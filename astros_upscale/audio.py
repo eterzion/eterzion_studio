@@ -5,12 +5,19 @@ with its own checkpoint management (downloaded by the library itself on first
 use, not tracked in astros_upscale's ``models/`` folder). They are an optional
 extra: ``pip install astros_upscale[audio]``.
 
+``denoise-voz`` (facebookresearch/denoiser), ``enhance-voz`` (voicefixer) and
+``universr`` (woongzip1/UniverSR) are all pure-Python PyTorch packages with no
+upper-bound numpy pin and no native build step (no Rust, no deepspeed) — they
+install cleanly alongside the modern torch/numpy the rest of astros_upscale
+uses. ``universr`` is not published on PyPI (installed straight from its git
+repo) and pulls in ``torchcodec``, which on Windows needs an FFmpeg "shared"
+build to load correctly — see the README troubleshooting section.
+
 NOTE: unlike the rest of astros_upscale, these three integrations were written
 against each library's documented public API but could not be exercised
-end-to-end in this environment (DeepFilterNet requires a Rust toolchain to
-build, and resemble-enhance/audiosr pull large GPU-oriented dependency trees).
-Please treat this module as implemented-but-unverified until you run it once
-against real weights.
+end-to-end in this environment (large model downloads / GPU-oriented
+dependency trees). Please treat this module as implemented-but-unverified
+until you run it once against real weights.
 """
 from __future__ import annotations
 
@@ -23,20 +30,20 @@ AUDIO_ENGINES = {
     'denoise-voz': {
         'category': 'Áudio/Voz',
         'description': 'Remoção de ruído em fala, rápido (roda em CPU)',
-        'package': 'deepfilternet',
-        'reference': 'https://github.com/Rikorose/DeepFilterNet',
+        'package': 'denoiser',
+        'reference': 'https://github.com/facebookresearch/denoiser',
     },
     'enhance-voz': {
         'category': 'Áudio/Voz',
-        'description': 'Denoise + restauração + extensão de banda (44.1kHz)',
-        'package': 'resemble-enhance',
-        'reference': 'https://github.com/resemble-ai/resemble-enhance',
+        'description': 'Denoise + restauração de fala degradada',
+        'package': 'voicefixer',
+        'reference': 'https://github.com/haoheliu/voicefixer',
     },
-    'audiosr': {
+    'universr': {
         'category': 'Áudio/Geral',
         'description': 'Super-resolução de áudio (fala e música) para 48kHz',
-        'package': 'audiosr',
-        'reference': 'https://github.com/haoheliu/versatile_audio_super_resolution',
+        'package': 'universr',
+        'reference': 'https://github.com/woongzip1/UniverSR',
     },
 }
 
@@ -78,44 +85,52 @@ def _convert_format(wav_path: str, output_path: str) -> None:
 
 def _enhance_denoise_voz(input_wav: str, output_wav: str) -> None:
     try:
-        from df.enhance import enhance, init_df, load_audio, save_audio
+        import torch
+        import torchaudio
+        from denoiser import pretrained
+        from denoiser.dsp import convert_audio
     except ImportError as error:
-        raise MissingAudioDependency('denoise-voz', 'deepfilternet', error) from error
-    model, df_state, _ = init_df()
-    audio, _ = load_audio(input_wav, sr=df_state.sr())
-    enhanced = enhance(model, df_state, audio)
-    save_audio(output_wav, enhanced, df_state.sr())
+        raise MissingAudioDependency('denoise-voz', 'denoiser', error) from error
+    model = pretrained.dns64()
+    wav, sr = torchaudio.load(input_wav)
+    wav = convert_audio(wav, sr, model.sample_rate, model.chin)
+    with torch.no_grad():
+        denoised = model(wav[None])[0]
+    torchaudio.save(output_wav, denoised.cpu(), model.sample_rate)
 
 
 def _enhance_enhance_voz(input_wav: str, output_wav: str, denoise_only: bool = False) -> None:
     try:
         import torch
-        import torchaudio
-        from resemble_enhance.enhancer.inference import denoise, enhance
+        from voicefixer import VoiceFixer
     except ImportError as error:
-        raise MissingAudioDependency('enhance-voz', 'resemble-enhance', error) from error
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    wav, sr = torchaudio.load(input_wav)
-    fn = denoise if denoise_only else enhance
-    enhanced_wav, new_sr = fn(wav.mean(dim=0), sr, device)
-    torchaudio.save(output_wav, enhanced_wav.unsqueeze(0).cpu(), new_sr)
+        raise MissingAudioDependency('enhance-voz', 'voicefixer', error) from error
+    vf = VoiceFixer()
+    # VoiceFixer has no dedicated denoise-only entry point; mode=1 (adds a
+    # pre-processing step that trims high frequencies) is the closest
+    # approximation to a lighter/denoise-leaning pass than the mode=0 default.
+    mode = 1 if denoise_only else 0
+    vf.restore(input=input_wav, output=output_wav, cuda=torch.cuda.is_available(), mode=mode)
 
 
-def _enhance_audiosr(input_wav: str, output_wav: str) -> None:
+def _enhance_universr(input_wav: str, output_wav: str) -> None:
     try:
-        import soundfile as sf
-        from audiosr import build_model, super_resolution
+        import torch
+        import torchaudio
+        from universr import UniverSR
     except ImportError as error:
-        raise MissingAudioDependency('audiosr', 'audiosr', error) from error
-    model = build_model(model_name='basic')
-    waveform = super_resolution(model, input_wav)
-    sf.write(output_wav, waveform.squeeze(), 48000)
+        raise MissingAudioDependency('universr', 'universr', error) from error
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    info = torchaudio.info(input_wav)
+    model = UniverSR.from_pretrained('woongzip1/universr-audio', device=device)
+    waveform = model.enhance(input_wav, input_sr=info.sample_rate)
+    torchaudio.save(output_wav, waveform.cpu(), 48000)
 
 
 _ENGINE_FUNCS = {
     'denoise-voz': _enhance_denoise_voz,
     'enhance-voz': _enhance_enhance_voz,
-    'audiosr': _enhance_audiosr,
+    'universr': _enhance_universr,
 }
 
 
@@ -154,5 +169,5 @@ def is_engine_available(engine: str) -> bool:
     """Check whether an audio engine's optional package is importable, without importing it fully."""
     import importlib.util
     package = AUDIO_ENGINES[engine]['package']
-    module_name = {'deepfilternet': 'df', 'resemble-enhance': 'resemble_enhance', 'audiosr': 'audiosr'}[package]
+    module_name = {'denoiser': 'denoiser', 'voicefixer': 'voicefixer', 'universr': 'universr'}[package]
     return importlib.util.find_spec(module_name) is not None

@@ -157,7 +157,7 @@ def test_1x_video_frame_chaining_offline(tmp_path):
 
 def test_audio_engine_missing_dependency_message(tmp_path):
     if is_engine_available('denoise-voz'):
-        pytest.skip('deepfilternet is installed in this environment')
+        pytest.skip('denoiser is installed in this environment')
     with pytest.raises(MissingAudioDependency, match='astros_upscale\\[audio\\]'):
         enhance_audio_file(str(tmp_path / 'in.wav'), str(tmp_path / 'out.wav'), engine='denoise-voz')
 

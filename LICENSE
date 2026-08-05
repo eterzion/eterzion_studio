@@ -1,28 +1,48 @@
-BSD 3-Clause License
+Licença de Uso Pessoal e Não Comercial
 
 Copyright (c) 2026, Eric Inácio
+Todos os direitos reservados.
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+Este software e os arquivos de código-fonte associados a ele (o "Software")
+são disponibilizados sob os seguintes termos:
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
+1. USO PERMITIDO
+   É concedido, gratuitamente, a qualquer pessoa que obtenha uma cópia deste
+   Software o direito de usá-lo e modificá-lo exclusivamente para fins
+   pessoais e não comerciais.
 
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+2. PROIBIÇÕES
+   a. É proibida a redistribuição do Software, no todo ou em parte, em sua
+      forma original, modificada, compilada ou incorporada a outro projeto —
+      seja de forma gratuita ou paga, pública ou privada.
+   b. É proibido qualquer uso comercial do Software, incluindo, sem se
+      limitar a: venda, licenciamento a terceiros, uso como parte de um
+      produto ou serviço oferecido a terceiros, ou qualquer uso do qual
+      resulte receita direta ou indireta.
+   c. É proibida a sublicença, cessão, aluguel ou transferência, total ou
+      parcial, dos direitos concedidos por esta licença.
 
-3. Neither the name of the copyright holder nor the names of its
-   contributors may be used to endorse or promote products derived from
-   this software without specific prior written permission.
+3. MODIFICAÇÕES
+   Modificações do Software são permitidas apenas para uso pessoal do autor
+   da modificação, e permanecem sujeitas às mesmas restrições desta licença
+   — em especial, não podem ser distribuídas a terceiros.
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+4. AVISO DE DIREITOS AUTORAIS
+   O aviso de copyright acima e esta licença devem ser mantidos em todas as
+   cópias ou partes substanciais do Software mantidas para uso pessoal.
+
+5. ISENÇÃO DE GARANTIA
+   O SOFTWARE É FORNECIDO "NO ESTADO EM QUE SE ENCONTRA", SEM GARANTIA DE
+   QUALQUER TIPO, EXPRESSA OU IMPLÍCITA, INCLUINDO, MAS NÃO SE LIMITANDO ÀS
+   GARANTIAS DE COMERCIALIZAÇÃO, ADEQUAÇÃO A UM PROPÓSITO ESPECÍFICO E NÃO
+   VIOLAÇÃO. EM NENHUMA HIPÓTESE OS AUTORES OU DETENTORES DOS DIREITOS
+   AUTORAIS SERÃO RESPONSÁVEIS POR QUALQUER RECLAMAÇÃO, DANO OU OUTRA
+   RESPONSABILIDADE, SEJA EM AÇÃO DE CONTRATO, ATO ILÍCITO OU DE OUTRA
+   FORMA, DECORRENTE DE, OU EM CONEXÃO COM O SOFTWARE OU O USO OU OUTRAS
+   NEGOCIAÇÕES NO SOFTWARE.
+
+6. MODELOS DE TERCEIROS
+   Esta licença cobre apenas o código-fonte deste repositório. Os modelos de
+   IA de terceiros baixados em tempo de execução (pasta `models/`) têm
+   autoria e licenças próprias e independentes — veja a seção "Origem,
+   autoria e licença de cada modelo" no README antes de qualquer uso.

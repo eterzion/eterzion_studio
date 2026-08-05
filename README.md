@@ -7,9 +7,9 @@ ou 4x, recuperando detalhes e removendo ruído.
 **Requisitos**
 
 - Python 3.9 ou mais novo. O extra opcional `[audio]` (melhoria de voz/áudio)
-  tem dependências de terceiros frágeis e desatualizadas que costumam falhar
-  no Windows independentemente da versão do Python — veja a seção de Solução
-  de problemas antes de tentar instalá-lo
+  instala normalmente na maioria dos casos; só o motor `universr` tem duas
+  particularidades (instala via `git`, e no Windows precisa de uma build
+  "shared" do FFmpeg) — veja a seção de Solução de problemas antes de usá-lo
 - Funciona em qualquer computador (CPU); se houver uma GPU NVIDIA com CUDA, ela
   é usada automaticamente e o processo fica muito mais rápido
 - ~100 MB de espaço em disco para os modelos (baixados automaticamente)
@@ -73,14 +73,49 @@ astros-upscale models update realesrgan-x4  # ou só um específico
 
 O comando `astros-upscale audio` (e a flag `--audio` do comando de vídeo, veja
 abaixo) usam bibliotecas de terceiros que não vêm instaladas por padrão.
-Para habilitá-las:
+
+**1. Instale o FFmpeg** (necessário para os três motores de áudio, e para
+manter o som em vídeos):
+
+- **Windows** — o motor `universr` (super-resolução geral) precisa
+  especificamente da build **"shared"** do FFmpeg, não da "essentials"/
+  "static" mais comum. Escolha uma das opções:
+  ```powershell
+  # via winget
+  winget install Gyan.FFmpeg.Shared
+  # ou via Chocolatey
+  choco install ffmpeg-shared
+  ```
+  Ou baixe manualmente a build "shared" em
+  [gyan.dev/ffmpeg/builds](https://www.gyan.dev/ffmpeg/builds/), extraia o
+  `.zip` e adicione a pasta `bin\` ao `PATH` do Windows.
+- **Linux (Debian/Ubuntu)**: `sudo apt install ffmpeg`
+- **macOS**: `brew install ffmpeg`
+
+Confirme que funcionou:
+
+```bash
+ffmpeg -version
+```
+
+**2. Instale o extra `[audio]`** (requer [git](https://git-scm.com/downloads)
+instalado, usado para baixar o motor `universr` direto do repositório do
+autor, já que ele não está publicado no PyPI):
 
 ```bash
 pip install -e ".[audio]"
 ```
 
-Sem esse passo, `image` e `video` continuam funcionando normalmente — só o
-comando `audio`/a flag `--audio` avisam pedindo essa instalação.
+Isso instala os três motores (`denoise-voz`, `enhance-voz`, `universr`) de
+uma vez. Sem esse passo, `image` e `video` continuam funcionando
+normalmente — só o comando `audio`/a flag `--audio` avisam pedindo essa
+instalação.
+
+**3. (Só para `universr`) confira o FFmpeg "shared" no Windows** — na
+primeira vez que rodar `--audio universr`, se aparecer o erro
+`RuntimeError: Could not load libtorchcodec`, é sinal de que o FFmpeg
+instalado é a build "static"/"essentials". Troque pela build "shared" (passo
+1 acima) e garanta que ela vem **antes** de qualquer outro FFmpeg no `PATH`.
 
 ---
 
@@ -196,7 +231,7 @@ Além de todas as opções de imagem acima:
 |---|---|
 | `--fps` | Força o fps do vídeo de saída. Padrão: igual ao original |
 | `--codec` | Codec de gravação (padrão: `mp4v`) |
-| `--audio` | Também melhora o áudio original com este motor (`denoise-voz`, `enhance-voz`, `audiosr`) |
+| `--audio` | Também melhora o áudio original com este motor (`denoise-voz`, `enhance-voz`, `universr`) |
 | `--denoise-only` | Com `--audio enhance-voz`: só remove ruído, sem restauração completa |
 
 ---
@@ -214,14 +249,14 @@ astros-upscale audio -i entrevista.wav -o entrevista_limpa.wav -m denoise-voz
 |---|---|
 | `-i`, `--input` | Arquivo de áudio de entrada (wav/mp3/flac — outros formatos que o ffmpeg leia também funcionam) |
 | `-o`, `--output` | Arquivo de saída. A extensão define o formato (`.wav`, `.mp3`, `.flac`) |
-| `-m`, `--model` | Motor de áudio: `denoise-voz` (padrão), `enhance-voz` ou `audiosr` |
+| `-m`, `--model` | Motor de áudio: `denoise-voz` (padrão), `enhance-voz` ou `universr` |
 | `--denoise-only` | Com `enhance-voz`: só remove ruído, sem a restauração/extensão de banda completa |
 
 | Motor | Indicado para |
 |---|---|
 | `denoise-voz` | Remover ruído de fala rapidamente, roda bem em CPU |
-| `enhance-voz` | Denoise + restauração + extensão de banda para 44.1kHz (mais pesado, melhor qualidade) |
-| `audiosr` | Super-resolução de áudio geral (fala ou música) para 48kHz |
+| `enhance-voz` | Denoise + restauração de fala degradada (mais pesado, melhor qualidade) |
+| `universr` | Super-resolução de áudio geral (fala ou música) para 48kHz |
 
 ---
 
@@ -273,46 +308,26 @@ Vídeo em CPU é pesado mesmo. Use um modelo leve (`realesr-general`,
 numa máquina com GPU NVIDIA.
 
 **"precisa do pacote opcional ..." ao usar `audio`/`--audio`**
-`pip install -e ".[audio]"` puxa três bibliotecas de terceiros
-(`deepfilternet`, `resemble-enhance`, `audiosr`) que são projetos de
-pesquisa de 2023–2024, com dependências fixadas em versões exatas e
-desatualizadas. **Elas não instalam de forma limpa junto uma da outra nem
-junto com o `torch` moderno que o resto do projeto usa** — isso é uma
-limitação conhecida dos pacotes upstream, não um bug do `astros_upscale`.
-Erros comuns e o porquê:
+`pip install -e ".[audio]"` puxa três bibliotecas de terceiros: `denoiser`
+(`denoise-voz`), `voicefixer` (`enhance-voz`) e `universr` (`universr`).
 
-- **Conflito de `numpy` só entre os pacotes de áudio** (pip reporta
-  `ResolutionImpossible`): `audiosr` exige `numpy<=1.23.5`,
-  `resemble-enhance` exige `numpy==1.26.2` (exato) e `deepfilternet` exige
-  `numpy<2.0` — três faixas mutuamente incompatíveis. Não existe versão de
-  numpy que sirva para os três ao mesmo tempo, em nenhuma versão de Python.
-- **Erro tentando compilar `numpy`/`deepfilterlib`** (menciona "Unknown
-  compiler(s)", pede `cl`/`gcc`/`clang`, ou "Cargo"/maturin/`link.exe`): o
-  `numpy` antigo exigido e o `deepfilterlib` (parte em Rust do
-  `deepfilternet`) só têm wheel pré-compilado até o **Python 3.11/3.12** no
-  Windows — no 3.13 o pip tenta compilar do zero e precisa de toolchain C++
-  (MSVC) e Rust com linker MSVC, o que a maioria das máquinas não tem
-  configurado.
-- **`ModuleNotFoundError: torchaudio.backend`** ao importar o
-  `deepfilternet` mesmo depois de instalado: o código do `deepfilternet`
-  0.5.6 foi escrito contra uma API do `torchaudio` que foi **removida** nas
-  versões recentes. Ele só funciona de fato com um `torch`/`torchaudio`
-  antigos (~2.0–2.1), incompatíveis com o `torch 2.13` que o
-  `astros_upscale` usa para imagem/vídeo.
+Os três são pacotes Python puros, sem etapa de compilação nativa (sem Rust,
+sem toolchain C++, sem `deepspeed`) e sem numpy travado numa versão exata —
+instalam normalmente junto com o `torch`/`numpy` modernos que o resto do
+projeto usa, em qualquer versão de Python suportada.
 
-Por causa disso, **o extra `[audio]` não é recomendado no Windows com um
-Python/torch modernos** — `image` e `video` (sem `--audio`) continuam
-funcionando normalmente, já que não dependem desse extra. Se você
-realmente precisar de `denoise-voz`/`enhance-voz`/`audiosr`, as opções
-realistas são:
+`universr` tem duas particularidades a saber:
 
-- Rodar esses motores num ambiente **totalmente isolado** (venv próprio,
-  fora do `astros_upscale`) com `torch`/`torchaudio` antigos fixados na
-  versão que cada pacote pede, sabendo que ainda assim `resemble-enhance`
-  exige `deepspeed==0.12.4`, que raramente compila no Windows fora do
-  WSL/Linux; ou
-- Usar **Linux ou WSL**, onde essas bibliotecas de pesquisa têm muito mais
-  chance de instalar como os autores originais testaram.
+- **Não está publicado no PyPI**: `pip install -e ".[audio]"` instala esse
+  pacote direto do repositório Git do autor
+  (`git+https://github.com/woongzip1/UniverSR.git`), então requer `git`
+  instalado e acesso à internet na hora de instalar (não só na primeira
+  execução, como os modelos de imagem/vídeo).
+- **`torchcodec`** (dependência do `universr`) no Windows precisa de uma
+  build "shared" do FFmpeg para carregar corretamente — a build "static" mais
+  comum não expõe as DLLs que ele procura, e o erro aparece como
+  `RuntimeError: Could not load libtorchcodec`. Veja como instalar a build
+  certa em [Melhoria de áudio (opcional)](#melhoria-de-áudio-opcional).
 
 ---
 
@@ -429,13 +444,19 @@ Use `python scripts/mirror_models.py --help` para ver todas as opções
 
 ## Licença
 
-O código do `astros_upscale` é distribuído sob a licença
-[BSD-3-Clause](LICENSE) — livre para uso, modificação e redistribuição,
-inclusive comercial, mantendo o aviso de copyright.
+O código do `astros_upscale` é distribuído sob uma licença de **uso pessoal
+e não comercial** (veja o texto completo em [LICENSE](LICENSE)). Em resumo:
+
+- Permitido: usar e modificar o código para fins pessoais e não comerciais.
+- Proibido: redistribuir o código (original ou modificado, gratuito ou
+  pago), usá-lo comercialmente (venda, como parte de um produto/serviço a
+  terceiros, ou qualquer uso que gere receita), ou sublicenciá-lo/cedê-lo a
+  terceiros.
 
 Essa licença cobre **apenas o código deste projeto**. Os modelos de IA
 baixados em tempo de execução (pasta `models/`) têm autoria e licenças
-próprias e independentes — algumas delas **não permitem uso comercial**
-(`ultrasharp` e `animesharp` são CC-BY-NC-SA-4.0). Veja a tabela completa em
+próprias e independentes — várias delas têm suas próprias restrições
+(`ultrasharp` e `animesharp` são CC-BY-NC-SA-4.0, por exemplo). Veja a tabela
+completa em
 [Origem, autoria e licença de cada modelo](#origem-autoria-e-licença-de-cada-modelo)
-antes de usar os resultados comercialmente.
+antes de usar qualquer resultado gerado por eles.
