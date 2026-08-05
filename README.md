@@ -424,3 +424,18 @@ funcionando normalmente (baixando das fontes originais).
 
 Use `python scripts/mirror_models.py --help` para ver todas as opções
 (espelhar só alguns modelos, mudar o nome do release, etc.).
+
+---
+
+## Licença
+
+O código do `astros_upscale` é distribuído sob a licença
+[BSD-3-Clause](LICENSE) — livre para uso, modificação e redistribuição,
+inclusive comercial, mantendo o aviso de copyright.
+
+Essa licença cobre **apenas o código deste projeto**. Os modelos de IA
+baixados em tempo de execução (pasta `models/`) têm autoria e licenças
+próprias e independentes — algumas delas **não permitem uso comercial**
+(`ultrasharp` e `animesharp` são CC-BY-NC-SA-4.0). Veja a tabela completa em
+[Origem, autoria e licença de cada modelo](#origem-autoria-e-licença-de-cada-modelo)
+antes de usar os resultados comercialmente.
