@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "astros_upscale"
+version = "1.0.0"
+description = "Upscale de imagens e vídeos com IA, sem dependência de BasicSR"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "BSD-3-Clause" }
+keywords = ["super-resolution", "upscale", "pytorch", "image-restoration", "video"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+]
+dependencies = [
+    "numpy>=1.26",
+    "opencv-python>=4.9",
+    "python-ffmpeg>=2.0",
+    "spandrel>=0.4",
+    "torch>=2.1",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+audio = [
+    "deepfilternet>=0.5",
+    "resemble-enhance",
+    "audiosr",
+]
+
+[project.scripts]
+astros-upscale = "astros_upscale.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["astros_upscale*"]
+
+[tool.pytest.ini_options]
+addopts = "tests/"
+
+[tool.yapf]
+based_on_style = "pep8"
+column_limit = 120
+
+[tool.isort]
+line_length = 120
+known_first_party = ["astros_upscale"]
