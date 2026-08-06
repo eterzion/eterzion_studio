@@ -33,7 +33,8 @@ dependencies = [
 audio = [
     "denoiser",
     "voicefixer",
-    "universr @ git+https://github.com/woongzip1/UniverSR.git",
+    "audiosronnx",
+    "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",
 ]
 
 [project.scripts]

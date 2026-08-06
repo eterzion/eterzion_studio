@@ -16,7 +16,7 @@ def test_registry_integrity():
         assert len(entry['sha256']) == len(entry['urls']), name
         assert all(isinstance(h, str) and len(h) == 64 for h in entry['sha256']), name
         assert entry['scale'] in (1, 2, 4), name
-        assert entry['category'] in ('Fotos', 'Anime', 'Restauração', 'Limpeza', 'Vídeo/Anime'), name
+        assert entry['category'] in ('Fotos', 'Anime', 'Restauração', 'Limpeza', 'Vídeo/Anime', 'Vídeo Real'), name
         assert entry['description'], name
 
 

@@ -1,0 +1,162 @@
+:root,
+:root[data-theme='dark'] {
+  /* Surfaces */
+  --surface-0: #0b0e14;
+  --surface-1: #10141d;
+  --surface-2: #161b26;
+  --surface-3: #1d2330;
+  --surface-border: #262d3d;
+  --surface-border-soft: #1c2230;
+
+  /* Text */
+  --text-primary: #f4f6fb;
+  --text-secondary: #a3adc2;
+  --text-tertiary: #6b7385;
+
+  /* Brand / semantic */
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2f6fe0;
+  --color-primary-soft: rgba(59, 130, 246, 0.14);
+  --color-success: #22c55e;
+  --color-success-soft: rgba(34, 197, 94, 0.14);
+  --color-warning: #f59e0b;
+  --color-warning-soft: rgba(245, 158, 11, 0.14);
+  --color-danger: #ef4444;
+  --color-danger-soft: rgba(239, 68, 68, 0.14);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+:root[data-theme='light'] {
+  /* Surfaces */
+  --surface-0: #f4f6fb;
+  --surface-1: #ffffff;
+  --surface-2: #f2f4f9;
+  --surface-3: #e7eaf2;
+  --surface-border: #dbe0ea;
+  --surface-border-soft: #e6e9f1;
+
+  /* Text */
+  --text-primary: #12151f;
+  --text-secondary: #545b6c;
+  --text-tertiary: #848da0;
+
+  /* Brand / semantic */
+  --color-primary: #2563eb;
+  --color-primary-hover: #1d4ed8;
+  --color-primary-soft: rgba(37, 99, 235, 0.1);
+  --color-success: #15803d;
+  --color-success-soft: rgba(21, 128, 61, 0.1);
+  --color-warning: #b45309;
+  --color-warning-soft: rgba(180, 83, 9, 0.1);
+  --color-danger: #b91c1c;
+  --color-danger-soft: rgba(185, 28, 28, 0.1);
+
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
+  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+:root {
+  /* Spacing grid */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Typography */
+  --font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+
+  --fs-page-title: 20px;
+  --fs-section-title: 12px;
+  --fs-label: 13px;
+  --fs-value: 13px;
+  --fs-caption: 12px;
+
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+
+  --transition-fast: 140ms ease;
+  --transition-theme: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+
+  /* Thumbnail size (Configurações > Interface) — components read this instead of a
+     hardcoded px value, so the setting actually reaches every thumbnail at once. */
+  --thumb-size: 64px;
+}
+
+body {
+  transition: var(--transition-theme);
+}
+
+/* Densidade (Configurações > Interface) rescales the spacing grid uniformly — every
+   component already builds its gaps/padding from var(--space-*), so this alone
+   reaches the whole app without per-component changes. */
+:root[data-density='compact'] {
+  --space-1: 3px;
+  --space-2: 6px;
+  --space-3: 12px;
+  --space-4: 18px;
+  --space-5: 24px;
+  --thumb-size: 52px;
+}
+
+:root[data-density='comfortable'] {
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 20px;
+  --space-4: 30px;
+  --space-5: 40px;
+  --thumb-size: 76px;
+}
+
+:root[data-thumb-size='sm'] {
+  --thumb-size: 48px;
+}
+
+:root[data-thumb-size='lg'] {
+  --thumb-size: 88px;
+}
+
+/* Ativar animações (Configurações > Interface) — off means every transition/animation
+   resolves instantly instead of not firing at all, so layout doesn't jump. */
+:root[data-animations='off'] *,
+:root[data-animations='off'] *::before,
+:root[data-animations='off'] *::after {
+  transition-duration: 0.001ms !important;
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-border);
+}

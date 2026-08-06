@@ -1,0 +1,9 @@
+"""Entrypoint for the packaged binary (see pyinstaller.spec) and for running
+the API directly with `python run.py` instead of `uvicorn app.main:app`.
+"""
+import uvicorn
+
+from app.config import settings
+
+if __name__ == '__main__':
+    uvicorn.run('app.main:app', host='127.0.0.1', port=settings.port)

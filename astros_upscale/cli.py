@@ -13,6 +13,8 @@ from . import __version__
 from .audio import AUDIO_ENGINES, MissingAudioDependency, enhance_audio_file, is_engine_available
 from .core import (DEFAULT_IMAGE_MODEL, DEFAULT_VIDEO_MODEL, MODELS, canonical_name, load_model,
                    model_download_status, model_needs_update, resolve_model, update_model)
+from .optimize import IMAGE_EXTENSIONS as OPTIMIZE_IMAGE_EXTENSIONS
+from .optimize import UnsupportedFormatError, optimize_file
 from .utils.download import DownloadError
 from .utils.image_io import imread, imwrite
 from .utils.video_io import (VideoReader, VideoWriter, copy_audio, even, extract_audio, has_ffmpeg, mux_audio_file)
@@ -209,6 +211,42 @@ def run_audio(args: argparse.Namespace) -> None:
     print(f'Pronto! Áudio salvo em: {output}')
 
 
+def run_optimize(args: argparse.Namespace) -> None:
+    if os.path.isfile(args.input):
+        if args.output is None:
+            name, ext = os.path.splitext(os.path.basename(args.input))
+            output = os.path.join('results', f'{name}_otimizado{ext}')
+        elif os.path.isdir(args.output) or args.output.endswith(('/', '\\')):
+            output = os.path.join(args.output, os.path.basename(args.input))
+        else:
+            output = args.output
+        try:
+            optimize_file(args.input, output, quality=args.quality, codec=args.codec)
+        except (UnsupportedFormatError, RuntimeError) as error:
+            sys.exit(f'Erro: {error}')
+        print(f'Pronto! Arquivo otimizado salvo em: {output}')
+    elif os.path.isdir(args.input):
+        paths = sorted(
+            p for p in glob.glob(os.path.join(args.input, '*')) if p.lower().endswith(OPTIMIZE_IMAGE_EXTENSIONS))
+        if not paths:
+            sys.exit(f'Nenhuma imagem encontrada em: {args.input} (pastas só são suportadas para imagens)')
+        output_dir = args.output if args.output is not None else 'results'
+        failures = []
+        for path in tqdm(paths, unit='img', desc='otimizar'):
+            name, ext = os.path.splitext(os.path.basename(path))
+            save_path = os.path.join(output_dir, f'{name}_otimizado{ext}')
+            try:
+                optimize_file(path, save_path, quality=args.quality)
+            except (UnsupportedFormatError, RuntimeError) as error:
+                print(f'{path}: FALHOU — {error}')
+                failures.append(path)
+        if failures:
+            sys.exit(f'\n{len(failures)} arquivo(s) falharam: {", ".join(failures)}')
+        print(f'Pronto! Resultado salvo em: {output_dir}')
+    else:
+        sys.exit(f'Entrada não encontrada: {args.input}')
+
+
 def _model_status_label(name: str, model_dir: str) -> str:
     downloaded, size = model_download_status(name, model_dir=model_dir)
     return f'[OK] {size / 1e6:.0f} MB' if downloaded else '[--] não baixado'
@@ -325,6 +363,18 @@ def main() -> None:
     p_audio.add_argument(
         '--denoise-only', action='store_true', help='Com enhance-voz: só remove ruído, sem restauração completa')
     p_audio.set_defaults(func=run_audio)
+
+    p_optimize = subparsers.add_parser(
+        'optimize', help='Reduz o tamanho do arquivo (imagem, vídeo ou áudio), mantendo o formato original')
+    p_optimize.add_argument('-i', '--input', type=str, required=True, help='Arquivo (ou pasta, para imagens)')
+    p_optimize.add_argument('-o', '--output', type=str, default=None, help='Arquivo ou pasta de saída')
+    p_optimize.add_argument(
+        '-q', '--quality', type=int, default=80,
+        help='Qualidade/fidelidade alvo, de 0 (menor arquivo) a 100 (mais próximo do original). Padrão: 80')
+    p_optimize.add_argument(
+        '--codec', type=str, default='libx264',
+        help='Codec de vídeo (padrão: libx264; ex.: libx265 para arquivos ainda menores)')
+    p_optimize.set_defaults(func=run_optimize)
 
     p_models = subparsers.add_parser('models', help='Lista, baixa ou verifica os modelos disponíveis')
     p_models.add_argument('--model-dir', type=str, default='models', help='Pasta onde os modelos são lidos')

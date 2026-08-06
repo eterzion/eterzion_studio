@@ -62,6 +62,20 @@ MODELS = {
         'category': 'Fotos',
         'description': 'Muito nítido; ótimo em JPEG comprimido',
     },
+    'nomos-webphoto': {
+        'urls': ['https://huggingface.co/Phips/4xNomosWebPhoto_RealPLKSR/resolve/main/4xNomosWebPhoto_RealPLKSR.safetensors'],
+        'sha256': ['9be0228f98156a100d6636d99b373ed2785b999723f9adc4cca504329ab157f2'],
+        'scale': 4,
+        'category': 'Fotos',
+        'description': 'RealPLKSR p/ fotos reais da web (ruído, blur, recompressão)',
+    },
+    'nomos2-dat2': {
+        'urls': ['https://huggingface.co/Phips/4xNomos2_hq_dat2/resolve/main/4xNomos2_hq_dat2.safetensors'],
+        'sha256': ['278c78ba9fd333ace4b02b3aeaa0254428baea20a63d3e995e2e4f8a60173f6f'],
+        'scale': 4,
+        'category': 'Fotos',
+        'description': 'DAT-2 (transformer), muito nítido — pesado, evite p/ vídeo/lote grande',
+    },
     # -------------------------- Anime -------------------------- #
     'realesrgan-anime': {
         'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth'],
@@ -77,6 +91,13 @@ MODELS = {
         'category': 'Anime',
         'description': 'Linhas limpas em ilustrações e texto',
     },
+    'hfa2k-span': {
+        'urls': ['https://huggingface.co/Phips/2xHFA2kSPAN/resolve/main/2xHFA2kSPAN.safetensors'],
+        'sha256': ['616666ffaa9ccdf604e3d6b98bf1ec32c6ed08c4d36da7fed1d013843e5a45e9'],
+        'scale': 2,
+        'category': 'Anime',
+        'description': 'SPAN — qualidade parecida ao realesrgan-anime, muito mais rápido',
+    },
     # -------------------------- Vídeo/Anime -------------------------- #
     'realesr-animevideo': {
         'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-animevideov3.pth'],
@@ -91,6 +112,22 @@ MODELS = {
         'scale': 2,
         'category': 'Vídeo/Anime',
         'description': 'Compact que trata degradação h264 (streaming/web)',
+    },
+    'nomosuni-span': {
+        'urls': ['https://huggingface.co/Phips/2xNomosUni_span_multijpg_ldl/resolve/main/2xNomosUni_span_multijpg_ldl.safetensors'],
+        'sha256': ['a3d35e01b8b71b4b3041ad1686f8ebd7bc4e1f3a10378319c2ac61c78b67012a'],
+        'scale': 2,
+        'category': 'Vídeo/Anime',
+        'description': 'SPAN universal e leve, tolera múltiplos níveis de recompressão JPEG',
+    },
+    # -------------------------- Vídeo Real -------------------------- #
+    'liveaction-span': {
+        'urls': ['https://raw.githubusercontent.com/jcj83429/upscaling/'
+                 'f73a3a02874360ec6ced18f8bdd8e43b5d7bba57/2xLiveActionV1_SPAN/2xLiveActionV1_SPAN_490000.pth'],
+        'sha256': ['8b166c75831ea7f694d9058ee9c8df8148af8cc1d2b57e69e6581b15cab572f7'],
+        'scale': 2,
+        'category': 'Vídeo Real',
+        'description': 'Vídeo live-action (não-anime): h264/h265/VP9, sem denoise agressivo',
     },
     # ----------------------- Restauração ----------------------- #
     'nmkd-siax': {
@@ -123,6 +160,13 @@ MODELS = {
         'scale': 1,
         'category': 'Limpeza',
         'description': 'Remove artefatos JPEG (treinado até qualidade 40)',
+    },
+    'deh264': {
+        'urls': ['https://huggingface.co/Phips/1xDeH264_realplksr/resolve/main/1xDeH264_realplksr.safetensors'],
+        'sha256': ['91f054af6308e37b81c261ecf775a58be5fa1d37a816709db5d0fea6fceb24b8'],
+        'scale': 1,
+        'category': 'Limpeza',
+        'description': 'Remove artefatos de compressão H264 (pré-limpeza antes de outro modelo)',
     },
 }
 
@@ -444,6 +488,10 @@ class AstrosUpscaler():
                 except RuntimeError as error:
                     print('Error', error)
                 print(f'\tTile {tile_idx}/{tiles_x * tiles_y}')
+                # optional per-tile progress hook (used by the desktop API for live progress)
+                tile_callback = getattr(self, 'tile_progress_callback', None)
+                if tile_callback is not None:
+                    tile_callback(tile_idx, tiles_x * tiles_y)
 
                 # output tile area on total image
                 output_start_x = input_start_x * self.scale

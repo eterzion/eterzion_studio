@@ -1,15 +1,17 @@
 # astros_upscale
 
-Aumente a resolução de **imagens e vídeos** com inteligência artificial, direto
-do terminal. O `astros_upscale` amplia fotos, ilustrações, anime e vídeos em 2x
-ou 4x, recuperando detalhes e removendo ruído.
+Aumente a resolução de **imagens e vídeos** com inteligência artificial,
+direto do terminal. O `astros_upscale` amplia fotos, ilustrações, anime e
+vídeos em 2x ou 4x, recuperando detalhes e removendo ruído.
+
+> Este README cobre só a **CLI**. Para a interface gráfica desktop (app
+> Electron + API FastAPI, ou a GUI antiga em PySide6) veja
+> [interface/README.md](interface/README.md).
 
 **Requisitos**
 
 - Python 3.9 ou mais novo. O extra opcional `[audio]` (melhoria de voz/áudio)
-  instala normalmente na maioria dos casos; só o motor `universr` tem duas
-  particularidades (instala via `git`, e no Windows precisa de uma build
-  "shared" do FFmpeg) — veja a seção de Solução de problemas antes de usá-lo
+  instala normalmente — veja a seção de Melhoria de áudio
 - Funciona em qualquer computador (CPU); se houver uma GPU NVIDIA com CUDA, ela
   é usada automaticamente e o processo fica muito mais rápido
 - ~100 MB de espaço em disco para os modelos (baixados automaticamente)
@@ -74,21 +76,10 @@ astros-upscale models update realesrgan-x4  # ou só um específico
 O comando `astros-upscale audio` (e a flag `--audio` do comando de vídeo, veja
 abaixo) usam bibliotecas de terceiros que não vêm instaladas por padrão.
 
-**1. Instale o FFmpeg** (necessário para os três motores de áudio, e para
-manter o som em vídeos):
+**1. Instale o FFmpeg** (necessário para os motores de áudio, e para manter o
+som em vídeos):
 
-- **Windows** — o motor `universr` (super-resolução geral) precisa
-  especificamente da build **"shared"** do FFmpeg, não da "essentials"/
-  "static" mais comum. Escolha uma das opções:
-  ```powershell
-  # via winget
-  winget install Gyan.FFmpeg.Shared
-  # ou via Chocolatey
-  choco install ffmpeg-shared
-  ```
-  Ou baixe manualmente a build "shared" em
-  [gyan.dev/ffmpeg/builds](https://www.gyan.dev/ffmpeg/builds/), extraia o
-  `.zip` e adicione a pasta `bin\` ao `PATH` do Windows.
+- **Windows**: `winget install Gyan.FFmpeg` (ou `choco install ffmpeg`)
 - **Linux (Debian/Ubuntu)**: `sudo apt install ffmpeg`
 - **macOS**: `brew install ffmpeg`
 
@@ -98,24 +89,21 @@ Confirme que funcionou:
 ffmpeg -version
 ```
 
-**2. Instale o extra `[audio]`** (requer [git](https://git-scm.com/downloads)
-instalado, usado para baixar o motor `universr` direto do repositório do
-autor, já que ele não está publicado no PyPI):
+**2. Instale o extra `[audio]`**:
 
 ```bash
 pip install -e ".[audio]"
 ```
 
-Isso instala os três motores (`denoise-voz`, `enhance-voz`, `universr`) de
-uma vez. Sem esse passo, `image` e `video` continuam funcionando
-normalmente — só o comando `audio`/a flag `--audio` avisam pedindo essa
-instalação.
-
-**3. (Só para `universr`) confira o FFmpeg "shared" no Windows** — na
-primeira vez que rodar `--audio universr`, se aparecer o erro
-`RuntimeError: Could not load libtorchcodec`, é sinal de que o FFmpeg
-instalado é a build "static"/"essentials". Troque pela build "shared" (passo
-1 acima) e garanta que ela vem **antes** de qualquer outro FFmpeg no `PATH`.
+Isso instala os quatro motores (`denoise-voz`, `enhance-voz`, `super-voz`,
+`audio-enhance`) de uma vez. Requer [git](https://git-scm.com/downloads)
+instalado, usado para baixar o `audio-enhance`
+([astros_audio_enhance](https://github.com/ericinacio/astros_audio_enhance),
+um fork próprio do AudioSR modernizado para `torch>=2.6`/`numpy>=2.1` — sem o
+travamento em `numpy<=1.23.5` do `audiosr` original, então não precisa mais
+de instalação manual à parte). Sem esse passo, `image` e `video` continuam
+funcionando normalmente — só o comando `audio`/a flag `--audio` avisam
+pedindo essa instalação.
 
 ---
 
@@ -231,7 +219,7 @@ Além de todas as opções de imagem acima:
 |---|---|
 | `--fps` | Força o fps do vídeo de saída. Padrão: igual ao original |
 | `--codec` | Codec de gravação (padrão: `mp4v`) |
-| `--audio` | Também melhora o áudio original com este motor (`denoise-voz`, `enhance-voz`, `universr`) |
+| `--audio` | Também melhora o áudio original com este motor (`denoise-voz`, `enhance-voz`, `audio-enhance`, `super-voz`) |
 | `--denoise-only` | Com `--audio enhance-voz`: só remove ruído, sem restauração completa |
 
 ---
@@ -249,14 +237,55 @@ astros-upscale audio -i entrevista.wav -o entrevista_limpa.wav -m denoise-voz
 |---|---|
 | `-i`, `--input` | Arquivo de áudio de entrada (wav/mp3/flac — outros formatos que o ffmpeg leia também funcionam) |
 | `-o`, `--output` | Arquivo de saída. A extensão define o formato (`.wav`, `.mp3`, `.flac`) |
-| `-m`, `--model` | Motor de áudio: `denoise-voz` (padrão), `enhance-voz` ou `universr` |
+| `-m`, `--model` | Motor de áudio: `denoise-voz` (padrão), `enhance-voz`, `audio-enhance` ou `super-voz` |
 | `--denoise-only` | Com `enhance-voz`: só remove ruído, sem a restauração/extensão de banda completa |
 
 | Motor | Indicado para |
 |---|---|
 | `denoise-voz` | Remover ruído de fala rapidamente, roda bem em CPU |
 | `enhance-voz` | Denoise + restauração de fala degradada (mais pesado, melhor qualidade) |
-| `universr` | Super-resolução de áudio geral (fala ou música) para 48kHz |
+| `audio-enhance` | Super-resolução de áudio geral (música) para 48kHz |
+| `super-voz` | Super-resolução de fala (bandwidth extension) para 48kHz |
+
+---
+
+## Otimização de arquivo (reduzir tamanho)
+
+Diferente do upscale, `astros-upscale optimize` **não muda resolução/duração**
+— só recomprime o arquivo (imagem, vídeo ou áudio) para ocupar menos espaço,
+mantendo o mesmo formato de entrada e saída. Funciona sem o extra `[audio]`
+(vídeo e áudio usam o `ffmpeg` do sistema, já necessário para manter som nos
+vídeos; veja [Melhoria de áudio](#melhoria-de-áudio-opcional) para instalá-lo).
+
+```bash
+astros-upscale optimize -i foto.jpg -o foto_leve.jpg -q 60
+astros-upscale optimize -i clipe.mp4 -o clipe_leve.mp4 -q 50 --codec libx265
+astros-upscale optimize -i musica.mp3 -o musica_leve.mp3 -q 40
+```
+
+Também aceita uma **pasta de imagens** (mesmo padrão do comando `image`):
+
+```bash
+astros-upscale optimize -i fotos/ -o fotos_leves/ -q 60
+```
+
+| Opção | O que faz |
+|---|---|
+| `-i`, `--input` | Arquivo (ou pasta, só para imagens) de entrada |
+| `-o`, `--output` | Arquivo ou pasta de saída. Padrão: `results/` |
+| `-q`, `--quality` | Fidelidade alvo, de `0` (menor arquivo) a `100` (mais próximo do original). Padrão: `80` |
+| `--codec` | Codec de vídeo (padrão: `libx264`; `libx265` comprime mais, mas é mais lento e menos compatível) |
+
+**Formatos suportados**: imagens `jpg`/`png`/`webp`; vídeos `mp4`/`mkv`/`mov`/
+`avi`/`webm`; áudio `mp3`/`m4a`/`aac`/`ogg`/`opus`/`flac`. Em imagem, `jpg`/
+`webp` usam a `--quality` como qualidade de recompressão; `png` (sem perdas)
+sempre usa a compressão máxima, ignorando `--quality`. Em vídeo, `--quality`
+vira um CRF (`0`→CRF 40, `100`→CRF 18); o áudio original é copiado sem
+reprocessar. Em áudio, `--quality` vira um bitrate (`0`→64kbps, `100`→320kbps)
+para formatos com perdas; `flac` (sem perdas) sempre usa a compressão máxima.
+`wav`/`bmp`/`tif` não têm compressão configurável nesses formatos e não são
+suportados — converta para um formato comprimido primeiro se precisar reduzir
+o tamanho.
 
 ---
 
@@ -308,26 +337,21 @@ Vídeo em CPU é pesado mesmo. Use um modelo leve (`realesr-general`,
 numa máquina com GPU NVIDIA.
 
 **"precisa do pacote opcional ..." ao usar `audio`/`--audio`**
-`pip install -e ".[audio]"` puxa três bibliotecas de terceiros: `denoiser`
-(`denoise-voz`), `voicefixer` (`enhance-voz`) e `universr` (`universr`).
+`pip install -e ".[audio]"` puxa quatro bibliotecas: `denoiser`
+(`denoise-voz`), `voicefixer` (`enhance-voz`), `audiosronnx` (`super-voz`) e
+`astros-audio-enhance` (`audio-enhance`). As três primeiras são pacotes
+Python puros, sem etapa de compilação nativa (sem Rust, sem toolchain C++,
+sem `deepspeed`) e sem numpy travado numa versão exata — o `audiosronnx`
+nem usa `torch` em tempo de execução, roda em cima do `onnxruntime`. Todas
+instalam normalmente junto com o resto do projeto.
 
-Os três são pacotes Python puros, sem etapa de compilação nativa (sem Rust,
-sem toolchain C++, sem `deepspeed`) e sem numpy travado numa versão exata —
-instalam normalmente junto com o `torch`/`numpy` modernos que o resto do
-projeto usa, em qualquer versão de Python suportada.
-
-`universr` tem duas particularidades a saber:
-
-- **Não está publicado no PyPI**: `pip install -e ".[audio]"` instala esse
-  pacote direto do repositório Git do autor
-  (`git+https://github.com/woongzip1/UniverSR.git`), então requer `git`
-  instalado e acesso à internet na hora de instalar (não só na primeira
-  execução, como os modelos de imagem/vídeo).
-- **`torchcodec`** (dependência do `universr`) no Windows precisa de uma
-  build "shared" do FFmpeg para carregar corretamente — a build "static" mais
-  comum não expõe as DLLs que ele procura, e o erro aparece como
-  `RuntimeError: Could not load libtorchcodec`. Veja como instalar a build
-  certa em [Melhoria de áudio (opcional)](#melhoria-de-áudio-opcional).
+`astros-audio-enhance` é o único caso à parte: não está publicado no PyPI,
+então `pip install -e ".[audio]"` instala esse pacote direto do repositório
+Git do autor (`git+https://github.com/ericinacio/astros_audio_enhance.git`),
+exigindo `git` instalado. É um fork próprio do AudioSR original (Liu et al.)
+reescrito contra `torch>=2.6`/`numpy>=2.1` — ao contrário do `audiosr`
+upstream (que prendia `numpy<=1.23.5`, incompatível com o `numpy>=1.26` do
+resto do projeto), não exige nenhuma instalação manual separada.
 
 ---
 
@@ -346,6 +370,8 @@ descartado automaticamente.
 | `realesr-general` | 4x | Leve e rápido, bom default geral; aceita `--denoise` |
 | `realesrnet-x4` | 4x | Resultado mais suave e com menos artefatos |
 | `ultrasharp` | 4x | Muito nítido; ótimo em JPEG comprimido |
+| `nomos-webphoto` | 4x | Fotos reais degradadas da web (ruído, blur, recompressão) |
+| `nomos2-dat2` | 4x | Transformer (DAT-2), o mais nítido — pesado, evite p/ vídeo/lote |
 
 **Anime**
 
@@ -353,6 +379,7 @@ descartado automaticamente.
 |---|---|---|
 | `realesrgan-anime` | 4x | Modelo leve otimizado para anime/ilustração |
 | `animesharp` | 4x | Linhas limpas em ilustrações e texto |
+| `hfa2k-span` | 2x | Qualidade parecida ao realesrgan-anime, bem mais rápido (SPAN) |
 | `anime-video` *(padrão p/ vídeos)* | 4x | Vídeos de anime — leve e rápido |
 
 **Vídeo/Anime** (leves, feitos para processar muitos frames)
@@ -361,6 +388,13 @@ descartado automaticamente.
 |---|---|---|
 | `realesr-animevideo` *(padrão p/ vídeos)* | 4x | Oficial Real-ESRGAN, leve, feito para vídeo de anime |
 | `hfa2k-avc` | 2x | Trata degradação h264 típica de vídeo comprimido/streaming |
+| `nomosuni-span` | 2x | SPAN universal e leve, tolera múltiplos níveis de recompressão JPEG |
+
+**Vídeo Real** (live-action, não-anime)
+
+| Modelo | Escala | Indicado para |
+|---|---|---|
+| `liveaction-span` | 2x | Vídeo real (h264/h265/VP9), sem denoise agressivo — preserva grão/detalhe |
 
 **Restauração**
 
@@ -375,6 +409,7 @@ descartado automaticamente.
 |---|---|---|
 | `denoise` | 1x | Remove ruído fotográfico; trata leve compressão JPEG |
 | `dejpg` | 1x | Remove artefatos JPEG (fotos muito comprimidas) |
+| `deh264` | 1x | Remove artefatos de compressão H264 (pré-limpeza antes de outro modelo) |
 
 Os modelos 1x mantêm o tamanho original — use-os sozinhos (`-m dejpg`) ou como
 etapa de limpeza antes de um upscale (`--pre dejpg -m realesrgan-x4`).
@@ -396,7 +431,8 @@ continua sendo a do autor original.
 | `ultrasharp` | Kim2091 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [openmodeldb.info/models/4x-UltraSharp](https://openmodeldb.info/models/4x-UltraSharp) |
 | `animesharp` | Kim2091 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [openmodeldb.info/models/4x-AnimeSharp](https://openmodeldb.info/models/4x-AnimeSharp) |
 | `nmkd-siax`, `nmkd-superscale` | Nmkd | WTFPL (uso livre) | [openmodeldb.info](https://openmodeldb.info/models/4x-NMKD-Siax-CX) |
-| `denoise`, `dejpg`, `hfa2k-avc` | Philip Hofmann (Helaman) | CC-BY-4.0 (uso livre, com atribuição) | [openmodeldb.info](https://openmodeldb.info/models/1x-DeNoise-realplksr-otf) |
+| `denoise`, `dejpg`, `hfa2k-avc`, `deh264`, `hfa2k-span`, `nomosuni-span`, `nomos-webphoto`, `nomos2-dat2` | Philip Hofmann (Phhofm/Phips) | CC-BY-4.0 (uso livre, com atribuição) | [huggingface.co/Phips](https://huggingface.co/Phips) |
+| `liveaction-span` | jcj83429 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [github.com/jcj83429/upscaling](https://github.com/jcj83429/upscaling) |
 
 ⚠️ `ultrasharp` e `animesharp` são **CC-BY-NC-SA 4.0**: não use os resultados
 gerados por eles comercialmente sem verificar os termos, e mantenha a

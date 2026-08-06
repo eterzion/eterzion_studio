@@ -164,6 +164,6 @@ def test_audio_engine_missing_dependency_message(tmp_path):
 
 def test_audio_engines_registry():
     for name, info in AUDIO_ENGINES.items():
-        assert info['category'] in ('Áudio/Voz', 'Áudio/Geral'), name
+        assert info['category'] in ('Áudio/Voz', 'Áudio/Geral', 'Áudio/Música'), name
         assert info['description'], name
         assert info['reference'].startswith('https://'), name

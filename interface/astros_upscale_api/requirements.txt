@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+python-multipart
+websockets
+torch
+realesrgan
+pillow
+opencv-python
