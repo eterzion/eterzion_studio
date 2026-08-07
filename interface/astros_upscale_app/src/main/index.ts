@@ -20,7 +20,13 @@ const MEDIA_SCHEME = 'astros-media'
 protocol.registerSchemesAsPrivileged([
   {
     scheme: MEDIA_SCHEME,
-    privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true, corsEnabled: true }
+    privileges: {
+      standard: true,
+      secure: true,
+      supportFetchAPI: true,
+      stream: true,
+      corsEnabled: true
+    }
   }
 ])
 
@@ -108,7 +114,10 @@ function registerIpcHandlers(win: BrowserWindow): void {
     const result = await dialog.showOpenDialog(win, {
       properties: ['openFile', 'multiSelections'],
       filters: [
-        { name: 'Mídia suportada', extensions: [...IMAGE_EXT, ...VIDEO_EXT, ...AUDIO_EXT].map((e) => e.slice(1)) },
+        {
+          name: 'Mídia suportada',
+          extensions: [...IMAGE_EXT, ...VIDEO_EXT, ...AUDIO_EXT].map((e) => e.slice(1))
+        },
         { name: 'Todos os arquivos', extensions: ['*'] }
       ]
     })
@@ -135,7 +144,9 @@ function registerIpcHandlers(win: BrowserWindow): void {
       files: described
         .filter((d) => d.described !== null && d.described.kind !== null)
         .map((d) => d.described!),
-      rejected: described.filter((d) => !d.described || d.described.kind === null).map((d) => d.path)
+      rejected: described
+        .filter((d) => !d.described || d.described.kind === null)
+        .map((d) => d.path)
     }
   })
 

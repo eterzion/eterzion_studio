@@ -29,6 +29,8 @@ const emit = defineEmits<{
 <style scoped>
 .segmented {
   display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
   background: var(--surface-3);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-sm);
@@ -45,7 +47,9 @@ const emit = defineEmits<{
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .segment:hover {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { HelpCircle, SunMoon, ArrowLeft } from '@lucide/vue'
+import { ArrowLeft } from '@lucide/vue'
+import LicenseWidget from './LicenseWidget.vue'
 
 withDefaults(
   defineProps<{
@@ -25,9 +26,7 @@ defineEmits<{
 
     <div class="topbar-right">
       <slot name="actions" />
-      <button class="icon-btn" type="button" title="Ajuda"><HelpCircle :size="18" /></button>
-      <button class="icon-btn" type="button" title="Tema"><SunMoon :size="18" /></button>
-      <div class="avatar">A</div>
+      <LicenseWidget />
     </div>
   </header>
 </template>

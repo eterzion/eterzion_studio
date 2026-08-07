@@ -1,0 +1,10 @@
+{
+  "dpapi.py": "4a1ecec95e4043cf302c3c3a816c91b36afad7dad0b49b38c8f5becb3639e45f",
+  "install_identity.py": "a891c7d02a21061acb807fd093b6cef1a338a8f0a21ed3215dc09ae1fb5bb1a5",
+  "integrity.py": "7d122e5cbc3a1a80c11c7c002b34d1333ed9f2a3d8cb31d31077adf31d078d0f",
+  "isolated_worker.py": "c3ef16d4d5dcd807e7765872365c058664f5a7e1e5765d4c2c9124de33828f4c",
+  "protected_loader.py": "d16327308700142966d0c4c9b631eb103e0a72a15bdd10088e261a5c4810175a",
+  "secure_tempdir.py": "66b7193c271761b9e7e7d36fe7807618417b59fde2d659df22eb9e61907cd0b6",
+  "upscaler.py": "6c1687e88a467a07335cea043920ea4b000c2fc95769b6cac39998f017a6f6b3",
+  "worker_supervisor.py": "d282dcdd63465ba2d3c346f4f78ee00eafe2530802d07ae0617fdd2624a398dc"
+}

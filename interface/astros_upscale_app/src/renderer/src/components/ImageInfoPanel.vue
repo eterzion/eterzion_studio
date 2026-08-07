@@ -11,13 +11,16 @@ const props = defineProps<{
 }>()
 
 const scaleFactor = computed(() => {
-  if (!props.originalWidth || !props.originalHeight || !props.newWidth || !props.newHeight) return null
+  if (!props.originalWidth || !props.originalHeight || !props.newWidth || !props.newHeight)
+    return null
   const origPixels = props.originalWidth * props.originalHeight
   const newPixels = props.newWidth * props.newHeight
   return Math.sqrt(newPixels / origPixels)
 })
 
-const percentIncrease = computed(() => (scaleFactor.value ? Math.round((scaleFactor.value - 1) * 100) : null))
+const percentIncrease = computed(() =>
+  scaleFactor.value ? Math.round((scaleFactor.value - 1) * 100) : null
+)
 
 function fmtBytes(bytes: number | null): string {
   if (bytes == null) return '—'

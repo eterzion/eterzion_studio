@@ -67,14 +67,18 @@ function onKeydown(e: KeyboardEvent): void {
       <div class="icon-circle icon-error"><FileWarning :size="26" /></div>
       <h3 class="upload-title">Não foi possível importar os arquivos</h3>
       <p class="upload-subtitle">{{ error }}</p>
-      <button class="btn-primary" type="button" @click.stop="emit('pickFiles')">Tentar novamente</button>
+      <button class="btn-primary" type="button" @click.stop="emit('pickFiles')">
+        Tentar novamente
+      </button>
     </template>
     <template v-else>
       <div class="icon-circle" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
       <h3 class="upload-title">
         {{ dragOver ? 'Solte para importar' : 'Arraste imagens aqui' }}
       </h3>
-      <p class="upload-subtitle">ou use os botões abaixo — imagens são identificadas automaticamente</p>
+      <p class="upload-subtitle">
+        ou use os botões abaixo — imagens são identificadas automaticamente
+      </p>
 
       <div class="upload-actions">
         <button class="btn-primary" type="button" @click.stop="emit('pickFiles')">
@@ -87,7 +91,9 @@ function onKeydown(e: KeyboardEvent): void {
 
       <div class="upload-meta">
         <div class="format-chips">
-          <span v-for="fmt in ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']" :key="fmt" class="chip">{{ fmt }}</span>
+          <span v-for="fmt in ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']" :key="fmt" class="chip">{{
+            fmt
+          }}</span>
         </div>
         <span class="upload-limit">até 500 MB por arquivo</span>
       </div>
@@ -109,7 +115,10 @@ function onKeydown(e: KeyboardEvent): void {
   gap: var(--space-2);
   cursor: pointer;
   overflow: hidden;
-  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .upload-zone:hover:not(.loading) {

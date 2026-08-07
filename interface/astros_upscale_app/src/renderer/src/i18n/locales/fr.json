@@ -1,0 +1,93 @@
+{
+  "app": { "name": "Astros Upscale" },
+  "nav": {
+    "home": "Accueil",
+    "image": "Image",
+    "video": "Vidéo",
+    "audio": "Audio",
+    "optimize": "Optimiser",
+    "models": "Modèles",
+    "history": "Historique",
+    "settings": "Paramètres"
+  },
+  "sidebar": {
+    "navigation": "Navigation",
+    "support": "Assistance",
+    "collapse": "Réduire la barre latérale",
+    "expand": "Développer la barre latérale",
+    "darkMode": "Mode sombre",
+    "lightMode": "Mode clair",
+    "toggleTheme": "Basculer le thème clair/sombre",
+    "links": {
+      "site": "Site officiel",
+      "docs": "Documentation",
+      "github": "GitHub",
+      "discord": "Discord",
+      "faq": "FAQ",
+      "help": "Centre d'aide",
+      "email": "E-mail d'assistance"
+    }
+  },
+  "common": {
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "close": "Fermer"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "general": {
+      "title": "Général",
+      "description": "Préférences générales de l'application",
+      "language": { "label": "Langue", "description": "Détectée automatiquement depuis Windows au premier lancement" },
+      "theme": {
+        "label": "Thème",
+        "description": "Apparence claire, sombre, ou basée sur Windows",
+        "light": "Clair",
+        "dark": "Sombre",
+        "auto": "Automatique"
+      },
+      "accent": { "label": "Couleur d'accent", "description": "Couleur principale utilisée pour les boutons, liens et éléments actifs" },
+      "autoUpdate": { "label": "Mises à jour automatiques", "description": "Rechercher de nouvelles versions au démarrage (bientôt disponible)" },
+      "outputFolder": { "label": "Dossier de sortie par défaut", "description": "Utilisé comme suggestion initiale lors de l'exportation", "same": "Même dossier que l'image d'origine" },
+      "exportFormat": { "label": "Format d'image par défaut", "description": "Présélectionné à l'ouverture du panneau d'exportation" }
+    },
+    "processing": {
+      "title": "Traitement",
+      "description": "Valeurs par défaut lors de la configuration d'une nouvelle image",
+      "defaultModel": { "label": "Modèle par défaut", "description": "Défini dans l'onglet Modèles", "none": "Aucun défini" },
+      "defaultScale": { "label": "Échelle par défaut", "description": "Facteur présélectionné pour les nouvelles images" },
+      "lockAspect": { "label": "Conserver les proportions automatiquement", "description": "Verrouille largeur/hauteur en mode personnalisé" },
+      "quality": { "label": "Qualité de l'image", "description": "Par défaut pour l'exportation en .jpg/.webp" },
+      "concurrentJobs": { "label": "Tâches simultanées", "description": "Fixé à 1 par l'architecture de traitement actuelle (file série, un seul worker)" }
+    },
+    "history": {
+      "title": "Historique",
+      "count": "{count} entrée enregistrée localement | {count} entrées enregistrées localement",
+      "limit": { "label": "Nombre maximal d'entrées", "description": "Les plus anciennes sont supprimées au-delà" },
+      "autoCleanup": { "label": "Nettoyage automatique", "description": "Supprime les entrées plus anciennes que la période ci-dessous" },
+      "keepFor": { "label": "Conserver pendant", "description": "Jours avant suppression automatique", "days7": "7 jours", "days30": "30 jours", "days90": "90 jours" },
+      "clear": { "label": "Effacer l'historique manuellement", "description": "Supprime toutes les entrées enregistrées — n'affecte pas les fichiers exportés", "button": "Effacer l'historique", "confirm": "Confirmer la suppression" },
+      "clearCache": { "label": "Vider le cache", "description": "Recharge la liste des modèles directement depuis l'API", "button": "Vider le cache", "success": "Cache des modèles actualisé depuis l'API.", "error": "Échec de l'actualisation : {error}" }
+    },
+    "interface": {
+      "title": "Interface",
+      "description": "Personnalisez l'affichage des informations et la densité",
+      "showDescriptions": { "label": "Afficher les descriptions des modèles", "description": "Affiche un résumé de la finalité sur les cartes de l'onglet Modèles" },
+      "showBadges": { "label": "Afficher les indicateurs d'usage commercial", "description": "Badge de licence sur les modèles" },
+      "thumbnailSize": { "label": "Taille des miniatures", "description": "File d'attente, éditeur et historique", "small": "Petites", "medium": "Moyennes", "large": "Grandes" },
+      "animations": { "label": "Activer les animations", "description": "Transitions et micro-animations de l'interface" },
+      "density": { "label": "Densité de l'interface", "description": "Espacement entre les éléments", "compact": "Compacte", "standard": "Standard", "comfortable": "Confortable" }
+    },
+    "advanced": {
+      "title": "Avancé",
+      "description": "Diagnostic et informations techniques",
+      "appVersion": "Version de l'application",
+      "runtime": "Versions du runtime",
+      "apiServer": "Serveur de l'API",
+      "repoFolder": "Dossier du dépôt",
+      "debug": { "label": "Options de débogage", "description": "Ouvre les DevTools de Chromium pour inspecter l'interface", "button": "Ouvrir DevTools" }
+    }
+  }
+}

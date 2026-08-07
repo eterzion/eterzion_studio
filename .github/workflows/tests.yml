@@ -1,0 +1,69 @@
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  licensing-service-tests:
+    name: Licensing service (pytest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: interface/astros_licensing_service
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: interface/astros_licensing_service/requirements-dev.txt
+      - run: pip install -r requirements-dev.txt
+      - run: pytest --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: licensing-service-coverage
+          path: interface/astros_licensing_service/coverage.xml
+
+  upscale-api-tests:
+    name: Upscale API (pytest)
+    runs-on: windows-latest
+    # DPAPI (used by app.core.dpapi / install_identity.py) is Windows-only —
+    # the same reason install_identity.py itself falls back to a weaker,
+    # explicitly-documented no-op on other platforms. Running this suite on
+    # windows-latest exercises the real code path instead of the fallback.
+    defaults:
+      run:
+        working-directory: interface/astros_upscale_api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install -r requirements-dev.txt
+      - run: pytest --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: upscale-api-coverage
+          path: interface/astros_upscale_api/coverage.xml
+
+  frontend-lint-and-typecheck:
+    name: Desktop app — lint + typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: interface/astros_upscale_app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run typecheck

@@ -17,6 +17,9 @@ class Adjustments(BaseModel):
     deblur: int = Field(default=0, ge=0, le=100)
     detail_recovery: int = Field(default=0, ge=0, le=100)
     face_correction: bool = False
+    face_recovery_strength: int = Field(default=80, ge=0, le=100)
+    denoise_filter_enabled: bool = False
+    denoise_filter_strength: int = Field(default=45, ge=0, le=100)
 
 
 class JobParams(BaseModel):

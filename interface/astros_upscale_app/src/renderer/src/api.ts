@@ -41,7 +41,8 @@ export const api = {
   joinPath: (...parts: string[]): string => window.api.joinPath(...parts),
   baseName: (path: string, suffix?: string): string => window.api.baseName(path, suffix),
   extName: (path: string): string => window.api.extName(path),
-  saveTempImage: (buffer: ArrayBuffer, ext: string): Promise<string> => window.api.saveTempImage(buffer, ext),
+  saveTempImage: (buffer: ArrayBuffer, ext: string): Promise<string> =>
+    window.api.saveTempImage(buffer, ext),
   getAppVersion: (): Promise<string> => window.api.getAppVersion(),
   openDevTools: (): Promise<void> => window.api.openDevTools()
 }

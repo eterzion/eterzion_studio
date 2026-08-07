@@ -19,7 +19,9 @@ export async function checkApiStatus(): Promise<void> {
   try {
     const result = await api.ensureApi()
     apiStatus.ready = result.ready
-    apiStatus.error = result.ready ? null : (result.error ?? 'Não foi possível conectar ao servidor da API.')
+    apiStatus.error = result.ready
+      ? null
+      : (result.error ?? 'Não foi possível conectar ao servidor da API.')
   } catch (error) {
     apiStatus.ready = false
     apiStatus.error = error instanceof Error ? error.message : 'Falha ao verificar a API.'

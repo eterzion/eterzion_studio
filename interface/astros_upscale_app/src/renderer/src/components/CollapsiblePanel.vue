@@ -17,12 +17,7 @@ const open = ref(props.defaultOpen)
 
 <template>
   <section class="panel">
-    <button
-      class="panel-header"
-      type="button"
-      :aria-expanded="open"
-      @click="open = !open"
-    >
+    <button class="panel-header" type="button" :aria-expanded="open" @click="open = !open">
       <div v-if="icon" class="panel-icon"><component :is="icon" :size="16" /></div>
       <div class="panel-heading">
         <span class="panel-title">{{ title }}</span>
@@ -41,7 +36,6 @@ const open = ref(props.defaultOpen)
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-md);
-  overflow: hidden;
   flex-shrink: 0;
   transition: border-color var(--transition-fast);
 }
@@ -54,6 +48,7 @@ const open = ref(props.defaultOpen)
   padding: var(--space-3);
   background: transparent;
   border: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
   cursor: pointer;
   text-align: left;
 }

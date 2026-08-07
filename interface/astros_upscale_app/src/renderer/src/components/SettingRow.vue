@@ -53,10 +53,11 @@ defineProps<{
 }
 
 .setting-control {
-  flex-shrink: 0;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--space-2);
+  min-width: 0;
   max-width: 100%;
 }
 </style>

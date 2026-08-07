@@ -7,3 +7,5 @@ torch
 realesrgan
 pillow
 opencv-python
+cryptography
+facexlib

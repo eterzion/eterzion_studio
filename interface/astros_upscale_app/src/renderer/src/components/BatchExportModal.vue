@@ -28,7 +28,9 @@ const doneCount = ref(0)
 const results = ref<{ job: Job; ok: boolean; error?: string }[]>([])
 
 const selectedJobs = computed(() => props.jobs.filter((j) => selected.value.has(j.id)))
-const finished = computed(() => results.value.length === selectedJobs.value.length && selectedJobs.value.length > 0)
+const finished = computed(
+  () => results.value.length === selectedJobs.value.length && selectedJobs.value.length > 0
+)
 const successCount = computed(() => results.value.filter((r) => r.ok).length)
 const failureCount = computed(() => results.value.filter((r) => !r.ok).length)
 
@@ -93,16 +95,29 @@ async function run(): Promise<void> {
         <div class="field-row">
           <label class="field-label">Destino</label>
           <div class="folder-row">
-            <input class="select folder-input" type="text" :value="outputDir ?? 'Mesma pasta do original'" readonly />
-            <button class="folder-btn" type="button" @click="pickFolder"><FolderOpen :size="15" /></button>
+            <input
+              class="select folder-input"
+              type="text"
+              :value="outputDir ?? 'Mesma pasta do original'"
+              readonly
+            />
+            <button class="folder-btn" type="button" @click="pickFolder">
+              <FolderOpen :size="15" />
+            </button>
           </div>
         </div>
 
         <p v-if="running" class="progress-text">
-          <Loader2 :size="14" class="spin" /> Exportando {{ doneCount }} de {{ selectedJobs.length }}
+          <Loader2 :size="14" class="spin" /> Exportando {{ doneCount }} de
+          {{ selectedJobs.length }}
         </p>
 
-        <button class="btn-primary" type="button" :disabled="running || !selectedJobs.length" @click="run">
+        <button
+          class="btn-primary"
+          type="button"
+          :disabled="running || !selectedJobs.length"
+          @click="run"
+        >
           Exportar {{ selectedJobs.length }} imagem{{ selectedJobs.length === 1 ? '' : 's' }}
         </button>
       </div>
@@ -114,7 +129,11 @@ async function run(): Promise<void> {
         </p>
         <div class="job-list">
           <div v-for="r in results" :key="r.job.id" class="report-row">
-            <component :is="r.ok ? CheckCircle2 : AlertCircle" :size="14" :class="r.ok ? 'ok' : 'fail'" />
+            <component
+              :is="r.ok ? CheckCircle2 : AlertCircle"
+              :size="14"
+              :class="r.ok ? 'ok' : 'fail'"
+            />
             <span class="job-name">{{ r.job.fileName }}</span>
             <span v-if="!r.ok" class="report-error">{{ r.error }}</span>
           </div>

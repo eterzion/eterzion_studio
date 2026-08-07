@@ -26,7 +26,11 @@ const statusMeta = computed(() => {
     case 'done':
       return { label: 'Concluído', icon: CheckCircle2, tone: 'success' }
     case 'error':
-      return { label: props.job.errorMessage || 'Falha no processamento', icon: AlertCircle, tone: 'danger' }
+      return {
+        label: props.job.errorMessage || 'Falha no processamento',
+        icon: AlertCircle,
+        tone: 'danger'
+      }
     case 'cancelled':
       return { label: 'Cancelado', icon: CircleX, tone: 'neutral' }
     default:
@@ -34,7 +38,9 @@ const statusMeta = computed(() => {
   }
 })
 
-const sizeLabel = computed(() => (props.job.sourceMeta.sizeBytes / (1024 * 1024)).toFixed(2) + ' MB')
+const sizeLabel = computed(
+  () => (props.job.sourceMeta.sizeBytes / (1024 * 1024)).toFixed(2) + ' MB'
+)
 </script>
 
 <template>
@@ -53,16 +59,22 @@ const sizeLabel = computed(() => (props.job.sourceMeta.sizeBytes / (1024 * 1024)
       </div>
       <div class="meta">
         <span>Imagem · {{ job.sourceMeta.format }}</span>
-        <span v-if="job.sourceMeta.width">{{ job.sourceMeta.width }} x {{ job.sourceMeta.height }}</span>
+        <span v-if="job.sourceMeta.width"
+          >{{ job.sourceMeta.width }} x {{ job.sourceMeta.height }}</span
+        >
         <span>{{ sizeLabel }}</span>
       </div>
 
       <div class="status-row" :class="'tone-' + statusMeta.tone">
-        <component :is="statusMeta.icon" :size="13" :class="{ spin: job.status === 'processing' }" />
+        <component
+          :is="statusMeta.icon"
+          :size="13"
+          :class="{ spin: job.status === 'processing' }"
+        />
         <span>{{ statusMeta.label }}</span>
       </div>
 
-      <div class="progress-track" v-if="job.status === 'processing' || job.status === 'queued'">
+      <div v-if="job.status === 'processing' || job.status === 'queued'" class="progress-track">
         <div
           class="progress-fill"
           :class="'tone-' + statusMeta.tone"
@@ -82,11 +94,33 @@ const sizeLabel = computed(() => (props.job.sourceMeta.sizeBytes / (1024 * 1024)
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-md);
   cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  animation: queue-item-in 220ms ease backwards;
+}
+
+.queue-item:hover {
+  border-color: var(--surface-border);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+@keyframes queue-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .thumb {
-  width: 64px;
-  height: 64px;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   background: var(--surface-3);

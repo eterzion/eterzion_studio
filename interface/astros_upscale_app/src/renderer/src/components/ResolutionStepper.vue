@@ -117,7 +117,9 @@ const focused = ref(false)
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-sm);
   overflow: hidden;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .stepper.focused {
@@ -140,7 +142,10 @@ const focused = ref(false)
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), transform 80ms ease;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    transform 80ms ease;
 }
 
 .step-btn:hover:not(:disabled) {
@@ -188,5 +193,4 @@ const focused = ref(false)
 .step-value:focus {
   outline: none;
 }
-
 </style>

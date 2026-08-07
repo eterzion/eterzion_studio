@@ -34,8 +34,10 @@ const api = {
   selectFolder: (): Promise<PickResult> => ipcRenderer.invoke('dialog:openFolder'),
   selectOutputFolder: (defaultPath?: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:selectOutputFolder', defaultPath),
-  statPath: (path: string): Promise<DescribedFile | null> => ipcRenderer.invoke('fs:statPath', path),
-  showItemInFolder: (path: string): Promise<void> => ipcRenderer.invoke('shell:showItemInFolder', path),
+  statPath: (path: string): Promise<DescribedFile | null> =>
+    ipcRenderer.invoke('fs:statPath', path),
+  showItemInFolder: (path: string): Promise<void> =>
+    ipcRenderer.invoke('shell:showItemInFolder', path),
   openPath: (path: string): Promise<string> => ipcRenderer.invoke('shell:openPath', path),
   getAppPaths: (): Promise<{ documents: string; repoRoot: string; apiBaseUrl: string }> =>
     ipcRenderer.invoke('app:paths'),

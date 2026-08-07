@@ -22,17 +22,25 @@ from typing import Any
 from uuid import uuid4
 
 from app.config import settings
+from app.core import worker_supervisor
 from app.core.upscaler import Upscaler
+from app.core.worker_supervisor import WorkerCrashed, WorkerFailure
 from astros_upscale.utils.image_io import ImageOpenError
 
 jobs: dict[str, dict[str, Any]] = {}
 
 _queue: 'asyncio.Queue[str]' = asyncio.Queue()
 _listeners: dict[str, list['asyncio.Queue[dict]']] = {}
+# Bridges the blocking IPC call to the isolated worker process (worker_supervisor)
+# onto the asyncio loop — the actual model inference no longer runs on this thread,
+# it runs in a separate OS process (see docs/processing-protection-architecture.md,
+# Fase 1). One thread because the isolated worker itself only handles one job at a
+# time, matching the previous single-worker semantics.
 _executor = ThreadPoolExecutor(max_workers=1)
-_upscaler_cache: dict[tuple[str, str | None], Upscaler] = {}
 _worker_task: asyncio.Task | None = None
+_watchdog_task: asyncio.Task | None = None
 _enqueue_counter = itertools.count(1)
+_processing_job_id: str | None = None
 
 
 def _now_iso() -> str:
@@ -97,16 +105,19 @@ def update_params(job_id: str, params: dict) -> bool:
 
 def cancel_job(job_id: str) -> bool:
     """Cancels a job. Jobs still 'pending'/'queued' are cancelled outright. A job
-    already 'processing' can't be safely killed mid-inference (it runs on a plain
-    thread, not a subprocess) — it's marked cancelled and its result is discarded
-    once the thread finishes; the client sees the cancellation immediately via the
-    status flip, not after the (now-pointless) work actually completes."""
+    already 'processing' runs in the isolated worker process (Fase 1), so it can
+    actually be killed instead of just having its result discarded — this stops
+    wasted GPU/CPU work immediately rather than letting it run to completion for
+    nothing. The worker is respawned lazily on the next job."""
     job = jobs.get(job_id)
     if job is None:
         return False
     if job['status'] in ('pending', 'queued', 'processing'):
+        was_processing = job['status'] == 'processing' and job_id == _processing_job_id
         job['status'] = 'cancelled'
         _notify(job_id)
+        if was_processing:
+            worker_supervisor.get_supervisor().terminate()
     return True
 
 
@@ -144,6 +155,8 @@ def _notify(job_id: str) -> None:
 
 
 def _categorize_error(error: Exception) -> str:
+    if isinstance(error, WorkerCrashed):
+        return 'model_failure'
     text = str(error).lower()
     if isinstance(error, MemoryError) or 'out of memory' in text or 'cuda out of memory' in text:
         return 'out_of_memory'
@@ -155,11 +168,13 @@ def _categorize_error(error: Exception) -> str:
 
 
 async def _process_job(job_id: str) -> None:
+    global _processing_job_id
     job = jobs[job_id]
     if job['status'] == 'cancelled':
         return
     job['status'] = 'processing'
     job['processing_started_at'] = _now_iso()
+    _processing_job_id = job_id
     _notify(job_id)
 
     loop = asyncio.get_running_loop()
@@ -178,18 +193,43 @@ async def _process_job(job_id: str) -> None:
         loop.call_soon_threadsafe(_notify, job_id)
 
     def blocking_run():
-        cache_key = (params['model'], params.get('device'))
-        upscaler = _upscaler_cache.get(cache_key)
-        if upscaler is None:
-            on_stage('Carregando modelo de IA')
-            denoise = params.get('adjustments', {}).get('denoise', 50) / 100
-            upscaler = Upscaler(params['model'], settings.models_dir, device=params.get('device'), denoise_strength=denoise)
-            _upscaler_cache[cache_key] = upscaler
         custom = params.get('custom_size')
-        custom_size = (custom['width'], custom['height']) if custom else None
-        return upscaler.process(
-            job['input_path'], params.get('scale', 4), custom_size, _master_path(job_id),
-            on_progress=on_progress, on_stage=on_stage,
+        adjustments = params.get('adjustments', {})
+        denoise = adjustments.get('denoise', 50)
+        sharpen = adjustments.get('deblur', 0)
+        face_recovery = adjustments.get('face_correction', False)
+        face_recovery_strength = adjustments.get('face_recovery_strength', 80)
+        denoise_filter_strength = adjustments.get('denoise_filter_strength', 0) if adjustments.get('denoise_filter_enabled') else 0
+        protected = None
+        if settings.licensing_service_url:
+            # Fase 4 — fetch the orchestration logic from the licensing service
+            # instead of the worker's static import. Empty licensing_service_url
+            # (the default: no license infra deployed) keeps today's behavior.
+            protected = {
+                'base_url': settings.licensing_service_url,
+                'trusted_pubkey_b64': settings.licensing_service_public_key_b64,
+                'model': params['model'],
+                'version': 'latest',
+            }
+        # Runs in the isolated worker process (Fase 1), not on this thread — this
+        # call just relays the request over IPC and blocks for the reply.
+        return worker_supervisor.get_supervisor().process(
+            job_id=job_id,
+            input_path=job['input_path'],
+            master_path=_master_path(job_id),
+            model=params['model'],
+            models_dir=settings.models_dir,
+            device=params.get('device'),
+            scale=params.get('scale', 4),
+            custom_size=custom,
+            denoise=denoise,
+            sharpen=sharpen,
+            face_recovery=face_recovery,
+            face_recovery_strength=face_recovery_strength,
+            denoise_filter_strength=denoise_filter_strength,
+            on_progress=on_progress,
+            on_stage=on_stage,
+            protected=protected,
         )
 
     try:
@@ -212,10 +252,18 @@ async def _process_job(job_id: str) -> None:
             'width': output_w, 'height': output_h,
             'size_bytes': os.path.getsize(master_path) if os.path.isfile(master_path) else None,
         }
+    except WorkerFailure as error:
+        if job['status'] != 'cancelled':
+            job['status'] = 'error'
+            job['error'] = str(error)
+            job['error_category'] = _categorize_error(error)
     except Exception as error:  # noqa: BLE001 - surfaced to the client as job.error
-        job['status'] = 'error'
-        job['error'] = str(error)
-        job['error_category'] = _categorize_error(error)
+        if job['status'] != 'cancelled':
+            job['status'] = 'error'
+            job['error'] = str(error)
+            job['error_category'] = _categorize_error(error)
+    finally:
+        _processing_job_id = None
     _notify(job_id)
 
 
@@ -228,10 +276,26 @@ async def _worker_loop() -> None:
             _queue.task_done()
 
 
+async def _watchdog_loop(interval_seconds: float = 20.0) -> None:
+    """Detects a worker that died or stopped responding between jobs and kills
+    it so the next job spawns a fresh one, instead of hanging forever waiting
+    on a dead pipe. Doesn't touch a worker that's mid-job (ping is only sent
+    when idle) to avoid false positives on long GPU-bound work."""
+    supervisor = worker_supervisor.get_supervisor()
+    while True:
+        await asyncio.sleep(interval_seconds)
+        if _processing_job_id is not None:
+            continue
+        if supervisor.is_alive() and not supervisor.ping():
+            supervisor.terminate()
+
+
 def start_worker() -> None:
-    global _worker_task
+    global _worker_task, _watchdog_task
     if _worker_task is None:
         _worker_task = asyncio.get_event_loop().create_task(_worker_loop())
+    if _watchdog_task is None:
+        _watchdog_task = asyncio.get_event_loop().create_task(_watchdog_loop())
 
 
 def export_job(job_id: str, output_path: str, quality: int | None) -> None:

@@ -1,0 +1,93 @@
+{
+  "app": { "name": "Astros Upscale" },
+  "nav": {
+    "home": "Home",
+    "image": "Immagine",
+    "video": "Video",
+    "audio": "Audio",
+    "optimize": "Ottimizza",
+    "models": "Modelli",
+    "history": "Cronologia",
+    "settings": "Impostazioni"
+  },
+  "sidebar": {
+    "navigation": "Navigazione",
+    "support": "Supporto",
+    "collapse": "Comprimi barra laterale",
+    "expand": "Espandi barra laterale",
+    "darkMode": "Modalità scura",
+    "lightMode": "Modalità chiara",
+    "toggleTheme": "Alterna tema chiaro/scuro",
+    "links": {
+      "site": "Sito ufficiale",
+      "docs": "Documentazione",
+      "github": "GitHub",
+      "discord": "Discord",
+      "faq": "Domande frequenti",
+      "help": "Centro assistenza",
+      "email": "E-mail di supporto"
+    }
+  },
+  "common": {
+    "cancel": "Annulla",
+    "save": "Salva",
+    "confirm": "Conferma",
+    "delete": "Elimina",
+    "close": "Chiudi"
+  },
+  "settings": {
+    "title": "Impostazioni",
+    "general": {
+      "title": "Generale",
+      "description": "Preferenze generali dell'applicazione",
+      "language": { "label": "Lingua", "description": "Rilevata automaticamente da Windows al primo avvio" },
+      "theme": {
+        "label": "Tema",
+        "description": "Aspetto chiaro, scuro, o come Windows",
+        "light": "Chiaro",
+        "dark": "Scuro",
+        "auto": "Automatico"
+      },
+      "accent": { "label": "Colore d'accento", "description": "Colore principale usato per pulsanti, link ed elementi attivi" },
+      "autoUpdate": { "label": "Aggiornamenti automatici", "description": "Verifica nuove versioni all'avvio (prossimamente)" },
+      "outputFolder": { "label": "Cartella di output predefinita", "description": "Usata come suggerimento iniziale durante l'esportazione", "same": "Stessa cartella dell'immagine originale" },
+      "exportFormat": { "label": "Formato immagine predefinito", "description": "Preselezionato all'apertura del pannello di esportazione" }
+    },
+    "processing": {
+      "title": "Elaborazione",
+      "description": "Valori predefiniti nella configurazione di una nuova immagine",
+      "defaultModel": { "label": "Modello predefinito", "description": "Definito nella scheda Modelli", "none": "Nessuno definito" },
+      "defaultScale": { "label": "Scala predefinita", "description": "Fattore preselezionato per le nuove immagini" },
+      "lockAspect": { "label": "Mantieni proporzioni automaticamente", "description": "Blocca larghezza/altezza in modalità personalizzata" },
+      "quality": { "label": "Qualità dell'immagine", "description": "Predefinita per l'esportazione in .jpg/.webp" },
+      "concurrentJobs": { "label": "Attività simultanee", "description": "Fissato a 1 dall'attuale architettura di elaborazione (coda seriale, un worker)" }
+    },
+    "history": {
+      "title": "Cronologia",
+      "count": "{count} voce salvata localmente | {count} voci salvate localmente",
+      "limit": { "label": "Numero massimo di voci", "description": "Le più vecchie vengono rimosse al superamento" },
+      "autoCleanup": { "label": "Pulizia automatica", "description": "Rimuove le voci più vecchie del periodo seguente" },
+      "keepFor": { "label": "Conserva per", "description": "Giorni prima della rimozione automatica", "days7": "7 giorni", "days30": "30 giorni", "days90": "90 giorni" },
+      "clear": { "label": "Cancella cronologia manualmente", "description": "Rimuove tutte le voci salvate — non influisce sui file esportati", "button": "Cancella cronologia", "confirm": "Conferma eliminazione" },
+      "clearCache": { "label": "Svuota cache", "description": "Ricarica l'elenco dei modelli direttamente dall'API", "button": "Svuota cache", "success": "Cache dei modelli aggiornata dall'API.", "error": "Aggiornamento non riuscito: {error}" }
+    },
+    "interface": {
+      "title": "Interfaccia",
+      "description": "Personalizza la visualizzazione delle informazioni e la densità",
+      "showDescriptions": { "label": "Mostra descrizioni dei modelli", "description": "Mostra un riepilogo dello scopo nelle schede della scheda Modelli" },
+      "showBadges": { "label": "Mostra indicatori di uso commerciale", "description": "Badge di licenza sui modelli" },
+      "thumbnailSize": { "label": "Dimensione miniature", "description": "Coda, editor e cronologia", "small": "Piccole", "medium": "Medie", "large": "Grandi" },
+      "animations": { "label": "Attiva animazioni", "description": "Transizioni e microanimazioni dell'interfaccia" },
+      "density": { "label": "Densità dell'interfaccia", "description": "Spaziatura tra gli elementi", "compact": "Compatta", "standard": "Standard", "comfortable": "Confortevole" }
+    },
+    "advanced": {
+      "title": "Avanzate",
+      "description": "Diagnostica e informazioni tecniche",
+      "appVersion": "Versione dell'app",
+      "runtime": "Versioni del runtime",
+      "apiServer": "Server API",
+      "repoFolder": "Cartella del repository",
+      "debug": { "label": "Opzioni di debug", "description": "Apre le DevTools di Chromium per ispezionare l'interfaccia", "button": "Apri DevTools" }
+    }
+  }
+}

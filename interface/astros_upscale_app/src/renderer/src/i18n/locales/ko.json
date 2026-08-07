@@ -1,0 +1,93 @@
+{
+  "app": { "name": "Astros Upscale" },
+  "nav": {
+    "home": "홈",
+    "image": "이미지",
+    "video": "동영상",
+    "audio": "오디오",
+    "optimize": "최적화",
+    "models": "모델",
+    "history": "기록",
+    "settings": "설정"
+  },
+  "sidebar": {
+    "navigation": "탐색",
+    "support": "지원",
+    "collapse": "사이드바 접기",
+    "expand": "사이드바 펼치기",
+    "darkMode": "다크 모드",
+    "lightMode": "라이트 모드",
+    "toggleTheme": "라이트/다크 테마 전환",
+    "links": {
+      "site": "공식 사이트",
+      "docs": "문서",
+      "github": "GitHub",
+      "discord": "Discord",
+      "faq": "자주 묻는 질문",
+      "help": "도움말 센터",
+      "email": "지원 이메일"
+    }
+  },
+  "common": {
+    "cancel": "취소",
+    "save": "저장",
+    "confirm": "확인",
+    "delete": "삭제",
+    "close": "닫기"
+  },
+  "settings": {
+    "title": "설정",
+    "general": {
+      "title": "일반",
+      "description": "앱의 일반 환경설정",
+      "language": { "label": "언어", "description": "처음 실행 시 Windows에서 자동으로 감지됩니다" },
+      "theme": {
+        "label": "테마",
+        "description": "라이트, 다크 또는 Windows 설정을 따름",
+        "light": "라이트",
+        "dark": "다크",
+        "auto": "자동"
+      },
+      "accent": { "label": "강조 색상", "description": "버튼, 링크, 활성 요소에 사용되는 기본 색상" },
+      "autoUpdate": { "label": "자동 업데이트", "description": "시작 시 새 버전 확인 (출시 예정)" },
+      "outputFolder": { "label": "기본 출력 폴더", "description": "내보낼 때 초기 제안으로 사용됩니다", "same": "원본 이미지와 같은 폴더" },
+      "exportFormat": { "label": "기본 이미지 형식", "description": "내보내기 패널을 열 때 미리 선택됩니다" }
+    },
+    "processing": {
+      "title": "처리",
+      "description": "새 이미지를 구성할 때 사용되는 기본값",
+      "defaultModel": { "label": "기본 모델", "description": "모델 탭에서 설정됨", "none": "설정되지 않음" },
+      "defaultScale": { "label": "기본 배율", "description": "새 이미지에 미리 선택되는 배율" },
+      "lockAspect": { "label": "종횡비 자동 유지", "description": "사용자 지정 모드에서 너비/높이를 고정합니다" },
+      "quality": { "label": "이미지 품질", "description": ".jpg/.webp로 내보낼 때의 기본값" },
+      "concurrentJobs": { "label": "동시 작업 수", "description": "현재 처리 구조상 1로 고정 (순차 대기열, 단일 워커)" }
+    },
+    "history": {
+      "title": "기록",
+      "count": "로컬에 {count}개 항목 저장됨",
+      "limit": { "label": "최대 항목 수", "description": "초과하면 가장 오래된 항목이 삭제됩니다" },
+      "autoCleanup": { "label": "자동 정리", "description": "아래 기간보다 오래된 항목을 삭제합니다" },
+      "keepFor": { "label": "보관 기간", "description": "자동 삭제까지의 일수", "days7": "7일", "days30": "30일", "days90": "90일" },
+      "clear": { "label": "기록 수동 삭제", "description": "저장된 모든 항목을 삭제합니다 — 내보낸 파일에는 영향을 주지 않습니다", "button": "기록 삭제", "confirm": "삭제 확인" },
+      "clearCache": { "label": "캐시 지우기", "description": "API에서 모델 목록을 직접 다시 불러옵니다", "button": "캐시 지우기", "success": "모델 캐시가 API에서 업데이트되었습니다.", "error": "업데이트 실패: {error}" }
+    },
+    "interface": {
+      "title": "인터페이스",
+      "description": "정보 표시 및 밀도 사용자 지정",
+      "showDescriptions": { "label": "모델 설명 표시", "description": "모델 탭 카드에 용도 요약을 표시합니다" },
+      "showBadges": { "label": "상업적 사용 표시 보기", "description": "모델의 라이선스 배지" },
+      "thumbnailSize": { "label": "썸네일 크기", "description": "대기열, 편집기, 기록", "small": "작게", "medium": "중간", "large": "크게" },
+      "animations": { "label": "애니메이션 사용", "description": "인터페이스 전환 및 마이크로애니메이션" },
+      "density": { "label": "인터페이스 밀도", "description": "요소 간 간격", "compact": "컴팩트", "standard": "표준", "comfortable": "여유롭게" }
+    },
+    "advanced": {
+      "title": "고급",
+      "description": "진단 및 기술 정보",
+      "appVersion": "앱 버전",
+      "runtime": "런타임 버전",
+      "apiServer": "API 서버",
+      "repoFolder": "저장소 폴더",
+      "debug": { "label": "디버그 옵션", "description": "Chromium DevTools를 열어 인터페이스를 검사합니다", "button": "DevTools 열기" }
+    }
+  }
+}

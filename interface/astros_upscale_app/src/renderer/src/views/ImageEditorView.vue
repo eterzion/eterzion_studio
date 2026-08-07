@@ -17,6 +17,7 @@ import {
   Plus,
   Maximize2,
   Cpu,
+  MonitorCog,
   Expand,
   ChartNoAxesColumn,
   Link,
@@ -34,7 +35,8 @@ import {
   RotateCcw
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../api'
-import { getModels, type ModelInfo } from '../backend'
+import { settingsState } from '../store/settings'
+import { getModels, previewDenoise, type ModelInfo, type DenoisePreview } from '../backend'
 import { ERROR_CATEGORY_COPY } from '../backend'
 import {
   addFiles,
@@ -46,6 +48,7 @@ import {
   estimatedOutputSize,
   estimatedOutputBytes,
   ensureCustomSizeDefaults,
+  syncCustomSizeToPreset,
   effectiveCustomScale,
   MAX_OUTPUT_DIMENSION,
   startProcessing,
@@ -100,15 +103,21 @@ function onPanDown(e: PointerEvent): void {
 }
 function onPanMove(e: PointerEvent): void {
   if (!panning.value) return
-  pan.value = { x: panOrigin.panX + (e.clientX - panOrigin.x), y: panOrigin.panY + (e.clientY - panOrigin.y) }
+  pan.value = {
+    x: panOrigin.panX + (e.clientX - panOrigin.x),
+    y: panOrigin.panY + (e.clientY - panOrigin.y)
+  }
 }
 function onPanUp(): void {
   panning.value = false
 }
 
-const beforeSrc = computed(() => (job.value && hasNativeApi ? api.toFileUrl(job.value.sourcePath) : ''))
+const beforeSrc = computed(() =>
+  job.value && hasNativeApi ? api.toFileUrl(job.value.sourcePath) : ''
+)
 const afterSrc = computed(() => {
-  if (!job.value || !hasNativeApi || job.value.status !== 'done' || !job.value.lastExportPath) return beforeSrc.value
+  if (!job.value || !hasNativeApi || job.value.status !== 'done' || !job.value.lastExportPath)
+    return beforeSrc.value
   return api.toFileUrl(job.value.lastExportPath)
 })
 
@@ -132,7 +141,9 @@ const importError = ref<string | null>(null)
 // This is the IMAGE editor: video-oriented ("Vídeo/Anime", "Vídeo Real") and 1x
 // cleanup ("Limpeza") models are excluded — they belong to other sections.
 const IMAGE_CATEGORIES = ['Fotos', 'Anime', 'Restauração']
-const imageModels = computed(() => modelsList.value.filter((m) => IMAGE_CATEGORIES.includes(m.category)))
+const imageModels = computed(() =>
+  modelsList.value.filter((m) => IMAGE_CATEGORIES.includes(m.category))
+)
 
 // Model list follows the chosen scale (spec: config must be coherent): 2x shows
 // native-2x models, 4x shows native-4x models.
@@ -143,15 +154,23 @@ const compatibleModels = computed(() => {
   return matching.length ? matching : imageModels.value
 })
 
-const selectedModelInfo = computed(() => imageModels.value.find((m) => m.name === job.value?.scaleConfig.model))
+const selectedModelInfo = computed(() =>
+  imageModels.value.find((m) => m.name === job.value?.scaleConfig.model)
+)
 const selectedLicenseInfo = computed(() =>
   job.value ? getModelLicense(job.value.scaleConfig.model) : undefined
 )
 
 const modelOptions = computed(() =>
-  compatibleModels.value.map((m) => ({ value: m.name, label: `${m.name} (${m.scale}x)`, description: m.category }))
+  compatibleModels.value.map((m) => ({
+    value: m.name,
+    label: `${m.name} (${m.scale}x)`,
+    description: m.category
+  }))
 )
-const deviceOptions = computed(() => devices.value.map((d) => ({ value: d, label: deviceLabels[d] ?? d })))
+const deviceOptions = computed(() =>
+  devices.value.map((d) => ({ value: d, label: deviceLabels[d] ?? d }))
+)
 const exportFormatOptions = [
   { value: 'png', label: '.png' },
   { value: 'jpg', label: '.jpg' },
@@ -183,7 +202,85 @@ const deviceLabels: Record<string, string> = {
   mps: 'GPU (Apple/MPS)'
 }
 
+const deviceDescriptions: Record<string, string> = {
+  auto: 'Usa a GPU quando disponível e volta para a CPU automaticamente caso contrário.',
+  cpu: 'Processa apenas no processador — mais lento, funciona em qualquer máquina.',
+  cuda: 'Força o uso da GPU NVIDIA (CUDA) — mais rápido, requer driver compatível.',
+  mps: 'Força o uso da GPU da Apple via Metal — mais rápido em Macs com chip Apple Silicon.'
+}
+
+const selectedDeviceDescription = computed(() => {
+  const device = job.value?.scaleConfig.device ?? 'auto'
+  return deviceDescriptions[device] ?? deviceDescriptions.auto
+})
+
 const denoiseSupported = computed(() => job.value?.scaleConfig.model === 'realesr-general')
+
+// ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
+const DENOISE_PRESETS: {
+  key: 'low' | 'medium' | 'high' | 'custom'
+  label: string
+  strength: number | null
+}[] = [
+  { key: 'low', label: 'Baixo', strength: 20 },
+  { key: 'medium', label: 'Médio', strength: 45 },
+  { key: 'high', label: 'Alto', strength: 75 },
+  { key: 'custom', label: 'Personalizado', strength: null }
+]
+// A ref, not inferred from the numeric value — a custom value can legitimately
+// coincide with a preset's number, and that shouldn't silently reassign it back
+// to that preset (or hide the "Personalizado" slider the user just opened).
+const denoiseActivePresetKey = ref<'low' | 'medium' | 'high' | 'custom'>('medium')
+const denoisePreview = ref<DenoisePreview | null>(null)
+const denoisePreviewLoading = ref(false)
+const denoisePreviewError = ref<string | null>(null)
+let denoisePreviewTimer: ReturnType<typeof setTimeout> | undefined
+let denoisePreviewRequestId = 0
+
+function requestDenoisePreview(): void {
+  const j = job.value
+  if (!j || !j.scaleConfig.denoiseFilterEnabled || !hasNativeApi) return
+  clearTimeout(denoisePreviewTimer)
+  denoisePreviewTimer = setTimeout(async () => {
+    const requestId = ++denoisePreviewRequestId
+    denoisePreviewLoading.value = true
+    denoisePreviewError.value = null
+    try {
+      const result = await previewDenoise(j.sourcePath, j.scaleConfig.denoiseFilterStrength)
+      if (requestId === denoisePreviewRequestId) denoisePreview.value = result
+    } catch (error) {
+      if (requestId === denoisePreviewRequestId) {
+        denoisePreviewError.value =
+          error instanceof Error ? error.message : 'Falha ao gerar prévia.'
+      }
+    } finally {
+      if (requestId === denoisePreviewRequestId) denoisePreviewLoading.value = false
+    }
+  }, 350)
+}
+
+function setDenoisePreset(preset: {
+  key: 'low' | 'medium' | 'high' | 'custom'
+  strength: number | null
+}): void {
+  if (!job.value) return
+  denoiseActivePresetKey.value = preset.key
+  if (preset.strength !== null) job.value.scaleConfig.denoiseFilterStrength = preset.strength
+  requestDenoisePreview()
+}
+
+function toggleDenoiseFilter(): void {
+  if (!job.value) return
+  job.value.scaleConfig.denoiseFilterEnabled = !job.value.scaleConfig.denoiseFilterEnabled
+  denoisePreview.value = null
+  if (job.value.scaleConfig.denoiseFilterEnabled) {
+    const matched = DENOISE_PRESETS.find(
+      (p) => p.strength === job.value!.scaleConfig.denoiseFilterStrength
+    )
+    denoiseActivePresetKey.value = matched?.key ?? 'custom'
+    requestDenoisePreview()
+  }
+}
 
 // Elapsed-time ticker for the processing panel (spec 5.2: elapsed time alongside
 // progress, since the model step can be long).
@@ -201,14 +298,15 @@ onMounted(async () => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   tickTimer = setInterval(() => (nowTick.value = Date.now()), 1000)
-  if (!hasNativeApi) return
   try {
     const registry = await getModels()
     modelsList.value = registry.models
     devices.value = registry.devices
   } catch (error) {
     registryError.value =
-      error instanceof Error ? `Não foi possível carregar os modelos da API: ${error.message}` : 'Falha ao carregar modelos.'
+      error instanceof Error
+        ? `Não foi possível carregar os modelos da API: ${error.message}`
+        : 'Falha ao carregar modelos.'
   } finally {
     modelsLoading.value = false
   }
@@ -244,7 +342,12 @@ function onCustomHeightInput(j: Job, raw: string): void {
 function toggleAspectLock(j: Job): void {
   j.scaleConfig.lockAspectRatio = !j.scaleConfig.lockAspectRatio
   // Re-locking snaps the height back to the source aspect ratio, taking width as truth.
-  if (j.scaleConfig.lockAspectRatio && j.scaleConfig.customWidth && j.sourceMeta.width && j.sourceMeta.height) {
+  if (
+    j.scaleConfig.lockAspectRatio &&
+    j.scaleConfig.customWidth &&
+    j.sourceMeta.width &&
+    j.sourceMeta.height
+  ) {
     j.scaleConfig.customHeight = Math.round(
       j.scaleConfig.customWidth * (j.sourceMeta.height / j.sourceMeta.width)
     )
@@ -285,9 +388,9 @@ async function cancel(j: Job): Promise<void> {
 }
 
 // ------------------------------- export (single job, post-done) ------------------------------- //
-const exportFormat = ref<'png' | 'jpg' | 'webp'>('png')
-const exportQuality = ref(90)
-const exportDestFolder = ref<string | null>(null)
+const exportFormat = ref<'png' | 'jpg' | 'webp'>(settingsState.defaultExportFormat)
+const exportQuality = ref(settingsState.defaultQuality)
+const exportDestFolder = ref<string | null>(settingsState.defaultOutputFolder)
 const exportFilename = ref<string | null>(null)
 const exportConflict = ref<'overwrite' | 'rename' | 'ask'>('rename')
 const conflictPrompt = ref<{ job: Job } | null>(null)
@@ -300,7 +403,11 @@ async function runExport(j: Job): Promise<void> {
     filename: exportFilename.value,
     conflict: exportConflict.value
   })
-  if (!result.ok && j.exportError === 'Já existe um arquivo com esse nome no destino.' && exportConflict.value === 'ask') {
+  if (
+    !result.ok &&
+    j.exportError === 'Já existe um arquivo com esse nome no destino.' &&
+    exportConflict.value === 'ask'
+  ) {
     conflictPrompt.value = { job: j }
   }
 }
@@ -341,11 +448,23 @@ async function importFiles(): Promise<void> {
   <div class="editor-view">
     <TopBar :title="job?.fileName ?? 'Nenhuma imagem selecionada'" show-back @back="$emit('back')">
       <template #actions>
-        <button class="btn-outline" type="button" @click="importFiles"><Upload :size="15" /> Importar</button>
-        <button class="btn-outline" type="button" :disabled="!configuringJobs.length" @click="processAll">
+        <button class="btn-outline" type="button" @click="importFiles">
+          <Upload :size="15" /> Importar
+        </button>
+        <button
+          class="btn-outline"
+          type="button"
+          :disabled="!configuringJobs.length"
+          @click="processAll"
+        >
           Processar todos
         </button>
-        <button class="btn-outline" type="button" :disabled="!doneJobs.length" @click="showBatchModal = true">
+        <button
+          class="btn-outline"
+          type="button"
+          :disabled="!doneJobs.length"
+          @click="showBatchModal = true"
+        >
           <Download :size="15" /> Exportar tudo
         </button>
       </template>
@@ -357,45 +476,15 @@ async function importFiles(): Promise<void> {
 
     <div v-else class="editor-body">
       <div class="preview-area">
-        <div class="zoom-panel">
-          <span class="zoom-label">Zoom</span>
-          <div class="zoom-controls">
-            <button class="zoom-btn" type="button" @click="zoom = Math.max(10, zoom - 10)">
-              <Minus :size="14" />
-            </button>
-            <span class="zoom-value">{{ zoom }}%</span>
-            <button class="zoom-btn" type="button" @click="zoom = Math.min(400, zoom + 10)">
-              <Plus :size="14" />
-            </button>
-          </div>
-          <button class="fit-btn" type="button" @click="resetView">
-            <Maximize2 :size="14" /> Ajustar
-          </button>
-          <div v-if="job.status === 'done'" class="view-mode-toggle">
-            <button
-              class="mode-btn"
-              :class="{ active: viewMode === 'slider' }"
-              type="button"
-              title="Slider antes/depois"
-              @click="viewMode = 'slider'"
-            >
-              <GalleryHorizontal :size="14" />
-            </button>
-            <button
-              class="mode-btn"
-              :class="{ active: viewMode === 'side-by-side' }"
-              type="button"
-              title="Lado a lado"
-              @click="viewMode = 'side-by-side'"
-            >
-              <Columns2 :size="14" />
-            </button>
-          </div>
-        </div>
-
         <div class="preview-canvas" :class="{ panning }" @wheel.prevent="onWheelZoom">
           <div v-if="spaceHeld" class="pan-surface">
-            <img :src="afterSrc" alt="Depois" class="viewport-img" :style="mediaStyle" draggable="false" />
+            <img
+              :src="afterSrc"
+              alt="Depois"
+              class="viewport-img"
+              :style="mediaStyle"
+              draggable="false"
+            />
           </div>
           <div
             v-else-if="job.status !== 'done'"
@@ -404,7 +493,13 @@ async function importFiles(): Promise<void> {
             @pointermove="onPanMove"
             @pointerup="onPanUp"
           >
-            <img :src="beforeSrc" alt="" class="viewport-img" :style="mediaStyle" draggable="false" />
+            <img
+              :src="beforeSrc"
+              alt=""
+              class="viewport-img"
+              :style="mediaStyle"
+              draggable="false"
+            />
           </div>
           <CompareSlider
             v-else-if="viewMode === 'slider'"
@@ -412,33 +507,86 @@ async function importFiles(): Promise<void> {
             :after-src="afterSrc"
             :media-style="mediaStyle"
           />
-          <div v-else class="side-by-side" @pointerdown="onPanDown" @pointermove="onPanMove" @pointerup="onPanUp">
+          <div
+            v-else
+            class="side-by-side"
+            @pointerdown="onPanDown"
+            @pointermove="onPanMove"
+            @pointerup="onPanUp"
+          >
             <div class="side-pane">
               <span class="side-label">Antes</span>
-              <img :src="beforeSrc" alt="Antes" class="viewport-img" :style="mediaStyle" draggable="false" />
+              <img
+                :src="beforeSrc"
+                alt="Antes"
+                class="viewport-img"
+                :style="mediaStyle"
+                draggable="false"
+              />
             </div>
             <div class="side-pane">
               <span class="side-label">Depois</span>
-              <img :src="afterSrc" alt="Depois" class="viewport-img" :style="mediaStyle" draggable="false" />
+              <img
+                :src="afterSrc"
+                alt="Depois"
+                class="viewport-img"
+                :style="mediaStyle"
+                draggable="false"
+              />
             </div>
           </div>
         </div>
 
-        <p v-if="job.status === 'done'" class="hold-space-hint">Segure Espaço para alternar rapidamente antes/depois</p>
+        <p v-if="job.status === 'done'" class="hold-space-hint">
+          Segure Espaço para alternar rapidamente antes/depois
+        </p>
 
         <div class="preview-footer">
-          <div class="zoom-presets">
-            <button
-              v-for="level in zoomLevels"
-              :key="level"
-              class="preset-btn"
-              :class="{ active: zoom === level }"
-              type="button"
-              @click="zoom = level"
-            >
-              {{ level }}%
-            </button>
-            <button class="preset-btn" type="button" @click="resetView">Fit</button>
+          <div class="zoom-toolbar">
+            <div class="zoom-controls">
+              <button class="zoom-btn" type="button" @click="zoom = Math.max(10, zoom - 10)">
+                <Minus :size="14" />
+              </button>
+              <span class="zoom-value">{{ zoom }}%</span>
+              <button class="zoom-btn" type="button" @click="zoom = Math.min(400, zoom + 10)">
+                <Plus :size="14" />
+              </button>
+            </div>
+            <div class="zoom-presets">
+              <button
+                v-for="level in zoomLevels"
+                :key="level"
+                class="preset-btn"
+                :class="{ active: zoom === level }"
+                type="button"
+                @click="zoom = level"
+              >
+                {{ level }}%
+              </button>
+              <button class="preset-btn" type="button" @click="resetView">
+                <Maximize2 :size="12" /> Ajustar
+              </button>
+            </div>
+            <div v-if="job.status === 'done'" class="view-mode-toggle">
+              <button
+                class="mode-btn"
+                :class="{ active: viewMode === 'slider' }"
+                type="button"
+                title="Slider antes/depois"
+                @click="viewMode = 'slider'"
+              >
+                <GalleryHorizontal :size="14" />
+              </button>
+              <button
+                class="mode-btn"
+                :class="{ active: viewMode === 'side-by-side' }"
+                type="button"
+                title="Lado a lado"
+                @click="viewMode = 'side-by-side'"
+              >
+                <Columns2 :size="14" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -473,20 +621,34 @@ async function importFiles(): Promise<void> {
       <aside class="side-panel" :class="{ open: panelOpen }">
         <div class="panel-drawer-header">
           <span>Ajustes</span>
-          <button class="drawer-close" type="button" @click="panelOpen = false"><X :size="18" /></button>
+          <button class="drawer-close" type="button" @click="panelOpen = false">
+            <X :size="18" />
+          </button>
         </div>
 
-        <p v-if="registryError" class="banner-error"><AlertCircle :size="14" /> {{ registryError }}</p>
+        <p v-if="registryError" class="banner-error">
+          <AlertCircle :size="14" /> {{ registryError }}
+        </p>
         <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
         <!-- ---------------------------- CONFIGURING / ERROR / CANCELLED ---------------------------- -->
-        <template v-if="job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'">
+        <template
+          v-if="
+            job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
+          "
+        >
           <div v-if="job.status === 'error'" class="banner-error-block">
             <p class="banner-error">
               <AlertCircle :size="14" />
               <span>
-                {{ job.errorCategory ? ERROR_CATEGORY_COPY[job.errorCategory].message : job.errorMessage }}
-                <template v-if="job.errorCategory"> {{ ERROR_CATEGORY_COPY[job.errorCategory].action }}</template>
+                {{
+                  job.errorCategory
+                    ? ERROR_CATEGORY_COPY[job.errorCategory].message
+                    : job.errorMessage
+                }}
+                <template v-if="job.errorCategory">
+                  {{ ERROR_CATEGORY_COPY[job.errorCategory].action }}</template
+                >
               </span>
             </p>
             <TechnicalDetails
@@ -495,7 +657,9 @@ async function importFiles(): Promise<void> {
               :text="job.errorMessage"
             />
           </div>
-          <p v-if="job.status === 'cancelled'" class="banner-info"><XCircle :size="14" /> Processamento cancelado.</p>
+          <p v-if="job.status === 'cancelled'" class="banner-info">
+            <XCircle :size="14" /> Processamento cancelado.
+          </p>
 
           <CollapsiblePanel
             title="Modelo de IA"
@@ -522,7 +686,11 @@ async function importFiles(): Promise<void> {
                       />
                     </div>
                     <span class="model-option-org">
-                      {{ getModelLicense(String(option.value))?.developer ?? 'Organização não informada' }} ·
+                      {{
+                        getModelLicense(String(option.value))?.developer ??
+                        'Organização não informada'
+                      }}
+                      ·
                       {{ option.description }}
                     </span>
                   </div>
@@ -538,13 +706,20 @@ async function importFiles(): Promise<void> {
                 </div>
               </div>
             </div>
+          </CollapsiblePanel>
+
+          <CollapsiblePanel
+            title="Dispositivo de processamento"
+            description="Onde o modelo roda — GPU acelera, CPU é o padrão de compatibilidade"
+            :icon="MonitorCog"
+          >
             <div class="field">
-              <label class="field-label">Dispositivo</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
                 :options="deviceOptions"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
+              <p class="device-hint">{{ selectedDeviceDescription }}</p>
             </div>
           </CollapsiblePanel>
 
@@ -575,7 +750,10 @@ async function importFiles(): Promise<void> {
                 class="scale-btn"
                 :class="{ active: job.scaleConfig.presetFactor === s }"
                 type="button"
-                @click="job.scaleConfig.presetFactor = s as 2 | 4"
+                @click="
+                  job.scaleConfig.presetFactor = s as 2 | 4
+                  syncCustomSizeToPreset(job)
+                "
               >
                 {{ s }}x
               </button>
@@ -588,7 +766,11 @@ async function importFiles(): Promise<void> {
                   class="link-btn"
                   type="button"
                   :aria-pressed="job.scaleConfig.lockAspectRatio"
-                  :title="job.scaleConfig.lockAspectRatio ? 'Proporção travada — clique para destravar' : 'Proporção livre — clique para travar'"
+                  :title="
+                    job.scaleConfig.lockAspectRatio
+                      ? 'Proporção travada — clique para destravar'
+                      : 'Proporção livre — clique para travar'
+                  "
                   @click="toggleAspectLock(job)"
                 >
                   <component :is="job.scaleConfig.lockAspectRatio ? Link : Unlink" :size="13" />
@@ -615,10 +797,12 @@ async function importFiles(): Promise<void> {
                 <span class="scale-multiplier-label">Multiplicador de resolução</span>
                 <span class="scale-multiplier-value">{{ customFactor.toFixed(1) }}×</span>
               </div>
-              <p v-if="!job.scaleConfig.lockAspectRatio" class="field-warning">A imagem será distorcida.</p>
+              <p v-if="!job.scaleConfig.lockAspectRatio" class="field-warning">
+                A imagem será distorcida.
+              </p>
               <p v-if="customBeyondNative" class="field-warning">
-                Alvo acima do nativo do modelo ({{ selectedModelInfo?.scale }}x) — o excedente é interpolação,
-                com menos ganho de detalhe.
+                Alvo acima do nativo do modelo ({{ selectedModelInfo?.scale }}x) — o excedente é
+                interpolação, com menos ganho de detalhe.
               </p>
             </div>
 
@@ -632,43 +816,145 @@ async function importFiles(): Promise<void> {
             <p v-if="!validity.valid" class="field-warning">{{ validity.reason }}</p>
           </CollapsiblePanel>
 
-          <CollapsiblePanel title="Ajustes" description="Ajustes finos de qualidade" :icon="SlidersHorizontal">
+          <CollapsiblePanel
+            title="Ajustes"
+            description="Ajustes finos de qualidade"
+            :icon="SlidersHorizontal"
+          >
             <div class="slider-field" :class="{ disabled: !denoiseSupported }">
               <div class="slider-head">
-                <label class="field-label">Reduzir ruído</label>
+                <label class="field-label">Reduzir ruído (modelo)</label>
                 <span class="slider-value">{{ job.scaleConfig.denoise }}</span>
               </div>
-              <RangeSlider v-model="job.scaleConfig.denoise" :default-value="50" :disabled="!denoiseSupported" />
-              <p v-if="!denoiseSupported" class="field-hint">Disponível apenas com o modelo "realesr-general"</p>
-            </div>
-
-            <div class="slider-field disabled">
-              <div class="slider-head">
-                <label class="field-label">Nitidez <span class="badge">em breve</span></label>
-                <span class="slider-value">{{ job.scaleConfig.sharpen }}</span>
-              </div>
-              <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="0" disabled />
+              <RangeSlider
+                v-model="job.scaleConfig.denoise"
+                :default-value="50"
+                :disabled="!denoiseSupported"
+              />
+              <p v-if="!denoiseSupported" class="field-hint">
+                Disponível apenas com o modelo "realesr-general"
+              </p>
             </div>
 
             <div class="toggle-row">
-              <label class="field-label">Recuperação de faces <span class="badge">em breve</span></label>
+              <label class="field-label">Filtro de redução de ruído</label>
               <button
                 class="switch"
-                :class="{ on: job.scaleConfig.faceRecovery }"
+                :class="{ on: job.scaleConfig.denoiseFilterEnabled }"
                 type="button"
-                disabled
+                @click="toggleDenoiseFilter"
               >
                 <span class="knob" />
               </button>
             </div>
+            <div v-if="job.scaleConfig.denoiseFilterEnabled" class="denoise-filter-panel">
+              <div class="denoise-preset-row">
+                <button
+                  v-for="preset in DENOISE_PRESETS"
+                  :key="preset.key"
+                  type="button"
+                  class="preset-btn"
+                  :class="{ active: denoiseActivePresetKey === preset.key }"
+                  @click="setDenoisePreset(preset)"
+                >
+                  {{ preset.label }}
+                </button>
+              </div>
+              <div v-if="denoiseActivePresetKey === 'custom'" class="slider-field">
+                <div class="slider-head">
+                  <label class="field-label">Intensidade</label>
+                  <span class="slider-value">{{ job.scaleConfig.denoiseFilterStrength }}</span>
+                </div>
+                <RangeSlider
+                  v-model="job.scaleConfig.denoiseFilterStrength"
+                  :default-value="45"
+                  @update:model-value="requestDenoisePreview"
+                />
+              </div>
+              <p class="field-hint">
+                Suaviza granulação e artefatos de compressão preservando bordas (non-local means,
+                OpenCV) — independente do modelo escolhido.
+              </p>
+              <div v-if="!hasNativeApi" class="field-hint">
+                Prévia indisponível fora do app desktop.
+              </div>
+              <div v-else class="denoise-preview">
+                <Loader2 v-if="denoisePreviewLoading" :size="16" class="spin" />
+                <p v-else-if="denoisePreviewError" class="field-warning">
+                  {{ denoisePreviewError }}
+                </p>
+                <div v-else-if="denoisePreview" class="denoise-preview-images">
+                  <div class="denoise-preview-item">
+                    <span class="denoise-preview-label">Antes</span>
+                    <img
+                      :src="`data:image/png;base64,${denoisePreview.before}`"
+                      alt="Antes da redução de ruído"
+                    />
+                  </div>
+                  <div class="denoise-preview-item">
+                    <span class="denoise-preview-label">Depois</span>
+                    <img
+                      :src="`data:image/png;base64,${denoisePreview.after}`"
+                      alt="Depois da redução de ruído"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="slider-field">
+              <div class="slider-head">
+                <label class="field-label">Nitidez</label>
+                <span class="slider-value">{{ job.scaleConfig.sharpen }}</span>
+              </div>
+              <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="0" />
+              <p class="field-hint">Máscara de nitidez (unsharp mask) aplicada após o upscale</p>
+            </div>
+
+            <div class="toggle-row">
+              <label class="field-label">Recuperação de faces</label>
+              <button
+                class="switch"
+                :class="{ on: job.scaleConfig.faceRecovery }"
+                type="button"
+                @click="job.scaleConfig.faceRecovery = !job.scaleConfig.faceRecovery"
+              >
+                <span class="knob" />
+              </button>
+            </div>
+            <div v-if="job.scaleConfig.faceRecovery" class="slider-field">
+              <div class="slider-head">
+                <label class="field-label">Intensidade</label>
+                <span class="slider-value">{{ job.scaleConfig.faceRecoveryStrength }}</span>
+              </div>
+              <RangeSlider v-model="job.scaleConfig.faceRecoveryStrength" :default-value="80" />
+              <p class="field-hint">
+                Restaura rostos detectados via GFPGAN (rede neural treinada especificamente para
+                isso). Sem rosto detectável na imagem, ela permanece inalterada.
+              </p>
+            </div>
           </CollapsiblePanel>
 
-          <button class="apply-all-btn" type="button" :disabled="configuringJobs.length < 2" @click="applyConfigToAll(job)">
+          <button
+            class="apply-all-btn"
+            type="button"
+            :disabled="configuringJobs.length < 2"
+            @click="applyConfigToAll(job)"
+          >
             Aplicar esta configuração a todos ({{ configuringJobs.length }})
           </button>
 
-          <button class="export-btn" type="button" :disabled="!validity.valid" @click="process(job)">
-            {{ job.status === 'error' || job.status === 'cancelled' ? 'Tentar novamente' : 'Processar' }}
+          <button
+            class="export-btn"
+            type="button"
+            :disabled="!validity.valid"
+            @click="process(job)"
+          >
+            {{
+              job.status === 'error' || job.status === 'cancelled'
+                ? 'Tentar novamente'
+                : 'Processar'
+            }}
           </button>
         </template>
 
@@ -683,7 +969,10 @@ async function importFiles(): Promise<void> {
             <p v-if="job.stage" class="processing-stage">{{ job.stage }}</p>
             <p v-if="elapsedLabel" class="processing-stage">Tempo decorrido: {{ elapsedLabel }}</p>
             <div class="progress-track">
-              <div class="progress-fill" :style="{ width: (job.status === 'queued' ? 0 : job.progress) + '%' }" />
+              <div
+                class="progress-fill"
+                :style="{ width: (job.status === 'queued' ? 0 : job.progress) + '%' }"
+              />
             </div>
             <button class="cancel-btn" type="button" @click="cancel(job)">Cancelar</button>
           </div>
@@ -691,11 +980,19 @@ async function importFiles(): Promise<void> {
 
         <!-- ---------------------------- DONE ---------------------------- -->
         <template v-else-if="job.status === 'done'">
-          <CollapsiblePanel title="Resultado" description="Comparação e estatísticas do processamento" :icon="ChartNoAxesColumn">
+          <CollapsiblePanel
+            title="Resultado"
+            description="Comparação e estatísticas do processamento"
+            :icon="ChartNoAxesColumn"
+          >
             <ComparisonStats :job="job" />
           </CollapsiblePanel>
 
-          <CollapsiblePanel title="Exportar" description="Formato, destino e nome do arquivo final" :icon="Download">
+          <CollapsiblePanel
+            title="Exportar"
+            description="Formato, destino e nome do arquivo final"
+            :icon="Download"
+          >
             <div class="field">
               <label class="field-label">Formato</label>
               <AppSelect
@@ -722,7 +1019,9 @@ async function importFiles(): Promise<void> {
                   :value="exportDestFolder ?? 'Mesma pasta do original'"
                   readonly
                 />
-                <button class="folder-btn" type="button" @click="pickExportFolder"><FolderOpen :size="15" /></button>
+                <button class="folder-btn" type="button" @click="pickExportFolder">
+                  <FolderOpen :size="15" />
+                </button>
               </div>
             </div>
 
@@ -767,7 +1066,11 @@ async function importFiles(): Promise<void> {
               :disabled="job.exportState === 'exporting'"
               @click="runExport(job)"
             >
-              <component :is="job.exportState === 'exporting' ? Loader2 : Download" :size="16" :class="{ spin: job.exportState === 'exporting' }" />
+              <component
+                :is="job.exportState === 'exporting' ? Loader2 : Download"
+                :size="16"
+                :class="{ spin: job.exportState === 'exporting' }"
+              />
               {{ job.exportState === 'exporting' ? 'Exportando…' : 'Exportar' }}
             </button>
 
@@ -819,32 +1122,22 @@ async function importFiles(): Promise<void> {
   min-width: 0;
 }
 
-.zoom-panel {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 2;
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border-soft);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
+.zoom-toolbar {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
   gap: var(--space-2);
-  box-shadow: var(--shadow-md);
-  width: 150px;
-}
-
-.zoom-label {
-  font-size: var(--fs-caption);
-  color: var(--text-tertiary);
 }
 
 .zoom-controls {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-1);
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: 999px;
+  padding: 4px 6px;
 }
 
 .zoom-btn {
@@ -869,36 +1162,20 @@ async function importFiles(): Promise<void> {
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
-}
-
-.fit-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--surface-1);
-  border: 1px solid var(--surface-border);
-  color: var(--color-primary);
-  border-radius: var(--radius-sm);
-  padding: 6px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.fit-btn:hover {
-  background: var(--color-primary-soft);
+  min-width: 42px;
+  text-align: center;
 }
 
 .view-mode-toggle {
   display: flex;
   gap: 4px;
-  border-top: 1px solid var(--surface-border-soft);
-  padding-top: var(--space-2);
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: 999px;
+  padding: 4px;
 }
 
 .mode-btn {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1003,6 +1280,9 @@ async function importFiles(): Promise<void> {
 }
 
 .preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -1199,15 +1479,15 @@ async function importFiles(): Promise<void> {
 
 .model-option-line1 {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-2);
 }
 
 .model-option-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .model-option-org {
@@ -1274,6 +1554,12 @@ async function importFiles(): Promise<void> {
 .field-warning {
   font-size: 11px;
   color: var(--color-warning);
+}
+
+.device-hint {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+  margin-top: 6px;
 }
 
 .select {
@@ -1345,7 +1631,9 @@ async function importFiles(): Promise<void> {
   font-size: 11px;
   font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .link-btn:hover {
@@ -1430,6 +1718,56 @@ async function importFiles(): Promise<void> {
 
 .switch.on .knob {
   transform: translateX(14px);
+}
+
+.denoise-filter-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.denoise-preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.denoise-preview {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-2) 0;
+}
+
+.denoise-preview-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.denoise-preview-item {
+  flex: 1;
+  min-width: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.denoise-preview-item img {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border-soft);
+}
+
+.denoise-preview-label {
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  color: var(--text-tertiary);
 }
 
 .folder-row {

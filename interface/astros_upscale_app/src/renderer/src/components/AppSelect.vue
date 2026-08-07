@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronDown, Search, Loader2, AlertCircle, Check } from '@lucide/vue'
+import { useTruncated } from '../composables/useTruncated'
 
 export interface SelectOption {
   value: string | number
@@ -39,6 +40,10 @@ const root = ref<HTMLElement | null>(null)
 const searchInput = ref<HTMLInputElement | null>(null)
 const menu = ref<HTMLElement | null>(null)
 const openUpward = ref(false)
+const menuStyle = ref<{ left: string; width: string; top?: string; bottom?: string }>({
+  left: '0px',
+  width: '0px'
+})
 
 const effectiveSearchable = computed(() => props.searchable || props.options.length > 8)
 
@@ -51,6 +56,9 @@ const filteredOptions = computed(() => {
 })
 
 const selected = computed(() => props.options.find((o) => o.value === props.modelValue))
+
+const triggerLabelEl = ref<HTMLElement | null>(null)
+const triggerLabelTruncated = useTruncated(triggerLabelEl, selected)
 
 function openMenu(): void {
   if (props.disabled || props.loading) return
@@ -75,6 +83,11 @@ function toggleMenu(): void {
   else openMenu()
 }
 
+// The menu is teleported to <body> (see template) so it can float above any
+// ancestor with overflow:hidden (e.g. CollapsiblePanel's collapse-animation
+// clipping) — position:absolute relative to the trigger no longer applies once
+// teleported, so it's positioned as position:fixed from the trigger's real
+// on-screen rect instead, recomputed on open/scroll/resize.
 function positionMenu(): void {
   const el = root.value
   if (!el) return
@@ -82,6 +95,17 @@ function positionMenu(): void {
   const spaceBelow = window.innerHeight - rect.bottom
   const spaceAbove = rect.top
   openUpward.value = spaceBelow < 260 && spaceAbove > spaceBelow
+  menuStyle.value = openUpward.value
+    ? {
+        left: `${rect.left}px`,
+        width: `${rect.width}px`,
+        bottom: `${window.innerHeight - rect.top + 4}px`
+      }
+    : { left: `${rect.left}px`, width: `${rect.width}px`, top: `${rect.bottom + 4}px` }
+}
+
+function onWindowChange(): void {
+  if (open.value) positionMenu()
 }
 
 function selectOption(option: SelectOption): void {
@@ -102,7 +126,8 @@ function onTriggerKeydown(e: KeyboardEvent): void {
   if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(e.key)) {
     e.preventDefault()
     if (!open.value) openMenu()
-    else if (e.key === 'Enter' && activeIndex.value >= 0) selectOption(filteredOptions.value[activeIndex.value])
+    else if (e.key === 'Enter' && activeIndex.value >= 0)
+      selectOption(filteredOptions.value[activeIndex.value])
   }
 }
 
@@ -128,14 +153,29 @@ function onMenuKeydown(e: KeyboardEvent): void {
 }
 
 function onDocClick(e: MouseEvent): void {
-  if (open.value && root.value && !root.value.contains(e.target as Node)) closeMenu()
+  const target = e.target as Node
+  if (!open.value) return
+  const insideTrigger = root.value?.contains(target)
+  const insideMenu = menu.value?.contains(target)
+  if (!insideTrigger && !insideMenu) closeMenu()
 }
 
 watch(open, (isOpen) => {
-  if (isOpen) document.addEventListener('mousedown', onDocClick)
-  else document.removeEventListener('mousedown', onDocClick)
+  if (isOpen) {
+    document.addEventListener('mousedown', onDocClick)
+    window.addEventListener('scroll', onWindowChange, true)
+    window.addEventListener('resize', onWindowChange)
+  } else {
+    document.removeEventListener('mousedown', onDocClick)
+    window.removeEventListener('scroll', onWindowChange, true)
+    window.removeEventListener('resize', onWindowChange)
+  }
 })
-onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
+onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', onDocClick)
+  window.removeEventListener('scroll', onWindowChange, true)
+  window.removeEventListener('resize', onWindowChange)
+})
 
 watch(filteredOptions, () => {
   activeIndex.value = filteredOptions.value.length ? 0 : -1
@@ -155,7 +195,13 @@ watch(filteredOptions, () => {
     >
       <span class="trigger-content">
         <slot name="selected" :option="selected">
-          <span v-if="selected" class="trigger-label" :title="selected.label">{{ selected.label }}</span>
+          <span
+            v-if="selected"
+            ref="triggerLabelEl"
+            class="trigger-label"
+            :title="triggerLabelTruncated ? selected.label : undefined"
+            >{{ selected.label }}</span
+          >
           <span v-else class="trigger-placeholder">{{ placeholder }}</span>
         </slot>
       </span>
@@ -165,19 +211,26 @@ watch(filteredOptions, () => {
 
     <p v-if="error" class="error-text"><AlertCircle :size="12" /> {{ error }}</p>
 
-    <Transition name="menu-fade">
+    <Teleport to="body">
       <div
         v-if="open"
         ref="menu"
         class="menu"
         :class="{ upward: openUpward }"
+        :style="menuStyle"
         role="listbox"
         tabindex="-1"
         @keydown="onMenuKeydown"
       >
         <div v-if="effectiveSearchable" class="search-row">
           <Search :size="14" class="search-icon" />
-          <input ref="searchInput" v-model="query" type="text" placeholder="Buscar…" class="search-input" />
+          <input
+            ref="searchInput"
+            v-model="query"
+            type="text"
+            placeholder="Buscar…"
+            class="search-input"
+          />
         </div>
 
         <div class="options" :class="{ empty: !filteredOptions.length }">
@@ -188,7 +241,11 @@ watch(filteredOptions, () => {
             type="button"
             role="option"
             class="option"
-            :class="{ active: i === activeIndex, selected: option.value === modelValue, disabled: option.disabled }"
+            :class="{
+              active: i === activeIndex,
+              selected: option.value === modelValue,
+              disabled: option.disabled
+            }"
             :data-active="i === activeIndex"
             :aria-selected="option.value === modelValue"
             :disabled="option.disabled"
@@ -196,14 +253,18 @@ watch(filteredOptions, () => {
             @mouseenter="activeIndex = i"
           >
             <slot name="option" :option="option" :selected="option.value === modelValue">
-              <span class="option-label" :title="option.label">{{ option.label }}</span>
-              <span v-if="option.description" class="option-description">{{ option.description }}</span>
+              <span class="option-text">
+                <span class="option-label">{{ option.label }}</span>
+                <span v-if="option.description" class="option-description">{{
+                  option.description
+                }}</span>
+              </span>
             </slot>
             <Check v-if="option.value === modelValue" :size="14" class="option-check" />
           </button>
         </div>
       </div>
-    </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -227,7 +288,9 @@ watch(filteredOptions, () => {
   font-size: var(--fs-label);
   font-family: inherit;
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
 }
 
 .trigger:hover:not(:disabled) {
@@ -304,6 +367,7 @@ watch(filteredOptions, () => {
   right: 0;
   top: calc(100% + 4px);
   z-index: 30;
+  min-width: 200px;
   background: var(--surface-1);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
@@ -317,17 +381,6 @@ watch(filteredOptions, () => {
 .menu.upward {
   top: auto;
   bottom: calc(100% + 4px);
-}
-
-.menu-fade-enter-active,
-.menu-fade-leave-active {
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-
-.menu-fade-enter-from,
-.menu-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
 }
 
 .search-row {
@@ -375,7 +428,7 @@ watch(filteredOptions, () => {
 
 .option {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   width: 100%;
   text-align: left;
@@ -403,22 +456,31 @@ watch(filteredOptions, () => {
   cursor: not-allowed;
 }
 
-.option-label {
+.option-text {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.option-label {
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .option-description {
   font-size: 11px;
   color: var(--text-tertiary);
-  flex-shrink: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
 }
 
 .option-check {
   flex-shrink: 0;
+  margin-top: 2px;
   color: var(--color-primary);
 }
 

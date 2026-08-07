@@ -1,11 +1,33 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { Search, ExternalLink, TriangleAlert, Check, Cpu, Star } from '@lucide/vue'
+import { computed, onMounted, ref, type Component } from 'vue'
+import {
+  Search,
+  ExternalLink,
+  TriangleAlert,
+  Check,
+  Cpu,
+  Star,
+  User,
+  Tag,
+  Layers,
+  Shield,
+  Globe,
+  UserPlus,
+  Lock,
+  Link2,
+  Calendar,
+  Settings2,
+  Sparkles,
+  Zap,
+  X as XIcon,
+  Minus
+} from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import LicenseBadge from '../components/LicenseBadge.vue'
 import { getModels, type ModelInfo } from '../backend'
 import { getModelLicense, type CommercialUse } from '../data/modelLicenses'
 import { modelConfigState, saveDefaultModel, type SavedModelConfig } from '../store/modelConfig'
+import { settingsState } from '../store/settings'
 
 const models = ref<ModelInfo[]>([])
 const defaultModelName = ref<string | null>(null)
@@ -14,14 +36,16 @@ const loadError = ref<string | null>(null)
 const search = ref('')
 const selectedId = ref<string | null>(null)
 
-type FilterKey = 'all' | 'commercial' | 'not_commercial' | 'restricted' | 'recommended'
+type FilterKey =
+  'all' | 'commercial' | 'not_commercial' | 'restricted' | 'recommended' | 'downloaded'
 const activeFilter = ref<FilterKey>('all')
 const filters: { key: FilterKey; label: string }[] = [
   { key: 'all', label: 'Todos' },
   { key: 'commercial', label: 'Comercial' },
   { key: 'not_commercial', label: 'Não comercial' },
   { key: 'restricted', label: 'Com restrições' },
-  { key: 'recommended', label: 'Recomendados' }
+  { key: 'recommended', label: 'Recomendados' },
+  { key: 'downloaded', label: 'Já baixados' }
 ]
 
 onMounted(async () => {
@@ -49,9 +73,17 @@ function matchesFilter(m: ModelInfo): boolean {
       return commercial === 'restricted' || commercial === 'unverified'
     case 'recommended':
       return m.name === defaultModelName.value
+    case 'downloaded':
+      return m.downloaded
     default:
       return true
   }
+}
+
+function formatBytes(bytes: number | null): string {
+  if (bytes === null) return '—'
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 const filtered = computed(() => {
@@ -79,15 +111,39 @@ const grouped = computed(() => {
 })
 
 const selectedModel = computed(() => models.value.find((m) => m.name === selectedId.value))
-const selectedLicense = computed(() => (selectedId.value ? getModelLicense(selectedId.value) : undefined))
+const selectedLicense = computed(() =>
+  selectedId.value ? getModelLicense(selectedId.value) : undefined
+)
 const isCurrentDefault = computed(() => modelConfigState.saved?.modelId === selectedId.value)
 const isRecommended = computed(() => selectedId.value === defaultModelName.value)
 
-function permissionLabel(value: boolean | 'unverified' | undefined): string {
-  if (value === true) return 'Sim'
-  if (value === false) return 'Não'
-  return 'Não verificado'
+/** Modification/redistribution read as permission grants (green/red); attribution
+ * reads as an obligation when true (amber "Obrigatória"), not a green grant —
+ * "allowed to require credit" isn't the same shape of fact as "allowed to modify". */
+interface PermissionBadge {
+  icon: Component
+  label: string
+  tone: 'success' | 'warning' | 'danger' | 'neutral'
 }
+
+function permissionBadge(
+  value: boolean | 'unverified' | undefined,
+  kind: 'grant' | 'obligation' = 'grant'
+): PermissionBadge {
+  if (value === true) {
+    return kind === 'obligation'
+      ? { icon: TriangleAlert, label: 'Obrigatória', tone: 'warning' }
+      : { icon: Check, label: 'Permitido', tone: 'success' }
+  }
+  if (value === false) {
+    return kind === 'obligation'
+      ? { icon: Minus, label: 'Não exigida', tone: 'neutral' }
+      : { icon: XIcon, label: 'Não permitido', tone: 'danger' }
+  }
+  return { icon: Minus, label: 'Não informado', tone: 'neutral' }
+}
+
+const modelInitial = computed(() => (selectedModel.value?.name?.[0] ?? '?').toUpperCase())
 
 function save(): void {
   const model = selectedModel.value
@@ -119,8 +175,9 @@ function save(): void {
 
     <div class="models-content">
       <p class="page-hint">
-        Escolha o modelo padrão de upscale. Uso comercial é sempre indicado por status — nunca pelo nome técnico da
-        licença — e vem de fontes oficiais (repositório, documentação ou model card).
+        Escolha o modelo padrão de upscale. Uso comercial é sempre indicado por status — nunca pelo
+        nome técnico da licença — e vem de fontes oficiais (repositório, documentação ou model
+        card).
       </p>
 
       <div v-if="modelConfigState.saved" class="current-default">
@@ -134,7 +191,11 @@ function save(): void {
       <div class="toolbar">
         <div class="search-bar">
           <Search :size="16" />
-          <input v-model="search" type="text" placeholder="Buscar por nome, organização ou finalidade…" />
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Buscar por nome, organização ou finalidade…"
+          />
         </div>
 
         <div class="filter-row" role="tablist" aria-label="Filtrar modelos">
@@ -180,99 +241,242 @@ function save(): void {
                 <span class="model-name">{{ m.name }}</span>
                 <span class="model-version">v.{{ m.scale }}x</span>
               </div>
-              <p class="model-card-line2">{{ m.description }}</p>
+              <p v-if="settingsState.showModelDescriptions" class="model-card-line2">
+                {{ m.description }}
+              </p>
               <div class="model-card-line3">
                 <LicenseBadge
-                  v-if="getModelLicense(m.name)"
+                  v-if="settingsState.showCommercialBadges && getModelLicense(m.name)"
                   :commercial-use="getModelLicense(m.name)!.commercialUse"
                   compact
                 />
-                <span v-if="m.name === defaultModelName" class="recommended-chip"><Star :size="10" /> Recomendado</span>
+                <span v-if="m.name === defaultModelName" class="recommended-chip"
+                  ><Star :size="10" /> Recomendado</span
+                >
               </div>
               <div class="model-card-line4">
                 <span>{{ m.category }}</span>
                 <span>·</span>
                 <span>Escala nativa {{ m.scale }}x</span>
+                <span v-if="m.downloaded" class="downloaded-chip">· Baixado</span>
               </div>
             </button>
           </template>
-          <p v-if="!filtered.length" class="empty-text">Nenhum modelo encontrado para esse filtro/busca.</p>
+          <p v-if="!filtered.length" class="empty-text">
+            Nenhum modelo encontrado para esse filtro/busca.
+          </p>
         </div>
 
         <aside v-if="selectedModel" class="detail-panel">
-          <div class="detail-header">
-            <div>
+          <div class="detail-hero">
+            <div class="detail-avatar" aria-hidden="true">{{ modelInitial }}</div>
+            <div class="detail-hero-text">
               <h2>{{ selectedModel.name }}</h2>
-              <span v-if="isRecommended" class="recommended-chip"><Star :size="10" /> Recomendado</span>
+              <p class="detail-subtitle">
+                {{ selectedModel.category }} · nativa {{ selectedModel.scale }}x
+                <span v-if="isRecommended" class="recommended-chip"
+                  ><Star :size="10" /> Recomendado</span
+                >
+              </p>
+              <div class="detail-tag-row">
+                <span class="detail-tag"><Sparkles :size="11" /> {{ selectedModel.category }}</span>
+                <span class="detail-tag"
+                  ><Zap :size="11" /> {{ selectedModel.scale }}x Upscale</span
+                >
+              </div>
             </div>
-            <LicenseBadge v-if="selectedLicense" :commercial-use="selectedLicense.commercialUse" />
+            <LicenseBadge
+              v-if="settingsState.showCommercialBadges && selectedLicense"
+              class="detail-hero-badge"
+              :commercial-use="selectedLicense.commercialUse"
+            />
           </div>
 
-          <dl class="detail-grid">
+          <div class="detail-rows">
             <div class="detail-row">
-              <dt>Organização</dt>
-              <dd>{{ selectedLicense?.developer ?? '—' }}</dd>
+              <div class="detail-row-icon"><User :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Organização</span>
+                <span class="detail-row-value">{{ selectedLicense?.developer ?? '—' }}</span>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Versão</dt>
-              <dd>{{ selectedModel.name }} <span class="detail-note">(arquivo fixado por hash SHA-256)</span></dd>
+              <div class="detail-row-icon"><Tag :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Versão</span>
+                <span class="detail-row-value">
+                  {{ selectedModel.name }}
+                  <span class="detail-note">(arquivo fixado por hash SHA-256)</span>
+                </span>
+              </div>
             </div>
+
+            <div v-if="settingsState.showModelDescriptions" class="detail-row">
+              <div class="detail-row-icon"><Sparkles :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Finalidade</span>
+                <span class="detail-row-value">{{ selectedModel.description }}</span>
+              </div>
+            </div>
+
             <div class="detail-row">
-              <dt>Finalidade</dt>
-              <dd>{{ selectedModel.description }}</dd>
+              <div class="detail-row-icon"><Layers :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Categoria e escala</span>
+                <span class="detail-row-value"
+                  >{{ selectedModel.category }} · nativa {{ selectedModel.scale }}x</span
+                >
+              </div>
             </div>
+
+            <div v-if="selectedModel.architecture" class="detail-row">
+              <div class="detail-row-icon"><Settings2 :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Arquitetura</span>
+                <span class="detail-row-value">
+                  {{ selectedModel.architecture }}
+                  <span class="detail-note"
+                    >(conforme documentado pelo repositório/model card oficial)</span
+                  >
+                </span>
+              </div>
+            </div>
+
             <div class="detail-row">
-              <dt>Categoria e escala</dt>
-              <dd>{{ selectedModel.category }} · nativa {{ selectedModel.scale }}x</dd>
+              <div class="detail-row-icon"><Cpu :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Compatibilidade de execução</span>
+                <span class="detail-row-value"
+                  >CPU e GPU (via PyTorch/spandrel — sem restrição de hardware)</span
+                >
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Requisitos de hardware</dt>
-              <dd>Não especificado pelo desenvolvedor na fonte oficial — não inferido.</dd>
+              <div class="detail-row-icon"><Layers :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Arquivo do modelo</span>
+                <span class="detail-row-value">
+                  <template v-if="selectedModel.downloaded">
+                    {{ formatBytes(selectedModel.size_bytes) }}
+                    <span class="detail-note"
+                      >baixado localmente ({{ selectedModel.file_count }} arquivo{{
+                        selectedModel.file_count > 1 ? 's' : ''
+                      }})</span
+                    >
+                  </template>
+                  <template v-else>
+                    <span class="detail-note"
+                      >Ainda não baixado — baixado sob demanda no primeiro uso ({{
+                        selectedModel.file_count
+                      }}
+                      arquivo{{ selectedModel.file_count > 1 ? 's' : '' }})</span
+                    >
+                  </template>
+                </span>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Modificação permitida</dt>
-              <dd>{{ permissionLabel(selectedLicense?.modificationAllowed) }}</dd>
+              <div class="detail-row-icon"><Shield :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Modificação</span>
+                <span
+                  class="perm-badge"
+                  :class="'tone-' + permissionBadge(selectedLicense?.modificationAllowed).tone"
+                >
+                  <component
+                    :is="permissionBadge(selectedLicense?.modificationAllowed).icon"
+                    :size="12"
+                  />
+                  {{ permissionBadge(selectedLicense?.modificationAllowed).label }}
+                </span>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Redistribuição permitida</dt>
-              <dd>{{ permissionLabel(selectedLicense?.redistributionAllowed) }}</dd>
+              <div class="detail-row-icon"><Globe :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Redistribuição</span>
+                <span
+                  class="perm-badge"
+                  :class="'tone-' + permissionBadge(selectedLicense?.redistributionAllowed).tone"
+                >
+                  <component
+                    :is="permissionBadge(selectedLicense?.redistributionAllowed).icon"
+                    :size="12"
+                  />
+                  {{ permissionBadge(selectedLicense?.redistributionAllowed).label }}
+                </span>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Exige atribuição</dt>
-              <dd>{{ permissionLabel(selectedLicense?.attributionRequired) }}</dd>
+              <div class="detail-row-icon"><UserPlus :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Atribuição</span>
+                <span
+                  class="perm-badge"
+                  :class="
+                    'tone-' +
+                    permissionBadge(selectedLicense?.attributionRequired, 'obligation').tone
+                  "
+                >
+                  <component
+                    :is="permissionBadge(selectedLicense?.attributionRequired, 'obligation').icon"
+                    :size="12"
+                  />
+                  {{ permissionBadge(selectedLicense?.attributionRequired, 'obligation').label }}
+                </span>
+              </div>
             </div>
+
             <div v-if="selectedLicense?.restrictions.length" class="detail-row">
-              <dt>Restrições</dt>
-              <dd>
-                <ul class="restriction-list">
+              <div class="detail-row-icon"><Lock :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Restrições</span>
+                <ul class="detail-inner-card restriction-list">
                   <li v-for="(r, i) in selectedLicense.restrictions" :key="i">{{ r }}</li>
                 </ul>
-              </dd>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Fonte consultada</dt>
-              <dd>
-                <a :href="selectedLicense?.sourceUrl" target="_blank" rel="noreferrer" class="source-link">
+              <div class="detail-row-icon"><Link2 :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Fonte consultada</span>
+                <a
+                  :href="selectedLicense?.sourceUrl"
+                  target="_blank"
+                  rel="noreferrer"
+                  class="source-link"
+                >
                   {{ selectedLicense?.sourceUrl }} <ExternalLink :size="12" />
                 </a>
-              </dd>
+              </div>
             </div>
+
             <div class="detail-row">
-              <dt>Última verificação</dt>
-              <dd>{{ selectedLicense?.verifiedAt ?? '—' }}</dd>
+              <div class="detail-row-icon"><Calendar :size="15" /></div>
+              <div class="detail-row-body">
+                <span class="detail-row-label">Última verificação</span>
+                <span class="detail-row-value">{{ selectedLicense?.verifiedAt ?? '—' }}</span>
+              </div>
             </div>
-          </dl>
+          </div>
 
           <p v-if="selectedLicense?.needsManualReview" class="review-warning">
             <TriangleAlert :size="14" /> {{ selectedLicense.needsManualReview }}
           </p>
           <p v-if="selectedLicense?.commercialUse === 'unverified'" class="review-warning">
-            <TriangleAlert :size="14" /> Status de uso comercial não confirmado em fonte oficial — não use em
-            produção comercial sem validar manualmente.
+            <TriangleAlert :size="14" /> Status de uso comercial não confirmado em fonte oficial —
+            não use em produção comercial sem validar manualmente.
           </p>
 
           <button class="save-btn" type="button" :disabled="isCurrentDefault" @click="save">
-            <Cpu :size="15" /> {{ isCurrentDefault ? 'Já é o modelo padrão' : 'Definir como modelo padrão' }}
+            <Settings2 :size="16" />
+            {{ isCurrentDefault ? 'Já é o modelo padrão' : 'Definir como modelo padrão' }}
           </button>
         </aside>
       </div>
@@ -368,7 +572,10 @@ function save(): void {
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .filter-chip:hover {
@@ -414,7 +621,12 @@ function save(): void {
 .skeleton-card {
   height: 96px;
   border-radius: var(--radius-md);
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 37%,
+    var(--surface-2) 63%
+  );
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
@@ -422,7 +634,12 @@ function save(): void {
 .skeleton-detail {
   height: 480px;
   border-radius: var(--radius-lg);
-  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 37%, var(--surface-2) 63%);
+  background: linear-gradient(
+    90deg,
+    var(--surface-2) 25%,
+    var(--surface-3) 37%,
+    var(--surface-2) 63%
+  );
   background-size: 400% 100%;
   animation: skeleton-shimmer 1.4s ease infinite;
 }
@@ -459,12 +676,16 @@ function save(): void {
   border-radius: var(--radius-md);
   padding: var(--space-3);
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .model-card:hover {
   background: var(--surface-3);
   box-shadow: var(--shadow-sm);
+  transform: scale(1.01);
 }
 
 .model-card:focus-visible {
@@ -518,9 +739,15 @@ function save(): void {
 .model-card-line4 {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   font-size: 11px;
   color: var(--text-tertiary);
+}
+
+.downloaded-chip {
+  color: var(--color-success);
+  font-weight: var(--fw-medium);
 }
 
 .recommended-chip {
@@ -546,55 +773,158 @@ function save(): void {
 .detail-panel {
   position: sticky;
   top: 0;
-  background: var(--surface-1);
+  background: linear-gradient(180deg, var(--surface-1) 0%, var(--surface-2) 140%);
   border: 1px solid var(--surface-border);
-  border-radius: var(--radius-lg);
+  border-radius: 22px;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  gap: var(--space-4);
   max-height: calc(100vh - 260px);
   overflow-y: auto;
+  box-shadow: var(--shadow-md);
+  animation: detail-fade-in 220ms ease;
 }
 
-.detail-header {
+@keyframes detail-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detail-hero {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-2);
   flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--space-3);
 }
 
-.detail-header h2 {
-  font-size: var(--fs-page-title);
-  color: var(--text-primary);
-  overflow-wrap: break-word;
-  min-width: 0;
+.detail-avatar {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: var(--fw-semibold);
+  color: #fff;
+  background: linear-gradient(135deg, var(--color-primary), #0891b2);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 8px 20px -6px var(--color-primary-soft);
 }
 
-.detail-grid {
+.detail-hero-text {
+  flex: 1;
+  min-width: 140px;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 6px;
+}
+
+.detail-hero-text h2 {
+  font-size: 30px;
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  overflow-wrap: break-word;
+  line-height: 1.15;
+}
+
+.detail-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+}
+
+.detail-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.detail-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: var(--fw-medium);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+
+.detail-hero-badge {
+  flex-shrink: 0;
+}
+
+.detail-rows {
+  display: flex;
+  flex-direction: column;
 }
 
 .detail-row {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-bottom: var(--space-2);
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
   border-bottom: 1px solid var(--surface-border-soft);
+  transition: background var(--transition-fast);
 }
 
-.detail-row dt {
-  font-size: 10px;
+.detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.detail-row:hover {
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.detail-row-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: var(--surface-3);
+  border: 1px solid var(--surface-border-soft);
+}
+
+.detail-row-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-row-label {
+  font-size: 11px;
+  font-weight: var(--fw-semibold);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--text-tertiary);
 }
 
-.detail-row dd {
-  font-size: var(--fs-caption);
+.detail-row-value {
+  font-size: var(--fs-value);
+  font-weight: var(--fw-medium);
   color: var(--text-primary);
   overflow-wrap: break-word;
   word-break: break-word;
@@ -602,22 +932,78 @@ function save(): void {
 
 .detail-note {
   color: var(--text-tertiary);
+  font-weight: var(--fw-regular);
+  font-size: var(--fs-caption);
+}
+
+.detail-inner-card {
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
 }
 
 .restriction-list {
   padding-left: 16px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
+  list-style: disc;
+}
+
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: var(--fw-semibold);
+  border-radius: 999px;
+  padding: 3px 10px;
+  transition: transform var(--transition-fast);
+}
+
+.perm-badge:hover {
+  transform: scale(1.03);
+}
+
+.perm-badge.tone-success {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.perm-badge.tone-danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.perm-badge.tone-warning {
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
+}
+
+.perm-badge.tone-neutral {
+  color: var(--text-tertiary);
+  background: var(--surface-3);
 }
 
 .source-link {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
   color: var(--color-primary);
   overflow-wrap: anywhere;
   word-break: break-all;
+  transition: color var(--transition-fast);
+}
+
+.source-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
 }
 
 .review-warning {
@@ -637,23 +1023,41 @@ function save(): void {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--color-primary);
+  width: 100%;
+  background: linear-gradient(135deg, var(--color-primary), #0891b2);
   color: #fff;
   border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px;
+  border-radius: var(--radius-md);
+  padding: 14px;
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition: background var(--transition-fast);
+  box-shadow: 0 6px 18px -6px var(--color-primary-soft);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast);
 }
 
 .save-btn:hover:not(:disabled) {
-  background: var(--color-primary-hover);
+  filter: brightness(1.08);
+  box-shadow: 0 8px 22px -4px var(--color-primary-soft);
+  transform: translateY(-1px);
+}
+
+.save-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.save-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .save-btn:disabled {
-  opacity: 0.6;
+  background: var(--surface-3);
+  color: var(--text-tertiary);
+  box-shadow: none;
   cursor: not-allowed;
 }
 

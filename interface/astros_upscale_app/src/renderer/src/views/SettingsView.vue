@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Settings2,
   Cpu,
@@ -19,11 +20,28 @@ import SettingSwitch from '../components/SettingSwitch.vue'
 import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
-import { settingsState, setTheme } from '../store/settings'
+import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/settings'
+import { ACCENT_COLORS, type AccentColor } from '../theme'
+import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { modelConfigState } from '../store/modelConfig'
 import { clearHistory, historyState } from '../store/history'
+import { initLicense } from '../store/license'
 import { getModels } from '../backend'
 import { api, hasNativeApi } from '../api'
+
+function reloadLicense(): void {
+  initLicense()
+}
+
+const { t } = useI18n()
+
+const detectedLocaleLabel = computed(
+  () => SUPPORTED_LOCALES.find((l) => l.value === detectSystemLocale())?.label ?? ''
+)
+const languageOptions = computed(() => [
+  { value: 'auto', label: `${t('settings.general.theme.auto')} (${detectedLocaleLabel.value})` },
+  ...SUPPORTED_LOCALES.map((l) => ({ value: l.value as string, label: l.label }))
+])
 
 const emit = defineEmits<{
   navigate: [key: 'modelos']
@@ -46,7 +64,8 @@ async function clearModelsCache(): Promise<void> {
     await getModels()
     cacheMessage.value = 'Cache de modelos atualizado a partir da API.'
   } catch (error) {
-    cacheMessage.value = error instanceof Error ? `Falha ao atualizar: ${error.message}` : 'Falha ao atualizar cache.'
+    cacheMessage.value =
+      error instanceof Error ? `Falha ao atualizar: ${error.message}` : 'Falha ao atualizar cache.'
   }
   setTimeout(() => (cacheMessage.value = null), 4000)
 }
@@ -59,8 +78,9 @@ async function pickDefaultOutputFolder(): Promise<void> {
 
 const appVersion = ref<string | null>(null)
 const appPaths = ref<{ documents: string; repoRoot: string; apiBaseUrl: string } | null>(null)
-const electronVersions = (window as unknown as { electron?: { process?: { versions?: Record<string, string> } } })
-  .electron?.process?.versions
+const electronVersions = (
+  window as unknown as { electron?: { process?: { versions?: Record<string, string> } } }
+).electron?.process?.versions
 
 async function loadDiagnostics(): Promise<void> {
   if (!hasNativeApi) return
@@ -80,12 +100,14 @@ async function openDevTools(): Promise<void> {
 
 const historyCount = computed(() => historyState.entries.length)
 
-const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'Mesma pasta da imagem original')
+const outputFolderLabel = computed(
+  () => settingsState.defaultOutputFolder ?? t('settings.general.outputFolder.same')
+)
 </script>
 
 <template>
   <div class="settings-view">
-    <TopBar title="Configurações" />
+    <TopBar :title="t('settings.title')" />
 
     <div class="settings-content">
       <!-- ---------------------------- GERAL ---------------------------- -->
@@ -93,36 +115,90 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
         <div class="group-header">
           <div class="group-icon"><Settings2 :size="18" /></div>
           <div>
-            <h2 class="group-title">Geral</h2>
-            <p class="group-description">Preferências gerais do aplicativo</p>
+            <h2 class="group-title">{{ t('settings.general.title') }}</h2>
+            <p class="group-description">{{ t('settings.general.description') }}</p>
           </div>
         </div>
         <div class="group-body">
-          <SettingRow label="Idioma" description="Único idioma disponível nesta versão">
-            <AppSelect model-value="pt-BR" :options="[{ value: 'pt-BR', label: 'Português (Brasil)' }]" disabled />
+          <SettingRow
+            :label="t('settings.general.language.label')"
+            :description="t('settings.general.language.description')"
+          >
+            <AppSelect
+              :model-value="settingsState.language"
+              :options="languageOptions"
+              @update:model-value="(v) => setLanguage(v as SupportedLocale | 'auto')"
+            />
           </SettingRow>
-          <SettingRow label="Tema" description="Aparência clara ou escura da interface">
+          <SettingRow
+            :label="t('settings.general.theme.label')"
+            :description="t('settings.general.theme.description')"
+          >
             <SegmentedControl
               :model-value="settingsState.theme"
               :options="[
-                { value: 'dark', label: 'Escuro' },
-                { value: 'light', label: 'Claro' }
+                { value: 'light', label: t('settings.general.theme.light') },
+                { value: 'dark', label: t('settings.general.theme.dark') },
+                { value: 'auto', label: t('settings.general.theme.auto') }
               ]"
-              @update:model-value="(v) => setTheme(v as 'dark' | 'light')"
+              @update:model-value="(v) => setTheme(v as 'dark' | 'light' | 'auto')"
             />
           </SettingRow>
-          <SettingRow label="Atualizações automáticas" description="Verificar novas versões ao iniciar (em breve)">
+          <SettingRow
+            :label="t('settings.general.accent.label')"
+            :description="t('settings.general.accent.description')"
+          >
+            <div
+              class="accent-swatches"
+              role="radiogroup"
+              :aria-label="t('settings.general.accent.label')"
+            >
+              <button
+                v-for="accent in ACCENT_COLORS"
+                :key="accent.value"
+                type="button"
+                class="accent-swatch"
+                :class="[
+                  `swatch-${accent.value}`,
+                  { active: settingsState.accentColor === accent.value }
+                ]"
+                role="radio"
+                :aria-checked="settingsState.accentColor === accent.value"
+                :title="accent.label"
+                @click="setAccentColor(accent.value as AccentColor)"
+              >
+                <Check v-if="settingsState.accentColor === accent.value" :size="13" />
+              </button>
+            </div>
+          </SettingRow>
+          <SettingRow
+            :label="t('settings.general.autoUpdate.label')"
+            :description="t('settings.general.autoUpdate.description')"
+          >
             <SettingSwitch v-model="settingsState.autoCheckUpdates" disabled />
           </SettingRow>
-          <SettingRow label="Pasta padrão de saída" description="Usada como sugestão inicial ao exportar">
+          <SettingRow
+            :label="t('settings.general.outputFolder.label')"
+            :description="t('settings.general.outputFolder.description')"
+          >
             <div class="folder-picker">
-              <span class="folder-picker-value" :title="outputFolderLabel">{{ outputFolderLabel }}</span>
-              <button class="icon-btn" type="button" :disabled="!hasNativeApi" @click="pickDefaultOutputFolder">
+              <span class="folder-picker-value" :title="outputFolderLabel">{{
+                outputFolderLabel
+              }}</span>
+              <button
+                class="icon-btn"
+                type="button"
+                :disabled="!hasNativeApi"
+                @click="pickDefaultOutputFolder"
+              >
                 <FolderOpen :size="15" />
               </button>
             </div>
           </SettingRow>
-          <SettingRow label="Formato padrão da imagem" description="Pré-selecionado ao abrir o painel de exportação">
+          <SettingRow
+            :label="t('settings.general.exportFormat.label')"
+            :description="t('settings.general.exportFormat.description')"
+          >
             <AppSelect
               v-model="settingsState.defaultExportFormat"
               :options="[
@@ -147,7 +223,8 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
         <div class="group-body">
           <SettingRow label="Modelo padrão" description="Definido na aba Modelos">
             <button class="link-btn" type="button" @click="emit('navigate', 'modelos')">
-              {{ modelConfigState.saved?.modelName ?? 'Nenhum definido' }} <ExternalLink :size="12" />
+              {{ modelConfigState.saved?.modelName ?? 'Nenhum definido' }}
+              <ExternalLink :size="12" />
             </button>
           </SettingRow>
           <SettingRow label="Escala padrão" description="Fator pré-selecionado para novas imagens">
@@ -160,12 +237,23 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
               @update:model-value="(v) => (settingsState.defaultScalePreset = Number(v) as 2 | 4)"
             />
           </SettingRow>
-          <SettingRow label="Manter proporção automaticamente" description="Trava largura/altura no modo customizado">
+          <SettingRow
+            label="Manter proporção automaticamente"
+            description="Trava largura/altura no modo customizado"
+          >
             <SettingSwitch v-model="settingsState.defaultLockAspectRatio" />
           </SettingRow>
-          <SettingRow label="Qualidade da imagem" description="Padrão para exportação em .jpg/.webp">
+          <SettingRow
+            label="Qualidade da imagem"
+            description="Padrão para exportação em .jpg/.webp"
+          >
             <div class="quality-control">
-              <RangeSlider v-model="settingsState.defaultQuality" :min="1" :max="100" :default-value="90" />
+              <RangeSlider
+                v-model="settingsState.defaultQuality"
+                :min="1"
+                :max="100"
+                :default-value="90"
+              />
               <span class="quality-value">{{ settingsState.defaultQuality }}</span>
             </div>
           </SettingRow>
@@ -184,11 +272,16 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
           <div class="group-icon"><HistoryIcon :size="18" /></div>
           <div>
             <h2 class="group-title">Histórico</h2>
-            <p class="group-description">{{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente</p>
+            <p class="group-description">
+              {{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente
+            </p>
           </div>
         </div>
         <div class="group-body">
-          <SettingRow label="Limite máximo de registros" description="Os mais antigos são removidos ao ultrapassar">
+          <SettingRow
+            label="Limite máximo de registros"
+            description="Os mais antigos são removidos ao ultrapassar"
+          >
             <input
               v-model.number="settingsState.historyLimit"
               type="number"
@@ -197,13 +290,20 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
               class="number-input"
             />
           </SettingRow>
-          <SettingRow label="Limpeza automática" description="Remove registros mais antigos que o período abaixo">
+          <SettingRow
+            label="Limpeza automática"
+            description="Remove registros mais antigos que o período abaixo"
+          >
             <SettingSwitch
               :model-value="settingsState.historyAutoCleanupDays !== null"
               @update:model-value="(v) => (settingsState.historyAutoCleanupDays = v ? 30 : null)"
             />
           </SettingRow>
-          <SettingRow v-if="settingsState.historyAutoCleanupDays !== null" label="Manter por" description="Dias antes da remoção automática">
+          <SettingRow
+            v-if="settingsState.historyAutoCleanupDays !== null"
+            label="Manter por"
+            description="Dias antes da remoção automática"
+          >
             <AppSelect
               :model-value="String(settingsState.historyAutoCleanupDays)"
               :options="[
@@ -214,8 +314,16 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
               @update:model-value="(v) => (settingsState.historyAutoCleanupDays = Number(v))"
             />
           </SettingRow>
-          <SettingRow label="Limpar histórico manualmente" description="Remove todos os registros salvos — não afeta os arquivos exportados">
-            <button class="danger-btn" type="button" :disabled="!historyCount" @click="confirmClearHistory">
+          <SettingRow
+            label="Limpar histórico manualmente"
+            description="Remove todos os registros salvos — não afeta os arquivos exportados"
+          >
+            <button
+              class="danger-btn"
+              type="button"
+              :disabled="!historyCount"
+              @click="confirmClearHistory"
+            >
               <Trash2 :size="14" /> {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
             </button>
           </SettingRow>
@@ -224,7 +332,9 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
               <button class="secondary-btn" type="button" @click="clearModelsCache">
                 <RotateCcw :size="14" /> Limpar cache
               </button>
-              <span v-if="cacheMessage" class="cache-message"><Check :size="12" /> {{ cacheMessage }}</span>
+              <span v-if="cacheMessage" class="cache-message"
+                ><Check :size="12" /> {{ cacheMessage }}</span
+              >
             </div>
           </SettingRow>
         </div>
@@ -240,10 +350,16 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
           </div>
         </div>
         <div class="group-body">
-          <SettingRow label="Mostrar descrições dos modelos" description="Exibe a finalidade resumida nos cards da aba Modelos">
+          <SettingRow
+            label="Mostrar descrições dos modelos"
+            description="Exibe a finalidade resumida nos cards da aba Modelos"
+          >
             <SettingSwitch v-model="settingsState.showModelDescriptions" />
           </SettingRow>
-          <SettingRow label="Mostrar indicadores de uso comercial" description="Badge de licença nos modelos">
+          <SettingRow
+            label="Mostrar indicadores de uso comercial"
+            description="Badge de licença nos modelos"
+          >
             <SettingSwitch v-model="settingsState.showCommercialBadges" />
           </SettingRow>
           <SettingRow label="Tamanho das miniaturas" description="Fila, editor e histórico">
@@ -256,7 +372,10 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
               ]"
             />
           </SettingRow>
-          <SettingRow label="Ativar animações" description="Transições e microanimações da interface">
+          <SettingRow
+            label="Ativar animações"
+            description="Transições e microanimações da interface"
+          >
             <SettingSwitch v-model="settingsState.animationsEnabled" />
           </SettingRow>
           <SettingRow label="Densidade da interface" description="Espaçamento entre elementos">
@@ -287,17 +406,40 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
           </SettingRow>
           <SettingRow v-if="electronVersions" label="Versões do runtime">
             <span class="fixed-value mono">
-              Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} · Node {{ electronVersions.node }}
+              Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
+              Node {{ electronVersions.node }}
             </span>
           </SettingRow>
           <SettingRow label="Servidor da API">
             <span class="fixed-value mono">{{ appPaths?.apiBaseUrl ?? '—' }}</span>
           </SettingRow>
-          <SettingRow label="Pasta do repositório">
-            <span class="fixed-value mono truncate" :title="appPaths?.repoRoot">{{ appPaths?.repoRoot ?? '—' }}</span>
+          <SettingRow
+            label="Servidor de licenciamento"
+            description="Endereço do interface/astros_licensing_service — vazio desativa o módulo de licença"
+          >
+            <input
+              v-model="settingsState.licensingServiceUrl"
+              type="text"
+              placeholder="http://127.0.0.1:8766"
+              class="number-input licensing-url-input"
+              @change="reloadLicense"
+            />
           </SettingRow>
-          <SettingRow label="Opções de depuração" description="Abre o DevTools do Chromium para inspecionar a interface">
-            <button class="secondary-btn" type="button" :disabled="!hasNativeApi" @click="openDevTools">
+          <SettingRow label="Pasta do repositório">
+            <span class="fixed-value mono truncate" :title="appPaths?.repoRoot">{{
+              appPaths?.repoRoot ?? '—'
+            }}</span>
+          </SettingRow>
+          <SettingRow
+            label="Opções de depuração"
+            description="Abre o DevTools do Chromium para inspecionar a interface"
+          >
+            <button
+              class="secondary-btn"
+              type="button"
+              :disabled="!hasNativeApi"
+              @click="openDevTools"
+            >
               <Bug :size="14" /> Abrir DevTools
             </button>
           </SettingRow>
@@ -330,7 +472,6 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
   background: var(--surface-1);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-lg);
-  overflow: hidden;
 }
 
 .group-header {
@@ -340,6 +481,7 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
   padding: var(--space-4);
   border-bottom: 1px solid var(--surface-border-soft);
   background: var(--surface-2);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 }
 
 .group-icon {
@@ -455,6 +597,10 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
   font-family: var(--font-mono);
 }
 
+.licensing-url-input {
+  width: 220px;
+}
+
 .link-btn {
   display: flex;
   align-items: center;
@@ -518,5 +664,65 @@ const outputFolderLabel = computed(() => settingsState.defaultOutputFolder ?? 'M
   gap: 4px;
   font-size: 11px;
   color: var(--color-success);
+}
+
+.accent-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.accent-swatch {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.accent-swatch:hover {
+  transform: scale(1.08);
+}
+
+.accent-swatch:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+.accent-swatch.active {
+  border-color: var(--text-primary);
+}
+
+.swatch-cyan {
+  background: #06b6d4;
+}
+.swatch-blue {
+  background: #3b82f6;
+}
+.swatch-purple {
+  background: #8b5cf6;
+}
+.swatch-green {
+  background: #22c55e;
+}
+.swatch-red {
+  background: #ef4444;
+}
+.swatch-orange {
+  background: #f97316;
+}
+.swatch-pink {
+  background: #ec4899;
+}
+.swatch-gray {
+  background: #64748b;
 }
 </style>

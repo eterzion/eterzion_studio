@@ -4,7 +4,7 @@ import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
 import SummaryCards from '../components/SummaryCards.vue'
-import { Trash2, ChevronDown } from '@lucide/vue'
+import { Trash2, ChevronDown, ListChecks } from '@lucide/vue'
 import { api, hasNativeApi } from '../api'
 import { addFiles, queueState, removeJob, setActiveJob, type UploadResult } from '../store/jobs'
 
@@ -96,8 +96,15 @@ async function handleFilesDropped(dropped: File[]): Promise<void> {
   }
   uploading.value = true
   try {
-    const described = await Promise.all(dropped.map((file) => api.statPath(api.getPathForFile(file))))
-    reportResult(await addFiles(described.filter((d) => d !== null), DEFAULT_MODEL))
+    const described = await Promise.all(
+      dropped.map((file) => api.statPath(api.getPathForFile(file)))
+    )
+    reportResult(
+      await addFiles(
+        described.filter((d) => d !== null),
+        DEFAULT_MODEL
+      )
+    )
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'Falha ao importar os arquivos.'
   } finally {
@@ -147,9 +154,14 @@ function openImage(id?: string): void {
 
       <section class="queue-section">
         <div class="queue-header">
-          <div>
-            <h2 class="queue-title">Fila ({{ fileCount }})</h2>
-            <p class="queue-subtitle">{{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }} · {{ statusLabel }}</p>
+          <div class="queue-heading">
+            <div class="queue-icon"><ListChecks :size="16" /></div>
+            <div>
+              <h2 class="queue-title">Fila ({{ fileCount }})</h2>
+              <p class="queue-subtitle">
+                {{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }} · {{ statusLabel }}
+              </p>
+            </div>
           </div>
           <div class="queue-actions">
             <button class="btn-ghost" type="button" :disabled="!jobs.length" @click="clearQueue">
@@ -162,7 +174,14 @@ function openImage(id?: string): void {
         </div>
 
         <div v-if="jobs.length" class="queue-list">
-          <FileQueueItem v-for="j in jobs" :key="j.id" :job="j" @remove="removeJob" @click="openImage(j.id)" />
+          <FileQueueItem
+            v-for="(j, index) in jobs"
+            :key="j.id"
+            :job="j"
+            :style="{ animationDelay: Math.min(index, 10) * 25 + 'ms' }"
+            @remove="removeJob"
+            @click="openImage(j.id)"
+          />
         </div>
         <p v-else class="queue-empty">
           Nenhum arquivo na fila. Arraste algo acima, cole com Ctrl+V, ou clique para importar.
@@ -201,12 +220,37 @@ function openImage(id?: string): void {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  background: var(--surface-1);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .queue-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.queue-heading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.queue-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 
 .queue-title {
@@ -224,6 +268,7 @@ function openImage(id?: string): void {
 .queue-actions {
   display: flex;
   gap: var(--space-2);
+  flex-wrap: wrap;
 }
 
 .btn-ghost {

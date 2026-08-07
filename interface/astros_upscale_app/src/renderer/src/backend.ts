@@ -8,6 +8,10 @@ export interface ModelInfo {
   category: string
   scale: number
   description: string
+  architecture: string | null
+  file_count: number
+  downloaded: boolean
+  size_bytes: number | null
 }
 
 export interface ModelsResponse {
@@ -27,6 +31,9 @@ export interface Adjustments {
   deblur: number
   detail_recovery: number
   face_correction: boolean
+  face_recovery_strength: number
+  denoise_filter_enabled: boolean
+  denoise_filter_strength: number
 }
 
 export interface JobParams {
@@ -136,6 +143,26 @@ export async function exportJob(jobId: string, request: ExportRequest): Promise<
   return data.output_path as string
 }
 
+export interface DenoisePreview {
+  before: string // base64 PNG, no data: prefix
+  after: string
+  width: number
+  height: number
+}
+
+/** Runs the real denoise filter (same cv2.fastNlMeansDenoisingColored used by the
+ *  job pipeline) on a downscaled copy of the source image, for fast interactive
+ *  before/after feedback — the actual job always re-runs it on the full result. */
+export async function previewDenoise(inputPath: string, strength: number): Promise<DenoisePreview> {
+  const res = await fetch(`${BASE_URL}/preview/denoise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ input_path: inputPath, strength })
+  })
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
 /** Subscribes to live progress for a job over the API's WebSocket. Returns an
  *  unsubscribe function. Falls back silently if the socket errors — callers should
  *  still poll getJob() once as a fallback if they need a guaranteed final state. */
@@ -160,7 +187,15 @@ export function subscribeJobProgress(
 }
 
 export function defaultAdjustments(): Adjustments {
-  return { denoise: 50, deblur: 0, detail_recovery: 0, face_correction: false }
+  return {
+    denoise: 50,
+    deblur: 0,
+    detail_recovery: 0,
+    face_correction: false,
+    face_recovery_strength: 80,
+    denoise_filter_enabled: false,
+    denoise_filter_strength: 45
+  }
 }
 
 export const ERROR_CATEGORY_COPY: Record<ErrorCategory, { message: string; action: string }> = {

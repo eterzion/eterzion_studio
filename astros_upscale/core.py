@@ -27,6 +27,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'Padrão para fotos reais, equilíbrio nitidez/naturalidade',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'realesrgan-x2': {
         'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth'],
@@ -34,6 +35,7 @@ MODELS = {
         'scale': 2,
         'category': 'Fotos',
         'description': 'Quando 4x é exagero; só dobra a resolução',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'realesr-general': {
         'urls': [
@@ -47,6 +49,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'Leve e rápido, bom default geral (suporta --denoise)',
+        'architecture': 'SRVGGNetCompact',
     },
     'realesrnet-x4': {
         'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.1/RealESRNet_x4plus.pth'],
@@ -54,6 +57,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'Resultado mais suave e com menos artefatos',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'ultrasharp': {
         'urls': ['https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth'],
@@ -61,6 +65,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'Muito nítido; ótimo em JPEG comprimido',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'nomos-webphoto': {
         'urls': ['https://huggingface.co/Phips/4xNomosWebPhoto_RealPLKSR/resolve/main/4xNomosWebPhoto_RealPLKSR.safetensors'],
@@ -68,6 +73,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'RealPLKSR p/ fotos reais da web (ruído, blur, recompressão)',
+        'architecture': 'RealPLKSR',
     },
     'nomos2-dat2': {
         'urls': ['https://huggingface.co/Phips/4xNomos2_hq_dat2/resolve/main/4xNomos2_hq_dat2.safetensors'],
@@ -75,6 +81,7 @@ MODELS = {
         'scale': 4,
         'category': 'Fotos',
         'description': 'DAT-2 (transformer), muito nítido — pesado, evite p/ vídeo/lote grande',
+        'architecture': 'DAT-2 (transformer)',
     },
     # -------------------------- Anime -------------------------- #
     'realesrgan-anime': {
@@ -83,6 +90,7 @@ MODELS = {
         'scale': 4,
         'category': 'Anime',
         'description': 'Modelo leve otimizado para anime/ilustração',
+        'architecture': 'RRDBNet (ESRGAN, 6 blocos)',
     },
     'animesharp': {
         'urls': ['https://huggingface.co/Kim2091/AnimeSharp/resolve/main/4x-AnimeSharp.pth'],
@@ -90,6 +98,7 @@ MODELS = {
         'scale': 4,
         'category': 'Anime',
         'description': 'Linhas limpas em ilustrações e texto',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'hfa2k-span': {
         'urls': ['https://huggingface.co/Phips/2xHFA2kSPAN/resolve/main/2xHFA2kSPAN.safetensors'],
@@ -97,6 +106,7 @@ MODELS = {
         'scale': 2,
         'category': 'Anime',
         'description': 'SPAN — qualidade parecida ao realesrgan-anime, muito mais rápido',
+        'architecture': 'SPAN',
     },
     # -------------------------- Vídeo/Anime -------------------------- #
     'realesr-animevideo': {
@@ -105,6 +115,7 @@ MODELS = {
         'scale': 4,
         'category': 'Vídeo/Anime',
         'description': 'Oficial Real-ESRGAN, leve, feito para vídeo de anime',
+        'architecture': 'SRVGGNetCompact',
     },
     'hfa2k-avc': {
         'urls': ['https://huggingface.co/Phips/2xHFA2kAVCCompact/resolve/main/2xHFA2kAVCCompact.safetensors'],
@@ -112,6 +123,7 @@ MODELS = {
         'scale': 2,
         'category': 'Vídeo/Anime',
         'description': 'Compact que trata degradação h264 (streaming/web)',
+        'architecture': 'SRVGGNetCompact',
     },
     'nomosuni-span': {
         'urls': ['https://huggingface.co/Phips/2xNomosUni_span_multijpg_ldl/resolve/main/2xNomosUni_span_multijpg_ldl.safetensors'],
@@ -119,6 +131,7 @@ MODELS = {
         'scale': 2,
         'category': 'Vídeo/Anime',
         'description': 'SPAN universal e leve, tolera múltiplos níveis de recompressão JPEG',
+        'architecture': 'SPAN',
     },
     # -------------------------- Vídeo Real -------------------------- #
     'liveaction-span': {
@@ -128,6 +141,7 @@ MODELS = {
         'scale': 2,
         'category': 'Vídeo Real',
         'description': 'Vídeo live-action (não-anime): h264/h265/VP9, sem denoise agressivo',
+        'architecture': 'SPAN',
     },
     # ----------------------- Restauração ----------------------- #
     'nmkd-siax': {
@@ -136,6 +150,7 @@ MODELS = {
         'scale': 4,
         'category': 'Restauração',
         'description': 'Universal p/ imagens limpas ou pouco comprimidas',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     'nmkd-superscale': {
         'urls': ['https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x_NMKD-Superscale-SP_178000_G.pth'],
@@ -143,6 +158,7 @@ MODELS = {
         'scale': 4,
         'category': 'Restauração',
         'description': 'Fotos reais com ruído e artefatos',
+        'architecture': 'RRDBNet (ESRGAN)',
     },
     # ------------------ Limpeza (1x, sem upscale) ------------------ #
     'denoise': {
@@ -152,6 +168,7 @@ MODELS = {
         'scale': 1,
         'category': 'Limpeza',
         'description': 'Remove ruído fotográfico; trata leve compressão JPEG',
+        'architecture': 'RealPLKSR',
     },
     'dejpg': {
         'urls': ['https://github.com/Phhofm/models/releases/download/1xDeJPG_realplksr_otf/'
@@ -160,6 +177,7 @@ MODELS = {
         'scale': 1,
         'category': 'Limpeza',
         'description': 'Remove artefatos JPEG (treinado até qualidade 40)',
+        'architecture': 'RealPLKSR',
     },
     'deh264': {
         'urls': ['https://huggingface.co/Phips/1xDeH264_realplksr/resolve/main/1xDeH264_realplksr.safetensors'],
@@ -167,6 +185,7 @@ MODELS = {
         'scale': 1,
         'category': 'Limpeza',
         'description': 'Remove artefatos de compressão H264 (pré-limpeza antes de outro modelo)',
+        'architecture': 'RealPLKSR',
     },
 }
 

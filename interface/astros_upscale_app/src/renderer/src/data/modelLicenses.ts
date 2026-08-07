@@ -277,7 +277,10 @@ export function getModelLicense(name: string): ModelLicense | undefined {
   return MODEL_LICENSES[name]
 }
 
-export const COMMERCIAL_USE_COPY: Record<CommercialUse, { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }> = {
+export const COMMERCIAL_USE_COPY: Record<
+  CommercialUse,
+  { label: string; tone: 'success' | 'warning' | 'danger' | 'neutral' }
+> = {
   allowed: { label: 'Uso comercial permitido', tone: 'success' },
   restricted: { label: 'Uso comercial com restrições', tone: 'warning' },
   not_allowed: { label: 'Somente uso não comercial', tone: 'danger' },

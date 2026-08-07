@@ -27,7 +27,10 @@ const resolutionLabel = computed(
 
 const modelSummary = computed(() => {
   const c = props.job.scaleConfig
-  const scaleLabel = c.mode === 'preset' ? `${c.presetFactor}x` : `${c.customWidth ?? '—'}×${c.customHeight ?? '—'}px`
+  const scaleLabel =
+    c.mode === 'preset'
+      ? `${c.presetFactor}x`
+      : `${c.customWidth ?? '—'}×${c.customHeight ?? '—'}px`
   return `${c.model} · ${scaleLabel} · ruído ${c.denoise}`
 })
 </script>
@@ -40,11 +43,15 @@ const modelSummary = computed(() => {
     </div>
     <div class="stat">
       <span class="stat-label">Tamanho do arquivo</span>
-      <span class="stat-value">{{ fmtBytes(job.sourceMeta.sizeBytes) }} → {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span>
+      <span class="stat-value"
+        >{{ fmtBytes(job.sourceMeta.sizeBytes) }} → {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span
+      >
     </div>
     <div class="stat">
       <span class="stat-label">Tempo de processamento</span>
-      <span class="stat-value">{{ processingSeconds != null ? processingSeconds + 's' : '—' }}</span>
+      <span class="stat-value">{{
+        processingSeconds != null ? processingSeconds + 's' : '—'
+      }}</span>
     </div>
     <div class="stat stat-wide">
       <span class="stat-label">Modelo e parâmetros</span>

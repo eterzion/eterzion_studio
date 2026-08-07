@@ -12,6 +12,7 @@ import {
   type ExportRequest
 } from '../backend'
 import { recordJob } from './history'
+import { settingsState } from './settings'
 
 // ------------------------------------------------------------------------- //
 // Data model — mirrors the Spec Kit's Job/ScaleConfig/QueueState, adapted to
@@ -40,6 +41,8 @@ export interface ScaleConfig {
   sharpen: number
   faceRecovery: boolean
   faceRecoveryStrength: number
+  denoiseFilterEnabled: boolean
+  denoiseFilterStrength: number
 }
 
 export interface SourceMeta {
@@ -87,16 +90,18 @@ export const queueState = reactive<{ jobs: Job[]; activeJobId: string | null; co
 function defaultScaleConfig(model: string): ScaleConfig {
   return {
     mode: 'preset',
-    presetFactor: 4,
+    presetFactor: settingsState.defaultScalePreset,
     customWidth: null,
     customHeight: null,
-    lockAspectRatio: true,
+    lockAspectRatio: settingsState.defaultLockAspectRatio,
     model,
     device: 'auto',
     denoise: 50,
     sharpen: 0,
     faceRecovery: false,
-    faceRecoveryStrength: 50
+    faceRecoveryStrength: 50,
+    denoiseFilterEnabled: false,
+    denoiseFilterStrength: 45
   }
 }
 
@@ -123,14 +128,20 @@ export interface UploadResult {
 /** Validates and turns DescribedFile entries into configuring Jobs — section 3.2
  *  of the spec: format, file size, and min/max resolution checks happen here,
  *  before a Job is ever created. */
-export async function addFiles(described: DescribedFile[], defaultModel: string): Promise<UploadResult> {
+export async function addFiles(
+  described: DescribedFile[],
+  defaultModel: string
+): Promise<UploadResult> {
   const rejected: UploadRejection[] = []
   const duplicates: string[] = []
   const added: Job[] = []
 
   for (const f of described) {
     if (f.kind !== 'Imagem') {
-      rejected.push({ name: f.name, reason: 'Formato não suportado (apenas imagens: PNG, JPG, TIFF, WEBP, BMP).' })
+      rejected.push({
+        name: f.name,
+        reason: 'Formato não suportado (apenas imagens: PNG, JPG, TIFF, WEBP, BMP).'
+      })
       continue
     }
     if (queueState.jobs.some((j) => j.sourcePath === f.path)) {
@@ -138,18 +149,27 @@ export async function addFiles(described: DescribedFile[], defaultModel: string)
       continue
     }
     if (f.size > MAX_FILE_SIZE_BYTES) {
-      rejected.push({ name: f.name, reason: `Arquivo maior que o limite de ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.` })
+      rejected.push({
+        name: f.name,
+        reason: `Arquivo maior que o limite de ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
+      })
       continue
     }
 
     const thumbnail = hasNativeApi ? api.toFileUrl(f.path) : undefined
     const dims = thumbnail ? await loadImageDimensions(thumbnail) : null
     if (dims && (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION)) {
-      rejected.push({ name: f.name, reason: `Resolução muito baixa (mínimo ${MIN_DIMENSION}×${MIN_DIMENSION}px).` })
+      rejected.push({
+        name: f.name,
+        reason: `Resolução muito baixa (mínimo ${MIN_DIMENSION}×${MIN_DIMENSION}px).`
+      })
       continue
     }
     if (dims && (dims.width > 10000 || dims.height > 10000)) {
-      rejected.push({ name: f.name, reason: 'Resolução de entrada muito alta (acima de 10000px); o upscale pode não ser viável.' })
+      rejected.push({
+        name: f.name,
+        reason: 'Resolução de entrada muito alta (acima de 10000px); o upscale pode não ser viável.'
+      })
       continue
     }
 
@@ -217,26 +237,45 @@ export function effectiveCustomScale(job: Job): number | null {
   return Math.max(w / srcW, h / srcH)
 }
 
+function dimsForFactor(job: Job, rawFactor: number): { width: number; height: number } | null {
+  const { width: srcW, height: srcH } = job.sourceMeta
+  if (!srcW || !srcH) return null
+  const factor = Math.max(
+    1,
+    Math.min(rawFactor, MAX_OUTPUT_DIMENSION / srcW, MAX_OUTPUT_DIMENSION / srcH)
+  )
+  return { width: Math.round(srcW * factor), height: Math.round(srcH * factor) }
+}
+
 /** Prefills custom width/height (from the current preset factor, clamped to the
  *  output limit) the first time the user switches to custom mode — empty inputs
  *  are a hostile starting point. */
 export function ensureCustomSizeDefaults(job: Job): void {
-  const { width: srcW, height: srcH } = job.sourceMeta
-  if (!srcW || !srcH) return
   if (job.scaleConfig.customWidth != null && job.scaleConfig.customHeight != null) return
-  const factor = Math.max(
-    1,
-    Math.min(job.scaleConfig.presetFactor, MAX_OUTPUT_DIMENSION / srcW, MAX_OUTPUT_DIMENSION / srcH)
-  )
-  job.scaleConfig.customWidth = Math.round(srcW * factor)
-  job.scaleConfig.customHeight = Math.round(srcH * factor)
+  const dims = dimsForFactor(job, job.scaleConfig.presetFactor)
+  if (!dims) return
+  job.scaleConfig.customWidth = dims.width
+  job.scaleConfig.customHeight = dims.height
+}
+
+/** Keeps the custom target in sync with whichever preset factor the user just
+ *  picked — otherwise switching 4x -> 2x on the Predefinido tab and then back
+ *  to Customizado kept showing the old 4x-derived dimensions/multiplier,
+ *  since ensureCustomSizeDefaults() no-ops once they're already set. Called
+ *  whenever the preset buttons are clicked, not just on first custom-mode entry. */
+export function syncCustomSizeToPreset(job: Job): void {
+  const dims = dimsForFactor(job, job.scaleConfig.presetFactor)
+  if (!dims) return
+  job.scaleConfig.customWidth = dims.width
+  job.scaleConfig.customHeight = dims.height
 }
 
 export function applyConfigToAll(sourceJob: Job): void {
   // Custom sizes are absolute pixels, which only make sense for the source image's
   // aspect ratio — so what carries over to the other jobs is the *scale factor*,
   // recomputed against each image's own dimensions.
-  const customFactor = sourceJob.scaleConfig.mode === 'custom' ? effectiveCustomScale(sourceJob) : null
+  const customFactor =
+    sourceJob.scaleConfig.mode === 'custom' ? effectiveCustomScale(sourceJob) : null
   for (const job of queueState.jobs) {
     if (job.id === sourceJob.id || job.status !== 'configuring') continue
     job.scaleConfig = { ...sourceJob.scaleConfig }
@@ -261,12 +300,16 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 
   const { width: srcW, height: srcH } = job.sourceMeta
   if (job.scaleConfig.mode === 'preset') {
-    if (![2, 4].includes(job.scaleConfig.presetFactor)) return { valid: false, reason: 'Escolha um fator de escala.' }
+    if (![2, 4].includes(job.scaleConfig.presetFactor))
+      return { valid: false, reason: 'Escolha um fator de escala.' }
     if (srcW && srcH) {
       const outW = srcW * job.scaleConfig.presetFactor
       const outH = srcH * job.scaleConfig.presetFactor
       if (outW > MAX_OUTPUT_DIMENSION || outH > MAX_OUTPUT_DIMENSION) {
-        return { valid: false, reason: `Saída excederia o limite de ${MAX_OUTPUT_DIMENSION}px por lado.` }
+        return {
+          valid: false,
+          reason: `Saída excederia o limite de ${MAX_OUTPUT_DIMENSION}px por lado.`
+        }
       }
     }
     return { valid: true }
@@ -279,7 +322,10 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
     return { valid: false, reason: `Máximo de ${MAX_OUTPUT_DIMENSION}px por lado.` }
   }
   if (srcW && srcH && (w < srcW || h < srcH)) {
-    return { valid: false, reason: 'O tamanho customizado não pode ser menor que o original (isto é um upscaler).' }
+    return {
+      valid: false,
+      reason: 'O tamanho customizado não pode ser menor que o original (isto é um upscaler).'
+    }
   }
   return { valid: true }
 }
@@ -288,7 +334,10 @@ export function estimatedOutputSize(job: Job): { width: number; height: number }
   const { width: srcW, height: srcH } = job.sourceMeta
   if (!srcW || !srcH) return null
   if (job.scaleConfig.mode === 'preset') {
-    return { width: srcW * job.scaleConfig.presetFactor, height: srcH * job.scaleConfig.presetFactor }
+    return {
+      width: srcW * job.scaleConfig.presetFactor,
+      height: srcH * job.scaleConfig.presetFactor
+    }
   }
   if (job.scaleConfig.customWidth && job.scaleConfig.customHeight) {
     return { width: job.scaleConfig.customWidth, height: job.scaleConfig.customHeight }
@@ -324,7 +373,8 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
   job.progress = status.progress
   job.stage = status.stage ?? undefined
   job.queuePosition = status.queue_position
-  if (status.processing_started_at) job.processingStartedAt = Date.parse(status.processing_started_at)
+  if (status.processing_started_at)
+    job.processingStartedAt = Date.parse(status.processing_started_at)
   if (status.processing_ended_at) job.processingEndedAt = Date.parse(status.processing_ended_at)
   if (status.source_meta) {
     job.sourceMeta.width = status.source_meta.width
@@ -379,7 +429,9 @@ export async function startProcessing(job: Job): Promise<void> {
 
   try {
     const customSize =
-      job.scaleConfig.mode === 'custom' && job.scaleConfig.customWidth && job.scaleConfig.customHeight
+      job.scaleConfig.mode === 'custom' &&
+      job.scaleConfig.customWidth &&
+      job.scaleConfig.customHeight
         ? { width: job.scaleConfig.customWidth, height: job.scaleConfig.customHeight }
         : null
 
@@ -392,7 +444,10 @@ export async function startProcessing(job: Job): Promise<void> {
         denoise: job.scaleConfig.denoise,
         deblur: job.scaleConfig.sharpen,
         detail_recovery: job.scaleConfig.sharpen,
-        face_correction: job.scaleConfig.faceRecovery
+        face_correction: job.scaleConfig.faceRecovery,
+        face_recovery_strength: job.scaleConfig.faceRecoveryStrength,
+        denoise_filter_enabled: job.scaleConfig.denoiseFilterEnabled,
+        denoise_filter_strength: job.scaleConfig.denoiseFilterStrength
       }
     })
     job.backendJobId = backendJobId
@@ -441,7 +496,8 @@ export async function cancelProcessing(job: Job): Promise<void> {
 export function waitForSettled(job: Job): Promise<void> {
   return new Promise((resolvePromise) => {
     const check = (): void => {
-      if (job.status === 'done' || job.status === 'error' || job.status === 'cancelled') resolvePromise()
+      if (job.status === 'done' || job.status === 'error' || job.status === 'cancelled')
+        resolvePromise()
       else setTimeout(check, 300)
     }
     check()
@@ -457,7 +513,10 @@ export interface ExportOptions {
 }
 
 /** done -> exporting -> exported. Never re-runs the model — see backend.ts/exportJob. */
-export async function exportOne(job: Job, options: ExportOptions): Promise<{ ok: boolean; path?: string; error?: string }> {
+export async function exportOne(
+  job: Job,
+  options: ExportOptions
+): Promise<{ ok: boolean; path?: string; error?: string }> {
   if (!job.backendJobId) return { ok: false, error: 'Job sem processamento associado.' }
   job.exportState = 'exporting'
   job.exportError = undefined
@@ -476,7 +535,9 @@ export async function exportOne(job: Job, options: ExportOptions): Promise<{ ok:
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha ao exportar.'
     job.exportState = 'error'
-    job.exportError = message.startsWith('CONFLICT:') ? 'Já existe um arquivo com esse nome no destino.' : message
+    job.exportError = message.startsWith('CONFLICT:')
+      ? 'Já existe um arquivo com esse nome no destino.'
+      : message
     return { ok: false, error: job.exportError }
   }
 }

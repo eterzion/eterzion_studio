@@ -57,7 +57,10 @@ const statusOptions = [
 
 const modelOptions = computed(() => [
   { value: 'all', label: 'Todos os modelos' },
-  ...Array.from(new Set(historyState.entries.map((e) => e.model))).map((m) => ({ value: m, label: m }))
+  ...Array.from(new Set(historyState.entries.map((e) => e.model))).map((m) => ({
+    value: m,
+    label: m
+  }))
 ])
 
 const dateOptions = [
@@ -92,7 +95,8 @@ const filteredEntries = computed(() => {
     if (statusFilter.value !== 'all' && e.status !== statusFilter.value) return false
     if (modelFilter.value !== 'all' && e.model !== modelFilter.value) return false
     if (!withinDateFilter(e)) return false
-    if (q && !e.fileName.toLowerCase().includes(q) && !e.model.toLowerCase().includes(q)) return false
+    if (q && !e.fileName.toLowerCase().includes(q) && !e.model.toLowerCase().includes(q))
+      return false
     return true
   })
   list = [...list].sort((a, b) => {
@@ -225,16 +229,32 @@ function applyLimit(): void {
 
           <div class="filters-row">
             <div class="filter-select-wrap">
-              <AppSelect :model-value="statusFilter" :options="statusOptions" @update:model-value="(v) => (statusFilter = v as 'all' | HistoryStatus)" />
+              <AppSelect
+                :model-value="statusFilter"
+                :options="statusOptions"
+                @update:model-value="(v) => (statusFilter = v as 'all' | HistoryStatus)"
+              />
             </div>
             <div class="filter-select-wrap">
-              <AppSelect :model-value="modelFilter" :options="modelOptions" @update:model-value="(v) => (modelFilter = v as string)" />
+              <AppSelect
+                :model-value="modelFilter"
+                :options="modelOptions"
+                @update:model-value="(v) => (modelFilter = v as string)"
+              />
             </div>
             <div class="filter-select-wrap">
-              <AppSelect :model-value="dateFilter" :options="dateOptions" @update:model-value="(v) => (dateFilter = v as 'all' | 'today' | '7d' | '30d')" />
+              <AppSelect
+                :model-value="dateFilter"
+                :options="dateOptions"
+                @update:model-value="(v) => (dateFilter = v as 'all' | 'today' | '7d' | '30d')"
+              />
             </div>
             <div class="filter-select-wrap">
-              <AppSelect :model-value="sortKey" :options="sortOptions" @update:model-value="(v) => (sortKey = v as SortKey)" />
+              <AppSelect
+                :model-value="sortKey"
+                :options="sortOptions"
+                @update:model-value="(v) => (sortKey = v as SortKey)"
+              />
             </div>
           </div>
 
@@ -259,7 +279,12 @@ function applyLimit(): void {
         </div>
 
         <div v-else class="history-list">
-          <div v-for="entry in filteredEntries" :key="entry.id" class="history-card">
+          <div
+            v-for="(entry, index) in filteredEntries"
+            :key="entry.id"
+            class="history-card"
+            :style="{ animationDelay: Math.min(index, 12) * 25 + 'ms' }"
+          >
             <div class="card-main">
               <div class="thumb">
                 <img v-if="entry.thumbnail" :src="entry.thumbnail" alt="" />
@@ -270,7 +295,11 @@ function applyLimit(): void {
                 <div class="card-info-top">
                   <span class="file-name">{{ entry.fileName }}</span>
                   <span class="status-badge" :class="'tone-' + statusMeta[entry.status].tone">
-                    <component :is="statusMeta[entry.status].icon" :size="12" :class="{ spin: entry.status === 'processing' }" />
+                    <component
+                      :is="statusMeta[entry.status].icon"
+                      :size="12"
+                      :class="{ spin: entry.status === 'processing' }"
+                    />
                     {{ statusMeta[entry.status].label }}
                   </span>
                 </div>
@@ -289,30 +318,65 @@ function applyLimit(): void {
               </div>
 
               <div class="card-actions">
-                <button class="icon-action" type="button" title="Visualizar" :disabled="!entry.outputPath" @click="view(entry)">
+                <button
+                  class="icon-action"
+                  type="button"
+                  title="Visualizar"
+                  :disabled="!entry.outputPath"
+                  @click="view(entry)"
+                >
                   <Eye :size="15" />
                 </button>
-                <button class="icon-action" type="button" title="Baixar novamente" :disabled="!entry.outputPath" @click="downloadAgain(entry)">
+                <button
+                  class="icon-action"
+                  type="button"
+                  title="Baixar novamente"
+                  :disabled="!entry.outputPath"
+                  @click="downloadAgain(entry)"
+                >
                   <Download :size="15" />
                 </button>
                 <div class="menu-wrap">
-                  <button class="icon-action" type="button" title="Mais ações" @click="toggleMenu(entry.id)">
+                  <button
+                    class="icon-action"
+                    type="button"
+                    title="Mais ações"
+                    @click="toggleMenu(entry.id)"
+                  >
                     <EllipsisVertical :size="15" />
                   </button>
                   <div v-if="openMenuId === entry.id" class="dropdown-menu">
-                    <button type="button" @click="reuseConfig(entry)"><RotateCcw :size="13" /> Reutilizar configurações</button>
-                    <button type="button" @click="toggleDetails(entry.id)"><Info :size="13" /> Ver detalhes</button>
-                    <button type="button" class="danger" @click="remove(entry)"><Trash2 :size="13" /> Excluir</button>
+                    <button type="button" @click="reuseConfig(entry)">
+                      <RotateCcw :size="13" /> Reutilizar configurações
+                    </button>
+                    <button type="button" @click="toggleDetails(entry.id)">
+                      <Info :size="13" /> Ver detalhes
+                    </button>
+                    <button type="button" class="danger" @click="remove(entry)">
+                      <Trash2 :size="13" /> Excluir
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
 
             <div v-if="expandedId === entry.id" class="card-details">
-              <div class="detail-item"><dt>Origem</dt><dd>{{ entry.sourcePath }}</dd></div>
-              <div class="detail-item"><dt>Saída</dt><dd>{{ entry.outputPath ?? 'Ainda não exportado' }}</dd></div>
-              <div class="detail-item"><dt>Concluído em</dt><dd>{{ entry.completedAt ? fmtDateTime(entry.completedAt) : '—' }}</dd></div>
-              <div v-if="entry.errorMessage" class="detail-item"><dt>Erro</dt><dd>{{ entry.errorMessage }}</dd></div>
+              <div class="detail-item">
+                <dt>Origem</dt>
+                <dd>{{ entry.sourcePath }}</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Saída</dt>
+                <dd>{{ entry.outputPath ?? 'Ainda não exportado' }}</dd>
+              </div>
+              <div class="detail-item">
+                <dt>Concluído em</dt>
+                <dd>{{ entry.completedAt ? fmtDateTime(entry.completedAt) : '—' }}</dd>
+              </div>
+              <div v-if="entry.errorMessage" class="detail-item">
+                <dt>Erro</dt>
+                <dd>{{ entry.errorMessage }}</dd>
+              </div>
             </div>
           </div>
         </div>
@@ -411,7 +475,6 @@ function applyLimit(): void {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  flex: 1;
 }
 
 /* A wrapper div — not a bare "> *" selector — because Vue's scoped CSS doesn't
@@ -467,23 +530,42 @@ function applyLimit(): void {
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-md);
   padding: var(--space-3);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast),
+    background var(--transition-fast);
+  animation: card-in 260ms ease backwards;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .history-card:hover {
   border-color: var(--surface-border);
+  background: var(--surface-3);
   box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .card-main {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  min-height: calc(var(--thumb-size) * 0.8125);
 }
 
 .thumb {
-  width: 52px;
-  height: 52px;
+  width: calc(var(--thumb-size) * 0.8125);
+  height: calc(var(--thumb-size) * 0.8125);
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   background: var(--surface-3);
@@ -592,7 +674,9 @@ function applyLimit(): void {
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .icon-action:hover:not(:disabled) {

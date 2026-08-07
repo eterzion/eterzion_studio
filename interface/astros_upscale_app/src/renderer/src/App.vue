@@ -9,17 +9,22 @@ import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
-import { settingsState, setTheme } from './store/settings'
+import { setTheme } from './store/settings'
+import { initLicense } from './store/license'
+import { currentResolvedTheme } from './theme'
 import { hasNativeApi } from './api'
 
 const active = ref<NavKey>('home')
-const darkMode = computed(() => settingsState.theme === 'dark')
+const darkMode = computed(() => currentResolvedTheme.value === 'dark')
 
 function navigate(key: NavKey): void {
   active.value = key
 }
 
 function toggleTheme(): void {
+  // A quick toggle always sets an explicit mode — "Automático" (follow
+  // Windows) stays available in Configurações, but flipping this switch is a
+  // deliberate manual override of whatever it was resolving to.
   setTheme(darkMode.value ? 'light' : 'dark')
 }
 
@@ -28,6 +33,7 @@ onMounted(() => {
   if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
     Notification.requestPermission()
   }
+  initLicense()
 })
 </script>
 
