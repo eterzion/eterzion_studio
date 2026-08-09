@@ -751,7 +751,7 @@ async function importFiles(): Promise<void> {
                 :class="{ active: job.scaleConfig.presetFactor === s }"
                 type="button"
                 @click="
-                  job.scaleConfig.presetFactor = s as 2 | 4
+                  job.scaleConfig.presetFactor = s as 2 | 4;
                   syncCustomSizeToPreset(job)
                 "
               >
