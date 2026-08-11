@@ -35,7 +35,7 @@ import os
 import shutil
 import tempfile
 
-from .utils.video_io import has_ffmpeg
+from .media_engine import has_ffmpeg, run_ffmpeg
 
 AUDIO_ENGINES = {
     'denoise-voz': {
@@ -74,20 +74,12 @@ class MissingAudioDependency(ImportError):
             f"Instale com: pip install astros_upscale[audio]\n(erro original: {original})")
 
 
-def _run_ffmpeg(args_builder) -> None:
-    from ffmpeg import FFmpeg, FFmpegError
-    try:
-        args_builder(FFmpeg().option('y')).execute()
-    except (FFmpegError, OSError) as error:
-        raise RuntimeError(f'Falha ao converter áudio com ffmpeg: {error}') from error
-
-
 def _to_wav(input_path: str) -> str:
     """Convert any audio/video input to a temporary 16-bit PCM WAV via ffmpeg."""
     if not has_ffmpeg():
         raise RuntimeError('ffmpeg não encontrado no sistema; instale-o para processar áudio.')
     tmp_wav = tempfile.mktemp(suffix='.wav')
-    _run_ffmpeg(lambda f: f.input(input_path).output(tmp_wav, {'vn': None, 'acodec': 'pcm_s16le'}))
+    run_ffmpeg(lambda f: f.input(input_path).output(tmp_wav, {'vn': None, 'acodec': 'pcm_s16le'}))
     return tmp_wav
 
 
@@ -99,7 +91,7 @@ def _convert_format(wav_path: str, output_path: str) -> None:
         # falls back to a copy+delete in that case instead of requiring a rename.
         shutil.move(wav_path, output_path)
         return
-    _run_ffmpeg(lambda f: f.input(wav_path).output(output_path))
+    run_ffmpeg(lambda f: f.input(wav_path).output(output_path))
     os.remove(wav_path)
 
 

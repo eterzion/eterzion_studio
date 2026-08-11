@@ -51,15 +51,15 @@ def test_all_sources_fail_raises_aggregated_error(tmp_path):
 
 
 def test_resolve_model_uses_mirror_json(tmp_path, monkeypatch):
-    # build a fake models.json pointing 'realesrgan-x2' at a local mirror file
-    mirror_file = _write_source(tmp_path, 'RealESRGAN_x2plus.pth', b'fake-mirror-weights')
+    # build a fake models.json pointing 'hfa2k-span' at a local mirror file
+    mirror_file = _write_source(tmp_path, '2xHFA2kSPAN.safetensors', b'fake-mirror-weights')
     from astros_upscale.utils.download import sha256_of_file
     digest = sha256_of_file(str(mirror_file))
 
     manifest = {
         'models': [{
-            'name': 'realesrgan-x2',
-            'files': [{'filename': 'RealESRGAN_x2plus.pth', 'sha256': digest, 'mirror_url': mirror_file.as_uri()}],
+            'name': 'hfa2k-span',
+            'files': [{'filename': '2xHFA2kSPAN.safetensors', 'sha256': digest, 'mirror_url': mirror_file.as_uri()}],
         }]
     }
     models_json = tmp_path / 'models.json'
@@ -68,30 +68,29 @@ def test_resolve_model_uses_mirror_json(tmp_path, monkeypatch):
     # the registry's pinned sha256 differs from our fake mirror content, so pass sha256=None
     # indirectly by monkeypatching MODELS' pinned hash for this one test to match our fake file.
     import astros_upscale.core as core
-    monkeypatch.setitem(core.MODELS['realesrgan-x2'], 'sha256', [digest])
+    monkeypatch.setitem(core.MODELS['hfa2k-span'], 'sha256', [digest])
 
-    path, _ = resolve_model('realesrgan-x2', model_dir=str(tmp_path / 'out'), models_json=str(models_json))
+    path, _ = resolve_model('hfa2k-span', model_dir=str(tmp_path / 'out'), models_json=str(models_json))
     assert os.path.isfile(path)
     with open(path, 'rb') as f:
         assert f.read() == b'fake-mirror-weights'
 
 
 def test_model_download_status_and_paths(tmp_path):
-    downloaded, size = model_download_status('realesrgan-x4', model_dir=str(tmp_path))
+    downloaded, size = model_download_status('nomos-webphoto', model_dir=str(tmp_path))
     assert downloaded is False and size == 0
-    paths = model_local_paths('realesrgan-x4', model_dir=str(tmp_path))
+    paths = model_local_paths('nomos-webphoto', model_dir=str(tmp_path))
     os.makedirs(tmp_path, exist_ok=True)
     for p in paths:
         with open(p, 'wb') as f:
             f.write(b'x' * 10)
-    downloaded, size = model_download_status('realesrgan-x4', model_dir=str(tmp_path))
+    downloaded, size = model_download_status('nomos-webphoto', model_dir=str(tmp_path))
     assert downloaded is True and size == 10 * len(paths)
 
 
 def test_canonical_name_aliases():
     assert canonical_name('anime-video') == 'realesr-animevideo'
-    assert canonical_name('fast-x4') == 'realesr-general'
-    assert canonical_name('realesrgan-x4') == 'realesrgan-x4'
+    assert canonical_name('nomos-webphoto') == 'nomos-webphoto'
 
 
 def test_even_dimension_rounding():

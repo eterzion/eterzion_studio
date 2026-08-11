@@ -37,10 +37,24 @@ def test_optimize_image_rejects_unsupported_extension(tmp_path):
         optimize_image(src, str(tmp_path / 'out.tiff'), quality=80)
 
 
-def test_optimize_file_requires_matching_extension(tmp_path):
+def test_optimize_file_converts_between_extensions_of_the_same_media_type(tmp_path):
+    """T025/T027 — FR-028: conversion (different extension, same media type)
+    is now a real, supported path, not the same-extension restriction that
+    used to reject this outright."""
     src = _write_toy_image(tmp_path / 'in.jpg')
-    with pytest.raises(UnsupportedFormatError, match='extensão'):
-        optimize_file(src, str(tmp_path / 'out.png'), quality=80)
+    out = str(tmp_path / 'out.png')
+    optimize_file(src, out, quality=80)
+    assert os.path.exists(out)
+    from astros_upscale.utils.image_io import imread
+    assert imread(out).shape == imread(src).shape
+
+
+def test_optimize_file_rejects_cross_media_type_conversion(tmp_path):
+    """FR-030: image -> audio (or any cross-media-type request) must be
+    refused with a clear reason, never silently attempted."""
+    src = _write_toy_image(tmp_path / 'in.jpg')
+    with pytest.raises(UnsupportedFormatError, match='imagem.*áudio|mesmo tipo de mídia'):
+        optimize_file(src, str(tmp_path / 'out.mp3'), quality=80)
 
 
 def test_optimize_file_rejects_unknown_extension(tmp_path):
@@ -48,6 +62,25 @@ def test_optimize_file_rejects_unknown_extension(tmp_path):
     bogus.write_bytes(b'not a real media file')
     with pytest.raises(UnsupportedFormatError):
         optimize_file(str(bogus), str(tmp_path / 'out.xyz'), quality=80)
+
+
+def test_optimize_image_converts_to_avif_via_ffmpeg(tmp_path):
+    src = _write_toy_image(tmp_path / 'in.png')
+    out = str(tmp_path / 'out.avif')
+    optimize_image(src, out, quality=60)
+    assert os.path.exists(out)
+    assert os.path.getsize(out) > 0
+
+
+def test_optimize_image_converts_from_avif_via_ffmpeg(tmp_path):
+    src = _write_toy_image(tmp_path / 'in.png')
+    avif_path = str(tmp_path / 'mid.avif')
+    optimize_image(src, avif_path, quality=60)
+
+    out = str(tmp_path / 'out.jpg')
+    optimize_image(avif_path, out, quality=80)
+    assert os.path.exists(out)
+    assert os.path.getsize(out) > 0
 
 
 def test_quality_to_crf_bounds():

@@ -15,21 +15,19 @@ import cv2
 import numpy as np
 
 from astros_upscale.core import load_model
-from astros_upscale.face_restore import FaceRestorer
+from astros_upscale.face_enhance import FaceEnhancer
 from astros_upscale.utils.image_io import ImageOpenError, imread, imwrite
 
-# Lazily built and cached per (model_dir, device) — GFPGAN + its face detector are
-# ~350MB combined and slow to load, so this only happens the first time a job
-# actually requests face recovery, not on every Upscaler instantiation.
-_face_restorer_cache: dict[tuple[str, str], FaceRestorer] = {}
+# Lazily built and cached per model_dir — YuNet is small (~230KB) and fast, but there's
+# no reason to reload the ONNX graph on every job.
+_face_enhancer_cache: dict[str, FaceEnhancer] = {}
 
 
-def _get_face_restorer(model_dir: str, device: str) -> FaceRestorer:
-    key = (model_dir, device)
-    cached = _face_restorer_cache.get(key)
+def _get_face_enhancer(model_dir: str) -> FaceEnhancer:
+    cached = _face_enhancer_cache.get(model_dir)
     if cached is None:
-        cached = FaceRestorer(model_dir=model_dir, device=device)
-        _face_restorer_cache[key] = cached
+        cached = FaceEnhancer(model_dir=model_dir)
+        _face_enhancer_cache[model_dir] = cached
     return cached
 
 _QUALITY_EXTENSIONS = {
@@ -45,18 +43,29 @@ class ProcessResult(TypedDict):
 
 
 class Upscaler:
-    def __init__(self, model_name: str, model_dir: str, device: str | None = None, denoise_strength: float = 0.5):
+    """`model_name` here is always an internal `engine_ref` resolved by
+    profile_resolver.py (T012/T020) — never a raw identifier chosen by a
+    caller outside this process (FR-009/FR-011). `half` comes from the
+    resolved profile's execution_params (see profile_resolver._IMAGE_PROFILE_PARAMS)."""
+
+    # Hardware-derived fallback (T061/FR-035): only used when a caller doesn't
+    # pass tile_threshold/tile_size explicitly (e.g. code outside job_manager's
+    # profile_resolver-driven path) — never the value actually used for a real
+    # job, which always carries capacity.compute_tile_params()'s fresh figures.
+    _FALLBACK_TILE_THRESHOLD = 1600
+    _FALLBACK_TILE_SIZE = 512
+
+    def __init__(self, model_name: str, model_dir: str, device: str | None = None,
+                 denoise_strength: float = 0.5, half: bool = True,
+                 tile_threshold: int | None = None, tile_size: int | None = None):
         resolved_device = None if device in (None, 'auto', 'Automático') else device
         self._model = load_model(
             model_name, model_dir=model_dir, denoise_strength=denoise_strength,
-            tile=0, tile_pad=10, pre_pad=0, half=True, device=resolved_device,
+            tile=0, tile_pad=10, pre_pad=0, half=half, device=resolved_device,
         )
         self._model_dir = model_dir
-
-    # Inputs larger than this (on either side) are processed in tiles: bounds GPU/CPU
-    # memory (a 4096x4096 whole-image pass can OOM) and gives real per-tile progress.
-    _TILE_THRESHOLD = 1600
-    _TILE_SIZE = 512
+        self._tile_threshold = tile_threshold or self._FALLBACK_TILE_THRESHOLD
+        self._tile_size = tile_size or self._FALLBACK_TILE_SIZE
 
     @staticmethod
     def _sharpen(img, strength: int):
@@ -119,7 +128,7 @@ class Upscaler:
         if on_progress:
             on_progress(10)
 
-        self._model.tile_size = self._TILE_SIZE if max(h_input, w_input) > self._TILE_THRESHOLD else 0
+        self._model.tile_size = self._tile_size if max(h_input, w_input) > self._tile_threshold else 0
         if on_progress and self._model.tile_size:
             # map tile 1..N onto 10..90% of the bar
             self._model.tile_progress_callback = (
@@ -134,16 +143,16 @@ class Upscaler:
             result = cv2.resize(result, (int(target_w), int(target_h)), interpolation=cv2.INTER_LANCZOS4)
 
         if face_recovery:
-            # GFPGAN (via facexlib's detector/aligner) only operates on plain 3-channel
-            # 8-bit BGR — the common case for photos. 16-bit and RGBA/grayscale outputs
-            # (rarer inputs) are left as-is rather than silently mangled or crashed.
+            # YuNet detection + local enhancement only operates on plain 3-channel 8-bit
+            # BGR — the common case for photos. 16-bit and RGBA/grayscale outputs (rarer
+            # inputs) are left as-is rather than silently mangled or crashed.
             if result.dtype == np.uint8 and result.ndim == 3 and result.shape[2] == 3:
                 if on_stage:
-                    on_stage('Recuperando rostos')
-                restorer = _get_face_restorer(self._model_dir, str(self._model.device))
-                result, _faces_found = restorer.restore(result, strength=face_recovery_strength / 100)
+                    on_stage('Realçando rostos')
+                enhancer = _get_face_enhancer(self._model_dir)
+                result, _faces_found = enhancer.restore(result, strength=face_recovery_strength / 100)
             elif on_stage:
-                on_stage('Recuperação de faces não suportada para este formato de imagem')
+                on_stage('Realce de rostos não suportado para este formato de imagem')
 
         if denoise_filter_strength > 0:
             if on_stage:

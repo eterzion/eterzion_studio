@@ -2,6 +2,7 @@ import { reactive } from 'vue'
 import { api, hasNativeApi, type DescribedFile } from '../api'
 import {
   createLocalJob,
+  detectContentType,
   processJob as apiProcessJob,
   cancelJob as apiCancelJob,
   exportJob as apiExportJob,
@@ -9,7 +10,9 @@ import {
   getJob,
   type JobStatus as ApiJobStatus,
   type ErrorCategory,
-  type ExportRequest
+  type ExportRequest,
+  type ContentType,
+  type Profile
 } from '../backend'
 import { recordJob } from './history'
 import { settingsState } from './settings'
@@ -35,7 +38,11 @@ export interface ScaleConfig {
   customWidth: number | null
   customHeight: number | null
   lockAspectRatio: boolean
-  model: string
+  // Detected automatically (T008/FR-096) when the file is added; editable —
+  // never a model/checkpoint identifier (FR-009/FR-011). null while
+  // detection is still in flight or failed.
+  contentType: ContentType | null
+  profile: Profile
   device: string
   denoise: number
   sharpen: number
@@ -87,14 +94,15 @@ export const queueState = reactive<{ jobs: Job[]; activeJobId: string | null; co
   concurrency: 1
 })
 
-function defaultScaleConfig(model: string): ScaleConfig {
+function defaultScaleConfig(): ScaleConfig {
   return {
     mode: 'preset',
     presetFactor: settingsState.defaultScalePreset,
     customWidth: null,
     customHeight: null,
     lockAspectRatio: settingsState.defaultLockAspectRatio,
-    model,
+    contentType: null,
+    profile: 'fast', // FR-008: Rápido is the default when nothing is chosen
     device: 'auto',
     denoise: 50,
     sharpen: 0,
@@ -128,10 +136,7 @@ export interface UploadResult {
 /** Validates and turns DescribedFile entries into configuring Jobs — section 3.2
  *  of the spec: format, file size, and min/max resolution checks happen here,
  *  before a Job is ever created. */
-export async function addFiles(
-  described: DescribedFile[],
-  defaultModel: string
-): Promise<UploadResult> {
+export async function addFiles(described: DescribedFile[]): Promise<UploadResult> {
   const rejected: UploadRejection[] = []
   const duplicates: string[] = []
   const added: Job[] = []
@@ -184,7 +189,7 @@ export async function addFiles(
         format: f.ext.replace('.', '').toUpperCase(),
         sizeBytes: f.size
       },
-      scaleConfig: defaultScaleConfig(defaultModel),
+      scaleConfig: defaultScaleConfig(),
       status: 'configuring',
       progress: 0,
       queuePosition: null,
@@ -194,6 +199,17 @@ export async function addFiles(
     }
     queueState.jobs.push(job)
     added.push(job)
+
+    // FR-096: detect automatically, but leave it fully editable — a failed
+    // detection just leaves contentType null, and the UI/validateScaleConfig
+    // requires the person to pick one manually before processing.
+    detectContentType(f.path, 'image')
+      .then((detected) => {
+        job.scaleConfig.contentType = detected
+      })
+      .catch(() => {
+        // left null on purpose — see comment above
+      })
   }
 
   if (added.length && !queueState.activeJobId) {
@@ -296,7 +312,8 @@ export function applyConfigToAll(sourceJob: Job): void {
  *  32000px per side" guards from 4.2. Returns a single human-readable reason so
  *  the UI can show it inline instead of just disabling the button silently. */
 export function validateScaleConfig(job: Job): { valid: boolean; reason?: string } {
-  if (!job.scaleConfig.model) return { valid: false, reason: 'Escolha um modelo.' }
+  if (!job.scaleConfig.contentType)
+    return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
 
   const { width: srcW, height: srcH } = job.sourceMeta
   if (job.scaleConfig.mode === 'preset') {
@@ -435,12 +452,18 @@ export async function startProcessing(job: Job): Promise<void> {
         ? { width: job.scaleConfig.customWidth, height: job.scaleConfig.customHeight }
         : null
 
-    const backendJobId = await createLocalJob(job.sourcePath, {
-      model: job.scaleConfig.model,
-      device: job.scaleConfig.device,
-      scale: job.scaleConfig.presetFactor,
-      custom_size: customSize,
-      adjustments: {
+    const backendJobId = await createLocalJob(
+      {
+        media_type: 'image',
+        operation: 'enhance',
+        scale: `${job.scaleConfig.presetFactor}x`,
+        profile: job.scaleConfig.profile,
+        content_type_override: job.scaleConfig.contentType,
+        input_path: job.sourcePath,
+        device: job.scaleConfig.device,
+        custom_size: customSize
+      },
+      {
         denoise: job.scaleConfig.denoise,
         deblur: job.scaleConfig.sharpen,
         detail_recovery: job.scaleConfig.sharpen,
@@ -449,7 +472,7 @@ export async function startProcessing(job: Job): Promise<void> {
         denoise_filter_enabled: job.scaleConfig.denoiseFilterEnabled,
         denoise_filter_strength: job.scaleConfig.denoiseFilterStrength
       }
-    })
+    )
     job.backendJobId = backendJobId
     await apiProcessJob(backendJobId)
 

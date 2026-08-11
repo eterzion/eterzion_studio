@@ -9,12 +9,18 @@ const root = ref<HTMLElement | null>(null)
 
 const meta = computed(() => {
   switch (licenseState.status) {
-    case 'activated':
+    case 'active':
       return { icon: ShieldCheck, label: 'Licença ativa', tone: 'success' }
+    case 'offline_tolerance':
+      return { icon: ShieldCheck, label: 'Ativa (offline)', tone: 'success' }
+    case 'offline_expiring':
+      return { icon: ShieldAlert, label: 'Verifique sua conexão', tone: 'warning' }
     case 'checking':
       return { icon: Loader2, label: 'Verificando…', tone: 'neutral' }
     case 'error':
       return { icon: ShieldAlert, label: 'Erro de licença', tone: 'danger' }
+    case 'blocked':
+      return { icon: ShieldAlert, label: 'Licença bloqueada', tone: 'danger' }
     case 'not_activated':
       return { icon: KeyRound, label: 'Não ativada', tone: 'warning' }
     default:
@@ -25,7 +31,7 @@ const meta = computed(() => {
 async function submit(): Promise<void> {
   if (!licenseInput.value.trim()) return
   await activateLicense(licenseInput.value.trim())
-  if (licenseState.status === 'activated') licenseInput.value = ''
+  if (licenseState.status === 'active') licenseInput.value = ''
 }
 
 function onDocClick(e: MouseEvent): void {
@@ -49,51 +55,44 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     </button>
 
     <div v-if="open" class="license-popover">
-      <template v-if="licenseState.status === 'unconfigured'">
-        <p class="popover-title">Licenciamento não configurado</p>
-        <p class="popover-text">
-          Defina o endereço do servidor de licenciamento em Configurações &gt; Avançado para ativar
-          este módulo.
+      <p class="popover-title">Licença</p>
+      <p v-if="licenseState.installationsLimit" class="popover-detail">
+        Instalações: {{ licenseState.installationsUsed }}/{{ licenseState.installationsLimit }}
+      </p>
+      <p v-if="licenseState.offlineDaysRemaining != null" class="popover-detail">
+        Tolerância offline: {{ licenseState.offlineDaysRemaining }} dia(s) restante(s)
+      </p>
+
+      <template v-if="licenseState.status === 'active' || licenseState.status === 'offline_tolerance' || licenseState.status === 'offline_expiring'">
+        <p class="popover-detail success">
+          <ShieldCheck :size="13" /> Ativa nesta instalação
         </p>
+        <button class="popover-btn danger" type="button" @click="deactivateLicense">
+          Desativar nesta instalação
+        </button>
       </template>
 
       <template v-else>
-        <p class="popover-title">Licença</p>
-        <p v-if="licenseState.installId" class="popover-detail">
-          Instalação: <code>{{ licenseState.installId.slice(0, 12) }}…</code>
-        </p>
-
-        <template v-if="licenseState.status === 'activated'">
-          <p class="popover-detail success">
-            <ShieldCheck :size="13" /> Ativa — <code>{{ licenseState.licenseId }}</code>
-          </p>
-          <button class="popover-btn danger" type="button" @click="deactivateLicense">
-            Desativar nesta instalação
-          </button>
-        </template>
-
-        <template v-else>
-          <label class="popover-label" for="license-id-input">ID da licença</label>
-          <input
-            id="license-id-input"
-            v-model="licenseInput"
-            type="text"
-            placeholder="lic_..."
-            class="popover-input"
-            :disabled="licenseState.status === 'checking'"
-            @keydown.enter="submit"
-          />
-          <p class="popover-hint">Enviado por e-mail após a compra.</p>
-          <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
-          <button
-            class="popover-btn primary"
-            type="button"
-            :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
-            @click="submit"
-          >
-            {{ licenseState.status === 'checking' ? 'Ativando…' : 'Ativar' }}
-          </button>
-        </template>
+        <label class="popover-label" for="license-id-input">ID da licença</label>
+        <input
+          id="license-id-input"
+          v-model="licenseInput"
+          type="text"
+          placeholder="lic_..."
+          class="popover-input"
+          :disabled="licenseState.status === 'checking'"
+          @keydown.enter="submit"
+        />
+        <p class="popover-hint">Enviado por e-mail após a compra.</p>
+        <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
+        <button
+          class="popover-btn primary"
+          type="button"
+          :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
+          @click="submit"
+        >
+          {{ licenseState.status === 'checking' ? 'Ativando…' : 'Ativar' }}
+        </button>
       </template>
     </div>
   </div>

@@ -1,9 +1,9 @@
-"""Real end-to-end tests for upscaler.py — loads the actual realesrgan-x2
+"""Real end-to-end tests for upscaler.py — loads the actual hfa2k-span
 model (already present in the repo's models/ dir, no network access) and runs
 real CPU inference on tiny generated images. No mocking of the model itself;
-the only mocked boundary is GFPGAN face recovery (its ~350MB weights aren't
-vendored in this repo/CI — per the project's own testing rules, that's an
-external network boundary, the one place mocking is justified here)."""
+the face-enhance branch mocks FaceEnhancer's detection result (isolating this
+file's tests from whether a given synthetic image happens to trigger YuNet
+detection) rather than the network boundary — the wiring under test is real."""
 from __future__ import annotations
 
 import cv2
@@ -29,7 +29,7 @@ def real_upscaler():
     architecture detection, real torch.nn.Module — reused across tests in
     this file since loading it is the expensive part (~1-2s on CPU),
     inference on a 32x32 image is fast."""
-    return Upscaler('realesrgan-x2', model_dir=settings.models_dir, device='cpu')
+    return Upscaler('hfa2k-span', model_dir=settings.models_dir, device='cpu')
 
 
 @pytest.fixture
@@ -173,22 +173,22 @@ class TestStageCallbacksForOptionalEffects:
     pytestmark = pytest.mark.slow
 
     def test_reports_stages_for_every_enabled_effect(self, real_upscaler, tiny_image_path, tmp_path, monkeypatch):
-        fake = FakeFaceRestorer()
-        monkeypatch.setattr('app.core.upscaler._get_face_restorer', lambda model_dir, device: fake)
+        fake = FakeFaceEnhancer()
+        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
 
         stages = []
         real_upscaler.process(
             tiny_image_path, scale=2, custom_size=None, master_path=str(tmp_path / 'master.png'),
             on_stage=stages.append, face_recovery=True, denoise_filter_strength=40, sharpen_strength=40,
         )
-        assert 'Recuperando rostos' in stages
+        assert 'Realçando rostos' in stages
         assert 'Reduzindo ruído' in stages
         assert 'Aplicando nitidez' in stages
-        # documented pipeline order: face recovery -> denoise -> sharpen
-        assert stages.index('Recuperando rostos') < stages.index('Reduzindo ruído') < stages.index('Aplicando nitidez')
+        # documented pipeline order: face enhance -> denoise -> sharpen
+        assert stages.index('Realçando rostos') < stages.index('Reduzindo ruído') < stages.index('Aplicando nitidez')
 
 
-class FakeFaceRestorer:
+class FakeFaceEnhancer:
     def __init__(self):
         self.restore_calls: list[dict] = []
 
@@ -200,17 +200,19 @@ class FakeFaceRestorer:
 
 
 class TestFaceRecoveryBranch:
-    """GFPGAN's own weights (~350MB) aren't vendored/downloaded in this test
-    environment — mocked at that external boundary only; the wiring logic
-    (when it's called, with what args, output handling) is real."""
+    """FaceEnhancer's real YuNet weights (~230KB) ARE small enough to download in test
+    environments, but mocking it here still isolates this test from detection variance
+    (whether a synthetic tiny test image happens to trigger a face detection or not) —
+    the wiring logic under test (when it's called, with what args, output handling) is
+    what matters, and it's real."""
 
     pytestmark = pytest.mark.slow
 
-    def test_calls_the_face_restorer_with_the_models_output_and_strength(
+    def test_calls_the_face_enhancer_with_the_models_output_and_strength(
         self, real_upscaler, tiny_image_path, tmp_path, monkeypatch
     ):
-        fake = FakeFaceRestorer()
-        monkeypatch.setattr('app.core.upscaler._get_face_restorer', lambda model_dir, device: fake)
+        fake = FakeFaceEnhancer()
+        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
 
         master_path = str(tmp_path / 'master.png')
         real_upscaler.process(
@@ -228,8 +230,8 @@ class TestFaceRecoveryBranch:
     def test_skips_face_recovery_for_16_bit_output_without_crashing(
         self, real_upscaler, tmp_path, monkeypatch
     ):
-        fake = FakeFaceRestorer()
-        monkeypatch.setattr('app.core.upscaler._get_face_restorer', lambda model_dir, device: fake)
+        fake = FakeFaceEnhancer()
+        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
 
         img16 = (_make_test_image().astype(np.uint16)) * 257  # real 16-bit image
         path = tmp_path / 'in16.png'
@@ -241,27 +243,27 @@ class TestFaceRecoveryBranch:
             face_recovery=True, on_stage=stages.append,
         )
         assert fake.restore_calls == []  # never called for an unsupported dtype
-        assert any('não suportada' in s for s in stages)
+        assert any('não suportado' in s for s in stages)
 
-    def test_face_restorer_is_cached_across_process_calls(self, tiny_image_path, tmp_path, monkeypatch):
+    def test_face_enhancer_is_cached_across_process_calls(self, tiny_image_path, tmp_path, monkeypatch):
         from app.core import upscaler as upscaler_module
 
-        upscaler_module._face_restorer_cache.clear()
+        upscaler_module._face_enhancer_cache.clear()
         constructed = []
 
-        class TrackingFake(FakeFaceRestorer):
-            def __init__(self, model_dir, device):
+        class TrackingFake(FakeFaceEnhancer):
+            def __init__(self, model_dir):
                 super().__init__()
-                constructed.append((model_dir, device))
+                constructed.append(model_dir)
 
-        monkeypatch.setattr(upscaler_module, 'FaceRestorer', TrackingFake)
-        upscaler = Upscaler('realesrgan-x2', model_dir=settings.models_dir, device='cpu')
+        monkeypatch.setattr(upscaler_module, 'FaceEnhancer', TrackingFake)
+        upscaler = Upscaler('hfa2k-span', model_dir=settings.models_dir, device='cpu')
 
         upscaler.process(tiny_image_path, scale=2, custom_size=None, master_path=str(tmp_path / 'a.png'), face_recovery=True)
         upscaler.process(tiny_image_path, scale=2, custom_size=None, master_path=str(tmp_path / 'b.png'), face_recovery=True)
 
         assert len(constructed) == 1  # second call reused the cached instance
-        upscaler_module._face_restorer_cache.clear()
+        upscaler_module._face_enhancer_cache.clear()
 
 
 class TestExport:

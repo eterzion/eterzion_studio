@@ -3,5 +3,8 @@ opencv-python>=4.9
 python-ffmpeg>=2.0
 spandrel>=0.4
 torch>=2.1
+torchaudio>=2.1
 tqdm
-facexlib>=0.3
+psutil>=5.9
+nvidia-ml-py>=12.0
+librosa>=0.10

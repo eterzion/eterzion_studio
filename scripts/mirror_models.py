@@ -14,7 +14,7 @@ Requirements:
 Usage:
     python scripts/mirror_models.py --repo your-user/astros_upscale
     python scripts/mirror_models.py --repo your-user/astros_upscale --tag models-v1
-    python scripts/mirror_models.py --repo your-user/astros_upscale --only realesrgan-x4 dejpg
+    python scripts/mirror_models.py --repo your-user/astros_upscale --only nomos-webphoto dejpg
 
 This script does NOT commit the .pth files to git — they are uploaded as
 release assets. Only the generated ``models.json`` (a small text file with
@@ -45,26 +45,17 @@ from astros_upscale.utils.download import load_file_from_url, sha256_of_file  # 
 # Hugging Face model card for the community ones) at the time this script was
 # written. Re-verify before relying on this for anything commercial.
 ATTRIBUTIONS = {
-    'realesrgan-x4': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
-                      'source': 'https://github.com/xinntao/Real-ESRGAN'},
-    'realesrgan-x2': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
-                      'source': 'https://github.com/xinntao/Real-ESRGAN'},
-    'realesr-general': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
-                        'source': 'https://github.com/xinntao/Real-ESRGAN'},
-    'realesrnet-x4': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
-                      'source': 'https://github.com/xinntao/Real-ESRGAN'},
-    'realesrgan-anime': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
-                         'source': 'https://github.com/xinntao/Real-ESRGAN'},
+    # realesrgan-x4/x2, realesr-general, realesrnet-x4, nomos2-dat2, realesrgan-anime
+    # removed (T023/T024, benchmark-driven reduction to one implementation per
+    # content type — docs/models/BENCHMARK_RESULTS.md); ultrasharp, animesharp,
+    # nmkd-siax, nmkd-superscale removed earlier —
+    # see docs/models/MODEL_LICENSES.md §1/§6 (rejected/unverified commercial licence).
+    'nomos-webphoto': {'author': 'Philip Hofmann (Phhofm)', 'license': 'CC-BY-4.0',
+                       'source': 'https://huggingface.co/Phips/4xNomosWebPhoto_RealPLKSR'},
+    'hfa2k-span': {'author': 'Philip Hofmann (Phhofm)', 'license': 'CC-BY-4.0',
+                  'source': 'https://huggingface.co/Phips/2xHFA2kSPAN'},
     'realesr-animevideo': {'author': 'Xintao Wang et al. (Real-ESRGAN)', 'license': 'BSD-3-Clause',
                            'source': 'https://github.com/xinntao/Real-ESRGAN'},
-    'ultrasharp': {'author': 'Kim2091', 'license': 'CC-BY-NC-SA-4.0',
-                  'source': 'https://openmodeldb.info/models/4x-UltraSharp'},
-    'animesharp': {'author': 'Kim2091', 'license': 'CC-BY-NC-SA-4.0',
-                  'source': 'https://openmodeldb.info/models/4x-AnimeSharp'},
-    'nmkd-siax': {'author': 'Nmkd', 'license': 'WTFPL',
-                 'source': 'https://openmodeldb.info/models/4x-NMKD-Siax-CX'},
-    'nmkd-superscale': {'author': 'Nmkd', 'license': 'WTFPL',
-                        'source': 'https://openmodeldb.info/models/4x-NMKD-Superscale'},
     'denoise': {'author': 'Philip Hofmann (Helaman)', 'license': 'CC-BY-4.0',
                'source': 'https://openmodeldb.info/models/1x-DeNoise-realplksr-otf'},
     'dejpg': {'author': 'Philip Hofmann (Helaman)', 'license': 'CC-BY-4.0',

@@ -1,118 +1,76 @@
 import { reactive } from 'vue'
-import { settingsState } from './settings'
+import { activateLicenseKey, getLicenseStatus, releaseLicense, type LicenseState } from '../backend'
 
-const API_BASE_URL = 'http://127.0.0.1:8765'
-const STORAGE_KEY = 'astros-upscale:license'
+// T036/T038: this store is now a thin wrapper over the LOCAL API's /license/*
+// facade — it used to call the remote licensing service directly from the
+// renderer, bypassing the real gate mechanism (offline tolerance, revalidation
+// caching) entirely. The local API is always the one source of truth now.
 
-export type LicenseStatus = 'unconfigured' | 'checking' | 'not_activated' | 'activated' | 'error'
+export type UiLicenseStatus = LicenseState | 'checking' | 'error'
 
-interface StoredLicense {
-  licenseId: string
-}
-
-interface LicenseState {
-  status: LicenseStatus
-  installId: string | null
-  licenseId: string | null
+interface LicenseStoreState {
+  status: UiLicenseStatus
+  installationsUsed: number
+  installationsLimit: number
+  offlineDaysRemaining: number | null
   error: string | null
 }
 
-export const licenseState = reactive<LicenseState>({
-  status: 'unconfigured',
-  installId: null,
-  licenseId: null,
+export const licenseState = reactive<LicenseStoreState>({
+  status: 'checking',
+  installationsUsed: 0,
+  installationsLimit: 0,
+  offlineDaysRemaining: null,
   error: null
 })
 
-function loadPersisted(): StoredLicense | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
+/** Media/processing screens are usable in these states — offline_tolerance
+ *  and offline_expiring both still work (FR-056/FR-057), only blocked/
+ *  not_activated require going through LicenseActivationView.vue (T039). */
+export function isUsableLicenseState(status: UiLicenseStatus): boolean {
+  return status === 'active' || status === 'offline_tolerance' || status === 'offline_expiring'
 }
 
-function persist(value: StoredLicense | null): void {
-  if (value) localStorage.setItem(STORAGE_KEY, JSON.stringify(value))
-  else localStorage.removeItem(STORAGE_KEY)
-}
-
-interface IdentityResponse {
-  install_id: string
-  signing_public_key_b64: string
-  encryption_public_key_b64: string
-}
-
-async function fetchIdentity(): Promise<IdentityResponse> {
-  const resp = await fetch(`${API_BASE_URL}/identity`)
-  if (!resp.ok)
-    throw new Error(`Não foi possível obter a identidade da instalação (HTTP ${resp.status}).`)
-  return resp.json()
-}
-
-/** Called once at app startup. Not an error if licensingServiceUrl is empty —
- * that's the default (no license infra deployed by default, see
- * docs/processing-protection-architecture.md) and just means the module
- * shows "não configurado" instead of trying to reach a service that doesn't
- * exist for this install. */
-export async function initLicense(): Promise<void> {
-  if (!settingsState.licensingServiceUrl) {
-    licenseState.status = 'unconfigured'
-    return
-  }
-  const persisted = loadPersisted()
-  licenseState.licenseId = persisted?.licenseId ?? null
-  licenseState.status = persisted ? 'activated' : 'not_activated'
-  try {
-    const identity = await fetchIdentity()
-    licenseState.installId = identity.install_id
-  } catch (error) {
-    // Diagnostic only — the local API might just not be up yet. Doesn't
-    // downgrade an already-activated status; activation only needs the
-    // identity at the moment of activating, not on every load.
-    licenseState.error = error instanceof Error ? error.message : String(error)
-  }
-}
-
-export async function activateLicense(licenseId: string): Promise<void> {
-  if (!settingsState.licensingServiceUrl) {
-    licenseState.status = 'error'
-    licenseState.error = 'Nenhum servidor de licenciamento configurado (Configurações > Avançado).'
-    return
-  }
+export async function refreshLicenseStatus(): Promise<void> {
   licenseState.status = 'checking'
   licenseState.error = null
   try {
-    const identity = licenseState.installId ? null : await fetchIdentity()
-    if (identity) licenseState.installId = identity.install_id
-    const fullIdentity = identity ?? (await fetchIdentity())
-    const resp = await fetch(`${settingsState.licensingServiceUrl}/activations`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        license_id: licenseId,
-        install_id: fullIdentity.install_id,
-        signing_public_key_b64: fullIdentity.signing_public_key_b64,
-        encryption_public_key_b64: fullIdentity.encryption_public_key_b64
-      })
-    })
-    if (!resp.ok) {
-      const detail = await resp.json().catch(() => null)
-      throw new Error(detail?.detail ?? `Falha na ativação (HTTP ${resp.status}).`)
-    }
-    licenseState.licenseId = licenseId
-    licenseState.status = 'activated'
-    persist({ licenseId })
+    const body = await getLicenseStatus()
+    licenseState.status = body.state
+    licenseState.installationsUsed = body.installations_used
+    licenseState.installationsLimit = body.installations_limit
+    licenseState.offlineDaysRemaining = body.offline_days_remaining
   } catch (error) {
     licenseState.status = 'error'
     licenseState.error = error instanceof Error ? error.message : String(error)
   }
 }
 
-export function deactivateLicense(): void {
-  licenseState.licenseId = null
-  licenseState.status = settingsState.licensingServiceUrl ? 'not_activated' : 'unconfigured'
+/** Called once at app startup (App.vue). */
+export async function initLicense(): Promise<void> {
+  await refreshLicenseStatus()
+}
+
+export async function activateLicense(licenseId: string): Promise<void> {
+  licenseState.status = 'checking'
   licenseState.error = null
-  persist(null)
+  try {
+    await activateLicenseKey(licenseId)
+    await refreshLicenseStatus()
+  } catch (error) {
+    licenseState.status = 'error'
+    licenseState.error = error instanceof Error ? error.message : String(error)
+  }
+}
+
+export async function deactivateLicense(): Promise<void> {
+  licenseState.status = 'checking'
+  licenseState.error = null
+  try {
+    await releaseLicense()
+    await refreshLicenseStatus()
+  } catch (error) {
+    licenseState.status = 'error'
+    licenseState.error = error instanceof Error ? error.message : String(error)
+  }
 }

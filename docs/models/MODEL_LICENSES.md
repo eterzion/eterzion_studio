@@ -413,6 +413,34 @@ x264 LLC / MulticoreWare. Por hardware (NVENC/QSV/AMF) são viáveis numa build 
 alinha com o Princípio VII (Hardware Adaptive) e com a Seção 14 ("selecionar automaticamente o
 encoder mais adequado considerando hardware").
 
+### T072 — Reverificação (2026-08-11)
+
+Reexecutado `ffmpeg -version` nesta máquina de desenvolvimento:
+
+```
+ffmpeg version 9.0-full_build-www.gyan.dev
+configuration: --enable-gpl --enable-version3 ... --enable-libx264 --enable-libx265 ...
+```
+
+**Estado inalterado desde 2026-08-08: a build ainda é GPL.** Confirmado também, via inspeção de
+`interface/astros_upscale_app/electron-builder.yml` e de `dist/win-unpacked/`, que o instalador
+**não embute nenhum binário `ffmpeg`/`ffmpeg.exe` próprio** — o único `ffmpeg.dll` presente no
+build do Electron é o do próprio Chromium (mídia HTML5), não o binário CLI que
+`astros_upscale/media_engine/transcode.py` invoca via `shutil.which('ffmpeg')`. O backend Python
+continua dependendo inteiramente de um `ffmpeg` já instalado no PATH da máquina do usuário final.
+
+Isso significa duas coisas distintas:
+1. **Sob a leitura estrita da LGPL**, como nada é redistribuído hoje, não há violação de licença
+   em produção — mas a checagem em `media_engine/transcode.py::is_lgpl_build()` já avisa (não
+   bloqueia) quando o `ffmpeg` do PATH reporta `--enable-gpl`/`--enable-nonfree`, para não deixar
+   isso passar despercebido no dia em que o empacotamento mudar.
+2. **Gap funcional real, fora do escopo de licenciamento**: sem `ffmpeg` embutido, as User
+   Stories 2/3/4 (compress/convert, vídeo, áudio) só funcionam de fato numa máquina de usuário
+   final que já tenha `ffmpeg` no PATH — o que não é o caso da maioria. Isso não é uma pendência
+   desta tarefa (T072 pede apenas verificar a licença do binário embutido/enviado), mas é uma
+   lacuna de produto real que a T072 expôs ao confirmar "nada está embutido" — registrada
+   separadamente para acompanhamento (ver tarefa apontada na sessão que fez esta verificação).
+
 **Nota separada:** o uso de H.264/H.265 pode também envolver royalties de patente (MPEG LA /
 Access Advance), independentemente da licença do encoder. Isso é questão jurídica de produto,
 fora do escopo desta verificação técnica.

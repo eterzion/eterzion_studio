@@ -321,6 +321,27 @@ Legenda de destino: **REUTILIZAR** (usar como está) · **REFATORAR** (existe, p
 
 ## 6. Pendências desta fase
 
-- [ ] Revalidação independente das licenças dos 19 modelos de imagem (em curso)
-- [ ] Verificação das licenças das engines de áudio e das alternativas para o que será criado (em curso)
-- [ ] Decisão sobre ativar ou não o enforcement de licenciamento no produto final
+- [x] Revalidação independente das licenças dos 19 modelos de imagem — concluída. O registro foi
+  reduzido de 19 para exatamente 1 implementação por content_type de imagem/vídeo (FR-095, T010/T024),
+  com os modelos rejeitados/indeterminados documentados em `astros_upscale/legacy_identifiers.py` e
+  as licenças finais rastreadas em `interface/astros_upscale_api/app/core/license_registry.py`
+  (`verify_registry_completeness()` garante que todo modelo em `astros_upscale.core.MODELS` tem
+  entrada de licença, e vice-versa).
+- [x] Verificação das licenças das engines de áudio e das alternativas — concluída. Decisão registrada
+  em `docs/models/MODEL_LICENSES.md` §3/§3-bis: fala = `audiosronnx` (Apache-2.0, sem ressalva);
+  música = `SonicMaster` (Apache-2.0, **condicional** — depende do VAE do Stable Audio Open, risco
+  aceito conscientemente pelo dono do produto). Rastreado em código via
+  `profile_resolver._CONTENT_TYPE_IMPLEMENTATIONS`'s `license_status`/`license_condition` (T055).
+- [x] Decisão sobre ativar ou não o enforcement de licenciamento no produto final — concluída: **ativado**.
+  `astros_licensing_service` (serviço separado) + `license_gate.py`/`routes_license.py` na API local
+  aplicam o gate real (`blocked`/`not_activated` recusam o processamento) com tolerância offline de
+  30 dias — ver User Story 7 em `specs/001-unified-media-processing/tasks.md`.
+
+### Pendência nova, encontrada durante a entrega (2026-08-11)
+
+- [ ] **O instalador Electron não embute nenhum binário `ffmpeg`** — o backend depende inteiramente de
+  um `ffmpeg` já presente no PATH da máquina do usuário final. Na prática, compress/convert (US2),
+  vídeo (US3) e áudio (US4) não funcionam numa instalação limpa típica, apesar de implementados e
+  testados. Encontrado ao reverificar a licença do FFmpeg (T072); registrado como tarefa de
+  acompanhamento separada (empacotar um build LGPL do ffmpeg) — ver
+  `docs/models/MODEL_LICENSES.md` §5.

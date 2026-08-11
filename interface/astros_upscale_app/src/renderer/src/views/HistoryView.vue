@@ -35,13 +35,31 @@ const emit = defineEmits<{
 
 const search = ref('')
 const statusFilter = ref<'all' | HistoryStatus>('all')
-const modelFilter = ref<'all' | string>('all')
+const contentTypeFilter = ref<'all' | string>('all')
 const dateFilter = ref<'all' | 'today' | '7d' | '30d'>('all')
 type SortKey = 'newest' | 'oldest' | 'res-desc' | 'res-asc' | 'size-desc' | 'size-asc'
 const sortKey = ref<SortKey>('newest')
 const openMenuId = ref<string | null>(null)
 const expandedId = ref<string | null>(null)
 const reuseError = ref<string | null>(null)
+
+// Never exposes a model/checkpoint name — only the content-type label
+// (FR-009/FR-063). Entries recorded before this field existed (pre-Unified
+// Media Processing) only have the legacy `model` string; shown as
+// "Arquivado" since it no longer maps to anything meaningful.
+const CONTENT_TYPE_LABEL: Record<string, string> = {
+  photo: 'Foto',
+  anime_image: 'Anime/Ilustração',
+  real_video: 'Vídeo real',
+  anime_video: 'Vídeo anime',
+  speech: 'Voz',
+  music: 'Música'
+}
+
+function contentTypeLabel(entry: HistoryEntry): string {
+  if (entry.contentType) return CONTENT_TYPE_LABEL[entry.contentType] ?? entry.contentType
+  return 'Arquivado'
+}
 
 const undoEntry = ref<HistoryEntry | null>(null)
 let undoTimer: ReturnType<typeof setTimeout> | undefined
@@ -55,13 +73,14 @@ const statusOptions = [
   { value: 'cancelled', label: 'Cancelado' }
 ]
 
-const modelOptions = computed(() => [
-  { value: 'all', label: 'Todos os modelos' },
-  ...Array.from(new Set(historyState.entries.map((e) => e.model))).map((m) => ({
-    value: m,
-    label: m
-  }))
-])
+const contentTypeOptions = computed(() => {
+  const present = new Set<string>()
+  for (const e of historyState.entries) if (e.contentType) present.add(e.contentType)
+  return [
+    { value: 'all', label: 'Todos os tipos' },
+    ...Array.from(present).map((c) => ({ value: c, label: CONTENT_TYPE_LABEL[c] ?? c }))
+  ]
+})
 
 const dateOptions = [
   { value: 'all', label: 'Qualquer data' },
@@ -93,10 +112,9 @@ const filteredEntries = computed(() => {
   const q = search.value.trim().toLowerCase()
   let list = historyState.entries.filter((e) => {
     if (statusFilter.value !== 'all' && e.status !== statusFilter.value) return false
-    if (modelFilter.value !== 'all' && e.model !== modelFilter.value) return false
+    if (contentTypeFilter.value !== 'all' && e.contentType !== contentTypeFilter.value) return false
     if (!withinDateFilter(e)) return false
-    if (q && !e.fileName.toLowerCase().includes(q) && !e.model.toLowerCase().includes(q))
-      return false
+    if (q && !e.fileName.toLowerCase().includes(q)) return false
     return true
   })
   list = [...list].sort((a, b) => {
@@ -167,12 +185,20 @@ async function reuseConfig(entry: HistoryEntry): Promise<void> {
   openMenuId.value = null
   reuseError.value = null
   if (!hasNativeApi) return
+  if (entry.mediaType && entry.mediaType !== 'image') {
+    reuseError.value = 'Reaproveitar configuração só está disponível para entradas de imagem.'
+    return
+  }
+  if (!entry.scaleConfig?.contentType) {
+    reuseError.value = 'Esta configuração é de antes da atualização e não pode mais ser reaproveitada — configure novamente.'
+    return
+  }
   const described = await api.statPath(entry.sourcePath)
   if (!described || described.kind !== 'Imagem') {
     reuseError.value = `Arquivo original não encontrado: ${entry.sourcePath}`
     return
   }
-  const result = await addFiles([described], entry.scaleConfig.model)
+  const result = await addFiles([described])
   const newJob = result.added[0]
   if (!newJob) {
     reuseError.value = 'Este arquivo já está na fila atual.'
@@ -237,9 +263,9 @@ function applyLimit(): void {
             </div>
             <div class="filter-select-wrap">
               <AppSelect
-                :model-value="modelFilter"
-                :options="modelOptions"
-                @update:model-value="(v) => (modelFilter = v as string)"
+                :model-value="contentTypeFilter"
+                :options="contentTypeOptions"
+                @update:model-value="(v) => (contentTypeFilter = v as string)"
               />
             </div>
             <div class="filter-select-wrap">
@@ -306,7 +332,7 @@ function applyLimit(): void {
                 <div class="card-meta">
                   <span>{{ fmtDateTime(entry.createdAt) }}</span>
                   <span>·</span>
-                  <span>{{ entry.model }}</span>
+                  <span>{{ contentTypeLabel(entry) }}</span>
                   <span v-if="entry.scale">· {{ entry.scale }}x</span>
                 </div>
                 <div class="card-meta">

@@ -21,85 +21,21 @@ from .utils.download import download_with_fallback, load_file_from_url, local_fi
 # computed hash is logged on download instead of failing.
 MODELS = {
     # -------------------------- Fotos -------------------------- #
-    'realesrgan-x4': {
-        'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth'],
-        'sha256': ['4fa0d38905f75ac06eb49a7951b426670021be3018265fd191d2125df9d682f1'],
-        'scale': 4,
-        'category': 'Fotos',
-        'description': 'Padrão para fotos reais, equilíbrio nitidez/naturalidade',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
-    'realesrgan-x2': {
-        'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth'],
-        'sha256': ['49fafd45f8fd7aa8d31ab2a22d14d91b536c34494a5cfe31eb5d89c2fa266abb'],
-        'scale': 2,
-        'category': 'Fotos',
-        'description': 'Quando 4x é exagero; só dobra a resolução',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
-    'realesr-general': {
-        'urls': [
-            'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth',
-            'https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-wdn-x4v3.pth',
-        ],
-        'sha256': [
-            '8dc7edb9ac80ccdc30c3a5dca6616509367f05fbc184ad95b731f05bece96292',
-            '1641f8c4464b9f097c9fdda5589273713f67cf59f3d909e0bd688f0cee269dca',
-        ],
-        'scale': 4,
-        'category': 'Fotos',
-        'description': 'Leve e rápido, bom default geral (suporta --denoise)',
-        'architecture': 'SRVGGNetCompact',
-    },
-    'realesrnet-x4': {
-        'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.1/RealESRNet_x4plus.pth'],
-        'sha256': ['a820b9bde89a874d7599d545567308ce6c128fc8754a53208eda016d40aa81df'],
-        'scale': 4,
-        'category': 'Fotos',
-        'description': 'Resultado mais suave e com menos artefatos',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
-    'ultrasharp': {
-        'urls': ['https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x-UltraSharp.pth'],
-        'sha256': ['a5812231fc936b42af08a5edba784195495d303d5b3248c24489ef0c4021fe01'],
-        'scale': 4,
-        'category': 'Fotos',
-        'description': 'Muito nítido; ótimo em JPEG comprimido',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
+    # T023/T024: benchmark real (docs/models/BENCHMARK_RESULTS.md) elegeu este
+    # como única implementação para content_type=photo (FR-095) — os outros
+    # cinco candidatos que disputaram (realesrgan-x4/x2, realesr-general,
+    # realesrnet-x4, nomos2-dat2) foram removidos; ver legacy_identifiers.py.
     'nomos-webphoto': {
         'urls': ['https://huggingface.co/Phips/4xNomosWebPhoto_RealPLKSR/resolve/main/4xNomosWebPhoto_RealPLKSR.safetensors'],
         'sha256': ['9be0228f98156a100d6636d99b373ed2785b999723f9adc4cca504329ab157f2'],
         'scale': 4,
         'category': 'Fotos',
-        'description': 'RealPLKSR p/ fotos reais da web (ruído, blur, recompressão)',
+        'description': 'Padrão para fotos reais — vencedor do benchmark de perfis (LPIPS)',
         'architecture': 'RealPLKSR',
     },
-    'nomos2-dat2': {
-        'urls': ['https://huggingface.co/Phips/4xNomos2_hq_dat2/resolve/main/4xNomos2_hq_dat2.safetensors'],
-        'sha256': ['278c78ba9fd333ace4b02b3aeaa0254428baea20a63d3e995e2e4f8a60173f6f'],
-        'scale': 4,
-        'category': 'Fotos',
-        'description': 'DAT-2 (transformer), muito nítido — pesado, evite p/ vídeo/lote grande',
-        'architecture': 'DAT-2 (transformer)',
-    },
     # -------------------------- Anime -------------------------- #
-    'realesrgan-anime': {
-        'urls': ['https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.2.4/RealESRGAN_x4plus_anime_6B.pth'],
-        'sha256': ['f872d837d3c90ed2e05227bed711af5671a6fd1c9f7d7e91c911a61f155e99da'],
-        'scale': 4,
-        'category': 'Anime',
-        'description': 'Modelo leve otimizado para anime/ilustração',
-        'architecture': 'RRDBNet (ESRGAN, 6 blocos)',
-    },
-    'animesharp': {
-        'urls': ['https://huggingface.co/Kim2091/AnimeSharp/resolve/main/4x-AnimeSharp.pth'],
-        'sha256': ['e7a7de2dafd7331c1992862bbbcd9e9712a9f9f8e6303f0aaa59b4341d359bab'],
-        'scale': 4,
-        'category': 'Anime',
-        'description': 'Linhas limpas em ilustrações e texto',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
+    # T023/T024: vencedor do benchmark para content_type=anime_image;
+    # realesrgan-anime (o outro candidato) foi removido — ver legacy_identifiers.py.
     'hfa2k-span': {
         'urls': ['https://huggingface.co/Phips/2xHFA2kSPAN/resolve/main/2xHFA2kSPAN.safetensors'],
         'sha256': ['616666ffaa9ccdf604e3d6b98bf1ec32c6ed08c4d36da7fed1d013843e5a45e9'],
@@ -134,32 +70,23 @@ MODELS = {
         'architecture': 'SPAN',
     },
     # -------------------------- Vídeo Real -------------------------- #
-    'liveaction-span': {
-        'urls': ['https://raw.githubusercontent.com/jcj83429/upscaling/'
-                 'f73a3a02874360ec6ced18f8bdd8e43b5d7bba57/2xLiveActionV1_SPAN/2xLiveActionV1_SPAN_490000.pth'],
-        'sha256': ['8b166c75831ea7f694d9058ee9c8df8148af8cc1d2b57e69e6581b15cab572f7'],
+    # T045: docs/models/MODEL_LICENSES.md §3-ter — Apache-2.0 em código e
+    # pesos, dataset 100% domínio público (CC0), sem ressalva de licença.
+    # Variante sem denoise (mais estável entre quadros que a alternativa com
+    # denoise agressivo, que não foi lançada por Phhofm neste release).
+    'realplksr-video-real': {
+        'urls': ['https://github.com/Phhofm/models/releases/download/'
+                 '2xPublic_realplksr_dysample_layernorm_real/2xPublic_realplksr_dysample_layernorm_real.safetensors'],
+        'sha256': ['5eb81e8c3e21d57b0ea2aa7931910c97c263c1f23ef9b35fabbd46e98471cd44'],
         'scale': 2,
         'category': 'Vídeo Real',
-        'description': 'Vídeo live-action (não-anime): h264/h265/VP9, sem denoise agressivo',
-        'architecture': 'SPAN',
+        'description': 'Padrão para vídeo real — estável entre quadros, sem denoise agressivo',
+        'architecture': 'RealPLKSR (dysample, layernorm)',
     },
-    # ----------------------- Restauração ----------------------- #
-    'nmkd-siax': {
-        'urls': ['https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x_NMKD-Siax_200k.pth'],
-        'sha256': ['560424d9f68625713fc47e9e7289a98aabe1d744e1cd6a9ae5a35e9957fd127e'],
-        'scale': 4,
-        'category': 'Restauração',
-        'description': 'Universal p/ imagens limpas ou pouco comprimidas',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
-    'nmkd-superscale': {
-        'urls': ['https://huggingface.co/uwg/upscaler/resolve/main/ESRGAN/4x_NMKD-Superscale-SP_178000_G.pth'],
-        'sha256': ['1d1b0078fe71446e0469d8d4df59e96baa80d83cda600d68237d655830821bcc'],
-        'scale': 4,
-        'category': 'Restauração',
-        'description': 'Fotos reais com ruído e artefatos',
-        'architecture': 'RRDBNet (ESRGAN)',
-    },
+    # Nota: a categoria "Restauração" tinha modelos aqui
+    # (nmkd-siax, nmkd-superscale) removidos por licença —
+    # ver docs/models/MODEL_LICENSES.md §1/§6. `real_video` é reintroduzido
+    # com um modelo aprovado em uma fase posterior (ver tasks.md T045).
     # ------------------ Limpeza (1x, sem upscale) ------------------ #
     'denoise': {
         'urls': ['https://github.com/Phhofm/models/releases/download/1xDeNoise_realplksr_otf/'
@@ -189,18 +116,15 @@ MODELS = {
     },
 }
 
-# Old model names kept as aliases for backward compatibility.
+# Old model names kept as aliases for backward compatibility. The photo/anime
+# aliases that pointed at models T024 removed are gone too — legacy_identifiers.py
+# is what gives those old names a friendly "archived" message now.
 ALIASES = {
-    'photo-x4': 'realesrgan-x4',
-    'photo-x2': 'realesrgan-x2',
-    'photo-soft-x4': 'realesrnet-x4',
-    'anime-x4': 'realesrgan-anime',
     'anime-video': 'realesr-animevideo',
     'anime-video-x4': 'realesr-animevideo',
-    'fast-x4': 'realesr-general',
 }
 
-DEFAULT_IMAGE_MODEL = 'realesrgan-x4'
+DEFAULT_IMAGE_MODEL = 'nomos-webphoto'
 DEFAULT_VIDEO_MODEL = 'realesr-animevideo'
 
 
@@ -316,6 +240,11 @@ def resolve_model(
         return name_or_path, None
     name = canonical_name(name_or_path)
     if name not in MODELS:
+        from .legacy_identifiers import removal_reason
+        reason = removal_reason(name)
+        if reason is not None:
+            raise ValueError(f'Modelo {name_or_path!r} não está mais disponível: {reason}. '
+                             f'Reprocesse com um perfil atual (Rápido/Equilibrado/Qualidade).')
         raise ValueError(f'Modelo desconhecido: {name_or_path!r}. '
                          f'Veja as opções com: astros-upscale models')
     entry = MODELS[name]

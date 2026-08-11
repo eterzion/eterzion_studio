@@ -14,7 +14,6 @@ const emit = defineEmits<{
 
 const uploadError = ref<string | null>(null)
 const uploading = ref(false)
-const DEFAULT_MODEL = 'realesrgan-x4'
 
 const jobs = computed(() => queueState.jobs)
 const fileCount = computed(() => jobs.value.length)
@@ -60,7 +59,7 @@ async function pickFiles(): Promise<void> {
   try {
     const result = await api.selectFiles()
     if (result.canceled) return
-    reportResult(await addFiles(result.files, DEFAULT_MODEL))
+    reportResult(await addFiles(result.files))
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'Falha ao selecionar arquivos.'
   } finally {
@@ -81,7 +80,7 @@ async function pickFolder(): Promise<void> {
       uploadError.value = 'Nenhuma imagem compatível foi encontrada nessa pasta.'
       return
     }
-    reportResult(await addFiles(result.files, DEFAULT_MODEL))
+    reportResult(await addFiles(result.files))
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'Falha ao selecionar a pasta.'
   } finally {
@@ -99,12 +98,7 @@ async function handleFilesDropped(dropped: File[]): Promise<void> {
     const described = await Promise.all(
       dropped.map((file) => api.statPath(api.getPathForFile(file)))
     )
-    reportResult(
-      await addFiles(
-        described.filter((d) => d !== null),
-        DEFAULT_MODEL
-      )
-    )
+    reportResult(await addFiles(described.filter((d) => d !== null)))
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'Falha ao importar os arquivos.'
   } finally {
@@ -124,7 +118,7 @@ async function handlePaste(event: ClipboardEvent): Promise<void> {
     const ext = item.type === 'image/jpeg' ? '.jpg' : item.type === 'image/webp' ? '.webp' : '.png'
     const path = await api.saveTempImage(buffer, ext)
     const described = await api.statPath(path)
-    if (described) reportResult(await addFiles([described], DEFAULT_MODEL))
+    if (described) reportResult(await addFiles([described]))
   } catch (error) {
     uploadError.value = error instanceof Error ? error.message : 'Falha ao colar a imagem.'
   }

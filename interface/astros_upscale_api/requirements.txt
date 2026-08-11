@@ -8,4 +8,5 @@ realesrgan
 pillow
 opencv-python
 cryptography
-facexlib
+psutil>=5.9
+nvidia-ml-py>=12.0

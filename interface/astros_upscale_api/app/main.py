@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import routes_files, routes_identity, routes_jobs, routes_models, routes_preview, ws_progress
+from app.api import (routes_components, routes_files, routes_identity, routes_jobs, routes_license, routes_preview,
+                     ws_progress)
 from app.config import settings
 from app.core import install_identity, job_manager, secure_tempdir, worker_supervisor
 
@@ -15,10 +16,11 @@ app.add_middleware(
 )
 
 app.include_router(routes_jobs.router, prefix='/jobs', tags=['jobs'])
-app.include_router(routes_models.router, prefix='/models', tags=['models'])
+app.include_router(routes_components.router, prefix='/components', tags=['components'])
 app.include_router(routes_files.router, tags=['files'])
 app.include_router(routes_identity.router, prefix='/identity', tags=['identity'])
 app.include_router(routes_preview.router, prefix='/preview', tags=['preview'])
+app.include_router(routes_license.router, prefix='/license', tags=['license'])
 app.include_router(ws_progress.router, tags=['ws'])
 
 

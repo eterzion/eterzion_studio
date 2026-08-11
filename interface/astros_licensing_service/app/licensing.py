@@ -131,6 +131,18 @@ def release_installation(license_id: str, install_id: str) -> bool:
         return cur.rowcount > 0
 
 
+def touch_installation(install_id: str) -> bool:
+    """Records a successful reachable check-in (T035/FR-056) — every time a
+    client can reach this service at all, its offline clock resets. Called by
+    GET /activations/{install_id}/status, which the local license gate (T016)
+    already calls on every job creation."""
+    with get_conn() as conn:
+        cur = conn.execute(
+            'UPDATE installations SET last_seen_at = ? WHERE install_id = ?', (_now_iso(), install_id)
+        )
+        return cur.rowcount > 0
+
+
 def get_installation(install_id: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute('SELECT * FROM installations WHERE install_id = ?', (install_id,)).fetchone()

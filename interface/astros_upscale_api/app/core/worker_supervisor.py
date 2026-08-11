@@ -26,9 +26,10 @@ from app.core import secure_tempdir
 _API_ROOT = Path(__file__).resolve().parent.parent.parent  # app/core -> app -> astros_upscale_api
 
 
-class ProcessResult(TypedDict):
+class ProcessResult(TypedDict, total=False):
     source_size: tuple[int, int]
     output_size: tuple[int, int]
+    audio_meta: dict
 
 
 class WorkerCrashed(RuntimeError):
@@ -187,20 +188,33 @@ class WorkerSupervisor:
         face_recovery: bool = False,
         face_recovery_strength: int = 80,
         denoise_filter_strength: int = 0,
+        media_type: str = 'image',
+        operation: str = 'enhance',
+        half: bool = True,
+        stabilize: bool = False,
+        tile_threshold: int | None = None,
+        tile_size: int | None = None,
     ) -> ProcessResult:
         """Blocking call — meant to run inside job_manager's single-worker
         executor thread, same as the direct-call version it replaces.
         `protected`, when set, tells the worker to fetch the orchestration
         logic from the licensing service (Fase 4) instead of using its own
-        static import — see isolated_worker.py's _resolve_upscaler_class()."""
+        static import — see isolated_worker.py's module registry.
+
+        `media_type`/`operation` select which handler the isolated worker
+        dispatches to (T014) — default to the only one implemented today
+        (image/enhance, i.e. Upscaler); video/audio handlers land with
+        T042/T053 without any change to this IPC layer."""
         self.ensure_started()
         assert self._conn is not None
         self._conn.send({
-            'type': 'process', 'job_id': job_id, 'input_path': input_path, 'master_path': master_path,
+            'type': 'process', 'job_id': job_id, 'media_type': media_type, 'operation': operation,
+            'input_path': input_path, 'master_path': master_path,
             'model': model, 'models_dir': models_dir, 'device': device, 'scale': scale,
             'custom_size': custom_size, 'denoise': denoise, 'protected': protected, 'sharpen': sharpen,
             'face_recovery': face_recovery, 'face_recovery_strength': face_recovery_strength,
-            'denoise_filter_strength': denoise_filter_strength,
+            'denoise_filter_strength': denoise_filter_strength, 'half': half, 'stabilize': stabilize,
+            'tile_threshold': tile_threshold, 'tile_size': tile_size,
         })
         while True:
             try:
@@ -213,7 +227,12 @@ class WorkerSupervisor:
             elif msg_type == 'stage' and on_stage:
                 on_stage(msg['stage'])
             elif msg_type == 'result':
-                return {'source_size': tuple(msg['source_size']), 'output_size': tuple(msg['output_size'])}
+                result: ProcessResult = {
+                    'source_size': tuple(msg['source_size']), 'output_size': tuple(msg['output_size']),
+                }
+                if msg.get('audio_meta') is not None:
+                    result['audio_meta'] = msg['audio_meta']
+                return result
             elif msg_type == 'error':
                 raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
 

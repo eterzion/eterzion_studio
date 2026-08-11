@@ -75,13 +75,16 @@ class FakeSupervisor:
 
     def process(self, *, job_id, input_path, master_path, model, models_dir, device, scale,
                 custom_size, denoise, on_progress=None, on_stage=None, protected=None,
-                sharpen=0, face_recovery=False, face_recovery_strength=80, denoise_filter_strength=0):
+                sharpen=0, face_recovery=False, face_recovery_strength=80, denoise_filter_strength=0,
+                media_type='image', operation='enhance', half=True, stabilize=False,
+                tile_threshold=None, tile_size=None):
         import os
 
         self.process_calls.append({
             'job_id': job_id, 'input_path': input_path, 'master_path': master_path, 'model': model,
             'device': device, 'scale': scale, 'custom_size': custom_size, 'denoise': denoise,
             'sharpen': sharpen, 'face_recovery': face_recovery, 'denoise_filter_strength': denoise_filter_strength,
+            'media_type': media_type, 'operation': operation, 'half': half, 'stabilize': stabilize,
         })
         for pct in self._progress_events:
             if on_progress:
@@ -121,11 +124,12 @@ def real_input_file(tmp_path):
 @pytest.fixture
 def default_job_params():
     """Factory fixture — call it to get a params dict shaped like what
-    routes_jobs.py's JobParams.model_dump() actually produces."""
+    routes_jobs.py's _build_job_params() actually produces: intent only
+    (scale/profile/device/adjustments), never a model identifier (FR-011)."""
 
     def _make(**overrides):
         params = {
-            'model': 'realesrgan-x4', 'device': 'auto', 'scale': 4, 'custom_size': None,
+            'scale': '4x', 'profile': 'fast', 'device': 'auto', 'custom_size': None,
             'adjustments': {
                 'denoise': 50, 'deblur': 0, 'detail_recovery': 0, 'face_correction': False,
                 'face_recovery_strength': 80, 'denoise_filter_enabled': False, 'denoise_filter_strength': 0,

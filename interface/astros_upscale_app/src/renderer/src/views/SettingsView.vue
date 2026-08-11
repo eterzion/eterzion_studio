@@ -12,7 +12,7 @@ import {
   RotateCcw,
   Bug,
   Check,
-  ExternalLink
+  Award
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import SettingRow from '../components/SettingRow.vue'
@@ -23,10 +23,9 @@ import RangeSlider from '../components/RangeSlider.vue'
 import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/settings'
 import { ACCENT_COLORS, type AccentColor } from '../theme'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
-import { modelConfigState } from '../store/modelConfig'
 import { clearHistory, historyState } from '../store/history'
 import { initLicense } from '../store/license'
-import { getModels } from '../backend'
+import { listComponents } from '../backend'
 import { api, hasNativeApi } from '../api'
 
 function reloadLicense(): void {
@@ -43,9 +42,30 @@ const languageOptions = computed(() => [
   ...SUPPORTED_LOCALES.map((l) => ({ value: l.value as string, label: l.label }))
 ])
 
-const emit = defineEmits<{
-  navigate: [key: 'modelos']
-}>()
+// T073/FR-045/SC-012 — real attribution for every component this build
+// actually ships, sourced from docs/models/MODEL_LICENSES.md (the legal
+// source of truth) and app/core/license_registry.py (its backend
+// projection). Static here because it's a fixed disclosure obligation of
+// already-approved licenses, not something the API resolves per request.
+// `work` cites the actual published model/work being attributed (required by
+// CC-BY-4.0/Apache-2.0 NOTICE terms) — never an internal routing identifier;
+// `capability` is the same human-facing label used everywhere else in the
+// product (FR-009/FR-063), always listed first.
+const CREDITS = [
+  { capability: 'Melhoria de imagem — Foto', work: '4xNomosWebPhoto_RealPLKSR', author: 'Philip Hofmann (Phhofm)', license: 'CC-BY-4.0' },
+  { capability: 'Melhoria de imagem — Anime/Ilustração', work: '2xHFA2kSPAN', author: 'Philip Hofmann (Phhofm)', license: 'CC-BY-4.0' },
+  { capability: 'Melhoria de vídeo — Anime/Animação', work: 'Real-ESRGAN (realesr-animevideov3)', author: 'Xintao Wang', license: 'BSD-3-Clause' },
+  { capability: 'Melhoria de vídeo — Filmagem real', work: '2xPublic_realplksr_dysample_layernorm_real', author: 'Philip Hofmann (Phhofm)', license: 'Apache-2.0' },
+  { capability: 'Melhoria de áudio — Voz', work: 'audiosronnx', author: 'TigreGotico', license: 'Apache-2.0' },
+  {
+    capability: 'Melhoria de áudio — Música',
+    work: 'SonicMaster',
+    author: 'AMAAI Lab',
+    license: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open, ver MODEL_LICENSES.md §3-bis)',
+  },
+  { capability: 'Realce de rosto (imagem)', work: 'YuNet', author: 'OpenCV / libfacedetection', license: 'MIT' },
+  { capability: 'Processamento de mídia', work: 'FFmpeg', author: 'FFmpeg developers', license: 'LGPL v2.1+ (build de distribuição)' },
+]
 
 const clearConfirm = ref(false)
 function confirmClearHistory(): void {
@@ -61,8 +81,8 @@ function confirmClearHistory(): void {
 const cacheMessage = ref<string | null>(null)
 async function clearModelsCache(): Promise<void> {
   try {
-    await getModels()
-    cacheMessage.value = 'Cache de modelos atualizado a partir da API.'
+    await listComponents()
+    cacheMessage.value = 'Cache de componentes atualizado a partir da API.'
   } catch (error) {
     cacheMessage.value =
       error instanceof Error ? `Falha ao atualizar: ${error.message}` : 'Falha ao atualizar cache.'
@@ -221,12 +241,6 @@ const outputFolderLabel = computed(
           </div>
         </div>
         <div class="group-body">
-          <SettingRow label="Modelo padrão" description="Definido na aba Modelos">
-            <button class="link-btn" type="button" @click="emit('navigate', 'modelos')">
-              {{ modelConfigState.saved?.modelName ?? 'Nenhum definido' }}
-              <ExternalLink :size="12" />
-            </button>
-          </SettingRow>
           <SettingRow label="Escala padrão" description="Fator pré-selecionado para novas imagens">
             <SegmentedControl
               :model-value="String(settingsState.defaultScalePreset)"
@@ -445,6 +459,27 @@ const outputFolderLabel = computed(
           </SettingRow>
         </div>
       </section>
+
+      <section class="settings-group">
+        <div class="group-header">
+          <div class="group-icon"><Award :size="18" /></div>
+          <div>
+            <h2 class="group-title">Créditos</h2>
+            <p class="group-description">
+              Atribuição obrigatória dos componentes usados (ver docs/models/MODEL_LICENSES.md)
+            </p>
+          </div>
+        </div>
+        <div class="group-body credits-body">
+          <ul class="credits-list">
+            <li v-for="credit in CREDITS" :key="credit.capability">
+              <span class="credit-name">{{ credit.capability }}</span>
+              <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
+              <span class="credit-license">{{ credit.license }}</span>
+            </li>
+          </ul>
+        </div>
+      </section>
     </div>
   </div>
 </template>
@@ -472,6 +507,40 @@ const outputFolderLabel = computed(
   background: var(--surface-1);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-lg);
+}
+
+.credits-body {
+  padding: var(--space-3);
+}
+.credits-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.credits-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: var(--fs-body-sm);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-1);
+}
+.credits-list li:last-child {
+  border-bottom: none;
+}
+.credit-name {
+  font-weight: 600;
+  min-width: 220px;
+}
+.credit-author {
+  color: var(--text-secondary);
+}
+.credit-license {
+  color: var(--text-tertiary);
+  margin-left: auto;
 }
 
 .group-header {

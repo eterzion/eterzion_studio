@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import type { ContentType, MediaType } from '../backend'
 import type { Job, JobStatus, ScaleConfig } from './jobs'
 import { settingsState } from './settings'
 
@@ -18,12 +19,23 @@ export interface HistoryEntry {
   originalHeight: number | null
   newWidth?: number
   newHeight?: number
-  model: string
+  /** Present on entries recorded before this field existed — kept only so
+   *  History can still show something for old rows (see HistoryView.vue's
+   *  "Arquivado" fallback). New entries never set it, they set contentType. */
+  model?: string
+  contentType?: ContentType | null
+  /** T066 — absent on entries recorded before video/audio history existed;
+   *  HistoryView.vue treats a missing value as 'image' (the only kind that
+   *  existed then). */
+  mediaType?: MediaType
   scale: number
   outputSizeBytes?: number
   outputPath?: string
   errorMessage?: string
-  scaleConfig: ScaleConfig // snapshot, for "reuse config"
+  /** Only ever set for image-enhance entries (ImageEditorView's "reuse
+   *  config" feature) — video/audio/compress-convert entries never carry
+   *  this, since ScaleConfig is an image-specific shape (T066). */
+  scaleConfig?: ScaleConfig
 }
 
 export const historyState = reactive<{ entries: HistoryEntry[] }>({
@@ -87,14 +99,15 @@ export function recordJob(job: Job, status: JobStatus): void {
       createdAt: job.createdAt,
       originalWidth: job.sourceMeta.width,
       originalHeight: job.sourceMeta.height,
-      model: job.scaleConfig.model,
+      contentType: job.scaleConfig.contentType,
+      mediaType: 'image',
       scale: job.scaleConfig.mode === 'preset' ? job.scaleConfig.presetFactor : 0,
       scaleConfig: { ...job.scaleConfig }
     }
     historyState.entries.push(entry)
   }
   entry.status = status as HistoryStatus
-  entry.model = job.scaleConfig.model
+  entry.contentType = job.scaleConfig.contentType
   entry.scaleConfig = { ...job.scaleConfig }
   if (job.outputMeta) {
     entry.newWidth = job.outputMeta.width
@@ -106,6 +119,57 @@ export function recordJob(job: Job, status: JobStatus): void {
     entry.completedAt = Date.now()
   }
   if (status === 'error') entry.errorMessage = job.errorMessage
+
+  persist()
+  pruneToLimit()
+}
+
+/** T066 — the video/audio/compress-convert screens each keep their own
+ *  self-contained job list (see VideoView.vue/AudioView.vue/
+ *  CompressConvertView.vue's own comments on why: ScaleConfig is an
+ *  image-only shape) instead of store/jobs.ts's queueState. This is the
+ *  media-agnostic equivalent of recordJob() for those — same "create on
+ *  first call, update in place after" behavior, without requiring a full
+ *  image Job/ScaleConfig object those screens never have. */
+export interface SimpleJobRecord {
+  id: string
+  sourcePath: string
+  fileName: string
+  status: HistoryStatus
+  mediaType: MediaType
+  contentType?: ContentType | null
+  createdAt: number
+  outputPath?: string
+  outputSizeBytes?: number
+  errorMessage?: string
+}
+
+export function recordSimpleJob(record: SimpleJobRecord): void {
+  let entry = historyState.entries.find((e) => e.id === record.id)
+  if (!entry) {
+    entry = {
+      id: record.id,
+      sourcePath: record.sourcePath,
+      fileName: record.fileName,
+      status: record.status,
+      createdAt: record.createdAt,
+      originalWidth: null,
+      originalHeight: null,
+      contentType: record.contentType,
+      mediaType: record.mediaType,
+      scale: 0
+    }
+    historyState.entries.push(entry)
+  }
+  entry.status = record.status
+  entry.contentType = record.contentType
+  entry.mediaType = record.mediaType
+  if (record.outputPath) entry.outputPath = record.outputPath
+  if (record.outputSizeBytes != null) entry.outputSizeBytes = record.outputSizeBytes
+  if (record.status === 'done' || record.status === 'error' || record.status === 'cancelled') {
+    entry.completedAt = Date.now()
+  }
+  if (record.status === 'error') entry.errorMessage = record.errorMessage
 
   persist()
   pruneToLimit()

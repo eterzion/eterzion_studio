@@ -52,6 +52,13 @@ def _http_post(url: str, body: dict) -> dict:
         raise ProtectedLoadError(f'{url} -> HTTP {error.code}: {detail}') from error
 
 
+def installation_status(base_url: str, install_id: str) -> dict:
+    """T036 — the same GET .../status endpoint license_gate.py uses, exposed
+    here for routes_license.py's release flow, which needs the license_id
+    tied to this installation (check_gate()'s GateResult doesn't carry it)."""
+    return _http_get(f'{base_url}/activations/{install_id}/status')
+
+
 def activate(base_url: str, license_id: str, identity: InstallIdentity) -> dict:
     return _http_post(f'{base_url}/activations', {
         'license_id': license_id,
@@ -59,6 +66,20 @@ def activate(base_url: str, license_id: str, identity: InstallIdentity) -> dict:
         'signing_public_key_b64': identity.signing_public_key_b64,
         'encryption_public_key_b64': identity.encryption_public_key_b64,
     })
+
+
+def release(base_url: str, license_id: str, install_id: str) -> dict:
+    """T036 — releases this installation's seat (FR-054)."""
+    req = urllib.request.Request(
+        f'{base_url}/activations/{install_id}?license_id={license_id}',
+        headers={'Content-Type': 'application/json'}, method='DELETE',
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode('utf-8', errors='replace')
+        raise ProtectedLoadError(f'{base_url} -> HTTP {error.code}: {detail}') from error
 
 
 def _trusted_public_key(base_url: str, pinned_b64: str) -> bytes:

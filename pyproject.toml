@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Upscale de imagens e vídeos com IA, sem dependência de BasicSR"
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "LicenseRef-Personal-NonCommercial-NoDistribution" }
+license = { text = "Proprietary" }
 keywords = ["super-resolution", "upscale", "pytorch", "image-restoration", "video"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -26,14 +26,20 @@ dependencies = [
     "python-ffmpeg>=2.0",
     "spandrel>=0.4",
     "torch>=2.1",
+    "torchaudio>=2.1",
     "tqdm",
+    "psutil>=5.9",
+    "nvidia-ml-py>=12.0",
+    "librosa>=0.10",
 ]
 
 [project.optional-dependencies]
 audio = [
-    "denoiser",
-    "voicefixer",
-    "audiosronnx",
+    # denoiser (CC-BY-NC-4.0) and voicefixer's unlicensed vocoder checkpoint were
+    # removed per docs/models/MODEL_LICENSES.md — replaced by DSP (afftdn/loudnorm)
+    # in astros_upscale.audio plus the two commercially-clean model paths below.
+    "audiosronnx",  # Apache-2.0 code and weights — speech bandwidth extension
+    "sonicmaster @ git+https://github.com/AMAAI-Lab/SonicMaster.git",  # music — approved_conditional, see MODEL_LICENSES.md §3-bis
     "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",
 ]
 

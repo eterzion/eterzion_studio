@@ -1,10 +1,22 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-JobStatusValue = Literal['pending', 'queued', 'processing', 'done', 'error', 'cancelled']
-ErrorCategory = Literal['out_of_memory', 'corrupted_input', 'model_failure', 'disk_full']
+JobStatusValue = Literal['pending', 'pending_confirmation', 'queued', 'processing', 'done', 'error', 'cancelled']
+ErrorCategory = Literal[
+    'out_of_memory', 'corrupted_input', 'model_failure', 'disk_full',
+    'hardware_insufficient', 'license_invalid',
+]
 ConflictMode = Literal['overwrite', 'rename', 'ask']
+
+# --- Unified Media Processing (data-model.md / contracts/api.md) ---
+MediaType = Literal['image', 'video', 'audio']
+Operation = Literal['enhance', 'compress', 'convert']
+Profile = Literal['fast', 'balanced', 'quality']
+ContentType = Literal['photo', 'anime_image', 'real_video', 'anime_video', 'speech', 'music']
+InstallState = Literal['not_installed', 'installing', 'installed', 'update_available']
+LicenseState = Literal['active', 'offline_tolerance', 'offline_expiring', 'blocked', 'not_activated']
+LicenseStatusValue = Literal['approved', 'approved_conditional']
 
 
 class CustomSize(BaseModel):
@@ -22,20 +34,42 @@ class Adjustments(BaseModel):
     denoise_filter_strength: int = Field(default=45, ge=0, le=100)
 
 
-class JobParams(BaseModel):
-    model: str = 'realesrgan-x4'
+class OutputTarget(BaseModel):
+    """Where/how the result is written — format, directory, name, conflict policy."""
+    format: str
+    directory: str | None = None
+    filename: str | None = None
+    conflict: ConflictMode = 'rename'
+
+
+class MediaRequest(BaseModel):
+    """The processing-intent contract (contracts/api.md `POST /jobs`, data-model.md
+    MediaRequest). `extra='forbid'` is what makes FR-011 real: a `model`/`engine`/
+    `checkpoint_id` field (or any other unknown field) is a 422 validation error,
+    never a silently-ignored extra key — the API only ever accepts intent, the
+    implementation is resolved internally by profile_resolver.py."""
+    model_config = ConfigDict(extra='forbid')
+
+    media_type: MediaType
+    operation: Operation
+    scale: Literal['2x', '4x'] | None = None
+    profile: Profile | None = None
+    content_type_override: ContentType | None = None
+    input_path: str
+    output_target: OutputTarget | None = None
+    secondary_elements_ack: bool = False
     device: str = 'auto'
-    scale: int = 4
     custom_size: CustomSize | None = None
-    adjustments: Adjustments = Adjustments()
+    quality: int | None = Field(default=None, ge=0, le=100)  # compress/convert only (FR-027)
 
 
 class LocalJobRequest(BaseModel):
     """Body for POST /jobs/local — the same local-desktop convenience as
     ExportRequest.output_dir, but for input: skips the multipart upload and points
-    the job straight at a file already on disk (API and client on the same machine)."""
-    input_path: str
-    params: JobParams = JobParams()
+    the job straight at a file already on disk (API and client on the same machine).
+    `media_request.input_path` IS the path — there is no separate top-level field."""
+    media_request: MediaRequest
+    adjustments: Adjustments = Adjustments()
 
 
 class ExportRequest(BaseModel):
@@ -50,14 +84,25 @@ class ExportRequest(BaseModel):
 
 
 class SizeMeta(BaseModel):
-    width: int
-    height: int
+    # width/height are None for audio and for any compress/convert result —
+    # those operations don't produce a pixel-dimensioned output (FR-025/FR-028).
+    width: int | None = None
+    height: int | None = None
     size_bytes: int | None = None
+
+
+class CapacityCheck(BaseModel):
+    fits: bool
+    estimated_duration: float | None = None
+    limiting_resource: str | None = None
 
 
 class JobStatus(BaseModel):
     id: str
     status: JobStatusValue
+    media_type: MediaType = 'image'
+    operation: Operation = 'enhance'
+    content_type_detected: ContentType | None = None
     progress: int = 0
     stage: str | None = None
     eta_seconds: int | None = None
@@ -66,6 +111,7 @@ class JobStatus(BaseModel):
     output_path: str | None = None
     error: str | None = None
     error_category: ErrorCategory | None = None
+    capacity_check: CapacityCheck | None = None
     created_at: str
     processing_started_at: str | None = None
     processing_ended_at: str | None = None
@@ -78,3 +124,36 @@ class ModelInfo(BaseModel):
     category: str
     scale: int
     description: str
+
+
+class Component(BaseModel):
+    """`GET /components` — capability-first listing, never a technical name
+    (FR-063/FR-064). No selection affordance: only install/update/remove."""
+    id: str
+    capability_label: str
+    size_mb: int
+    install_state: InstallState
+    update_available: bool = False
+
+
+class ComponentDetails(Component):
+    """`GET /components/{id}/details` — the one opt-in place technical detail is
+    ever shown (FR-065/FR-066)."""
+    technical_name: str
+    version: str
+    provenance: str
+    license: str
+
+
+class DetectContentTypeRequest(BaseModel):
+    """Body for POST /content-type/detect — lets the UI show a correct default
+    on the editable content-type indicator (FR-096) before a Job exists."""
+    input_path: str
+    media_type: MediaType
+
+
+class LicenseStatusResponse(BaseModel):
+    state: LicenseState
+    installations_used: int
+    installations_limit: int
+    offline_days_remaining: int | None = None

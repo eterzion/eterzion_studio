@@ -39,6 +39,13 @@ _MANIFEST_PATH = _CORE_DIR / 'integrity_manifest.json'
 PROTECTED_FILES = (
     'isolated_worker.py',
     'upscaler.py',
+    # T042/T053 — video_upscaler.py/audio_processor.py are dispatched from the
+    # same isolated_worker.py _MODULE_REGISTRY as upscaler.py and run in the
+    # same trust boundary; leaving them out of this list would mean a local
+    # tamperer could alter what those handlers actually run undetected.
+    'video_upscaler.py',
+    'audio_processor.py',
+    'capacity.py',
     'worker_supervisor.py',
     'protected_loader.py',
     'install_identity.py',

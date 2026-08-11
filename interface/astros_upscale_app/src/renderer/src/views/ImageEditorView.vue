@@ -7,11 +7,9 @@ import CompareSlider from '../components/CompareSlider.vue'
 import ComparisonStats from '../components/ComparisonStats.vue'
 import BatchExportModal from '../components/BatchExportModal.vue'
 import AppSelect from '../components/AppSelect.vue'
-import LicenseBadge from '../components/LicenseBadge.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
 import ResolutionStepper from '../components/ResolutionStepper.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
-import { getModelLicense } from '../data/modelLicenses'
 import {
   Minus,
   Plus,
@@ -36,7 +34,7 @@ import {
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../api'
 import { settingsState } from '../store/settings'
-import { getModels, previewDenoise, type ModelInfo, type DenoisePreview } from '../backend'
+import { previewDenoise, type ContentType, type DenoisePreview, type Profile } from '../backend'
 import { ERROR_CATEGORY_COPY } from '../backend'
 import {
   addFiles,
@@ -131,43 +129,32 @@ function onKeyUp(e: KeyboardEvent): void {
   if (e.code === 'Space') spaceHeld.value = false
 }
 
-// ------------------------------- models ------------------------------- //
-const modelsList = ref<ModelInfo[]>([])
-const modelsLoading = ref(true)
+// ------------------------------- content type + profile ------------------------------- //
+// FR-009/FR-063: never a model name — only what the backend actually accepts as
+// intent (profile_resolver.py resolves the implementation internally). The
+// content-type indicator is auto-detected on file add (store/jobs.ts addFiles())
+// but stays editable here — FR-096, and this editor only handles images, so the
+// only two valid content types are photo <-> anime_image.
 const devices = ref<string[]>(['auto', 'cpu', 'cuda'])
-const registryError = ref<string | null>(null)
 const importError = ref<string | null>(null)
 
-// This is the IMAGE editor: video-oriented ("Vídeo/Anime", "Vídeo Real") and 1x
-// cleanup ("Limpeza") models are excluded — they belong to other sections.
-const IMAGE_CATEGORIES = ['Fotos', 'Anime', 'Restauração']
-const imageModels = computed(() =>
-  modelsList.value.filter((m) => IMAGE_CATEGORIES.includes(m.category))
+const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
+  { value: 'photo', label: 'Foto', description: 'Fotografias reais — retratos, paisagens, produtos' },
+  { value: 'anime_image', label: 'Anime/Ilustração', description: 'Arte digital, anime, ilustração com traços definidos' }
+]
+const contentTypeOptions = computed(() =>
+  CONTENT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
 )
 
-// Model list follows the chosen scale (spec: config must be coherent): 2x shows
-// native-2x models, 4x shows native-4x models.
-const compatibleModels = computed(() => {
-  const cfg = job.value?.scaleConfig
-  if (!cfg || cfg.mode !== 'preset') return imageModels.value
-  const matching = imageModels.value.filter((m) => m.scale === cfg.presetFactor)
-  return matching.length ? matching : imageModels.value
-})
-
-const selectedModelInfo = computed(() =>
-  imageModels.value.find((m) => m.name === job.value?.scaleConfig.model)
-)
-const selectedLicenseInfo = computed(() =>
-  job.value ? getModelLicense(job.value.scaleConfig.model) : undefined
+const PROFILE_OPTIONS: { value: Profile; label: string; description: string }[] = [
+  { value: 'fast', label: 'Rápido', description: 'Prioriza velocidade' },
+  { value: 'balanced', label: 'Equilibrado', description: 'Equilíbrio entre velocidade e qualidade' },
+  { value: 'quality', label: 'Qualidade', description: 'Prioriza o melhor resultado' }
+]
+const profileOptions = computed(() =>
+  PROFILE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
 )
 
-const modelOptions = computed(() =>
-  compatibleModels.value.map((m) => ({
-    value: m.name,
-    label: `${m.name} (${m.scale}x)`,
-    description: m.category
-  }))
-)
 const deviceOptions = computed(() =>
   devices.value.map((d) => ({ value: d, label: deviceLabels[d] ?? d }))
 )
@@ -181,13 +168,6 @@ const conflictOptions = [
   { value: 'overwrite', label: 'Sobrescrever' },
   { value: 'ask', label: 'Perguntar' }
 ]
-
-// Keep the selection valid when the scale (and thus the list) changes.
-watch(compatibleModels, (models) => {
-  const j = job.value
-  if (!j || !models.length) return
-  if (!models.some((m) => m.name === j.scaleConfig.model)) j.scaleConfig.model = models[0].name
-})
 
 // Reset the viewport whenever the user switches to another image.
 watch(
@@ -213,8 +193,6 @@ const selectedDeviceDescription = computed(() => {
   const device = job.value?.scaleConfig.device ?? 'auto'
   return deviceDescriptions[device] ?? deviceDescriptions.auto
 })
-
-const denoiseSupported = computed(() => job.value?.scaleConfig.model === 'realesr-general')
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const DENOISE_PRESETS: {
@@ -294,22 +272,10 @@ const elapsedLabel = computed(() => {
   return seconds >= 60 ? `${Math.floor(seconds / 60)}min ${seconds % 60}s` : `${seconds}s`
 })
 
-onMounted(async () => {
+onMounted(() => {
   window.addEventListener('keydown', onKeyDown)
   window.addEventListener('keyup', onKeyUp)
   tickTimer = setInterval(() => (nowTick.value = Date.now()), 1000)
-  try {
-    const registry = await getModels()
-    modelsList.value = registry.models
-    devices.value = registry.devices
-  } catch (error) {
-    registryError.value =
-      error instanceof Error
-        ? `Não foi possível carregar os modelos da API: ${error.message}`
-        : 'Falha ao carregar modelos.'
-  } finally {
-    modelsLoading.value = false
-  }
 })
 
 onUnmounted(() => {
@@ -364,12 +330,14 @@ const customFactor = computed(() => {
   return effectiveCustomScale(j)
 })
 
-// The model always runs at its native scale; a custom target beyond that is reached
-// by interpolation on top of the model output — worth telling the user.
+// The resolved implementation always runs at the chosen preset factor (2x/4x);
+// a custom target beyond that is reached by interpolation on top of its output
+// — worth telling the user, even though the specific model is never named here.
 const customBeyondNative = computed(() => {
+  const j = job.value
   const factor = customFactor.value
-  const native = selectedModelInfo.value?.scale
-  return factor != null && native != null && factor > native + 0.01
+  if (!j || factor == null) return false
+  return factor > j.scaleConfig.presetFactor + 0.01
 })
 
 async function process(j: Job): Promise<void> {
@@ -439,7 +407,7 @@ async function importFiles(): Promise<void> {
   importError.value = result.rejected.length
     ? `${result.rejected.length} arquivo(s) não puderam ser importados (formato não suportado ou ilegível).`
     : null
-  const upload = await addFiles(result.files, modelsList.value[0]?.name ?? 'realesrgan-x4')
+  const upload = await addFiles(result.files)
   if (!job.value && upload.added[0]) setActiveJob(upload.added[0].id)
 }
 </script>
@@ -626,9 +594,6 @@ async function importFiles(): Promise<void> {
           </button>
         </div>
 
-        <p v-if="registryError" class="banner-error">
-          <AlertCircle :size="14" /> {{ registryError }}
-        </p>
         <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
         <!-- ---------------------------- CONFIGURING / ERROR / CANCELLED ---------------------------- -->
@@ -662,49 +627,31 @@ async function importFiles(): Promise<void> {
           </p>
 
           <CollapsiblePanel
-            title="Modelo de IA"
-            description="Motor de upscale e dispositivo de processamento"
+            title="Tipo de conteúdo"
+            description="Detectado automaticamente — corrija se estiver errado"
             :icon="Cpu"
           >
             <div class="field">
               <AppSelect
-                :model-value="job.scaleConfig.model"
-                :options="modelOptions"
-                :loading="modelsLoading"
-                :error="registryError"
-                searchable
-                @update:model-value="(v) => (job!.scaleConfig.model = String(v))"
-              >
-                <template #option="{ option }">
-                  <div class="model-option">
-                    <div class="model-option-line1">
-                      <span class="model-option-label">{{ option.label }}</span>
-                      <LicenseBadge
-                        v-if="getModelLicense(String(option.value))"
-                        :commercial-use="getModelLicense(String(option.value))!.commercialUse"
-                        compact
-                      />
-                    </div>
-                    <span class="model-option-org">
-                      {{
-                        getModelLicense(String(option.value))?.developer ??
-                        'Organização não informada'
-                      }}
-                      ·
-                      {{ option.description }}
-                    </span>
-                  </div>
-                </template>
-              </AppSelect>
-              <div class="model-summary-card">
-                <p class="model-summary-desc">
-                  {{ selectedModelInfo?.description ?? 'Carregando modelos…' }}
-                </p>
-                <div v-if="selectedLicenseInfo" class="model-summary-meta">
-                  <span class="model-summary-org">{{ selectedLicenseInfo.developer }}</span>
-                  <LicenseBadge :commercial-use="selectedLicenseInfo.commercialUse" compact />
-                </div>
-              </div>
+                :model-value="job.scaleConfig.contentType"
+                :options="contentTypeOptions"
+                placeholder="Detectando…"
+                @update:model-value="(v) => (job!.scaleConfig.contentType = v as ContentType)"
+              />
+            </div>
+          </CollapsiblePanel>
+
+          <CollapsiblePanel
+            title="Perfil"
+            description="Rápido, Equilibrado ou Qualidade — nunca troca o que processa a imagem, só o quanto se esforça"
+            :icon="ChartNoAxesColumn"
+          >
+            <div class="field">
+              <AppSelect
+                :model-value="job.scaleConfig.profile"
+                :options="profileOptions"
+                @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
+              />
             </div>
           </CollapsiblePanel>
 
@@ -801,7 +748,7 @@ async function importFiles(): Promise<void> {
                 A imagem será distorcida.
               </p>
               <p v-if="customBeyondNative" class="field-warning">
-                Alvo acima do nativo do modelo ({{ selectedModelInfo?.scale }}x) — o excedente é
+                Alvo acima do fator nativo ({{ job.scaleConfig.presetFactor }}x) — o excedente é
                 interpolação, com menos ganho de detalhe.
               </p>
             </div>
@@ -821,21 +768,6 @@ async function importFiles(): Promise<void> {
             description="Ajustes finos de qualidade"
             :icon="SlidersHorizontal"
           >
-            <div class="slider-field" :class="{ disabled: !denoiseSupported }">
-              <div class="slider-head">
-                <label class="field-label">Reduzir ruído (modelo)</label>
-                <span class="slider-value">{{ job.scaleConfig.denoise }}</span>
-              </div>
-              <RangeSlider
-                v-model="job.scaleConfig.denoise"
-                :default-value="50"
-                :disabled="!denoiseSupported"
-              />
-              <p v-if="!denoiseSupported" class="field-hint">
-                Disponível apenas com o modelo "realesr-general"
-              </p>
-            </div>
-
             <div class="toggle-row">
               <label class="field-label">Filtro de redução de ruído</label>
               <button

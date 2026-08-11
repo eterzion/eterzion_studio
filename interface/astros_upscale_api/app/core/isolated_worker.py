@@ -21,21 +21,23 @@ import sys
 import traceback
 from multiprocessing.connection import Client
 
+from app.core import audio_processor as _static_audio_processor
 from app.core.upscaler import Upscaler as _StaticUpscaler
+from app.core.video_upscaler import VideoUpscaler as _StaticVideoUpscaler
 
 _upscaler_cache: dict[tuple, object] = {}
+_video_upscaler_cache: dict[tuple, object] = {}
 _protected_module_cache: dict[str, object] = {}
 
 
-def _resolve_upscaler_class(protected: dict | None):
-    """Default path: the plain static import (no license infra deployed).
-    Opt-in path (protected != None): fetch, verify, decrypt and exec the
-    orchestration-logic package in memory (Fase 4) and use ITS Upscaler class
-    instead — see protected_loader.py. Falls back to the static class if
-    protected loading fails, so a licensing-service outage degrades to
-    today's behavior rather than breaking processing outright."""
+def _resolve_protected_module(protected: dict | None):
+    """Opt-in path (protected != None): fetch, verify, decrypt and exec the
+    orchestration-logic package in memory (Fase 4) — see protected_loader.py.
+    Returns None on any failure (or when protected loading isn't requested),
+    so a licensing-service outage degrades to a handler's own static fallback
+    rather than breaking processing outright."""
     if not protected:
-        return _StaticUpscaler
+        return None
     cache_key = f"{protected['base_url']}::{protected['version']}"
     cached = _protected_module_cache.get(cache_key)
     if cached is not None:
@@ -47,24 +49,113 @@ def _resolve_upscaler_class(protected: dict | None):
         module = load_protected_module(
             base_url=protected['base_url'], trusted_pubkey_b64=protected.get('trusted_pubkey_b64', ''),
             identity=identity, model=protected['model'], version=protected['version'],
+            operation=protected.get('operation', 'process'),
         )
-        upscaler_class = module.Upscaler
-        _protected_module_cache[cache_key] = upscaler_class
-        return upscaler_class
+        _protected_module_cache[cache_key] = module
+        return module
     except ProtectedLoadError:
         traceback.print_exc(file=sys.stderr)
-        return _StaticUpscaler
+        return None
 
 
-def _get_upscaler(model: str, models_dir: str, device: str | None, denoise: float, protected: dict | None):
-    upscaler_class = _resolve_upscaler_class(protected)
-    key = (upscaler_class, model, device)
+def _get_upscaler(model: str, models_dir: str, device: str | None, denoise: float, half: bool,
+                   protected: dict | None, tile_threshold: int | None, tile_size: int | None):
+    module = _resolve_protected_module(protected)
+    upscaler_class = module.Upscaler if module is not None else _StaticUpscaler
+    key = (upscaler_class, model, device, half, tile_threshold, tile_size)
     cached = _upscaler_cache.get(key)
     if cached is not None:
         return cached
-    upscaler = upscaler_class(model, models_dir, device=device, denoise_strength=denoise)
+    upscaler = upscaler_class(
+        model, models_dir, device=device, denoise_strength=denoise, half=half,
+        tile_threshold=tile_threshold, tile_size=tile_size)
     _upscaler_cache[key] = upscaler
     return upscaler
+
+
+def _handle_image_enhance(msg: dict, send) -> None:
+    """Today's only real handler: static-model super-resolution via
+    astros_upscale.core.load_model, wrapped by app.core.upscaler.Upscaler.
+    `msg['model']` is the internal engine_ref profile_resolver.py already
+    resolved in job_manager.py — never a raw caller-supplied identifier."""
+    denoise = msg.get('denoise', 50) / 100
+    half = msg.get('half', True)
+    upscaler = _get_upscaler(
+        msg['model'], msg['models_dir'], msg.get('device'), denoise, half, msg.get('protected'),
+        msg.get('tile_threshold'), msg.get('tile_size'))
+    custom = msg.get('custom_size')
+    custom_size = (custom['width'], custom['height']) if custom else None
+    result = upscaler.process(
+        msg['input_path'], msg.get('scale', 4), custom_size, msg['master_path'],
+        on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
+        on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
+        sharpen_strength=msg.get('sharpen', 0),
+        face_recovery=msg.get('face_recovery', False),
+        face_recovery_strength=msg.get('face_recovery_strength', 80),
+        denoise_filter_strength=msg.get('denoise_filter_strength', 0),
+    )
+    send({'type': 'result', 'source_size': result['source_size'], 'output_size': result['output_size']})
+
+
+def _get_video_upscaler(model: str, models_dir: str, device: str | None, denoise: float, half: bool,
+                         protected: dict | None, tile_threshold: int | None, tile_size: int | None):
+    module = _resolve_protected_module(protected)
+    upscaler_class = getattr(module, 'VideoUpscaler', None) if module is not None else None
+    upscaler_class = upscaler_class or _StaticVideoUpscaler
+    key = (upscaler_class, model, device, half, tile_threshold, tile_size)
+    cached = _video_upscaler_cache.get(key)
+    if cached is not None:
+        return cached
+    upscaler = upscaler_class(
+        model, models_dir, device=device, denoise_strength=denoise, half=half,
+        tile_threshold=tile_threshold, tile_size=tile_size)
+    _video_upscaler_cache[key] = upscaler
+    return upscaler
+
+
+def _handle_video_enhance(msg: dict, send) -> None:
+    """T042 — wraps the same astros_upscale.core frame-by-frame model pipeline
+    `cli.py`'s `run_video` uses. `msg['master_path']` is where the final,
+    audio-muxed video is written directly — video has no separate "master then
+    export" step like images do."""
+    denoise = msg.get('denoise', 50) / 100
+    half = msg.get('half', True)
+    upscaler = _get_video_upscaler(
+        msg['model'], msg['models_dir'], msg.get('device'), denoise, half, msg.get('protected'),
+        msg.get('tile_threshold'), msg.get('tile_size'))
+    result = upscaler.process(
+        msg['input_path'], msg.get('scale', 2), msg['master_path'],
+        on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
+        on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
+        stabilize=msg.get('stabilize', False),
+    )
+    send({'type': 'result', 'source_size': result['source_size'], 'output_size': result['output_size']})
+
+
+def _handle_audio_enhance(msg: dict, send) -> None:
+    """T053 — DSP chain (always) + content-type model pass (speech/music).
+    `msg['protected']` is accepted for interface symmetry with the other
+    handlers but unused here — audio_processor has no protected-orchestration
+    variant today, same as compress/convert never invoking one."""
+    module = _resolve_protected_module(msg.get('protected'))
+    processor = getattr(module, 'audio_processor', None) if module is not None else None
+    processor = processor or _static_audio_processor
+    result = processor.process(
+        msg['input_path'], msg['model'], msg['master_path'],
+        on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
+        on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
+    )
+    send({'type': 'result', 'source_size': (0, 0), 'output_size': (0, 0), 'audio_meta': result})
+
+
+# Dispatch table: (media_type, operation) -> handler(msg, send). This is the
+# generalization T014 asks for — the isolated worker no longer hardcodes a
+# single processing class, it looks up a handler by what the job actually is.
+_MODULE_REGISTRY: dict[tuple[str, str], object] = {
+    ('image', 'enhance'): _handle_image_enhance,
+    ('video', 'enhance'): _handle_video_enhance,
+    ('audio', 'enhance'): _handle_audio_enhance,
+}
 
 
 def _handle_process(conn, msg: dict) -> None:
@@ -73,21 +164,19 @@ def _handle_process(conn, msg: dict) -> None:
     def send(payload: dict) -> None:
         conn.send({**payload, 'job_id': job_id})
 
+    media_type = msg.get('media_type', 'image')
+    operation = msg.get('operation', 'enhance')
+    handler = _MODULE_REGISTRY.get((media_type, operation))
+    if handler is None:
+        send({
+            'type': 'error',
+            'message': f"Nenhum processador disponível para media_type={media_type!r}, operation={operation!r}.",
+            'error_class': 'NoHandlerAvailable',
+        })
+        return
+
     try:
-        denoise = msg.get('denoise', 50) / 100
-        upscaler = _get_upscaler(msg['model'], msg['models_dir'], msg.get('device'), denoise, msg.get('protected'))
-        custom = msg.get('custom_size')
-        custom_size = (custom['width'], custom['height']) if custom else None
-        result = upscaler.process(
-            msg['input_path'], msg.get('scale', 4), custom_size, msg['master_path'],
-            on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
-            on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
-            sharpen_strength=msg.get('sharpen', 0),
-            face_recovery=msg.get('face_recovery', False),
-            face_recovery_strength=msg.get('face_recovery_strength', 80),
-            denoise_filter_strength=msg.get('denoise_filter_strength', 0),
-        )
-        send({'type': 'result', 'source_size': result['source_size'], 'output_size': result['output_size']})
+        handler(msg, send)
     except Exception as error:  # noqa: BLE001 - reported to the parent, not re-raised
         send({'type': 'error', 'message': str(error), 'error_class': type(error).__name__})
 

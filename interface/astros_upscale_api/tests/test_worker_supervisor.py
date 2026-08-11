@@ -110,7 +110,7 @@ class TestRealProcessCall:
     def test_processes_a_real_image_through_the_real_isolated_worker(self, supervisor, tmp_path):
         """The full real path: spawn subprocess -> subprocess passes its own
         integrity self-check -> imports app.core.upscaler -> loads the real
-        realesrgan-x2 model -> runs real inference -> sends the result back
+        hfa2k-span model -> runs real inference -> sends the result back
         over the pipe. Nothing here is mocked."""
         input_path = _make_test_image_path(tmp_path)
         master_path = str(tmp_path / 'master.png')
@@ -121,7 +121,7 @@ class TestRealProcessCall:
             job_id='job_test_real',
             input_path=input_path,
             master_path=master_path,
-            model='realesrgan-x2',
+            model='hfa2k-span',
             models_dir=settings.models_dir,
             device='cpu',
             scale=2,
@@ -143,14 +143,14 @@ class TestRealProcessCall:
         input_path = _make_test_image_path(tmp_path)
         supervisor.process(
             job_id='job_1', input_path=input_path, master_path=str(tmp_path / 'a.png'),
-            model='realesrgan-x2', models_dir=settings.models_dir, device='cpu', scale=2,
+            model='hfa2k-span', models_dir=settings.models_dir, device='cpu', scale=2,
             custom_size=None, denoise=50,
         )
         pid_after_first = supervisor._process.pid
 
         supervisor.process(
             job_id='job_2', input_path=input_path, master_path=str(tmp_path / 'b.png'),
-            model='realesrgan-x2', models_dir=settings.models_dir, device='cpu', scale=2,
+            model='hfa2k-span', models_dir=settings.models_dir, device='cpu', scale=2,
             custom_size=None, denoise=50,
         )
         assert supervisor._process.pid == pid_after_first  # same child, no respawn
@@ -159,7 +159,7 @@ class TestRealProcessCall:
         with pytest.raises(WorkerFailure):
             supervisor.process(
                 job_id='job_bad', input_path=str(tmp_path / 'does-not-exist.png'),
-                master_path=str(tmp_path / 'out.png'), model='realesrgan-x2',
+                master_path=str(tmp_path / 'out.png'), model='hfa2k-span',
                 models_dir=settings.models_dir, device='cpu', scale=2, custom_size=None, denoise=50,
             )
 
@@ -194,7 +194,7 @@ class TestRealProcessCall:
             with pytest.raises(WorkerCrashed):
                 supervisor.process(
                     job_id='job_after_kill', input_path=input_path, master_path=str(tmp_path / 'out.png'),
-                    model='realesrgan-x2', models_dir=settings.models_dir, device='cpu', scale=2,
+                    model='hfa2k-span', models_dir=settings.models_dir, device='cpu', scale=2,
                     custom_size=None, denoise=50,
                 )
         finally:

@@ -72,6 +72,45 @@ class TestActivationRoute:
         res = client.delete('/activations/install-ghost', params={'license_id': lic.id})
         assert res.status_code == 404
 
+    def test_status_returns_the_license_status_for_an_activated_installation(self, client, license_factory, install_keys):
+        lic = license_factory(activation_limit=2)
+        client.post('/activations', json={'license_id': lic.id, 'install_id': 'install-1', **install_keys()})
+        res = client.get('/activations/install-1/status')
+        assert res.status_code == 200
+        assert res.json() == {
+            'license_id': lic.id, 'status': 'active', 'installations_used': 1, 'installations_limit': 2,
+        }
+
+    def test_status_call_touches_last_seen_at(self, client, license_factory, install_keys):
+        """T035/FR-056 — reaching the status route at all is a revalidation."""
+        from app import licensing
+
+        lic = license_factory()
+        client.post('/activations', json={'license_id': lic.id, 'install_id': 'install-1', **install_keys()})
+        with licensing.get_conn() as conn:
+            conn.execute(
+                'UPDATE installations SET last_seen_at = ? WHERE install_id = ?',
+                ('2020-01-01T00:00:00Z', 'install-1'),
+            )
+        assert licensing.get_installation('install-1')['last_seen_at'] == '2020-01-01T00:00:00Z'
+
+        client.get('/activations/install-1/status')
+        assert licensing.get_installation('install-1')['last_seen_at'] != '2020-01-01T00:00:00Z'
+
+    def test_status_reflects_a_revoked_license(self, client, license_factory, install_keys):
+        from app import licensing
+
+        lic = license_factory()
+        client.post('/activations', json={'license_id': lic.id, 'install_id': 'install-1', **install_keys()})
+        licensing.set_license_status(lic.id, 'revoked')
+        res = client.get('/activations/install-1/status')
+        assert res.status_code == 200
+        assert res.json()['status'] == 'revoked'
+
+    def test_status_returns_404_for_a_never_activated_installation(self, client):
+        res = client.get('/activations/install-never-activated/status')
+        assert res.status_code == 404
+
 
 class TestAuthorizationRoute:
     def test_authorize_succeeds_for_an_activated_installation(self, client, license_factory, install_keys):

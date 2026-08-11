@@ -4,18 +4,30 @@ import { Loader2, ServerCrash } from '@lucide/vue'
 import AppSidebar from './components/AppSidebar.vue'
 import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
-import ModelsView from './views/ModelsView.vue'
+import ComponentsView from './views/ComponentsView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
+import CompressConvertView from './views/CompressConvertView.vue'
+import VideoView from './views/VideoView.vue'
+import AudioView from './views/AudioView.vue'
+import LicenseActivationView from './views/LicenseActivationView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
-import { initLicense } from './store/license'
+import { initLicense, isUsableLicenseState, licenseState } from './store/license'
 import { currentResolvedTheme } from './theme'
 import { hasNativeApi } from './api'
 
 const active = ref<NavKey>('home')
 const darkMode = computed(() => currentResolvedTheme.value === 'dark')
+
+// T039/FR-059/SC-019: only the actual processing screens are gated — home,
+// models, history and settings stay reachable even when the license is
+// blocked, so nothing already on disk (or already in the queue) becomes
+// inaccessible just because the license lapsed.
+const MEDIA_SCREENS: NavKey[] = ['imagem', 'video', 'audio', 'otimizar']
+const isMediaScreen = computed(() => MEDIA_SCREENS.includes(active.value))
+const licenseUsable = computed(() => isUsableLicenseState(licenseState.status))
 
 function navigate(key: NavKey): void {
   active.value = key
@@ -58,10 +70,14 @@ onMounted(() => {
     </div>
 
     <HomeView v-else-if="active === 'home'" @open-image="active = 'imagem'" />
+    <LicenseActivationView v-else-if="isMediaScreen && !licenseUsable" />
     <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
-    <ModelsView v-else-if="active === 'modelos'" />
+    <ComponentsView v-else-if="active === 'modelos'" />
     <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
-    <SettingsView v-else-if="active === 'configuracoes'" @navigate="navigate" />
+    <SettingsView v-else-if="active === 'configuracoes'" />
+    <CompressConvertView v-else-if="active === 'otimizar'" />
+    <VideoView v-else-if="active === 'video'" />
+    <AudioView v-else-if="active === 'audio'" />
     <div v-else class="placeholder-view">
       <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
     </div>
