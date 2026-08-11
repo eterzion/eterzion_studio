@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      - uses: astral-sh/setup-uv@v9
+      - uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
           cache-dependency-glob: interface/astros_licensing_service/requirements*.txt
@@ -48,7 +48,7 @@ jobs:
       # per-call pip resolver overhead — and its cache survives across runs,
       # which is what actually keeps this job under budget on a Windows
       # runner (slower disk/process spawn than Linux runners).
-      - uses: astral-sh/setup-uv@v9
+      - uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
           cache-dependency-glob: interface/astros_upscale_api/requirements*.txt
