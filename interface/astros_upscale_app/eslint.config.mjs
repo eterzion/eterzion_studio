@@ -36,5 +36,14 @@ export default defineConfig(
       ]
     }
   },
+  {
+    // Build/tooling scripts (plain JS, not app source) — explicit return
+    // types are a TypeScript-source convention that doesn't apply to a
+    // .mjs script with no type-checking pass of its own.
+    files: ['scripts/**/*.mjs'],
+    rules: {
+      '@typescript-eslint/explicit-function-return-type': 'off'
+    }
+  },
   eslintConfigPrettier
 )
