@@ -90,3 +90,18 @@ Duas lacunas permanecem sem solução e são reduções de capacidade deliberada
 
 **Status**: especificação completa, sem marcadores de clarificação pendentes, sem lacunas de
 cobertura sem decisão registrada. Aprovada para `/speckit.plan`.
+
+## Post-`/speckit.analyze` Update (2026-08-08)
+
+`/speckit.analyze` rodou sobre spec.md × plan.md × tasks.md (72 tasks na primeira versão) e
+encontrou **3 achados CRITICAL**: uma contradição direta entre uma task e o requisito que ela
+deveria implementar (I1, indicador de tipo de conteúdo descrito como "read-only" contra FR-096),
+uma lacuna de segurança real (G1, vídeo/áudio processariam fora do isolamento protegido que
+FR-070–075 exigem), e o caso de borda que o próprio spec.md já havia antecipado mas nenhuma task
+resolvia (G2, histórico quebrando após remoção de modelo). Mais 4 achados não-críticos (G3–G6, U1).
+
+Todos os 8 foram corrigidos diretamente em `tasks.md`, que cresceu de 72 para **76 tasks** — ver a
+seção "Analyze fixes applied" no final de `tasks.md` para o mapa achado→correção completo.
+
+**Status atualizado**: `tasks.md` revisado e consistente com `spec.md`. Aprovado para
+`/speckit.implement`.
