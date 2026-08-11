@@ -17,11 +17,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-          cache: pip
-          cache-dependency-path: |
-            interface/astros_licensing_service/requirements.txt
-            interface/astros_licensing_service/requirements-dev.txt
-      - run: pip install -r requirements-dev.txt
+      - uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          cache-dependency-glob: interface/astros_licensing_service/requirements*.txt
+      - run: uv pip install --system -r requirements-dev.txt
       - run: pytest --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
@@ -44,22 +44,27 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-          cache: pip
-          cache-dependency-path: |
-            interface/astros_upscale_api/requirements.txt
-            interface/astros_upscale_api/requirements-dev.txt
+      # uv resolves/downloads/installs in parallel with a Rust binary — no
+      # per-call pip resolver overhead — and its cache survives across runs,
+      # which is what actually keeps this job under budget on a Windows
+      # runner (slower disk/process spawn than Linux runners).
+      - uses: astral-sh/setup-uv@v9
+        with:
+          enable-cache: true
+          cache-dependency-glob: interface/astros_upscale_api/requirements*.txt
       # CI runners have no GPU — the CUDA torch/torchaudio wheels pulled by
       # requirements.txt's unpinned `torch`/`torchaudio` are several GB and
       # dominate the job's runtime. Installing the CPU wheels first satisfies
       # those (unversioned) requirement lines, so the requirements-dev.txt
       # install below reuses them instead of re-resolving CUDA builds.
-      - run: pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
-      - run: pip install -r requirements-dev.txt
+      - run: uv pip install --system torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install --system -r requirements-dev.txt
       # Deselect `slow` (real subprocess/model-inference) tests from the
-      # required CI run to keep it fast — they run real ffmpeg/model
-      # workloads unsuited to a 3-minute budget. Run them locally or in a
-      # separate scheduled job before release.
-      - run: pytest -m "not slow" --cov-report=xml
+      # required CI run — they run real ffmpeg/model workloads unsuited to a
+      # tight time budget. Run them locally or in a separate scheduled job
+      # before release. `-n auto` (pytest-xdist) spreads the rest across the
+      # runner's cores instead of running ~30 test files serially.
+      - run: pytest -m "not slow" -n auto --durations=20 --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
         with:

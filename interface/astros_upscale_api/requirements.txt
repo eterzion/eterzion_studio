@@ -6,7 +6,10 @@ websockets
 torch
 torchaudio
 pillow
-opencv-python
+# headless: no test or server-side code calls cv2.imshow/highgui — the
+# regular opencv-python build pulls in Qt/GTK bindings that aren't used here
+# and slow down install on every CI run.
+opencv-python-headless
 cryptography
 psutil>=5.9
 nvidia-ml-py>=12.0
