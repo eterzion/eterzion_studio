@@ -40,7 +40,18 @@ jobs:
       run:
         working-directory: interface/astros_upscale_api
     steps:
+      # The repo carries ~130MB of model checkpoints under /models and
+      # /inputs (real fixtures for the `slow` model-inference tests, which
+      # this job deselects) — on a Windows runner, writing that to disk on
+      # every checkout was a meaningful chunk of this job's time. Only
+      # astros_upscale/ (imported via sys.path by conftest.py) and this
+      # job's own working directory are needed for the "not slow" suite.
       - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            astros_upscale
+            interface/astros_upscale_api
+          sparse-checkout-cone-mode: true
       # windows-latest ships no ffmpeg on PATH. Several non-`slow` tests
       # (e.g. test_content_type_audio.py) shell out to a real `ffmpeg` to
       # synthesize fixture audio/video, so without this they fail with
