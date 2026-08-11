@@ -181,7 +181,7 @@ def _finish_video_with_enhanced_audio(args: argparse.Namespace, tmp_video: str, 
             os.replace(tmp_video, output)
             return
         try:
-            enhance_audio_file(tmp_audio_in, tmp_audio_out, engine=args.audio, denoise_only=args.denoise_only)
+            enhance_audio_file(tmp_audio_in, tmp_audio_out, engine=args.audio)
         except MissingAudioDependency as error:
             print(f'Aviso: {error}\nO vídeo será salvo com o áudio original, sem melhoria.')
             if not mux_audio_file(tmp_video, tmp_audio_in, output):
@@ -203,7 +203,7 @@ def run_audio(args: argparse.Namespace) -> None:
         sys.exit(f'Entrada não encontrada: {args.input}')
     output = args.output if args.output is not None else _default_output_path(args.input, None, 'enhanced', '.wav')
     try:
-        enhance_audio_file(args.input, output, engine=args.model, denoise_only=args.denoise_only)
+        enhance_audio_file(args.input, output, engine=args.model)
     except MissingAudioDependency as error:
         sys.exit(str(error))
     except (RuntimeError, ValueError) as error:
@@ -349,19 +349,14 @@ def main() -> None:
     p_video.add_argument(
         '--audio', type=str, default=None, choices=sorted(AUDIO_ENGINES),
         help='Também melhora o áudio original com este motor antes de remontar o vídeo (requer extra [audio])')
-    p_video.add_argument(
-        '--denoise-only', action='store_true',
-        help='Com --audio enhance-voz: só remove ruído, sem restauração/extensão de banda')
     p_video.set_defaults(func=run_video)
 
     p_audio = subparsers.add_parser('audio', help='Melhora a qualidade de um arquivo de áudio')
     p_audio.add_argument('-i', '--input', type=str, required=True, help='Arquivo de áudio de entrada (wav/mp3/flac)')
     p_audio.add_argument('-o', '--output', type=str, default=None, help='Arquivo de saída (padrão: results/)')
     p_audio.add_argument(
-        '-m', '--model', type=str, default='denoise-voz', choices=sorted(AUDIO_ENGINES),
-        help='Motor de áudio a usar. Padrão: denoise-voz')
-    p_audio.add_argument(
-        '--denoise-only', action='store_true', help='Com enhance-voz: só remove ruído, sem restauração completa')
+        '-m', '--model', type=str, default='super-voz', choices=sorted(AUDIO_ENGINES),
+        help='Motor de áudio a usar. Padrão: super-voz')
     p_audio.set_defaults(func=run_audio)
 
     p_optimize = subparsers.add_parser(

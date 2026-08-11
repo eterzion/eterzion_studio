@@ -95,8 +95,8 @@ ffmpeg -version
 pip install -e ".[audio]"
 ```
 
-Isso instala os quatro motores (`denoise-voz`, `enhance-voz`, `super-voz`,
-`audio-enhance`) de uma vez. Requer [git](https://git-scm.com/downloads)
+Isso instala os dois motores (`super-voz`, `audio-enhance`) de uma vez. Requer
+[git](https://git-scm.com/downloads)
 instalado, usado para baixar o `audio-enhance`
 ([astros_audio_enhance](https://github.com/ericinacio/astros_audio_enhance),
 um fork próprio do AudioSR modernizado para `torch>=2.6`/`numpy>=2.1` — sem o
@@ -196,7 +196,7 @@ astros-upscale video -i clipe.mp4 -o clipe_upscaled.mp4 -m hfa2k-avc -s 2
 **Melhorar o áudio junto com o vídeo** (requer `pip install -e ".[audio]"`):
 
 ```bash
-astros-upscale video -i clipe.mp4 -o clipe_upscaled.mp4 --audio denoise-voz
+astros-upscale video -i clipe.mp4 -o clipe_upscaled.mp4 --audio super-voz
 ```
 
 Isso extrai a trilha de áudio original, roda o motor escolhido nela, e
@@ -219,8 +219,7 @@ Além de todas as opções de imagem acima:
 |---|---|
 | `--fps` | Força o fps do vídeo de saída. Padrão: igual ao original |
 | `--codec` | Codec de gravação (padrão: `mp4v`) |
-| `--audio` | Também melhora o áudio original com este motor (`denoise-voz`, `enhance-voz`, `audio-enhance`, `super-voz`) |
-| `--denoise-only` | Com `--audio enhance-voz`: só remove ruído, sem restauração completa |
+| `--audio` | Também melhora o áudio original com este motor (`audio-enhance`, `super-voz`) |
 
 ---
 
@@ -230,20 +229,17 @@ Para melhorar só um arquivo de áudio (sem vídeo), requer
 `pip install -e ".[audio]"`:
 
 ```bash
-astros-upscale audio -i entrevista.wav -o entrevista_limpa.wav -m denoise-voz
+astros-upscale audio -i entrevista.wav -o entrevista_limpa.wav -m super-voz
 ```
 
 | Opção | O que faz |
 |---|---|
 | `-i`, `--input` | Arquivo de áudio de entrada (wav/mp3/flac — outros formatos que o ffmpeg leia também funcionam) |
 | `-o`, `--output` | Arquivo de saída. A extensão define o formato (`.wav`, `.mp3`, `.flac`) |
-| `-m`, `--model` | Motor de áudio: `denoise-voz` (padrão), `enhance-voz`, `audio-enhance` ou `super-voz` |
-| `--denoise-only` | Com `enhance-voz`: só remove ruído, sem a restauração/extensão de banda completa |
+| `-m`, `--model` | Motor de áudio: `super-voz` (padrão) ou `audio-enhance` |
 
 | Motor | Indicado para |
 |---|---|
-| `denoise-voz` | Remover ruído de fala rapidamente, roda bem em CPU |
-| `enhance-voz` | Denoise + restauração de fala degradada (mais pesado, melhor qualidade) |
 | `audio-enhance` | Super-resolução de áudio geral (música) para 48kHz |
 | `super-voz` | Super-resolução de fala (bandwidth extension) para 48kHz |
 
@@ -337,13 +333,12 @@ Vídeo em CPU é pesado mesmo. Use um modelo leve (`realesr-general`,
 numa máquina com GPU NVIDIA.
 
 **"precisa do pacote opcional ..." ao usar `audio`/`--audio`**
-`pip install -e ".[audio]"` puxa quatro bibliotecas: `denoiser`
-(`denoise-voz`), `voicefixer` (`enhance-voz`), `audiosronnx` (`super-voz`) e
-`astros-audio-enhance` (`audio-enhance`). As três primeiras são pacotes
-Python puros, sem etapa de compilação nativa (sem Rust, sem toolchain C++,
-sem `deepspeed`) e sem numpy travado numa versão exata — o `audiosronnx`
-nem usa `torch` em tempo de execução, roda em cima do `onnxruntime`. Todas
-instalam normalmente junto com o resto do projeto.
+`pip install -e ".[audio]"` puxa duas bibliotecas: `audiosronnx`
+(`super-voz`) e `astros-audio-enhance` (`audio-enhance`). A primeira é um
+pacote Python puro, sem etapa de compilação nativa (sem Rust, sem toolchain
+C++, sem `deepspeed`) e sem numpy travado numa versão exata — nem usa
+`torch` em tempo de execução, roda em cima do `onnxruntime`. Ambas instalam
+normalmente junto com o resto do projeto.
 
 `astros-audio-enhance` é o único caso à parte: não está publicado no PyPI,
 então `pip install -e ".[audio]"` instala esse pacote direto do repositório
