@@ -1,17 +1,15 @@
-"""Optional audio-enhancement pipeline (denoise / restoration / super-resolution).
+"""Optional audio-enhancement pipeline (restoration / super-resolution).
 
 These engines are NOT spandrel .pth models — each is a separate PyTorch project
 with its own checkpoint management (downloaded by the library itself on first
 use, not tracked in astros_upscale's ``models/`` folder). They are an optional
 extra: ``pip install astros_upscale[audio]``.
 
-``denoise-voz`` (facebookresearch/denoiser), ``enhance-voz`` (voicefixer) and
 ``super-voz`` (TigreGotico/audiosronnx, wrapping the LavaSR model as ONNX —
-doesn't even need torch at runtime) are pure-Python packages with no
-upper-bound numpy pin and no native build step (no Rust, no deepspeed). All
-three install cleanly alongside the modern torch/numpy the rest of
-astros_upscale uses, and are published on PyPI as part of the ``[audio]``
-extra.
+doesn't even need torch at runtime) is a pure-Python package with no
+upper-bound numpy pin and no native build step (no Rust, no deepspeed). It
+installs cleanly alongside the modern torch/numpy the rest of astros_upscale
+uses, and is published on PyPI as part of the ``[audio]`` extra.
 
 ``audio-enhance`` uses `astros_audio_enhance
 <https://github.com/ericinacio/astros_audio_enhance>`_ — this project's own
@@ -23,11 +21,13 @@ its git repository (not on PyPI) as part of the ``[audio]`` extra like
 everything else here — no special-cased manual install needed anymore.
 
 NOTE: ``audio-enhance`` has been exercised end-to-end (real weights, a real
-10.24s wav, CPU inference) — 48kHz/correct-duration output confirmed. The
-other three engines were written against each library's documented public
-API but not run end-to-end in this environment (large model downloads /
-GPU-oriented dependency trees); treat those three as implemented-but-unverified
-until run once against real weights.
+10.24s wav, CPU inference) — 48kHz/correct-duration output confirmed.
+``super-voz`` was written against its library's documented public API but not
+run end-to-end in this environment (large model download); treat it as
+implemented-but-unverified until run once against real weights.
+
+The ``denoiser`` (CC-BY-NC-4.0) and ``voicefixer`` (unlicensed vocoder
+checkpoint) engines were removed — see pyproject.toml's ``[audio]`` extra.
 """
 from __future__ import annotations
 
@@ -38,18 +38,6 @@ import tempfile
 from .media_engine import has_ffmpeg, run_ffmpeg
 
 AUDIO_ENGINES = {
-    'denoise-voz': {
-        'category': 'Áudio/Voz',
-        'description': 'Remoção de ruído em fala, rápido (roda em CPU)',
-        'package': 'denoiser',
-        'reference': 'https://github.com/facebookresearch/denoiser',
-    },
-    'enhance-voz': {
-        'category': 'Áudio/Voz',
-        'description': 'Denoise + restauração de fala degradada',
-        'package': 'voicefixer',
-        'reference': 'https://github.com/haoheliu/voicefixer',
-    },
     'audio-enhance': {
         'category': 'Áudio/Música',
         'description': 'Super-resolução de áudio geral (música) para 48kHz',
@@ -95,36 +83,6 @@ def _convert_format(wav_path: str, output_path: str) -> None:
     os.remove(wav_path)
 
 
-def _enhance_denoise_voz(input_wav: str, output_wav: str) -> None:
-    try:
-        import torch
-        import torchaudio
-        from denoiser import pretrained
-        from denoiser.dsp import convert_audio
-    except ImportError as error:
-        raise MissingAudioDependency('denoise-voz', 'denoiser', error) from error
-    model = pretrained.dns64()
-    wav, sr = torchaudio.load(input_wav)
-    wav = convert_audio(wav, sr, model.sample_rate, model.chin)
-    with torch.no_grad():
-        denoised = model(wav[None])[0]
-    torchaudio.save(output_wav, denoised.cpu(), model.sample_rate)
-
-
-def _enhance_enhance_voz(input_wav: str, output_wav: str, denoise_only: bool = False) -> None:
-    try:
-        import torch
-        from voicefixer import VoiceFixer
-    except ImportError as error:
-        raise MissingAudioDependency('enhance-voz', 'voicefixer', error) from error
-    vf = VoiceFixer()
-    # VoiceFixer has no dedicated denoise-only entry point; mode=1 (adds a
-    # pre-processing step that trims high frequencies) is the closest
-    # approximation to a lighter/denoise-leaning pass than the mode=0 default.
-    mode = 1 if denoise_only else 0
-    vf.restore(input=input_wav, output=output_wav, cuda=torch.cuda.is_available(), mode=mode)
-
-
 def _enhance_audio_enhance(input_wav: str, output_wav: str) -> None:
     try:
         import soundfile as sf
@@ -159,14 +117,12 @@ def _enhance_super_voz(input_wav: str, output_wav: str) -> None:
 
 
 _ENGINE_FUNCS = {
-    'denoise-voz': _enhance_denoise_voz,
-    'enhance-voz': _enhance_enhance_voz,
     'audio-enhance': _enhance_audio_enhance,
     'super-voz': _enhance_super_voz,
 }
 
 
-def enhance_audio_file(input_path: str, output_path: str, engine: str, denoise_only: bool = False) -> None:
+def enhance_audio_file(input_path: str, output_path: str, engine: str) -> None:
     """Enhance the audio track/file at ``input_path`` and write the result to ``output_path``.
 
     ``input_path`` may be any format ffmpeg understands (wav/mp3/flac/a video file
@@ -186,10 +142,7 @@ def enhance_audio_file(input_path: str, output_path: str, engine: str, denoise_o
     tmp_in = _to_wav(input_path)
     tmp_out = tempfile.mktemp(suffix='.wav')
     try:
-        if engine == 'enhance-voz':
-            _enhance_enhance_voz(tmp_in, tmp_out, denoise_only=denoise_only)
-        else:
-            _ENGINE_FUNCS[engine](tmp_in, tmp_out)
+        _ENGINE_FUNCS[engine](tmp_in, tmp_out)
         _convert_format(tmp_out, output_path)
     finally:
         for tmp in (tmp_in, tmp_out):
@@ -202,8 +155,6 @@ def is_engine_available(engine: str) -> bool:
     import importlib.util
     package = AUDIO_ENGINES[engine]['package']
     module_name = {
-        'denoiser': 'denoiser',
-        'voicefixer': 'voicefixer',
         'astros-audio-enhance': 'astros_audio_enhance',
         'audiosronnx': 'audiosronnx',
     }[package]
