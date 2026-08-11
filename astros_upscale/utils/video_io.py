@@ -23,9 +23,31 @@ class VideoOpenError(ValueError):
     """Raised when a video file cannot be opened for reading or writing."""
 
 
+def _bundled_ffmpeg_path() -> str | None:
+    """Path to the ffmpeg binary electron-builder packages alongside the app.
+
+    The Electron main process (interface/astros_upscale_app/src/main/apiProcess.ts)
+    sets ASTROS_FFMPEG_DIR to the extraResources 'ffmpeg' folder when a bundled
+    LGPL build exists for the current platform (see electron-builder.yml and
+    docs/models/MODEL_LICENSES.md §5). Unset in dev or on platforms without one
+    (currently macOS), in which case callers fall back to PATH.
+    """
+    bundled_dir = os.environ.get('ASTROS_FFMPEG_DIR')
+    if not bundled_dir:
+        return None
+    binary_name = 'ffmpeg.exe' if os.name == 'nt' else 'ffmpeg'
+    bundled_path = os.path.join(bundled_dir, binary_name)
+    return bundled_path if os.path.isfile(bundled_path) else None
+
+
+def ffmpeg_path() -> str | None:
+    """Return the ffmpeg binary to use: the bundled build if present, else PATH."""
+    return _bundled_ffmpeg_path() or shutil.which('ffmpeg')
+
+
 def has_ffmpeg() -> bool:
-    """Return True when the ffmpeg binary is available on PATH."""
-    return shutil.which('ffmpeg') is not None
+    """Return True when an ffmpeg binary is available (bundled or on PATH)."""
+    return ffmpeg_path() is not None
 
 
 class VideoReader:
@@ -91,10 +113,12 @@ def extract_audio(video_path: str, output_wav_path: str) -> bool:
     Returns False (instead of raising) when ffmpeg is missing or the source has
     no audio track — the caller should treat that as "nothing to enhance".
     """
-    if not has_ffmpeg():
+    path = ffmpeg_path()
+    if path is None:
         return False
     try:
-        (FFmpeg().option('y').input(video_path).output(output_wav_path, {'vn': None, 'acodec': 'pcm_s16le'})
+        (FFmpeg(executable=path).option('y').input(video_path)
+         .output(output_wav_path, {'vn': None, 'acodec': 'pcm_s16le'})
          .execute())
     except (FFmpegError, OSError):
         return False
@@ -103,10 +127,11 @@ def extract_audio(video_path: str, output_wav_path: str) -> bool:
 
 def mux_audio_file(video_path: str, audio_path: str, output_path: str) -> bool:
     """Mux an external audio file into a (silent) video, re-encoding audio to AAC."""
-    if not has_ffmpeg():
+    path = ffmpeg_path()
+    if path is None:
         return False
     remux = (
-        FFmpeg()
+        FFmpeg(executable=path)
         .option('y')
         .input(video_path)
         .input(audio_path)
@@ -129,11 +154,12 @@ def copy_audio(source_video: str, upscaled_video: str, output_path: str) -> bool
     is missing, the source has no audio, or the mux fails — the caller is
     expected to keep the audio-less file in that case.
     """
-    if not has_ffmpeg():
-        logger.info('ffmpeg binary not found on PATH; skipping audio remux')
+    path = ffmpeg_path()
+    if path is None:
+        logger.info('ffmpeg binary not found (bundled or on PATH); skipping audio remux')
         return False
     remux = (
-        FFmpeg()
+        FFmpeg(executable=path)
         .option('y')
         .input(upscaled_video)
         .input(source_video)

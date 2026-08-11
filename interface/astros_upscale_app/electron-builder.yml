@@ -9,10 +9,21 @@ files:
   - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
+  - '!scripts/**'
+  # resources/ffmpeg/<platform> is copied to the packaged resources dir via the
+  # per-platform extraResources below (not through the app.asar), so exclude it
+  # here to avoid bundling every platform's binaries into every installer.
+  - '!resources/ffmpeg/**'
 asarUnpack:
   - resources/**
 win:
   executableName: astros-upscale
+  # LGPL FFmpeg build (win64-lgpl-shared, no --enable-gpl/--enable-nonfree) fetched
+  # by `npm run fetch:ffmpeg:win` (scripts/fetch-ffmpeg.mjs) ahead of packaging.
+  # See docs/models/MODEL_LICENSES.md §5 for the licensing verification.
+  extraResources:
+    - from: resources/ffmpeg/win32
+      to: ffmpeg
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
@@ -26,6 +37,9 @@ mac:
     - NSDocumentsFolderUsageDescription: Application requests access to the user's Documents folder.
     - NSDownloadsFolderUsageDescription: Application requests access to the user's Downloads folder.
   notarize: false
+  # No bundled FFmpeg on macOS yet: there is no BtbN-equivalent official LGPL
+  # build for macOS to pin/verify against. The app falls back to a PATH-installed
+  # ffmpeg on this platform. See docs/models/MODEL_LICENSES.md §5.
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
@@ -35,6 +49,12 @@ linux:
     - deb
   maintainer: electronjs.org
   category: Utility
+  # LGPL FFmpeg build (linux64-lgpl-shared, no --enable-gpl/--enable-nonfree) fetched
+  # by `npm run fetch:ffmpeg:linux` (scripts/fetch-ffmpeg.mjs) ahead of packaging.
+  # See docs/models/MODEL_LICENSES.md §5 for the licensing verification.
+  extraResources:
+    - from: resources/ffmpeg/linux
+      to: ffmpeg
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false

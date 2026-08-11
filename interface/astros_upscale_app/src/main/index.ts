@@ -108,7 +108,7 @@ function createWindow(): void {
 }
 
 function registerIpcHandlers(win: BrowserWindow): void {
-  ipcMain.handle('api:ensure', async () => ensureApiRunning(repoRoot))
+  ipcMain.handle('api:ensure', async () => ensureApiRunning(repoRoot, process.resourcesPath))
 
   ipcMain.handle('dialog:openFiles', async () => {
     const result = await dialog.showOpenDialog(win, {

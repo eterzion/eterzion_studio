@@ -12,7 +12,7 @@ import os
 import cv2
 
 from .utils.image_io import ImageOpenError, imread
-from .utils.video_io import has_ffmpeg
+from .utils.video_io import ffmpeg_path, has_ffmpeg
 
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')
 VIDEO_EXTENSIONS = ('.mp4', '.mkv', '.mov', '.avi', '.webm')
@@ -27,7 +27,7 @@ class UnsupportedFormatError(ValueError):
 def _run_ffmpeg(args_builder) -> None:
     from ffmpeg import FFmpeg, FFmpegError
     try:
-        args_builder(FFmpeg().option('y')).execute()
+        args_builder(FFmpeg(executable=ffmpeg_path()).option('y')).execute()
     except (FFmpegError, OSError) as error:
         raise RuntimeError(f'Falha ao otimizar com ffmpeg: {error}') from error
 

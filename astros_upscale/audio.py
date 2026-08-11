@@ -35,7 +35,7 @@ import os
 import shutil
 import tempfile
 
-from .utils.video_io import has_ffmpeg
+from .utils.video_io import ffmpeg_path, has_ffmpeg
 
 AUDIO_ENGINES = {
     'denoise-voz': {
@@ -77,7 +77,7 @@ class MissingAudioDependency(ImportError):
 def _run_ffmpeg(args_builder) -> None:
     from ffmpeg import FFmpeg, FFmpegError
     try:
-        args_builder(FFmpeg().option('y')).execute()
+        args_builder(FFmpeg(executable=ffmpeg_path()).option('y')).execute()
     except (FFmpegError, OSError) as error:
         raise RuntimeError(f'Falha ao converter áudio com ffmpeg: {error}') from error
 
