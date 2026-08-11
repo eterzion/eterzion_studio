@@ -4,3 +4,7 @@ out
 .DS_Store
 .eslintcache
 *.log*
+
+# Fetched by `npm run fetch:ffmpeg:*` (scripts/fetch-ffmpeg.mjs) at build time —
+# not committed, see docs/models/MODEL_LICENSES.md §5.
+resources/ffmpeg/

@@ -4,6 +4,17 @@ import { join, resolve } from 'node:path'
 
 export const API_BASE_URL = 'http://127.0.0.1:8765'
 
+/** Locates the bundled FFmpeg binary's directory (electron-builder extraResources,
+ *  see electron-builder.yml win/linux `extraResources: ... to: ffmpeg`), if one was
+ *  packaged for this platform. Returns null in dev or on platforms without a
+ *  bundled build (currently macOS — see docs/models/MODEL_LICENSES.md §5) so the
+ *  Python backend falls back to a PATH-installed ffmpeg. */
+export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
+  const binaryName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
+  const dir = join(resourcesPath, 'ffmpeg')
+  return existsSync(join(dir, binaryName)) ? dir : null
+}
+
 /** Locates the astros_upscale repo root (the folder with pyproject.toml) from the
  *  compiled main process location (out/main) or, in dev, from process.cwd(). */
 export function resolveRepoRoot(): string {
@@ -55,8 +66,13 @@ export interface ApiReadyResult {
 
 /** Ensures the astros_upscale_api FastAPI server is reachable at API_BASE_URL — reuses
  *  it if the user already started it manually (e.g. `python run.py` in a terminal),
- *  otherwise spawns it from the repo's astros_upscale_api/ folder using the shared .venv. */
-export async function ensureApiRunning(repoRoot: string): Promise<ApiReadyResult> {
+ *  otherwise spawns it from the repo's astros_upscale_api/ folder using the shared .venv.
+ *  `resourcesPath` (Electron's `process.resourcesPath`) is used to locate a bundled
+ *  FFmpeg, if any, for this platform. */
+export async function ensureApiRunning(
+  repoRoot: string,
+  resourcesPath: string
+): Promise<ApiReadyResult> {
   if (await pingHealth(800)) {
     return { ready: true, baseUrl: API_BASE_URL, startedByApp: false }
   }
@@ -73,7 +89,11 @@ export async function ensureApiRunning(repoRoot: string): Promise<ApiReadyResult
   }
 
   const python = resolvePythonExecutable(repoRoot)
-  const child = spawn(python, [runScript], { cwd: apiDir })
+  const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath)
+  const env = bundledFfmpegDir
+    ? { ...process.env, ASTROS_FFMPEG_DIR: bundledFfmpegDir }
+    : process.env
+  const child = spawn(python, [runScript], { cwd: apiDir, env })
   ownedProcess = child
 
   let stderrTail = ''

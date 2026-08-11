@@ -373,19 +373,118 @@ Fonte: `FFmpeg/LICENSE.md` e `ffmpeg.org/legal.html`.
 | **GPL** (`--enable-gpl`) | ❌ Contamina o app inteiro — obrigaria liberar o Astros sob GPL v2+ |
 | **nonfree** (`--enable-nonfree`) | ❌ Binários legalmente não redistribuíveis |
 
-### Estado atual verificado nesta máquina (2026-08-08)
+### Estado histórico (2026-08-08) — dependência externa, não empacotada
 
 ```
 ffmpeg version 9.0-full_build-www.gyan.dev
 configuration: --enable-gpl --enable-version3 ... --enable-libx264 --enable-libx265 ...
 ```
 
-**A build em uso é GPL.** Além disso, `astros_upscale/optimize.py:59` usa `libx264` como codec
-padrão — encoder GPL.
+Nesta data o FFmpeg era dependência **externa** (o código só verificava
+`shutil.which('ffmpeg')`, resolvendo qualquer build presente no PATH do usuário — inclusive a
+build GPL acima), então o produto não o redistribuía. Mas a ausência de qualquer FFmpeg
+empacotado também significava que, numa instalação limpa (sem FFmpeg pré-instalado pelo
+usuário), as funcionalidades de compressão/conversão e melhoria de vídeo/áudio simplesmente
+não funcionavam.
 
-Hoje o FFmpeg é dependência **externa** (o código só verifica `shutil.which('ffmpeg')`), então o
-produto não o redistribui. Mas qualquer decisão de empacotar o FFmpeg no instalador — que é o
-esperado para um app desktop — torna isto bloqueante.
+### Empacotamento resolvido (2026-08-11) — build LGPL vendorizada, fetch-at-build-time
+
+O app agora empacota um FFmpeg LGPL para Windows e Linux, buscado durante o build (não
+comitado no git) por `interface/astros_upscale_app/scripts/fetch-ffmpeg.mjs` a partir da
+fonte pública **BtbN/FFmpeg-Builds** (<https://github.com/BtbN/FFmpeg-Builds>), releases
+`ffmpeg-n8.1-latest-{win64,linux64}-lgpl-shared-8.1`. O script pina o nome exato do asset e
+seu SHA256 (não confia em "latest" resolvido no momento do fetch) e recusa-se a usar o binário
+se o hash não bater.
+
+`electron-builder.yml` copia `resources/ffmpeg/<platform>/` para o `resources/ffmpeg/` do app
+empacotado via `extraResources` (win/linux); o processo principal do Electron
+(`src/main/apiProcess.ts`, `resolveBundledFfmpegDir`) detecta esse binário e passa seu diretório
+ao backend Python via a variável de ambiente `ASTROS_FFMPEG_DIR`.
+`astros_upscale/utils/video_io.py` (`ffmpeg_path()`) prefere esse binário quando presente e cai
+de volta para `shutil.which('ffmpeg')` (PATH do sistema) quando ausente — preservando o
+comportamento anterior em modo dev ou em plataformas sem build empacotada.
+
+**Verificação real do binário empacotado** (`ffmpeg -version` rodado diretamente no artefato
+baixado pelo `fetch-ffmpeg.mjs`, Windows, 2026-08-11, hash SHA256 do zip
+`b1284f218de4e0c740c63c1a13f2bd09c287a7e05bb04d8f13f24ab7a7accc46` conferido contra o
+`checksums.sha256` publicado no release):
+
+```
+ffmpeg version n8.1.2-34-g9b6c8969e0-20260811 Copyright (c) 2000-2026 the FFmpeg developers
+built with gcc 15.2.0 (crosstool-NG 1.28.0.23_185f348)
+configuration: --prefix=/ffbuild/prefix --pkg-config-flags=--static --pkg-config=pkg-config
+  --cross-prefix=x86_64-w64-mingw32- --arch=x86_64 --target-os=mingw32 --enable-version3
+  --disable-debug --enable-shared --disable-static --disable-w32threads --enable-pthreads
+  --enable-iconv --enable-zlib --enable-libxml2 --enable-libvmaf --enable-fontconfig
+  --enable-libharfbuzz --enable-libfreetype --enable-libfribidi --enable-vulkan
+  --enable-libshaderc --enable-libvorbis --disable-libxcb --disable-xlib --disable-libpulse
+  --enable-gmp --enable-lzma --enable-liblcevc-dec --enable-opencl --enable-amf
+  --enable-libaom --enable-libaribb24 --disable-avisynth --enable-chromaprint
+  --enable-libdav1d --disable-libdavs2 --disable-libdvdread --disable-libdvdnav
+  --disable-libfdk-aac --enable-ffnvcodec --enable-cuda-llvm --disable-frei0r --enable-libgme
+  --enable-libkvazaar --enable-libaribcaption --enable-libass --enable-libbluray
+  --enable-libjxl --enable-libmp3lame --enable-libopus --enable-libplacebo --enable-librist
+  --enable-libssh --enable-libtheora --enable-libvpx --enable-libwebp --enable-libzmq
+  --enable-lv2 --enable-libvpl --enable-openal --enable-liboapv --enable-libopencore-amrnb
+  --enable-libopencore-amrwb --enable-libopenh264 --enable-libopenjpeg --enable-libopenmpt
+  --enable-librav1e --disable-librubberband --enable-schannel --enable-sdl2
+  --enable-libsnappy --enable-libsoxr --enable-libsrt --enable-libsvtav1 --enable-libtwolame
+  --enable-libuavs3d --disable-libdrm --enable-vaapi --disable-libvidstab --enable-libvvenc
+  --disable-whisper --disable-libx264 --disable-libx265 --disable-libxavs2 --disable-libxvid
+  --enable-libzimg --enable-libzvbi ...
+```
+
+Confirmado: **sem `--enable-gpl` e sem `--enable-nonfree`** na configuration line; e
+explicitamente `--disable-libx264 --disable-libx265` (os encoders GPL problemáticos da seção
+anterior). `--enable-shared --disable-static` confirma o link dinâmico exigido pela LGPL — o
+app distribui `ffmpeg.exe` + `avcodec-62.dll`/`avfilter-11.dll`/`avformat-62.dll`/etc. como
+arquivos separados e substituíveis, não estaticamente embutidos.
+
+O build Linux equivalente (`linux64-lgpl-shared-8.1`, hash
+`9bcd549b0c1277796235b813ed593de5337c7f11228a35ea4a35c8fa1ba803fa` conferido) não pôde ser
+executado nesta máquina (Windows, sem capacidade de rodar um binário ELF) para um
+`ffmpeg -version` direto, então a configuration line foi extraída lendo a string embutida em
+`lib/libavutil.so.60.26.102` dentro do `.tar.xz` já baixado e com hash conferido:
+
+```
+--prefix=/ffbuild/prefix ... --cross-prefix=x86_64-ffbuild-linux-gnu- --arch=x86_64
+--target-os=linux --enable-version3 --disable-debug --enable-shared --disable-static
+--enable-iconv --enable-zlib ... --enable-ffnvcodec --enable-cuda-llvm ...
+--disable-librubberband --disable-schannel --enable-sdl2 ... --enable-libsvtav1
+--enable-libtwolame --enable-libuavs3d --enable-libdrm --enable-vaapi --disable-libvidstab
+--enable-libvvenc --disable-whisper --disable-libx264 --disable-libx265 --disable-libxavs2
+--disable-libxvid --enable-libzimg ...
+```
+
+Mesmo resultado: **sem `--enable-gpl`, sem `--enable-nonfree`**, com `--disable-libx264
+--disable-libx265` e `--enable-shared --disable-static` (link dinâmico). O binário ELF carrega
+as `.so` dinamicamente via rpath `$ORIGIN`/`$ORIGIN/../lib` (verificado diretamente nas flags do
+linker embutidas no executável `bin/ffmpeg` do mesmo arquivo), o que é o motivo de
+`fetch-ffmpeg.mjs` colocar as `.so*` lado a lado com o binário em `resources/ffmpeg/linux/` —
+mesmo layout plano usado para as DLLs do Windows.
+
+**Nota de execução:** o ambiente desta verificação ficou sob contenção pesada de CPU/E-S durante
+o teste (dezenas de processos concorrentes no host), o que impediu completar localmente o fluxo
+fim-a-fim `npm run fetch:ffmpeg:linux` → `resources/ffmpeg/linux/ffmpeg` → execução do binário
+(inviável de qualquer forma nesta máquina Windows). A extração seletiva do `.tar.xz`
+(`fetch-ffmpeg.mjs`) e a leitura do hash/flags acima foram feitas diretamente sobre o arquivo já
+baixado e com SHA256 conferido, sem depender do `tar` do sistema. O fluxo completo (download →
+extração → `resources/ffmpeg/linux/ffmpeg` executável) deve ser confirmado na primeira execução
+real de `npm run build:linux` em CI Linux nativo.
+
+**Fonte disponível para reprodução:** os fontes usados por essas builds ficam publicados pelo
+próprio projeto BtbN em <https://github.com/BtbN/FFmpeg-Builds> (workflow de build + pin do
+commit do FFmpeg upstream). O `LICENSE.md`/`COPYING.LGPLv2.1` do FFmpeg é distribuído dentro de
+cada arquivo de release do BtbN.
+
+**Pendência: macOS.** BtbN não publica builds para macOS, e não foi encontrada uma fonte
+oficial e automatizável equivalente (as builds mais conhecidas, como as de evermeet.cx,
+normalmente vêm com `--enable-gpl`/libx264 habilitados). `fetch-ffmpeg.mjs` cobre apenas
+`win32`/`linux`; `electron-builder.yml` não declara `extraResources` de ffmpeg para `mac`, então
+o instalador macOS continua dependendo de um FFmpeg já presente no PATH do usuário (mesmo
+comportamento de antes desta mudança). Qualquer build usada futuramente para macOS precisa
+satisfazer o mesmo critério desta seção: LGPL (sem `--enable-gpl`/`--enable-nonfree`), com
+`ffmpeg -version` verificado e registrado aqui antes de ser vendorizada.
 
 ### Filtros de áudio: nenhum é GPL
 
@@ -473,7 +572,7 @@ haoheliu/audiosr_speech (sem licença) · vocoder do voicefixer · pesos do Deep
 | 3 | Implementar realce facial determinístico (YuNet MIT + OpenCV) | Substituto aprovado da decisão | Alta |
 | 4 | Renomear a feature — não prometer "recuperação facial por IA" | Honestidade sobre a capacidade real | Alta |
 | 5 | Remover pesos rejeitados de `models/`: `4x-UltraSharp.pth`, `4x-AnimeSharp.pth`, `4x_NMKD-Siax_200k.pth`, `4x_NMKD-Superscale-SP_178000_G.pth` | NC confirmado / indeterminado | Alta |
-| 6 | Trocar build de FFmpeg para **LGPL** | Build atual é `--enable-gpl` (verificado) | Alta (bloqueia empacotamento) |
+| 6 | ~~Trocar build de FFmpeg para **LGPL**~~ — **feito (2026-08-11)**, ver seção 5 "Empacotamento resolvido" | Build de PATH podia ser `--enable-gpl`; agora Windows/Linux empacotam uma build LGPL verificada | Alta (bloqueava empacotamento) — macOS ainda pendente |
 | 7 | Trocar codec padrão de `libx264` para hardware ou AV1 | libx264 é GPL | Alta |
 | 8 | Substituir AudioSR de haoheliu por **`audiosronnx`** (Apache-2.0) | Conflito AudioLDM resolvido sem perder a capacidade | Média |
 | 9 | Créditos de atribuição visíveis na UI (CC-BY-4.0 / Apache NOTICE / BSD) | Obrigação das licenças aprovadas | Média |

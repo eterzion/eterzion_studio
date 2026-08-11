@@ -5,6 +5,7 @@ for why the LGPL check here is a warning, not an import-time failure.
 from __future__ import annotations
 
 import logging
+import os
 import shutil
 import subprocess
 
@@ -19,14 +20,37 @@ GPL_ENCODERS = frozenset({'libx264', 'libx264rgb', 'libx265', 'libxvid'})
 _warned_this_process = False
 
 
+def _bundled_ffmpeg_path() -> str | None:
+    """Path to the ffmpeg binary electron-builder packages alongside the app.
+
+    The Electron main process (interface/astros_upscale_app/src/main/apiProcess.ts)
+    sets ASTROS_FFMPEG_DIR to the extraResources 'ffmpeg' folder when a bundled
+    LGPL build exists for the current platform (see electron-builder.yml and
+    docs/models/MODEL_LICENSES.md §5). Unset in dev or on platforms without one
+    (currently macOS), in which case callers fall back to PATH.
+    """
+    bundled_dir = os.environ.get('ASTROS_FFMPEG_DIR')
+    if not bundled_dir:
+        return None
+    binary_name = 'ffmpeg.exe' if os.name == 'nt' else 'ffmpeg'
+    bundled_path = os.path.join(bundled_dir, binary_name)
+    return bundled_path if os.path.isfile(bundled_path) else None
+
+
+def ffmpeg_path() -> str | None:
+    """Return the ffmpeg binary to use: the bundled build if present, else PATH."""
+    return _bundled_ffmpeg_path() or shutil.which('ffmpeg')
+
+
 def has_ffmpeg() -> bool:
-    return shutil.which('ffmpeg') is not None
+    return ffmpeg_path() is not None
 
 
 def is_lgpl_build() -> bool | None:
-    """Returns True/False when determinable, or None when ffmpeg isn't on PATH.
-    Real check against `ffmpeg -version`'s configuration line — not a guess."""
-    ffmpeg_bin = shutil.which('ffmpeg')
+    """Returns True/False when determinable, or None when no ffmpeg binary
+    (bundled or on PATH) is found. Real check against `ffmpeg -version`'s
+    configuration line — not a guess."""
+    ffmpeg_bin = ffmpeg_path()
     if not ffmpeg_bin:
         return None
     try:
@@ -54,11 +78,13 @@ def _warn_once_if_gpl_build() -> None:
 def run_ffmpeg(args_builder) -> None:
     """Runs one FFmpeg invocation built by `args_builder(FFmpeg().option('y'))`.
     Consolidates what were three near-identical `_run_ffmpeg` helpers in
-    utils/video_io.py, audio.py and optimize.py into the one real place."""
+    utils/video_io.py, audio.py and optimize.py into the one real place.
+    Uses the bundled ffmpeg binary (T072) when packaged, falling back to PATH."""
     from ffmpeg import FFmpeg, FFmpegError
 
     _warn_once_if_gpl_build()
+    executable = ffmpeg_path() or 'ffmpeg'
     try:
-        args_builder(FFmpeg().option('y')).execute()
+        args_builder(FFmpeg(executable=executable).option('y')).execute()
     except (FFmpegError, OSError) as error:
         raise RuntimeError(f'Falha ao processar com ffmpeg: {error}') from error

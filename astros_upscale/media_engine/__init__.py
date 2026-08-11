@@ -14,9 +14,9 @@ from __future__ import annotations
 
 from .probe import ffprobe_json, probe_streams
 from .temporal import TileGrid, apply_atadenoise, apply_deflicker, compute_tile_grid
-from .transcode import GPL_ENCODERS, has_ffmpeg, is_lgpl_build, run_ffmpeg
+from .transcode import GPL_ENCODERS, ffmpeg_path, has_ffmpeg, is_lgpl_build, run_ffmpeg
 
 __all__ = [
-    'has_ffmpeg', 'is_lgpl_build', 'run_ffmpeg', 'GPL_ENCODERS', 'probe_streams', 'ffprobe_json',
+    'has_ffmpeg', 'is_lgpl_build', 'run_ffmpeg', 'ffmpeg_path', 'GPL_ENCODERS', 'probe_streams', 'ffprobe_json',
     'TileGrid', 'compute_tile_grid', 'apply_atadenoise', 'apply_deflicker',
 ]
