@@ -22,7 +22,7 @@ def _assert_no_suspicious_field(fields: set[str], context: str) -> None:
 
 
 def test_activate_request_has_no_media_derived_field():
-    from app.routes_activation import ActivateRequest
+    from app.routes import ActivateRequest
 
     fields = set(ActivateRequest.model_fields.keys())
     assert fields == {'license_id', 'install_id', 'signing_public_key_b64', 'encryption_public_key_b64'}
@@ -30,7 +30,7 @@ def test_activate_request_has_no_media_derived_field():
 
 
 def test_payment_event_has_no_media_derived_field():
-    from app.payments.base import PaymentEvent
+    from app.payments import PaymentEvent
 
     fields = {f.name for f in dataclasses.fields(PaymentEvent)}
     assert fields == {'provider', 'reference', 'email', 'amount', 'currency'}
@@ -56,7 +56,7 @@ def test_activations_status_response_has_no_media_derived_field(client, license_
 
 
 def test_authorization_request_has_no_media_derived_field():
-    from app.routes_authorizations import AuthorizeRequest
+    from app.routes import AuthorizeRequest
 
     fields = set(AuthorizeRequest.model_fields.keys())
     _assert_no_suspicious_field(fields, 'AuthorizeRequest')

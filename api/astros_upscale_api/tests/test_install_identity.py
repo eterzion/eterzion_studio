@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from app.core import install_identity
+from app import security as install_identity
 
 
 class TestEnsureIdentity:
@@ -30,7 +30,7 @@ class TestEnsureIdentity:
         the on-disk file) and confirm the *same* identity — not a new one —
         is loaded back, matching ensure_identity()'s documented contract."""
         first = install_identity.ensure_identity()
-        install_identity._cached = None
+        install_identity._cached_identity = None
         second = install_identity.ensure_identity()
         assert first.install_id == second.install_id
         assert first.signing_public_key_b64 == second.signing_public_key_b64
@@ -54,7 +54,7 @@ class TestEnsureIdentity:
         another_dir = tmp_path / 'other-identity'
         another_dir.mkdir()
         monkeypatch.setattr(install_identity, '_identity_dir', lambda: str(another_dir))
-        install_identity._cached = None
+        install_identity._cached_identity = None
         second = install_identity.ensure_identity()
 
         assert first.install_id != second.install_id
@@ -65,13 +65,13 @@ class TestSignAndVerify:
         identity = install_identity.ensure_identity()
         signature = identity.sign(b'a request payload')
         pubkey_bytes = base64.b64decode(identity.signing_public_key_b64)
-        assert install_identity.verify(pubkey_bytes, b'a request payload', signature) is True
+        assert install_identity.verify_signature(pubkey_bytes, b'a request payload', signature) is True
 
     def test_verify_rejects_a_tampered_payload(self):
         identity = install_identity.ensure_identity()
         signature = identity.sign(b'original payload')
         pubkey_bytes = base64.b64decode(identity.signing_public_key_b64)
-        assert install_identity.verify(pubkey_bytes, b'tampered payload', signature) is False
+        assert install_identity.verify_signature(pubkey_bytes, b'tampered payload', signature) is False
 
     def test_verify_rejects_a_signature_from_a_different_identity(self, tmp_path, monkeypatch):
         identity_a = install_identity.ensure_identity()
@@ -80,16 +80,16 @@ class TestSignAndVerify:
         other_dir = tmp_path / 'identity-b'
         other_dir.mkdir()
         monkeypatch.setattr(install_identity, '_identity_dir', lambda: str(other_dir))
-        install_identity._cached = None
+        install_identity._cached_identity = None
         identity_b = install_identity.ensure_identity()
 
         pubkey_b_bytes = base64.b64decode(identity_b.signing_public_key_b64)
-        assert install_identity.verify(pubkey_b_bytes, b'shared payload', signature) is False
+        assert install_identity.verify_signature(pubkey_b_bytes, b'shared payload', signature) is False
 
     def test_verify_rejects_malformed_signature_bytes_without_raising(self):
         identity = install_identity.ensure_identity()
         pubkey_bytes = base64.b64decode(identity.signing_public_key_b64)
-        assert install_identity.verify(pubkey_bytes, b'payload', b'not-a-real-signature') is False
+        assert install_identity.verify_signature(pubkey_bytes, b'payload', b'not-a-real-signature') is False
 
 
 class TestEnvelopeDecryption:
@@ -134,7 +134,7 @@ class TestEnvelopeDecryption:
         other_dir = tmp_path / 'identity-victim'
         other_dir.mkdir()
         monkeypatch.setattr(install_identity, '_identity_dir', lambda: str(other_dir))
-        install_identity._cached = None
+        install_identity._cached_identity = None
         victim = install_identity.ensure_identity()
 
         # Wrap for an unrelated third keypair, not the victim's.
@@ -164,7 +164,7 @@ class TestCorruptedOrMissingIdentity:
 
     def test_ensure_identity_regenerates_after_corruption(self):
         original = install_identity.ensure_identity()
-        install_identity._cached = None
+        install_identity._cached_identity = None
 
         path = install_identity._identity_path()
         with open(path, 'w', encoding='utf-8') as fh:

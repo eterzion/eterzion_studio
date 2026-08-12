@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-# astros_upscale (the core package, imported by app.core.upscaler) is a real
+# astros_upscale (the core package, imported by app.processing) is a real
 # installed dependency now (pip install -e ./api), not resolved via sys.path
 # climbing — see specs/002-api-interface-split/research.md Decisão 3.
 
@@ -13,33 +13,33 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def isolated_identity_dir(tmp_path, monkeypatch):
-    """install_identity.py reads %LOCALAPPDATA%/%APPDATA% directly (it's a
-    real per-machine path, not something app.config exposes) — point it at a
+    """app.security reads %LOCALAPPDATA%/%APPDATA% directly (it's a real
+    per-machine path, not something app.config exposes) — point it at a
     temp dir per test and clear the in-process identity cache so no test sees
     another test's generated keys."""
-    from app.core import install_identity
+    from app import security
 
     def _fake_identity_dir():
         path = tmp_path / 'identity'
         path.mkdir(parents=True, exist_ok=True)
         return str(path)
 
-    monkeypatch.setattr(install_identity, '_identity_dir', _fake_identity_dir)
-    monkeypatch.setattr(install_identity, '_cached', None)
+    monkeypatch.setattr(security, '_identity_dir', _fake_identity_dir)
+    monkeypatch.setattr(security, '_cached_identity', None)
     yield
-    monkeypatch.setattr(install_identity, '_cached', None)
+    monkeypatch.setattr(security, '_cached_identity', None)
 
 
 @pytest.fixture(autouse=True)
 def isolated_job_store(monkeypatch, tmp_path):
-    """job_manager.jobs is plain module-level state shared across the whole
-    process — without this, tests would see each other's jobs. Harmless
-    (just resets an unrelated dict) for tests that never touch job_manager."""
+    """app.jobs's `jobs` dict is plain module-level state shared across the
+    whole process — without this, tests would see each other's jobs.
+    Harmless (just resets an unrelated dict) for tests that never touch it."""
     from app.config import settings
-    from app.core import job_manager
+    from app import jobs as jobs_module
 
-    monkeypatch.setattr(job_manager, 'jobs', {})
-    monkeypatch.setattr(job_manager, '_processing_job_id', None)
+    monkeypatch.setattr(jobs_module, 'jobs', {})
+    monkeypatch.setattr(jobs_module, '_processing_job_id', None)
     monkeypatch.setattr(settings, 'outputs_dir', str(tmp_path / 'outputs'))
     yield
 
@@ -106,11 +106,11 @@ class FakeSupervisor:
 
 @pytest.fixture
 def fake_supervisor(monkeypatch):
-    from app.core import worker_supervisor
+    from app import jobs as jobs_module
 
     fake = FakeSupervisor()
-    monkeypatch.setattr(worker_supervisor, '_supervisor', fake)
-    monkeypatch.setattr(worker_supervisor, 'get_supervisor', lambda: fake)
+    monkeypatch.setattr(jobs_module, '_supervisor', fake)
+    monkeypatch.setattr(jobs_module, 'get_supervisor', lambda: fake)
     return fake
 
 
@@ -124,7 +124,7 @@ def real_input_file(tmp_path):
 @pytest.fixture
 def default_job_params():
     """Factory fixture — call it to get a params dict shaped like what
-    routes_jobs.py's _build_job_params() actually produces: intent only
+    app.routes's _build_job_params() actually produces: intent only
     (scale/profile/device/adjustments), never a model identifier (FR-011)."""
 
     def _make(**overrides):

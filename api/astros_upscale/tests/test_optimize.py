@@ -5,7 +5,7 @@ import pytest
 
 from astros_upscale.optimize import (UnsupportedFormatError, _quality_to_audio_bitrate_kbps, _quality_to_crf,
                                       optimize_file, optimize_image)
-from astros_upscale.utils.image_io import imwrite
+from astros_upscale.media import imwrite
 
 
 def _write_toy_image(path, width=64, height=48):
@@ -27,7 +27,7 @@ def test_optimize_image_png_is_lossless(tmp_path):
     src = _write_toy_image(tmp_path / 'in.png')
     out = str(tmp_path / 'out.png')
     optimize_image(src, out, quality=1)  # quality is ignored for png
-    from astros_upscale.utils.image_io import imread
+    from astros_upscale.media import imread
     assert np.array_equal(imread(src), imread(out))
 
 
@@ -45,7 +45,7 @@ def test_optimize_file_converts_between_extensions_of_the_same_media_type(tmp_pa
     out = str(tmp_path / 'out.png')
     optimize_file(src, out, quality=80)
     assert os.path.exists(out)
-    from astros_upscale.utils.image_io import imread
+    from astros_upscale.media import imread
     assert imread(out).shape == imread(src).shape
 
 

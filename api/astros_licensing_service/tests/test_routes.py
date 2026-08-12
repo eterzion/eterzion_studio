@@ -199,7 +199,7 @@ class TestStripeWebhookRoute:
         )
         assert res.status_code == 400
 
-        from app.db import get_conn
+        from app.database import get_conn
 
         with get_conn() as conn:
             count = conn.execute(

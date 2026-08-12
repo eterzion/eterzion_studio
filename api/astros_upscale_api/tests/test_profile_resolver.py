@@ -2,13 +2,13 @@
 detect_hardware(): every resolve() call here measures this machine for real."""
 import pytest
 
-from app.core.profile_resolver import (
+from app.licensing import (
     MediaRequest,
     ResolvedPipeline,
     UnresolvableRequestError,
     resolve,
 )
-from astros_upscale.hardware import HardwareCapability
+from astros_upscale.processing import HardwareCapability
 
 pytestmark = pytest.mark.hardware
 
@@ -77,7 +77,7 @@ def test_resolve_rejects_a_content_type_with_no_approved_implementation(monkeypa
     implementation (T024/T045/T046/T055), so this exercises the rejection
     path directly against a real (temporarily unapproved) registry entry
     instead of relying on a content type that no longer stays unapproved."""
-    from app.core import profile_resolver
+    from app import licensing as profile_resolver
 
     monkeypatch.setitem(
         profile_resolver._CONTENT_TYPE_IMPLEMENTATIONS, 'music',
@@ -165,7 +165,7 @@ def test_profile_half_precision_flag_never_gets_more_aggressive_from_fast_to_qua
     than Equilibrado, which MUST NEVER be cheaper than Rápido.
 
     This was originally a real wall-clock timing test (build the three profiles'
-    AstrosUpscaler and measure real astros_upscale.core inference on a tiny
+    AstrosUpscaler and measure real astros_upscale.processing inference on a tiny
     image). Run for real against this machine, it was flaky: `half=True` (used
     by fast/balanced) only affects CUDA/MPS devices — on this CPU-only dev
     machine it's a documented no-op (see AstrosUpscaler.__init__), so the

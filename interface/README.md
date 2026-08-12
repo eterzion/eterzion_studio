@@ -22,7 +22,7 @@ módulo interno de `api/` diretamente.
 ## Rodar em desenvolvimento
 
 Requer [Node.js](https://nodejs.org/) 18+ e a API local (`api/astros_upscale_api`) rodando —
-veja `api/astros_upscale_api/README` ou o `Dockerfile` lá para como subi-la.
+veja o `Dockerfile` em `api/astros_upscale_api/` para como subi-la.
 
 ```bash
 npm install

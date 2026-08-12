@@ -7,7 +7,7 @@ import os
 
 import pytest
 
-from app.core import secure_tempdir
+from app import security as secure_tempdir
 
 
 @pytest.fixture(autouse=True)

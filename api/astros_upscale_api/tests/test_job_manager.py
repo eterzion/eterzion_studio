@@ -16,7 +16,7 @@ import asyncio
 
 import pytest
 
-from app.core import job_manager, worker_supervisor
+from app import jobs as job_manager
 
 
 def _create_photo_job(input_path, filename, params, **overrides):
@@ -278,7 +278,7 @@ class TestProcessJobStateMachine:
     def test_worker_failure_marks_job_as_error_with_category(
         self, real_input_file, default_job_params, fake_supervisor
     ):
-        fake_supervisor.configure_error(worker_supervisor.WorkerFailure('CUDA out of memory', 'RuntimeError'))
+        fake_supervisor.configure_error(job_manager.WorkerFailure('CUDA out of memory', 'RuntimeError'))
         job_id = _create_photo_job(real_input_file, 'a.png', default_job_params())
         job_manager.jobs[job_id]['status'] = 'queued'
 
@@ -292,7 +292,7 @@ class TestProcessJobStateMachine:
     def test_worker_crash_is_categorized_as_model_failure(
         self, real_input_file, default_job_params, fake_supervisor
     ):
-        fake_supervisor.configure_error(worker_supervisor.WorkerCrashed('pipe closed'))
+        fake_supervisor.configure_error(job_manager.WorkerCrashed('pipe closed'))
         job_id = _create_photo_job(real_input_file, 'a.png', default_job_params())
         job_manager.jobs[job_id]['status'] = 'queued'
 

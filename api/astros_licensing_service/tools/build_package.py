@@ -6,8 +6,8 @@ compilation (Nuitka / a Rust rewrite behind FFI) is a separate, much larger
 tooling investment noted as future work in docs/processing-protection-
 architecture.md; what this buys today is that the module never sits on disk
 in the clear and is checked for tampering (signature) and origin (installation
-binding) before it's ever executed — see app/core/protected_loader.py on the
-astros_upscale_api side for how it's consumed.
+binding) before it's ever executed — see app/security.py's protected loader on
+the astros_upscale_api side for how it's consumed.
 
 Usage: python tools/build_package.py
 Run from api/astros_licensing_service, with astros_upscale_api as a
@@ -21,12 +21,16 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app.db import init_db  # noqa: E402
-from app.package_crypto import build_package  # noqa: E402
-from app.packages import save_package  # noqa: E402
+from app.database import init_db  # noqa: E402
+from app.packages import build_package, save_package  # noqa: E402
 
 PACKAGE_NAME = 'orchestration-logic'
-_SOURCE_PATH = Path(__file__).resolve().parent.parent.parent / 'astros_upscale_api' / 'app' / 'core' / 'upscaler.py'
+# Upscaler used to live in its own upscaler.py; it's now one class inside the
+# consolidated app/processing.py (Constitution Princípio XI) alongside
+# VideoUpscaler and the audio pipeline — same module, same `Upscaler` class
+# the protected loader's consumer (app.jobs's `_get_upscaler`) looks up via
+# `module.Upscaler`.
+_SOURCE_PATH = Path(__file__).resolve().parent.parent.parent / 'astros_upscale_api' / 'app' / 'processing.py'
 
 
 def main() -> None:

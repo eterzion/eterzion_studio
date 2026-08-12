@@ -1,12 +1,12 @@
 """Real tests for the license gate (T016/T035) — network calls are stubbed at
 license_gate._http_get (the one seam that actually talks to the wire), not
 the whole module, so the real branching logic (including the real offline-
-tolerance fallback, license_cache.py + offline_tolerance.py) still runs."""
+tolerance fallback, license_gate.py + offline_tolerance.py) still runs."""
 import urllib.error
 
 import pytest
 
-from app.core import license_cache, license_gate
+from app import licensing as license_gate
 
 
 @pytest.fixture(autouse=True)
@@ -24,7 +24,7 @@ def _configure(monkeypatch, http_get):
 
     monkeypatch.setattr(settings, 'licensing_service_url', 'http://licensing.test')
     monkeypatch.setattr(license_gate, '_http_get', http_get)
-    monkeypatch.setattr('app.core.install_identity.ensure_identity', lambda: _FakeIdentity())
+    monkeypatch.setattr('app.security.ensure_identity', lambda: _FakeIdentity())
 
 
 def test_gate_allows_when_no_licensing_service_configured(monkeypatch):
@@ -65,9 +65,9 @@ def test_gate_reaching_the_service_records_a_successful_check(monkeypatch):
     """FR-056 — a successful reach, even to learn the license isn't active,
     is still a real revalidation for offline-tolerance purposes."""
     _configure(monkeypatch, lambda url, timeout=5.0: {'license_id': 'lic_1', 'status': 'active'})
-    assert license_cache.days_since_last_success() is None
+    assert license_gate.days_since_last_success() is None
     license_gate.check_gate()
-    assert license_cache.days_since_last_success() == pytest.approx(0.0, abs=0.1)
+    assert license_gate.days_since_last_success() == pytest.approx(0.0, abs=0.1)
 
 
 def test_gate_blocks_when_installation_status_is_not_active(monkeypatch):
@@ -104,7 +104,7 @@ class TestOfflineFallback:
         assert result.state == 'blocked'
 
     def test_recently_validated_then_unreachable_is_allowed_within_tolerance(self, monkeypatch):
-        license_cache.record_successful_check()
+        license_gate.record_successful_check()
         _configure(monkeypatch, self._raise_unreachable)
         result = license_gate.check_gate()
         assert result.allowed is True
@@ -112,7 +112,7 @@ class TestOfflineFallback:
         assert result.offline_days_remaining == 30
 
     def test_validated_23_days_ago_then_unreachable_warns(self, monkeypatch):
-        license_cache.record_successful_check(now_epoch=0.0)
+        license_gate.record_successful_check(now_epoch=0.0)
         _configure(monkeypatch, self._raise_unreachable)
         monkeypatch.setattr('time.time', lambda: 23 * 86400.0)
         result = license_gate.check_gate()
@@ -120,7 +120,7 @@ class TestOfflineFallback:
         assert result.state == 'offline_expiring'
 
     def test_validated_31_days_ago_then_unreachable_is_blocked(self, monkeypatch):
-        license_cache.record_successful_check(now_epoch=0.0)
+        license_gate.record_successful_check(now_epoch=0.0)
         _configure(monkeypatch, self._raise_unreachable)
         monkeypatch.setattr('time.time', lambda: 31 * 86400.0)
         result = license_gate.check_gate()
@@ -131,7 +131,7 @@ class TestOfflineFallback:
         def _raise_500(url, timeout=5.0):
             raise urllib.error.HTTPError(url, 500, 'server error', hdrs=None, fp=None)
 
-        license_cache.record_successful_check()
+        license_gate.record_successful_check()
         _configure(monkeypatch, _raise_500)
         result = license_gate.check_gate()
         assert result.allowed is True

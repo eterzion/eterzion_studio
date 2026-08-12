@@ -1,11 +1,11 @@
-"""T052 — real coverage of astros_upscale.content_type.classify_audio (T008):
+"""T052 — real coverage of astros_upscale.processing.classify_audio (T008):
 routes a genuine speech recording to 'speech' and a synthesized musical clip
 (harmony + percussion, no voice) to 'music'. No mocking of the VAD model or
 of librosa's harmonic/percussive separation.
 
 The speech fixture is a real human-voice recording bundled with silero-vad's
 own repository (already fetched into this machine's torch.hub cache by
-astros_upscale.content_type._get_vad_model() — see conftest.py's
+astros_upscale.processing._get_vad_model() — see conftest.py's
 `real_speech_wav` fixture) — not a synthetic tone, which silero-vad would not
 reliably detect as speech in the first place."""
 from __future__ import annotations
@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 import soundfile as sf
 
-from astros_upscale.content_type import classify_audio
+from astros_upscale.processing import classify_audio
 
 pytestmark = pytest.mark.hardware  # loads a real torch model (silero-vad) + librosa
 

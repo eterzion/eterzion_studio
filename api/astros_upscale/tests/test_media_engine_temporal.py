@@ -5,8 +5,8 @@ import subprocess
 import numpy as np
 import pytest
 
-from astros_upscale.media_engine.temporal import apply_atadenoise, apply_deflicker, compute_tile_grid
-from astros_upscale.utils.video_io import VideoWriter
+from astros_upscale.media import apply_atadenoise, apply_deflicker, compute_tile_grid
+from astros_upscale.media import VideoWriter
 
 
 def _write_toy_video(path, frames=8, width=64, height=48, fps=10.0):

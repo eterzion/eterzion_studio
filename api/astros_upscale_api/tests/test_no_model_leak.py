@@ -1,7 +1,7 @@
 """T019: no response, log field, or output filename may contain a model/
 checkpoint/engine identifier, for every image scale x profile combination
 (Constitution Principle V, FR-009/FR-011). Checks the actual known model
-identifiers from astros_upscale.core.MODELS/ALIASES against the real JSON
+identifiers from astros_upscale.processing.MODELS/ALIASES against the real JSON
 returned by POST /jobs* and GET /jobs/{id} — not a guess at what "looks like"
 a model name.
 """
@@ -11,8 +11,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_jobs
-from astros_upscale.core import ALIASES, MODELS
+from app.routes import jobs_router
+from astros_upscale.processing import ALIASES, MODELS
 
 _KNOWN_MODEL_IDENTIFIERS = set(MODELS) | set(ALIASES)
 
@@ -20,7 +20,7 @@ _KNOWN_MODEL_IDENTIFIERS = set(MODELS) | set(ALIASES)
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_jobs.router, prefix='/jobs')
+    app.include_router(jobs_router, prefix='/jobs')
     return TestClient(app)
 
 
@@ -29,7 +29,7 @@ def _iter_string_values(payload):
     dict keys, never numbers/bools. Matching against values only (with exact
     equality, not substring) is what avoids false positives like the
     `adjustments.denoise` slider (an int, and even as a key merely SHARES a
-    name with the unrelated `denoise` model in astros_upscale.core.MODELS —
+    name with the unrelated `denoise` model in astros_upscale.processing.MODELS —
     a real leak means the model's own identifier appears as a value)."""
     if isinstance(payload, dict):
         for value in payload.values():

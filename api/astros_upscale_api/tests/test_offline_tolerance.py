@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import pytest
 
-from app.core import license_cache, offline_tolerance
+from app import licensing as offline_tolerance
 
 
 @pytest.fixture(autouse=True)
@@ -57,16 +57,16 @@ class TestComputeOfflineState:
 
 class TestLicenseCache:
     def test_no_cache_file_yet_reports_none(self):
-        assert license_cache.days_since_last_success(now_epoch=1000.0) is None
+        assert offline_tolerance.days_since_last_success(now_epoch=1000.0) is None
 
     def test_records_and_reads_back_a_successful_check(self):
-        license_cache.record_successful_check(now_epoch=1_000_000.0)
-        days = license_cache.days_since_last_success(now_epoch=1_000_000.0 + 5 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=1_000_000.0)
+        days = offline_tolerance.days_since_last_success(now_epoch=1_000_000.0 + 5 * DAY)
         assert days == pytest.approx(5.0)
 
     def test_full_offline_tolerance_pipeline_across_real_days(self):
-        license_cache.record_successful_check(now_epoch=0.0)
-        days = license_cache.days_since_last_success(now_epoch=25 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=0.0)
+        days = offline_tolerance.days_since_last_success(now_epoch=25 * DAY)
         state, remaining = offline_tolerance.compute_offline_state(days)
         assert state == 'offline_expiring'
         assert remaining == 5
@@ -75,12 +75,12 @@ class TestLicenseCache:
         """FR-058 — the actual mechanism under test: max_observed_epoch never
         goes down, so a rolled-back clock reading later can't look like a
         fresher check-in than one that's already been observed."""
-        license_cache.record_successful_check(now_epoch=100 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=100 * DAY)
         # attacker (or a buggy NTP sync) rolls the clock back to day 50 and
         # asks again — a naive "now - last_success" would report negative
         # days (i.e. "fully fresh"), resetting the tolerance clock
-        license_cache.record_successful_check(now_epoch=50 * DAY)
-        days = license_cache.days_since_last_success(now_epoch=50 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=50 * DAY)
+        days = offline_tolerance.days_since_last_success(now_epoch=50 * DAY)
         # effective_now is clamped to the max ever observed (100 days), so
         # the gap from the real last_success_epoch (100 days) is still ~0,
         # never negative, and a later honest reading past day 100 keeps
@@ -88,7 +88,7 @@ class TestLicenseCache:
         assert days == pytest.approx(0.0, abs=0.01)
 
     def test_rolling_clock_backward_then_forward_again_still_counts_from_true_success(self):
-        license_cache.record_successful_check(now_epoch=100 * DAY)
-        license_cache.record_successful_check(now_epoch=50 * DAY)  # rollback attempt, ignored
-        days = license_cache.days_since_last_success(now_epoch=110 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=100 * DAY)
+        offline_tolerance.record_successful_check(now_epoch=50 * DAY)  # rollback attempt, ignored
+        days = offline_tolerance.days_since_last_success(now_epoch=110 * DAY)
         assert days == pytest.approx(10.0, abs=0.01)

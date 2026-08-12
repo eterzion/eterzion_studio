@@ -43,7 +43,7 @@ Escopo: cobre a especificação completa recebida (defesa em profundidade para o
 
 ## 0. Achado crítico — leia antes de decidir investir nisso
 
-Antes de desenhar qualquer proteção, verifiquei o que `astros_upscale/core.py` realmente executa hoje. **Os 19 modelos registrados em `MODELS` são todos pesos públicos de terceiros**, baixados diretamente de URLs públicas do GitHub e do HuggingFace:
+Antes de desenhar qualquer proteção, verifiquei o que `api/astros_upscale/core.py` realmente executa hoje. **Os 19 modelos registrados em `MODELS` são todos pesos públicos de terceiros**, baixados diretamente de URLs públicas do GitHub e do HuggingFace:
 
 ```
 https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
@@ -67,7 +67,7 @@ Isso não invalida a especificação — ela continua correta como arquitetura g
 Duas decisões já foram tomadas e o restante deste documento reflete elas:
 
 1. **Os modelos (pesos) não precisam de proteção.** Confirmado — ficam exatamente como estão hoje: download público, sem criptografia, sem vínculo a instalação/licença. Isso elimina inteiramente a parte da especificação original sobre "modelo persistente" protegido, empacotamento de pesos por sessão, e a maior parte do custo da Fase 4 original.
-2. **Só a lógica de orquestração precisa de proteção** — isto é, o código que decide *como* usar os modelos: estratégia de tiling e overlap (`tile_process()` em `astros_upscale/core.py`), o limiar de tile e callback de progresso (`Upscaler` em `api/astros_upscale_api/app/core/upscaler.py`), e a aplicação de ajustes (denoise/sharpen/face recovery).
+2. **Só a lógica de orquestração precisa de proteção** — isto é, o código que decide *como* usar os modelos: estratégia de tiling e overlap (`tile_process()` em `api/astros_upscale/core.py`), o limiar de tile e callback de progresso (`Upscaler` em `api/astros_upscale_api/app/core/upscaler.py`), e a aplicação de ajustes (denoise/sharpen/face recovery).
 3. **O processamento continua rodando na GPU do usuário** — decisão explícita de manter a velocidade e não assumir custo de GPU em servidor. Isso significa que a inferência dividida (§6.1, a proteção mais forte do documento) **não é aplicável aqui**: se o cálculo pesado precisa acontecer na máquina do usuário, a lógica que o comanda também precisa estar presente ali, ainda que protegida. Nenhuma arquitetura torna isso 100% opaco — apenas eleva o custo e reduz a janela de exposição, conforme o §1.
 
 Com isso, o escopo efetivo do projeto é: **Fase 1, Fase 2, uma Fase 4 bem mais enxuta (só a lógica, não pesos) e Fase 5**, mais uma **Fase 3 completa**, já que a decisão seguinte (§0.2) confirmou que vocês também querem controle de acesso por licença, não só proteção contra engenharia reversa.
@@ -186,7 +186,7 @@ Note que a licença é verificada uma vez por sessão de processamento (passo 2)
 | Componente atual | O que muda |
 |---|---|
 | `astros_upscale_api` (FastAPI local) | Deixa de rodar a lógica de tiling/ajustes no próprio processo; passa a orquestrar o processo isolado (Fase 1) e a se comunicar com o serviço remoto mínimo (Fase 3 simplificada) para obter a autorização/chave de sessão a cada job. |
-| `astros_upscale/core.py` | `tile_process()` e a lógica de blending/ajustes migram para o módulo protegido que roda dentro do executor isolado. O download e carregamento do peso do modelo em si **não muda** — continua público, sem DRM, exatamente como hoje. |
+| `api/astros_upscale/core.py` | `tile_process()` e a lógica de blending/ajustes migram para o módulo protegido que roda dentro do executor isolado. O download e carregamento do peso do modelo em si **não muda** — continua público, sem DRM, exatamente como hoje. |
 | Download de modelos (`MODELS` dict) | Sem alteração — continua público, sem criptografia, sem vínculo a instalação (confirmado no §0.1). |
 | `job_manager.py` | Ganha os hooks de limpeza determinística (chaves, processo, artefatos) e o registro do watchdog. |
 

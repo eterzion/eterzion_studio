@@ -1,5 +1,5 @@
 """Real integration tests for worker_supervisor.py — actually spawns the
-isolated worker subprocess (python -m app.core.isolated_worker) and talks to
+isolated worker subprocess (python -m app.jobs) and talks to
 it over a real local IPC pipe, the same way job_manager does in production.
 This is deliberately NOT mocked: it's the one module in this codebase whose
 entire job is process lifecycle + IPC, so a test that mocked subprocess.Popen
@@ -17,8 +17,8 @@ import numpy as np
 import pytest
 
 from app.config import settings
-from app.core import worker_supervisor
-from app.core.worker_supervisor import WorkerCrashed, WorkerFailure, WorkerSupervisor
+from app import jobs as worker_supervisor
+from app.jobs import WorkerCrashed, WorkerFailure, WorkerSupervisor
 
 
 def _make_test_image_path(tmp_path, name='in.png'):
@@ -109,7 +109,7 @@ class TestRealProcessCall:
 
     def test_processes_a_real_image_through_the_real_isolated_worker(self, supervisor, tmp_path):
         """The full real path: spawn subprocess -> subprocess passes its own
-        integrity self-check -> imports app.core.upscaler -> loads the real
+        integrity self-check -> imports app.processing -> loads the real
         hfa2k-span model -> runs real inference -> sends the result back
         over the pipe. Nothing here is mocked."""
         input_path = _make_test_image_path(tmp_path)

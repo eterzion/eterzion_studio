@@ -1,6 +1,6 @@
 """T026: compress/convert operations must never load an AI model — real
 ffmpeg/OpenCV transcoding only (FR-029, Constitution "No AI Without Benefit").
-Spies on profile_resolver.resolve() and astros_upscale.core.load_model() (the
+Spies on profile_resolver.resolve() and astros_upscale.processing.load_model() (the
 one place a spandrel/torch model actually gets loaded) to prove the AI path
 is never even touched, then runs a REAL compress job end-to-end and confirms
 distinct quality levels produce measurably different file sizes (the
@@ -13,7 +13,7 @@ import cv2
 import numpy as np
 import pytest
 
-from app.core import job_manager
+from app import jobs as job_manager
 
 
 def _write_test_image(path, size=96):
@@ -27,8 +27,8 @@ def _write_test_image(path, size=96):
 def spy_on_ai_paths(monkeypatch):
     calls = {'resolve': 0, 'load_model': 0}
 
-    from app.core import profile_resolver
-    from astros_upscale import core as astros_core
+    from app import licensing as profile_resolver
+    from astros_upscale import processing as astros_core
 
     real_resolve = profile_resolver.resolve
     real_load_model = astros_core.load_model

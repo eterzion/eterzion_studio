@@ -14,8 +14,7 @@ import os
 
 import cv2
 
-from .media_engine import has_ffmpeg, run_ffmpeg
-from .utils.image_io import ImageOpenError, imread
+from .media import ImageOpenError, has_ffmpeg, imread, run_ffmpeg
 
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp', '.avif')
 _CV2_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')  # what OpenCV itself can decode/encode
@@ -36,7 +35,7 @@ def _quality_to_avif_crf(quality: int) -> int:
 def _convert_image_via_ffmpeg(input_path: str, output_path: str, quality: int) -> None:
     """AVIF isn't a format OpenCV's stock build can decode or encode — real
     transcoding via ffmpeg's AV1 still-picture encoder (libaom-av1, LGPL-safe
-    per media_engine.transcode.GPL_ENCODERS) covers both directions."""
+    per media.GPL_ENCODERS) covers both directions."""
     if not has_ffmpeg():
         raise RuntimeError('ffmpeg não encontrado no sistema; instale-o para converter de/para AVIF.')
     os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)

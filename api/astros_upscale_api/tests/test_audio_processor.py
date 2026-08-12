@@ -13,9 +13,8 @@ import wave
 
 import pytest
 
-from app.core.audio_processor import MissingAudioDependency, apply_dsp_chain, process
-from astros_upscale.media_engine.probe import ffprobe_json
-from astros_upscale.utils.video_io import has_ffmpeg
+from app.processing import MissingAudioDependency, apply_dsp_chain, process
+from astros_upscale.media import ffprobe_json, has_ffmpeg
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 

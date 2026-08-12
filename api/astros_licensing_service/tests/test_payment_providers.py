@@ -9,7 +9,7 @@ import hmac
 import json
 import time
 
-from app.payments import mercadopago_provider, stripe_provider
+from app import payments
 
 SECRET = 'whsec_test_secret'
 
@@ -42,7 +42,7 @@ class TestStripeVerification:
     def test_accepts_a_correctly_signed_payload(self):
         payload = _stripe_payload()
         header = _stripe_signed(payload)
-        event = stripe_provider.verify_and_parse(payload, header, SECRET)
+        event = payments.verify_and_parse(payload, header, SECRET)
         assert event is not None
         assert event.reference == 'cs_test_123'
         assert event.email == 'buyer@example.com'
@@ -51,24 +51,24 @@ class TestStripeVerification:
     def test_rejects_wrong_secret(self):
         payload = _stripe_payload()
         header = _stripe_signed(payload, secret='a-different-secret')
-        assert stripe_provider.verify_and_parse(payload, header, SECRET) is None
+        assert payments.verify_and_parse(payload, header, SECRET) is None
 
     def test_rejects_tampered_payload(self):
         """Same signature, different body — must fail, not just log a warning."""
         payload = _stripe_payload()
         header = _stripe_signed(payload)
         tampered = _stripe_payload(amount_total=1)
-        assert stripe_provider.verify_and_parse(tampered, header, SECRET) is None
+        assert payments.verify_and_parse(tampered, header, SECRET) is None
 
     def test_rejects_missing_header(self):
-        assert stripe_provider.verify_and_parse(_stripe_payload(), '', SECRET) is None
+        assert payments.verify_and_parse(_stripe_payload(), '', SECRET) is None
 
     def test_rejects_empty_webhook_secret(self):
         """A misconfigured (empty) secret must fail closed, not treat every
         request as trusted."""
         payload = _stripe_payload()
         header = _stripe_signed(payload)
-        assert stripe_provider.verify_and_parse(payload, header, '') is None
+        assert payments.verify_and_parse(payload, header, '') is None
 
     def test_rejects_stale_timestamp_replay(self):
         """A captured, correctly-signed webhook replayed an hour later must be
@@ -76,21 +76,21 @@ class TestStripeVerification:
         payload = _stripe_payload()
         old_ts = int(time.time()) - 3600
         header = _stripe_signed(payload, ts=old_ts)
-        assert stripe_provider.verify_and_parse(payload, header, SECRET) is None
+        assert payments.verify_and_parse(payload, header, SECRET) is None
 
     def test_rejects_malformed_header(self):
         payload = _stripe_payload()
-        assert stripe_provider.verify_and_parse(payload, 'not-a-valid-header', SECRET) is None
+        assert payments.verify_and_parse(payload, 'not-a-valid-header', SECRET) is None
 
     def test_ignores_non_checkout_event_types(self):
         body = json.dumps({'type': 'invoice.paid', 'data': {'object': {}}}).encode('utf-8')
         header = _stripe_signed(body)
-        assert stripe_provider.verify_and_parse(body, header, SECRET) is None
+        assert payments.verify_and_parse(body, header, SECRET) is None
 
     def test_ignores_unpaid_session(self):
         payload = _stripe_payload(payment_status='unpaid')
         header = _stripe_signed(payload)
-        assert stripe_provider.verify_and_parse(payload, header, SECRET) is None
+        assert payments.verify_and_parse(payload, header, SECRET) is None
 
     def test_rejects_missing_email(self):
         body = {
@@ -99,7 +99,7 @@ class TestStripeVerification:
         }
         payload = json.dumps(body).encode('utf-8')
         header = _stripe_signed(payload)
-        assert stripe_provider.verify_and_parse(payload, header, SECRET) is None
+        assert payments.verify_and_parse(payload, header, SECRET) is None
 
 
 def _mp_signed(data_id: str, request_id: str, secret: str = SECRET, ts: str | None = None) -> str:
@@ -113,32 +113,32 @@ def _mp_signed(data_id: str, request_id: str, secret: str = SECRET, ts: str | No
 class TestMercadoPagoVerification:
     def test_accepts_a_correctly_signed_payload(self):
         header = _mp_signed('12345', 'req-1')
-        assert mercadopago_provider.verify_signature('12345', 'req-1', header, SECRET) is True
+        assert payments.verify_signature('12345', 'req-1', header, SECRET) is True
 
     def test_rejects_wrong_secret(self):
         header = _mp_signed('12345', 'req-1', secret='a-different-secret')
-        assert mercadopago_provider.verify_signature('12345', 'req-1', header, SECRET) is False
+        assert payments.verify_signature('12345', 'req-1', header, SECRET) is False
 
     def test_rejects_tampered_data_id(self):
         header = _mp_signed('12345', 'req-1')
-        assert mercadopago_provider.verify_signature('99999', 'req-1', header, SECRET) is False
+        assert payments.verify_signature('99999', 'req-1', header, SECRET) is False
 
     def test_rejects_tampered_request_id(self):
         header = _mp_signed('12345', 'req-1')
-        assert mercadopago_provider.verify_signature('12345', 'req-DIFFERENT', header, SECRET) is False
+        assert payments.verify_signature('12345', 'req-DIFFERENT', header, SECRET) is False
 
     def test_rejects_missing_header(self):
-        assert mercadopago_provider.verify_signature('12345', 'req-1', '', SECRET) is False
+        assert payments.verify_signature('12345', 'req-1', '', SECRET) is False
 
     def test_rejects_empty_secret(self):
         header = _mp_signed('12345', 'req-1')
-        assert mercadopago_provider.verify_signature('12345', 'req-1', header, '') is False
+        assert payments.verify_signature('12345', 'req-1', header, '') is False
 
     def test_rejects_malformed_header(self):
-        assert mercadopago_provider.verify_signature('12345', 'req-1', 'garbage', SECRET) is False
+        assert payments.verify_signature('12345', 'req-1', 'garbage', SECRET) is False
 
     def test_to_payment_event_accepts_approved_payment(self):
-        event = mercadopago_provider.to_payment_event({
+        event = payments.to_payment_event({
             'status': 'approved', 'id': 555, 'payer': {'email': 'buyer@example.com'},
             'transaction_amount': 49.9, 'currency_id': 'BRL',
         })
@@ -147,11 +147,11 @@ class TestMercadoPagoVerification:
         assert event.email == 'buyer@example.com'
 
     def test_to_payment_event_ignores_non_approved_status(self):
-        event = mercadopago_provider.to_payment_event({
+        event = payments.to_payment_event({
             'status': 'pending', 'id': 555, 'payer': {'email': 'buyer@example.com'},
         })
         assert event is None
 
     def test_to_payment_event_rejects_missing_email(self):
-        event = mercadopago_provider.to_payment_event({'status': 'approved', 'id': 555, 'payer': {}})
+        event = payments.to_payment_event({'status': 'approved', 'id': 555, 'payer': {}})
         assert event is None

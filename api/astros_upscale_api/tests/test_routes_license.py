@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_license
+from app.routes import license_router
 
 
 @pytest.fixture(autouse=True)
@@ -22,7 +22,7 @@ def isolated_cache_dir(tmp_path, monkeypatch):
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_license.router, prefix='/license')
+    app.include_router(license_router, prefix='/license')
     return TestClient(app)
 
 
@@ -36,7 +36,7 @@ def _configure(monkeypatch):
     from app.config import settings
 
     monkeypatch.setattr(settings, 'licensing_service_url', 'http://licensing.test')
-    monkeypatch.setattr('app.core.install_identity.ensure_identity', lambda: _FakeIdentity())
+    monkeypatch.setattr('app.security.ensure_identity', lambda: _FakeIdentity())
 
 
 class TestGetStatus:
@@ -50,7 +50,7 @@ class TestGetStatus:
 
     def test_reports_active_with_seat_counts(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         monkeypatch.setattr(license_gate, '_http_get', lambda url, timeout=5.0: {
             'license_id': 'lic_1', 'status': 'active', 'installations_used': 1, 'installations_limit': 2,
@@ -64,7 +64,7 @@ class TestGetStatus:
 
     def test_reports_not_activated_for_a_never_activated_installation(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         def _raise_404(url, timeout=5.0):
             raise urllib.error.HTTPError(url, 404, 'not found', hdrs=None, fp=None)
@@ -84,7 +84,8 @@ class TestActivate:
 
     def test_activates_and_records_a_successful_check(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import license_cache, protected_loader
+        from app import licensing as license_cache
+        from app import security as protected_loader
 
         monkeypatch.setattr(protected_loader, '_http_post', lambda url, body: {'ok': True})
         assert license_cache.days_since_last_success() is None
@@ -95,7 +96,7 @@ class TestActivate:
 
     def test_surfaces_a_clear_error_when_the_service_rejects_activation(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import protected_loader
+        from app import security as protected_loader
 
         def _raise(url, body):
             raise protected_loader.ProtectedLoadError('licença inválida')
@@ -108,7 +109,7 @@ class TestActivate:
 class TestRelease:
     def test_returns_409_when_not_activated(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         def _raise_404(url, timeout=5.0):
             raise urllib.error.HTTPError(url, 404, 'not found', hdrs=None, fp=None)
@@ -119,7 +120,8 @@ class TestRelease:
 
     def test_releases_a_real_activated_installation(self, client, monkeypatch):
         _configure(monkeypatch)
-        from app.core import license_gate, protected_loader
+        from app import licensing as license_gate
+        from app import security as protected_loader
 
         monkeypatch.setattr(
             license_gate, '_http_get',

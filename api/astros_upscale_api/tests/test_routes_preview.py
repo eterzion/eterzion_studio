@@ -12,13 +12,13 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_preview
+from app import routes as routes_preview
 
 
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_preview.router, prefix='/preview')
+    app.include_router(routes_preview.preview_router, prefix='/preview')
     return TestClient(app)
 
 

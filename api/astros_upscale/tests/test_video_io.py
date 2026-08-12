@@ -4,9 +4,9 @@ import subprocess
 import numpy as np
 import pytest
 
-from astros_upscale.core import resolve_model
-from astros_upscale.utils.image_io import ImageOpenError, imread
-from astros_upscale.utils.video_io import VideoOpenError, VideoReader, VideoWriter, copy_audio, has_ffmpeg
+from astros_upscale.processing import resolve_model
+from astros_upscale.media import ImageOpenError, imread
+from astros_upscale.media import VideoOpenError, VideoReader, VideoWriter, copy_audio, has_ffmpeg
 
 
 def _write_toy_video(path, frames=5, width=32, height=24, fps=10.0):

@@ -40,7 +40,7 @@ class TestCreateLicenseFromPayment:
         assert first.id == second.id
 
     def test_idempotent_retry_does_not_duplicate_row(self, make_payment_event):
-        from app.db import get_conn
+        from app.database import get_conn
 
         event = make_payment_event(reference='txn_dedup')
         licensing.create_license_from_payment(event)

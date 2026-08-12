@@ -12,8 +12,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_jobs
-from astros_upscale.utils.video_io import has_ffmpeg
+from app.routes import jobs_router
+from astros_upscale.media import has_ffmpeg
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_jobs.router, prefix='/jobs')
+    app.include_router(jobs_router, prefix='/jobs')
     return TestClient(app)
 
 

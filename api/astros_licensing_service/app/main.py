@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import routes_activation, routes_authorizations, routes_packages, routes_webhooks
 from app.config import settings
-from app.db import init_db
-from app.service_identity import get_public_key_b64
+from app.database import init_db
+from app.licensing import get_public_key_b64
+from app.routes import activation_router, authorizations_router, packages_router, webhooks_router
 
 app = FastAPI(title='Astros Upscale — Licensing Service')
 
@@ -15,10 +15,10 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.include_router(routes_webhooks.router, prefix='/webhooks', tags=['webhooks'])
-app.include_router(routes_activation.router, prefix='/activations', tags=['activations'])
-app.include_router(routes_authorizations.router, prefix='/authorizations', tags=['authorizations'])
-app.include_router(routes_packages.router, prefix='/packages', tags=['packages'])
+app.include_router(webhooks_router, prefix='/webhooks', tags=['webhooks'])
+app.include_router(activation_router, prefix='/activations', tags=['activations'])
+app.include_router(authorizations_router, prefix='/authorizations', tags=['authorizations'])
+app.include_router(packages_router, prefix='/packages', tags=['packages'])
 
 
 @app.on_event('startup')

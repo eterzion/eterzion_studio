@@ -6,10 +6,10 @@ import pytest
 import torch
 from spandrel.architectures.Compact import Compact
 
-from astros_upscale.audio import AUDIO_ENGINES, MissingAudioDependency, enhance_audio_file, is_engine_available
-from astros_upscale.core import canonical_name, model_download_status, model_local_paths, resolve_model
-from astros_upscale.utils.download import DownloadError, download_with_fallback
-from astros_upscale.utils.video_io import VideoWriter, even, extract_audio, has_ffmpeg, mux_audio_file
+from astros_upscale.processing import AUDIO_ENGINES, MissingAudioDependency, enhance_audio_file, is_engine_available
+from astros_upscale.processing import canonical_name, model_download_status, model_local_paths, resolve_model
+from astros_upscale.media import DownloadError, download_with_fallback
+from astros_upscale.media import VideoWriter, even, extract_audio, has_ffmpeg, mux_audio_file
 
 
 def _write_source(tmp_path, name, content=b'weights'):
@@ -22,7 +22,7 @@ def _write_source(tmp_path, name, content=b'weights'):
 def test_mirror_url_used_before_fallback(tmp_path, monkeypatch):
     # a working "mirror" file wins over a broken "original" URL
     mirror = _write_source(tmp_path / 'mirror', 'w.pth', b'mirror-bytes')
-    from astros_upscale.utils.download import sha256_of_file
+    from astros_upscale.media import sha256_of_file
     digest = sha256_of_file(str(mirror))
 
     result = download_with_fallback(
@@ -33,7 +33,7 @@ def test_mirror_url_used_before_fallback(tmp_path, monkeypatch):
 
 def test_fallback_to_original_when_mirror_fails(tmp_path):
     original = _write_source(tmp_path / 'original', 'w2.pth', b'original-bytes')
-    from astros_upscale.utils.download import sha256_of_file
+    from astros_upscale.media import sha256_of_file
     digest = sha256_of_file(str(original))
 
     broken_mirror = (tmp_path / 'nao-existe.pth').as_uri()
@@ -53,7 +53,7 @@ def test_all_sources_fail_raises_aggregated_error(tmp_path):
 def test_resolve_model_uses_mirror_json(tmp_path, monkeypatch):
     # build a fake models.json pointing 'hfa2k-span' at a local mirror file
     mirror_file = _write_source(tmp_path, '2xHFA2kSPAN.safetensors', b'fake-mirror-weights')
-    from astros_upscale.utils.download import sha256_of_file
+    from astros_upscale.media import sha256_of_file
     digest = sha256_of_file(str(mirror_file))
 
     manifest = {
@@ -67,7 +67,7 @@ def test_resolve_model_uses_mirror_json(tmp_path, monkeypatch):
 
     # the registry's pinned sha256 differs from our fake mirror content, so pass sha256=None
     # indirectly by monkeypatching MODELS' pinned hash for this one test to match our fake file.
-    import astros_upscale.core as core
+    import astros_upscale.processing as core
     monkeypatch.setitem(core.MODELS['hfa2k-span'], 'sha256', [digest])
 
     path, _ = resolve_model('hfa2k-span', model_dir=str(tmp_path / 'out'), models_json=str(models_json))

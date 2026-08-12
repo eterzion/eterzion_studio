@@ -18,8 +18,8 @@ import time
 import pytest
 
 from app.config import settings
-from app.core.worker_supervisor import WorkerCrashed, WorkerFailure, WorkerSupervisor
-from astros_upscale.utils.video_io import has_ffmpeg
+from app.jobs import WorkerCrashed, WorkerFailure, WorkerSupervisor
+from astros_upscale.media import has_ffmpeg
 
 pytestmark = [pytest.mark.slow, pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary')]
 

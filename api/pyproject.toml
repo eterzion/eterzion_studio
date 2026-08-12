@@ -37,7 +37,7 @@ dependencies = [
 audio = [
     # denoiser (CC-BY-NC-4.0) and voicefixer's unlicensed vocoder checkpoint were
     # removed per docs/models/MODEL_LICENSES.md — replaced by DSP (afftdn/loudnorm)
-    # in astros_upscale.audio plus the two commercially-clean model paths below.
+    # in astros_upscale.processing plus the two commercially-clean model paths below.
     "audiosronnx",  # Apache-2.0 code and weights — speech bandwidth extension
     "sonicmaster @ git+https://github.com/AMAAI-Lab/SonicMaster.git",  # music — approved_conditional, see MODEL_LICENSES.md §3-bis
     "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",

@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_components
+from app.routes import components_router
 from app.config import settings
 
 
@@ -21,13 +21,13 @@ def empty_models_dir(tmp_path, monkeypatch):
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_components.router, prefix='/components')
+    app.include_router(components_router, prefix='/components')
     return TestClient(app)
 
 
 class TestListComponents:
     def test_returns_the_six_content_type_components(self, client):
-        from app.core.component_manager import CAPABILITY_LABELS
+        from app.processing import CAPABILITY_LABELS
 
         res = client.get('/components')
         assert res.status_code == 200
@@ -69,7 +69,7 @@ class TestInstallUpdateDelete:
         component_manager._pip_install_audio_extra) — this test forces the
         real "no pyproject.toml next to this process" failure path instead
         of letting a real pip/git install run during the suite."""
-        from app.core import component_manager
+        from app import processing as component_manager
 
         monkeypatch.setattr(component_manager, '_REPO_ROOT', tmp_path)
         res = client.post('/components/speech/install')
@@ -77,7 +77,7 @@ class TestInstallUpdateDelete:
         assert 'pip install' in res.json()['detail']
 
     def test_install_speech_returns_200_when_pip_succeeds(self, client, monkeypatch):
-        from app.core import component_manager
+        from app import processing as component_manager
 
         class Usage:
             free = 100 * 1024 * 1024 * 1024

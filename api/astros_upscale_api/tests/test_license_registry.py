@@ -1,6 +1,6 @@
 """Real integrity tests for the backend model-license authority (T017)."""
-from app.core.license_registry import get_model_license, verify_registry_completeness
-from astros_upscale.core import MODELS
+from app.licensing import get_model_license, verify_registry_completeness
+from astros_upscale.processing import MODELS
 
 
 def test_registry_has_no_gaps_against_the_live_model_registry():

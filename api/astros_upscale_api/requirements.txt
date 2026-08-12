@@ -16,7 +16,7 @@ nvidia-ml-py>=12.0
 # The astros_upscale core package (imported via sys.path by conftest.py, not
 # pip-installed as a package) needs its own real dependencies here too —
 # `realesrgan` (and its broken, unmaintained `basicsr` transitive dependency)
-# was never actually imported by any code in this repo (astros_upscale.core
+# was never actually imported by any code in this repo (astros_upscale.processing
 # loads models through spandrel, per pyproject.toml's own description "sem
 # dependência de BasicSR") and was breaking `pip install` in CI.
 spandrel>=0.4

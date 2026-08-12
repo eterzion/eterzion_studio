@@ -10,9 +10,8 @@ import subprocess
 import pytest
 
 from app.config import settings
-from app.core.video_upscaler import VideoUpscaler
-from astros_upscale.media_engine.probe import ffprobe_json
-from astros_upscale.utils.video_io import has_ffmpeg
+from app.processing import VideoUpscaler
+from astros_upscale.media import ffprobe_json, has_ffmpeg
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 

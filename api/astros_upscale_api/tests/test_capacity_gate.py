@@ -11,14 +11,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_jobs
-from astros_upscale.hardware import HardwareCapability
+from app.routes import jobs_router
+from astros_upscale.processing import HardwareCapability
 
 
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_jobs.router, prefix='/jobs')
+    app.include_router(jobs_router, prefix='/jobs')
     return TestClient(app)
 
 
@@ -48,7 +48,7 @@ def _roomy_hardware() -> HardwareCapability:
 class TestCapacityGateOnJobCreation:
     def test_a_request_on_a_starved_machine_is_rejected_before_the_job_exists(
             self, client, real_input_file, monkeypatch):
-        from astros_upscale import hardware as hardware_module
+        from astros_upscale import processing as hardware_module
 
         monkeypatch.setattr(hardware_module, 'detect_hardware', _starved_hardware)
         res = client.post('/jobs/local', json=_local_body(real_input_file))
@@ -64,7 +64,7 @@ class TestCapacityGateOnJobCreation:
         import cv2
         import numpy as np
 
-        from astros_upscale import hardware as hardware_module
+        from astros_upscale import processing as hardware_module
 
         decodable_path = str(tmp_path / 'real.png')
         cv2.imwrite(decodable_path, np.zeros((64, 64, 3), dtype=np.uint8))
@@ -85,7 +85,7 @@ class TestCapacityGateOnJobCreation:
         """FR-076 to FR-079 are about the AI-model memory footprint —
         compress/convert never load a model (Constitution "No AI Without
         Benefit"), so this must proceed even on a starved machine."""
-        from astros_upscale import hardware as hardware_module
+        from astros_upscale import processing as hardware_module
 
         monkeypatch.setattr(hardware_module, 'detect_hardware', _starved_hardware)
         res = client.post('/jobs/local', json=_local_body(

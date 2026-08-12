@@ -10,13 +10,13 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_jobs
+from app.routes import jobs_router
 
 
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_jobs.router, prefix='/jobs')
+    app.include_router(jobs_router, prefix='/jobs')
     return TestClient(app)
 
 
@@ -64,7 +64,7 @@ class TestCreateJobLocal:
         implementation (T024/T045/T046/T055); this exercises the refusal path
         via a temporarily unapproved registry entry so the guarantee ("refused
         before the Job is created, not fail later mid-queue") stays covered."""
-        from app.core import profile_resolver
+        from app import licensing as profile_resolver
 
         monkeypatch.setitem(
             profile_resolver._CONTENT_TYPE_IMPLEMENTATIONS, 'music',
@@ -214,7 +214,7 @@ class TestExportJobRoute:
         assert res.status_code == 409
 
     def test_exports_a_done_job_and_renames_on_conflict(self, client, real_input_file, tmp_path, fake_supervisor):
-        from app.core import job_manager
+        from app import jobs as job_manager
 
         fake_supervisor.configure_result((10, 10), (20, 20))
         job_id = client.post('/jobs/local', json=_local_body(real_input_file)).json()['id']
@@ -245,7 +245,7 @@ class TestLicenseGate:
     (via GateResult, monkeypatched at the module level check_gate() reads)."""
 
     def test_create_job_local_is_blocked_when_gate_refuses(self, client, real_input_file, monkeypatch):
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         monkeypatch.setattr(
             license_gate, 'check_gate',
@@ -255,7 +255,7 @@ class TestLicenseGate:
         assert res.json()['detail']['error_category'] == 'license_invalid'
 
     def test_create_job_local_proceeds_when_gate_allows(self, client, real_input_file, monkeypatch):
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         monkeypatch.setattr(
             license_gate, 'check_gate', lambda: license_gate.GateResult(allowed=True, state='active'))
@@ -263,7 +263,7 @@ class TestLicenseGate:
         assert res.status_code == 200
 
     def test_process_job_is_blocked_when_gate_refuses(self, client, real_input_file, monkeypatch):
-        from app.core import license_gate
+        from app import licensing as license_gate
 
         job_id = client.post('/jobs/local', json=_local_body(real_input_file)).json()['id']
         monkeypatch.setattr(

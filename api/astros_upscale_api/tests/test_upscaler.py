@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 
 from app.config import settings
-from app.core.upscaler import Upscaler
+from app.processing import Upscaler
 
 
 def _make_test_image(size=32, seed=0) -> np.ndarray:
@@ -174,7 +174,7 @@ class TestStageCallbacksForOptionalEffects:
 
     def test_reports_stages_for_every_enabled_effect(self, real_upscaler, tiny_image_path, tmp_path, monkeypatch):
         fake = FakeFaceEnhancer()
-        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
+        monkeypatch.setattr('app.processing._get_face_enhancer', lambda model_dir: fake)
 
         stages = []
         real_upscaler.process(
@@ -212,7 +212,7 @@ class TestFaceRecoveryBranch:
         self, real_upscaler, tiny_image_path, tmp_path, monkeypatch
     ):
         fake = FakeFaceEnhancer()
-        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
+        monkeypatch.setattr('app.processing._get_face_enhancer', lambda model_dir: fake)
 
         master_path = str(tmp_path / 'master.png')
         real_upscaler.process(
@@ -231,7 +231,7 @@ class TestFaceRecoveryBranch:
         self, real_upscaler, tmp_path, monkeypatch
     ):
         fake = FakeFaceEnhancer()
-        monkeypatch.setattr('app.core.upscaler._get_face_enhancer', lambda model_dir: fake)
+        monkeypatch.setattr('app.processing._get_face_enhancer', lambda model_dir: fake)
 
         img16 = (_make_test_image().astype(np.uint16)) * 257  # real 16-bit image
         path = tmp_path / 'in16.png'
@@ -246,7 +246,7 @@ class TestFaceRecoveryBranch:
         assert any('não suportado' in s for s in stages)
 
     def test_face_enhancer_is_cached_across_process_calls(self, tiny_image_path, tmp_path, monkeypatch):
-        from app.core import upscaler as upscaler_module
+        from app import processing as upscaler_module
 
         upscaler_module._face_enhancer_cache.clear()
         constructed = []
@@ -304,8 +304,8 @@ class TestExport:
         mocked here (the one justified boundary: proving *this* code reacts
         correctly to that return value, not re-testing OpenCV's own
         internals)."""
-        from app.core import upscaler as upscaler_module
-        from astros_upscale.utils.image_io import ImageOpenError
+        from app import processing as upscaler_module
+        from astros_upscale.media import ImageOpenError
 
         master_path = tmp_path / 'master.png'
         cv2.imwrite(str(master_path), _make_test_image())

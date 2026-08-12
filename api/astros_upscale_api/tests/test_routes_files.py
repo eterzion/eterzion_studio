@@ -5,14 +5,14 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_files
-from app.core import job_manager
+from app.routes import files_router
+from app import jobs as job_manager
 
 
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_files.router)
+    app.include_router(files_router)
     return TestClient(app)
 
 

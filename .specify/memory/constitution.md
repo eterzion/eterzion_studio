@@ -1,6 +1,29 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.2.0 → 2.3.0 (2026-08-12)
+
+MINOR bump rationale: a new principle (XI. API Structure Is Consolidated By Domain, Not By Class)
+was added. It adds rules that did not previously exist — it does not remove or weaken anything, so
+it is not a MAJOR change; it is more than a wording clarification, so it is not a PATCH.
+
+Added principles: XI. API Structure Is Consolidated By Domain, Not By Class (fragmented
+single-responsibility files inside `api/` consolidate into domain-cohesive modules —
+processing/media/jobs/licensing/security/routes/schemas/payments/database — instead of one file
+per class or one directory per technical layer; genuine technical separation still stands where a
+responsibility is truly independent or a merge would stop reading as one coherent domain; no
+behaviour change from consolidation — HTTP contracts, WebSocket contracts and processing/licensing/
+payment logic are preserved exactly; empty pre-consolidation directories are removed, and
+compatibility shims are folded in rather than deleted blind).
+Modified sections: Governance → Compliance review (added Principle XI to the mandatory review gate
+list).
+Removed sections: none.
+Templates requiring review: none — the addition is additive and does not contradict existing
+guidance in spec/plan/tasks templates.
+
+---
+Previous report
+---------------
 Version change: 2.1.0 → 2.2.0 (2026-08-12)
 
 MINOR bump rationale: a new principle (X. Interface Structure Is Adapted, Not Templated) was
@@ -392,6 +415,55 @@ real need, adding indirection a ~20-component app never asked for. Principle II 
 this principle share the same instinct — prefer what the codebase already needs over what a
 template says it should have.
 
+### XI. API Structure Is Consolidated By Domain, Not By Class
+
+Generic layered conventions (one file per class, one directory per technical tier — `api/`,
+`core/`, `models/`) inform how `api/`'s subpackages are organised, but MUST be adapted to what
+each subpackage's actual responsibility surface looks like — never applied literally when the
+result is fragmentation with no real navigational benefit.
+
+- **Consolidate by domain, not by class or by technical layer.** Inside `astros_upscale_api/app/`,
+  the `app/api/`, `app/core/`, and `app/models/` directory split MUST NOT be kept as a rule of its
+  own; route handlers for different resources belong together in `routes.py`, model
+  upscale/video/audio/component/capacity orchestration belongs together in `processing.py`, job
+  scheduling/worker supervision/subprocess isolation belongs together in `jobs.py`, the licence
+  gate/cache/registry/profile-resolution/offline-tolerance chain belongs together in
+  `licensing.py`, the isolation/integrity/DPAPI/protected-loader/identity stack belongs together in
+  `security.py`, and request/response schemas belong together in a single `schemas.py`. The same
+  domain-grouping applies to `astros_licensing_service/app/`: activation, authorisation and service
+  identity into `licensing.py`; package definitions and their cryptography into `packages.py`; the
+  Stripe/Mercado Pago/base provider files into one `payments.py`; the four route files into one
+  `routes.py`.
+- **Genuine technical separation still stands.** If a piece of a consolidation target has a
+  separable, independently-testable responsibility, or merging it would produce a file that no
+  longer reads as one coherent domain, that piece MAY remain — or become — its own file. This
+  principle does not mandate merging past the point where the result stops being readable; a
+  smaller number of files is a consequence of removing accidental fragmentation, not a target
+  pursued for its own sake.
+- **No behaviour change from consolidation.** HTTP paths, methods, request/response schemas, status
+  codes, WebSocket message contracts, and the processing/licensing/payment logic itself MUST be
+  preserved exactly. Moving code between files is a file-organisation change, not a redesign, and
+  MUST NOT alter what any consumer (the `interface/` app, a test, an external client) observes.
+- **No abstraction added to make the merge easier.** Consolidating files MUST NOT introduce a new
+  facade, base class, or indirection layer whose only purpose is to paper over the merge — call
+  sites are updated to the new module path directly, per Principle X's existing "no abstraction
+  without a real consumer" rule, which applies here identically.
+- **Dead structure is removed, not left behind.** `app/api/`, `app/core/`, `app/models/`, and any
+  other pre-consolidation directory MUST be deleted once empty — not left as an empty shell "in
+  case something still imports it." Existing compatibility shims (e.g. `legacy_identifiers.py`)
+  MUST NOT be deleted without first confirming nothing external — persisted data, another service,
+  an already-shipped client — still depends on them; where still needed, their logic is folded into
+  the module it now conceptually belongs to, not kept as a standalone pass-through file.
+
+**Rationale:** this project already carries the scar tissue of applying structure for its own
+sake twice — three independently-grown backend surfaces before Principle IX consolidated them,
+and a generic frontend template that Principle X declined to apply literally. `api/`'s internal
+layout grew the same way: one class per file inside `app/core/` and `app/api/`, and a matching
+`app/models/` for schemas, none of which reflects a real boundary a consumer of the code needs.
+The same instinct that kept `interface/` small and reuse-driven under Principle X applies to the
+API's internal module layout — prefer what the codebase's actual responsibility surface needs
+over what a generic layered-architecture habit says it should have.
+
 ## Licensing and Distribution Constraints
 
 These constraints follow from Principle IV and from the product being closed-source and commercial.
@@ -460,8 +532,9 @@ weakens a principle MUST state explicitly what risk is being accepted and by who
 **Compliance review.** Every plan produced by `/speckit.plan` MUST be checkable against these
 principles, and `/speckit.analyze` MUST verify compliance before implementation is authorised.
 Principles IV (Commercial License Only), III (Performance First), II (Reuse First),
-V (Models Are Internal), VIII (Tests Required), IX (Two-Layer Architecture) and
-X (Interface Structure Is Adapted, Not Templated) are the mandatory review gates.
+V (Models Are Internal), VIII (Tests Required), IX (Two-Layer Architecture),
+X (Interface Structure Is Adapted, Not Templated) and XI (API Structure Is Consolidated By Domain,
+Not By Class) are the mandatory review gates.
 
 Complexity MUST be justified. A simpler implementation that satisfies the specification is
 preferred to a more capable one that exceeds it.
@@ -540,4 +613,35 @@ delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 2.2.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
+**v2.3.0 — 2026-08-12 — Principle XI added: API Structure Is Consolidated By Domain, Not By Class**
+
+*What changed:* added a new principle governing the internal module layout of `api/`'s two
+FastAPI services: fragmented single-responsibility files consolidate into domain-cohesive modules
+(`processing.py`, `media.py`, `jobs.py`, `licensing.py`, `security.py`, `routes.py`, `schemas.py`,
+`payments.py`, `database.py`) instead of one file per class or one directory per technical layer
+(`app/api/`, `app/core/`, `app/models/`); genuine technical separation still stands where a
+responsibility is truly independent or a merge would stop reading as one coherent domain; no
+behaviour change from consolidation — HTTP/WebSocket contracts and processing/licensing/payment
+logic are preserved exactly; no new abstraction is introduced to ease the merge; empty
+pre-consolidation directories are deleted, and compatibility shims are folded in rather than
+deleted without confirming nothing external still depends on them. Added Principle XI to the
+mandatory `/speckit.analyze` compliance review gates in Governance.
+
+*Why:* a structural refactor of `api/` was requested to reduce excessive file fragmentation
+(`astros_upscale_api/app/core/` alone held one file per concern — `upscaler.py`,
+`video_upscaler.py`, `audio_processor.py`, `component_manager.py`, `capacity.py`,
+`license_gate.py`, `license_cache.py`, `license_registry.py`, `profile_resolver.py`,
+`offline_tolerance.py`, `protected_loader.py`, `secure_tempdir.py`, `integrity.py`, `dpapi.py`,
+`install_identity.py`, `worker_supervisor.py`, `isolated_worker.py`, `job_manager.py` — 18 files
+for what groups into five real domains) — the same "structure for its own sake" failure mode
+Principle IX corrected across the repository's top level and Principle X corrected inside
+`interface/`, occurring a third time inside `api/`'s own internal layout.
+
+*Migration:* no existing compliant code becomes non-compliant by this amendment alone — it
+governs the reorganisation carried out under the feature spec that follows it, and does not
+itself move, merge, or delete any files.
+
+*Risk accepted:* none — this principle only adds structure/constraints the codebase did not
+previously have codified; it does not permit anything previously forbidden.
+
+**Version**: 2.3.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12

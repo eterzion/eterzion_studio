@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 
-from app import service_identity
+from app import licensing as service_identity
 from app.config import settings
-from app.db import init_db
+from app.database import init_db
 
 
 @pytest.fixture(autouse=True)
@@ -28,15 +28,15 @@ def isolated_service_storage(tmp_path, monkeypatch):
     identity_dir = tmp_path / 'identity'
     monkeypatch.setattr(settings, 'database_path', str(db_path))
     monkeypatch.setattr(settings, 'identity_dir', str(identity_dir))
-    monkeypatch.setattr(service_identity, '_cached', None)
+    monkeypatch.setattr(service_identity, '_cached_signing_key', None)
     init_db()
     yield
-    monkeypatch.setattr(service_identity, '_cached', None)
+    monkeypatch.setattr(service_identity, '_cached_signing_key', None)
 
 
 @pytest.fixture
 def make_payment_event():
-    from app.payments.base import PaymentEvent
+    from app.payments import PaymentEvent
 
     counter = {'n': 0}
 

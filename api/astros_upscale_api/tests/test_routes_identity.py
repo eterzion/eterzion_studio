@@ -9,13 +9,13 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.api import routes_identity
+from app.routes import identity_router
 
 
 @pytest.fixture
 def client():
     app = FastAPI()
-    app.include_router(routes_identity.router, prefix='/identity')
+    app.include_router(identity_router, prefix='/identity')
     return TestClient(app)
 
 

@@ -6,8 +6,8 @@ import torch
 from spandrel.architectures.Compact import Compact
 
 from astros_upscale import AstrosUpscaler
-from astros_upscale.core import ALIASES, MODELS, model_needs_update, resolve_model, update_model
-from astros_upscale.utils.download import DownloadError, load_file_from_url, sha256_of_file
+from astros_upscale.processing import ALIASES, MODELS, model_needs_update, resolve_model, update_model
+from astros_upscale.media import DownloadError, load_file_from_url, sha256_of_file
 
 
 def test_registry_integrity():
@@ -46,7 +46,7 @@ def test_download_sha256_ok_and_mismatch(tmp_path):
 def test_download_unpinned_hash_warns(tmp_path, caplog):
     source = tmp_path / 'weights.bin'
     source.write_bytes(b'astros')
-    with caplog.at_level('WARNING', logger='astros_upscale.utils.download'):
+    with caplog.at_level('WARNING', logger='astros_upscale.media'):
         load_file_from_url(source.as_uri(), model_dir=str(tmp_path / 'out'), progress=False, sha256=None)
     assert any('sha256' in record.message for record in caplog.records)
 
@@ -65,7 +65,7 @@ def _toy_upscaler(tmp_path, scale, name):
 
 
 def test_model_update_redownloads_stale_or_missing_file(tmp_path, monkeypatch):
-    import astros_upscale.core as core
+    import astros_upscale.processing as core
 
     official_source = tmp_path / 'official' / 'toy-weights.pth'
     official_source.parent.mkdir(parents=True, exist_ok=True)
@@ -98,7 +98,7 @@ def test_model_update_redownloads_stale_or_missing_file(tmp_path, monkeypatch):
 
 def test_resolve_model_downloads_from_official_url_by_default(tmp_path, monkeypatch):
     """With no models.json present, resolve_model must use the registry's official URL."""
-    import astros_upscale.core as core
+    import astros_upscale.processing as core
 
     official_source = tmp_path / 'official2' / 'toy2.pth'
     official_source.parent.mkdir(parents=True, exist_ok=True)

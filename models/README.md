@@ -1,13 +1,10 @@
 # Pasta de modelos
 
-Os arquivos de modelo (`.pth`) são baixados automaticamente para esta pasta na
-primeira vez que você usa cada modelo — não é preciso baixar nada manualmente.
+Os arquivos de modelo (`.pth`/`.safetensors`) são baixados automaticamente
+para esta pasta pela API (`api/astros_upscale`) na primeira vez que cada
+modelo é usado — não é preciso baixar nada manualmente.
 
-Para ver a lista de modelos disponíveis:
-
-```
-astros-upscale models
-```
-
-Se preferir usar um modelo próprio, coloque o arquivo `.pth` em qualquer lugar
-e passe o caminho direto: `astros-upscale image -i foto.jpg -m caminho/para/modelo.pth`
+A lista de modelos disponíveis, com o que já está baixado e o tamanho de
+cada um, aparece na tela de **Modelos** do app (veja
+[interface/README.md](../interface/README.md)); veja também a tabela em
+[README.md](../README.md#modelos-disponíveis) na raiz do projeto.

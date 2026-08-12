@@ -5,8 +5,8 @@ capacity than high-RAM/GPU, for both tiling and the duration estimate.
 """
 from __future__ import annotations
 
-from app.core.capacity import check_capacity, compute_tile_params, estimate_duration_seconds
-from astros_upscale.hardware import HardwareCapability
+from app.processing import check_capacity, compute_tile_params, estimate_duration_seconds
+from astros_upscale.processing import HardwareCapability
 
 
 def _hardware(**overrides) -> HardwareCapability:

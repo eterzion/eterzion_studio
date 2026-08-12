@@ -2,7 +2,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.schemas import Component, JobStatus, MediaRequest
+from app.schemas import Component, JobStatus, MediaRequest
 
 
 def test_media_request_accepts_a_well_formed_intent():

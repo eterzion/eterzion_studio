@@ -6,8 +6,8 @@ import subprocess
 
 import pytest
 
-from astros_upscale.media_engine.probe import detect_secondary_elements
-from astros_upscale.utils.video_io import has_ffmpeg
+from astros_upscale.media import detect_secondary_elements
+from astros_upscale.media import has_ffmpeg
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 

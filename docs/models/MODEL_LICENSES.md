@@ -400,7 +400,7 @@ se o hash não bater.
 empacotado via `extraResources` (win/linux); o processo principal do Electron
 (`src/main/apiProcess.ts`, `resolveBundledFfmpegDir`) detecta esse binário e passa seu diretório
 ao backend Python via a variável de ambiente `ASTROS_FFMPEG_DIR`.
-`astros_upscale/utils/video_io.py` (`ffmpeg_path()`) prefere esse binário quando presente e cai
+`api/astros_upscale/utils/video_io.py` (`ffmpeg_path()`) prefere esse binário quando presente e cai
 de volta para `shutil.which('ffmpeg')` (PATH do sistema) quando ausente — preservando o
 comportamento anterior em modo dev ou em plataformas sem build empacotada.
 
@@ -525,7 +525,7 @@ configuration: --enable-gpl --enable-version3 ... --enable-libx264 --enable-libx
 `interface/electron-builder.yml` e de `dist/win-unpacked/`, que o instalador
 **não embute nenhum binário `ffmpeg`/`ffmpeg.exe` próprio** — o único `ffmpeg.dll` presente no
 build do Electron é o do próprio Chromium (mídia HTML5), não o binário CLI que
-`astros_upscale/media_engine/transcode.py` invoca via `shutil.which('ffmpeg')`. O backend Python
+`api/astros_upscale/media_engine/transcode.py` invoca via `shutil.which('ffmpeg')`. O backend Python
 continua dependendo inteiramente de um `ffmpeg` já instalado no PATH da máquina do usuário final.
 
 Isso significa duas coisas distintas:

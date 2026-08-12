@@ -1,10 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import (routes_components, routes_files, routes_identity, routes_jobs, routes_license, routes_preview,
-                     ws_progress)
+from app import jobs, security
 from app.config import settings
-from app.core import install_identity, job_manager, secure_tempdir, worker_supervisor
+from app.routes import (components_router, files_router, identity_router, jobs_router, license_router,
+                        preview_router, ws_router)
 
 app = FastAPI(title='Astros Upscale API')
 
@@ -15,30 +15,30 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.include_router(routes_jobs.router, prefix='/jobs', tags=['jobs'])
-app.include_router(routes_components.router, prefix='/components', tags=['components'])
-app.include_router(routes_files.router, tags=['files'])
-app.include_router(routes_identity.router, prefix='/identity', tags=['identity'])
-app.include_router(routes_preview.router, prefix='/preview', tags=['preview'])
-app.include_router(routes_license.router, prefix='/license', tags=['license'])
-app.include_router(ws_progress.router, tags=['ws'])
+app.include_router(jobs_router, prefix='/jobs', tags=['jobs'])
+app.include_router(components_router, prefix='/components', tags=['components'])
+app.include_router(files_router, tags=['files'])
+app.include_router(identity_router, prefix='/identity', tags=['identity'])
+app.include_router(preview_router, prefix='/preview', tags=['preview'])
+app.include_router(license_router, prefix='/license', tags=['license'])
+app.include_router(ws_router, tags=['ws'])
 
 
 @app.on_event('startup')
 async def on_startup():
     # Recovery routine (Fase 1 — isolamento de processo): remove worker scratch
     # dirs left behind by a forced shutdown, crash, or power loss in a previous run.
-    secure_tempdir.cleanup_stale()
-    job_manager.start_worker()
+    security.cleanup_stale()
+    jobs.start_worker()
     # Fase 2 — identidade criptográfica por instalação: gera na primeira execução,
     # reaproveita nas seguintes. Feito na inicialização para falhar cedo e alto se
     # o DPAPI não estiver disponível, em vez de silenciosamente na primeira ativação.
-    install_identity.ensure_identity()
+    security.ensure_identity()
 
 
 @app.on_event('shutdown')
 async def on_shutdown():
-    worker_supervisor.shutdown()
+    jobs.shutdown()
 
 
 @app.get('/health')

@@ -10,7 +10,7 @@ import urllib.error
 
 import pytest
 
-from app.core import license_cache, license_gate
+from app import licensing as license_gate
 
 _SUSPICIOUS_SUBSTRINGS = (
     'file', 'path', 'content', 'hash', 'sha256', 'md5', 'bytes', 'media',
@@ -42,7 +42,7 @@ def test_license_gate_only_ever_sends_a_bare_get_no_body(monkeypatch):
 
     monkeypatch.setattr(settings, 'licensing_service_url', 'http://licensing.test')
     monkeypatch.setattr(license_gate, '_http_get', spy_http_get)
-    monkeypatch.setattr('app.core.install_identity.ensure_identity', lambda: _FakeIdentity())
+    monkeypatch.setattr('app.security.ensure_identity', lambda: _FakeIdentity())
 
     license_gate.check_gate()
 
@@ -55,8 +55,8 @@ def test_license_gate_only_ever_sends_a_bare_get_no_body(monkeypatch):
 
 def test_license_cache_never_persists_anything_but_timestamps(tmp_path, monkeypatch):
     monkeypatch.setenv('LOCALAPPDATA', str(tmp_path))
-    license_cache.record_successful_check(now_epoch=1000.0)
-    cached = license_cache.load()
+    license_gate.record_successful_check(now_epoch=1000.0)
+    cached = license_gate.load_license_cache()
     assert set(cached.keys()) == {'last_success_epoch', 'max_observed_epoch'}
     assert all(isinstance(v, (int, float)) for v in cached.values())
 
@@ -72,7 +72,7 @@ def test_offline_fallback_path_sends_nothing_at_all(monkeypatch):
 
     monkeypatch.setattr(settings, 'licensing_service_url', 'http://licensing.test')
     monkeypatch.setattr(license_gate, '_http_get', _raise_unreachable)
-    monkeypatch.setattr('app.core.install_identity.ensure_identity', lambda: _FakeIdentity())
+    monkeypatch.setattr('app.security.ensure_identity', lambda: _FakeIdentity())
 
     result = license_gate.check_gate()
     assert result.state in ('blocked', 'offline_tolerance', 'offline_expiring')
