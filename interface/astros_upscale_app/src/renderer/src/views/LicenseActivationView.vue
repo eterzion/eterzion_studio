@@ -1,18 +1,49 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { ShieldAlert, ShieldCheck, KeyRound, Loader2 } from '@lucide/vue'
-import { licenseState, activateLicense, deactivateLicense } from '../store/license'
+import { computed, ref } from 'vue'
+import {
+  ShieldAlert,
+  ShieldCheck,
+  ShieldQuestion,
+  KeyRound,
+  Loader2,
+  Copy,
+  XCircle,
+  RefreshCw,
+  HelpCircle,
+  Package,
+  ArrowRight
+} from '@lucide/vue'
+import {
+  licenseState,
+  activateLicense,
+  deactivateLicense,
+  refreshLicenseStatus
+} from '../store/license'
 
-// T039: rendered by App.vue INSTEAD of a media/processing screen whenever
-// licenseState isn't usable (blocked/not_activated/checking/error) — never
+// T039: rendered by App.vue INSTEAD of the whole app shell (no sidebar)
+// whenever isHardBlocked() is true — before the first successful check this
+// session, or once a status is confirmed bad (not_activated/blocked). Never
 // touches files already on disk (FR-059/SC-019), it only gates new work.
 
 const licenseInput = ref('')
+const copied = ref(false)
 
 async function submit(): Promise<void> {
   if (!licenseInput.value.trim()) return
   await activateLicense(licenseInput.value.trim())
   if (licenseState.status === 'active') licenseInput.value = ''
+}
+
+async function copyInput(): Promise<void> {
+  if (!licenseInput.value.trim()) return
+  await navigator.clipboard.writeText(licenseInput.value.trim())
+  copied.value = true
+  setTimeout(() => (copied.value = false), 1500)
+}
+
+function openHelp(): void {
+  // main/index.ts's setWindowOpenHandler routes this to shell.openExternal.
+  window.open('https://example.com/astros-upscale/help', '_blank')
 }
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {
@@ -26,39 +57,82 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
   },
   error: {
     title: 'Não foi possível verificar sua licença',
-    body: 'Ocorreu um erro ao consultar o status da licença. Verifique sua conexão e tente novamente.'
+    body: 'Ocorreu um erro ao consultar o status da licença. Verifique sua conexão com a internet e tente novamente.'
   },
   checking: {
     title: 'Verificando sua licença…',
     body: 'Só um instante.'
   }
 }
+
+const copy = computed(() => STATUS_COPY[licenseState.status] ?? STATUS_COPY.error)
+const icon = computed(() => {
+  if (licenseState.status === 'checking') return Loader2
+  if (licenseState.status === 'not_activated') return KeyRound
+  if (licenseState.status === 'error') return ShieldAlert
+  return ShieldQuestion
+})
+const isPrimaryActivate = computed(() => licenseState.status === 'not_activated')
 </script>
 
 <template>
   <div class="license-block">
     <div class="license-card">
-      <component
-        :is="licenseState.status === 'checking' ? Loader2 : licenseState.status === 'not_activated' ? KeyRound : ShieldAlert"
-        :size="36"
-        :class="{ spin: licenseState.status === 'checking' }"
-        class="license-icon"
-      />
-      <h1>{{ (STATUS_COPY[licenseState.status] ?? STATUS_COPY.error).title }}</h1>
-      <p class="license-body">{{ (STATUS_COPY[licenseState.status] ?? STATUS_COPY.error).body }}</p>
+      <div class="icon-badge" :class="'tone-' + licenseState.status">
+        <span class="badge-particle p1" /><span class="badge-particle p2" /><span
+          class="badge-particle p3"
+        />
+        <component
+          :is="icon"
+          :size="36"
+          :class="{ spin: licenseState.status === 'checking' }"
+          class="license-icon"
+        />
+      </div>
+      <h1>{{ copy.title }}</h1>
+      <p class="license-body">{{ copy.body }}</p>
 
       <template v-if="licenseState.status !== 'checking'">
+        <hr class="divider" />
+
         <label class="field-label" for="activation-license-id">ID da licença</label>
-        <input
-          id="activation-license-id"
-          v-model="licenseInput"
-          type="text"
-          placeholder="lic_..."
-          class="license-input"
-          @keydown.enter="submit"
-        />
-        <p v-if="licenseState.error" class="license-error">{{ licenseState.error }}</p>
+        <div class="input-wrap">
+          <KeyRound :size="15" class="input-icon" />
+          <input
+            id="activation-license-id"
+            v-model="licenseInput"
+            type="text"
+            placeholder="lic_..."
+            class="license-input"
+            @keydown.enter="submit"
+          />
+          <button
+            class="copy-btn"
+            type="button"
+            title="Copiar"
+            :disabled="!licenseInput.trim()"
+            @click="copyInput"
+          >
+            <Copy :size="14" />
+          </button>
+        </div>
+        <p v-if="copied" class="copied-hint">Copiado!</p>
+
+        <div v-if="licenseState.status === 'error'" class="fetch-error-box">
+          <XCircle :size="18" class="fetch-error-icon" />
+          <div>
+            <p class="fetch-error-title">Falha ao buscar informações</p>
+            <p class="fetch-error-detail">
+              {{
+                licenseState.error ??
+                'Não foi possível conectar aos nossos servidores. Verifique sua conexão e tente novamente.'
+              }}
+            </p>
+          </div>
+        </div>
+
         <button
+          v-if="isPrimaryActivate"
           class="primary-btn"
           type="button"
           :disabled="!licenseInput.trim()"
@@ -66,9 +140,26 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
         >
           <ShieldCheck :size="16" /> Ativar
         </button>
-        <button class="link-btn" type="button" @click="deactivateLicense">
-          Já ativou em outra instalação? Libere a vaga por aqui
+        <button v-else class="primary-btn" type="button" @click="refreshLicenseStatus">
+          <RefreshCw :size="16" /> Tentar novamente
         </button>
+
+        <button class="secondary-btn" type="button" @click="openHelp">
+          <HelpCircle :size="16" /> Precisa de ajuda?
+        </button>
+
+        <hr class="divider" />
+
+        <div class="release-row">
+          <Package :size="18" class="release-icon" />
+          <div class="release-text">
+            <p class="release-title">Já ativou em outra instalação?</p>
+            <p class="release-detail">Libere esta licença para utilizar aqui.</p>
+          </div>
+          <button class="release-link" type="button" @click="deactivateLicense">
+            Liberar licença <ArrowRight :size="14" />
+          </button>
+        </div>
       </template>
     </div>
   </div>
@@ -80,26 +171,88 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  flex: 1;
-  min-width: 0;
+  width: 100vw;
   padding: var(--space-4);
+  background: var(--surface-0);
 }
+
 .license-card {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--space-2);
-  max-width: 380px;
+  width: 100%;
+  max-width: 460px;
   text-align: center;
   background: var(--surface-1);
-  border: 1px solid var(--border-1);
-  border-radius: var(--radius-md);
-  padding: var(--space-6);
+  border: 1px solid var(--border-1, var(--surface-border-soft));
+  border-radius: var(--radius-lg, 16px);
+  padding: var(--space-6) var(--space-5);
 }
+
+.icon-badge {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-bottom: var(--space-3);
+  background: radial-gradient(circle, var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%, transparent 70%);
+}
+
+.icon-badge::before {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border-radius: 50%;
+  border: 1px solid var(--color-warning-soft, rgba(245, 158, 11, 0.3));
+}
+
+.icon-badge.tone-not_activated {
+  background: radial-gradient(circle, var(--color-primary-soft) 0%, transparent 70%);
+}
+
+.icon-badge.tone-not_activated::before {
+  border-color: var(--color-primary-soft);
+}
+
 .license-icon {
   color: var(--color-warning, var(--text-secondary));
-  margin-bottom: var(--space-2);
+  z-index: 1;
 }
+
+.icon-badge.tone-not_activated .license-icon {
+  color: var(--color-primary);
+}
+
+.badge-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--color-warning, var(--text-tertiary));
+  opacity: 0.5;
+}
+
+.badge-particle.p1 {
+  top: 6px;
+  right: 14px;
+}
+.badge-particle.p2 {
+  bottom: 10px;
+  left: 4px;
+  width: 3px;
+  height: 3px;
+}
+.badge-particle.p3 {
+  top: 30px;
+  right: -2px;
+  width: 3px;
+  height: 3px;
+}
+
 .spin {
   animation: spin 1s linear infinite;
 }
@@ -108,39 +261,205 @@ const STATUS_COPY: Record<string, { title: string; body: string }> = {
     transform: rotate(360deg);
   }
 }
+
 h1 {
-  font-size: var(--fs-h3, 1.25rem);
+  font-size: var(--fs-h3, 1.4rem);
   margin: 0;
+  color: var(--text-primary);
 }
+
 .license-body {
   color: var(--text-secondary);
   font-size: var(--fs-body-sm);
+  max-width: 380px;
 }
+
+.divider {
+  width: 100%;
+  border: none;
+  border-top: 1px solid var(--surface-border-soft);
+  margin: var(--space-2) 0;
+}
+
 .field-label {
   align-self: flex-start;
   font-size: var(--fs-label);
   color: var(--text-secondary);
-  margin-top: var(--space-3);
 }
-.license-input {
+
+.input-wrap {
   width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: var(--surface-2);
-  border: 1px solid var(--border-1);
+  border: 1px solid var(--border-1, var(--surface-border-soft));
   border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 8px 10px;
-  font-family: var(--font-mono);
+  padding: 0 10px;
 }
-.license-error {
+
+.input-icon {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.license-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  padding: 10px 0;
+  font-family: var(--font-mono);
+  outline: none;
+}
+
+.copy-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  padding: 6px;
+  border-radius: var(--radius-sm);
+}
+
+.copy-btn:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-3);
+}
+
+.copy-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.copied-hint {
+  align-self: flex-end;
+  font-size: 11px;
+  color: var(--color-success);
+  margin: -4px 0 0;
+}
+
+.fetch-error-box {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  background: var(--color-danger-soft);
+  border: 1px solid var(--color-danger-soft);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+}
+
+.fetch-error-icon {
+  flex-shrink: 0;
+  color: var(--color-danger);
+  margin-top: 2px;
+}
+
+.fetch-error-title {
+  margin: 0;
+  font-weight: var(--fw-semibold);
   color: var(--color-danger);
   font-size: var(--fs-body-sm);
 }
-.link-btn {
+
+.fetch-error-detail {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+}
+
+.primary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 11px;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+.primary-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondary-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  cursor: pointer;
+}
+
+.secondary-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.release-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+}
+
+.release-icon {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+}
+
+.release-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.release-title {
+  margin: 0;
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+.release-detail {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+}
+
+.release-link {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
   background: none;
   border: none;
-  color: var(--text-tertiary);
-  font-size: var(--fs-caption);
+  color: var(--color-primary);
+  font-size: var(--fs-body-sm);
+  font-weight: var(--fw-medium);
   cursor: pointer;
-  margin-top: var(--space-2);
+}
+
+.release-link:hover {
+  text-decoration: underline;
 }
 </style>

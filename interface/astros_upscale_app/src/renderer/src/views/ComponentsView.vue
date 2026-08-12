@@ -7,7 +7,15 @@ import {
   Trash2,
   Info,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ShieldAlert,
+  Image,
+  Palette,
+  Film,
+  Video,
+  Mic,
+  Music2,
+  Layers
 } from '@lucide/vue'
 import {
   listComponents,
@@ -18,6 +26,38 @@ import {
   type ComponentSummary,
   type ComponentDetails
 } from '../backend'
+import { licenseState, refreshLicenseStatus } from '../store/license'
+
+// UI-only copy/icon per capability — content_type slugs, not raw model
+// identifiers (FR-009 is about the technical_name/engine_ref, not this).
+const CAPABILITY_META: Record<string, { icon: unknown; description: string; tint: string }> = {
+  photo: { icon: Image, description: 'Aprimora qualidade e detalhes de fotos.', tint: '#3b82f6' },
+  anime_image: {
+    icon: Palette,
+    description: 'Aprimora imagens de anime e ilustrações.',
+    tint: '#a855f7'
+  },
+  anime_video: {
+    icon: Film,
+    description: 'Aprimora qualidade de vídeos de anime.',
+    tint: '#6366f1'
+  },
+  real_video: {
+    icon: Video,
+    description: 'Aprimora qualidade de filmagens reais.',
+    tint: '#f59e0b'
+  },
+  speech: { icon: Mic, description: 'Melhora clareza e qualidade de vozes.', tint: '#14b8a6' },
+  music: {
+    icon: Music2,
+    description: 'Aprimora qualidade de músicas e instrumentos.',
+    tint: '#ec4899'
+  }
+}
+
+function capabilityMeta(id: string): { icon: unknown; description: string; tint: string } {
+  return CAPABILITY_META[id] ?? { icon: Layers, description: '', tint: '#64748b' }
+}
 
 // T069/T070 — replaces ModelsView.vue. Capability-first, install/update/
 // remove only (FR-064, no selection affordance) — technical_name/version/
@@ -96,6 +136,9 @@ function stateLabel(state: ComponentSummary['install_state']): string {
         <button class="btn-outline" type="button" @click="refresh">
           <RefreshCw :size="15" /> Atualizar
         </button>
+        <span v-if="licenseState.status === 'error'" class="license-error-badge">
+          <ShieldAlert :size="13" /> Erro de licença
+        </span>
       </template>
     </TopBar>
 
@@ -114,10 +157,23 @@ function stateLabel(state: ComponentSummary['install_state']): string {
       <div v-else class="component-list">
         <div v-for="component in components" :key="component.id" class="component-card">
           <div class="component-row">
+            <div
+              class="component-icon"
+              :style="{ background: capabilityMeta(component.id).tint + '22', color: capabilityMeta(component.id).tint }"
+            >
+              <component :is="capabilityMeta(component.id).icon" :size="18" />
+            </div>
             <div class="component-main">
-              <span class="capability-label">{{ component.capability_label }}</span>
-              <span class="install-state" :class="component.install_state">{{ stateLabel(component.install_state) }}</span>
-              <span v-if="component.size_mb > 0" class="size">{{ component.size_mb }} MB</span>
+              <div class="component-title-row">
+                <span class="capability-label">{{ component.capability_label }}</span>
+                <span class="install-state" :class="component.install_state">{{
+                  stateLabel(component.install_state)
+                }}</span>
+                <span v-if="component.size_mb > 0" class="size">{{ component.size_mb }} MB</span>
+              </div>
+              <p v-if="capabilityMeta(component.id).description" class="component-description">
+                {{ capabilityMeta(component.id).description }}
+              </p>
             </div>
             <div class="component-actions">
               <button
@@ -175,6 +231,19 @@ function stateLabel(state: ComponentSummary['install_state']): string {
           </div>
         </div>
       </div>
+
+      <div v-if="licenseState.status === 'error'" class="license-banner">
+        <ShieldAlert :size="18" class="license-banner-icon" />
+        <div class="license-banner-text">
+          <p class="license-banner-title">Problemas com sua licença?</p>
+          <p class="license-banner-detail">
+            Verifique sua conexão com a internet ou tente novamente mais tarde.
+          </p>
+        </div>
+        <button class="btn-outline" type="button" @click="refreshLicenseStatus">
+          <RefreshCw :size="14" /> Tentar novamente
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -198,6 +267,45 @@ function stateLabel(state: ComponentSummary['install_state']): string {
 .hint {
   color: var(--text-secondary);
   font-size: var(--fs-body-sm);
+}
+.license-error-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+}
+.license-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+.license-banner-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.license-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+.license-banner-title {
+  margin: 0;
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-body-sm);
+  color: var(--text-primary);
+}
+.license-banner-detail {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
 }
 .banner-error {
   display: flex;
@@ -229,15 +337,35 @@ function stateLabel(state: ComponentSummary['install_state']): string {
 .component-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   flex-wrap: wrap;
 }
+.component-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .component-main {
+  flex: 1;
+  min-width: 160px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.component-title-row {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   flex-wrap: wrap;
+}
+.component-description {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
 }
 .capability-label {
   font-weight: 600;

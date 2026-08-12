@@ -14,20 +14,19 @@ import LicenseActivationView from './views/LicenseActivationView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
-import { initLicense, isUsableLicenseState, licenseState } from './store/license'
+import { initLicense, isHardBlocked, licenseState } from './store/license'
 import { currentResolvedTheme } from './theme'
 import { hasNativeApi } from './api'
 
 const active = ref<NavKey>('home')
 const darkMode = computed(() => currentResolvedTheme.value === 'dark')
 
-// T039/FR-059/SC-019: only the actual processing screens are gated — home,
-// models, history and settings stay reachable even when the license is
-// blocked, so nothing already on disk (or already in the queue) becomes
-// inaccessible just because the license lapsed.
-const MEDIA_SCREENS: NavKey[] = ['imagem', 'video', 'audio', 'otimizar']
-const isMediaScreen = computed(() => MEDIA_SCREENS.includes(active.value))
-const licenseUsable = computed(() => isUsableLicenseState(licenseState.status))
+// Full takeover (no sidebar, LicenseActivationView only) before the first
+// successful check this session ('not_activated'/'blocked'/never-verified
+// 'checking'/'error'). Once a check has succeeded once, a later 'error'
+// (server unreachable) degrades to an inline badge/banner per-view instead —
+// see isHardBlocked's doc comment in store/license.ts.
+const hardBlocked = computed(() => isHardBlocked(licenseState.status, licenseState.everUsable))
 
 function navigate(key: NavKey): void {
   active.value = key
@@ -51,36 +50,38 @@ onMounted(() => {
 
 <template>
   <div class="app-shell">
-    <AppSidebar
-      :active="active"
-      :dark-mode="darkMode"
-      @navigate="navigate"
-      @toggle-theme="toggleTheme"
-    />
+    <LicenseActivationView v-if="hardBlocked" />
+    <template v-else>
+      <AppSidebar
+        :active="active"
+        :dark-mode="darkMode"
+        @navigate="navigate"
+        @toggle-theme="toggleTheme"
+      />
 
-    <div v-if="apiStatus.checking" class="api-status-view">
-      <Loader2 :size="28" class="spin" />
-      <p>Conectando ao servidor da API (astros_upscale_api)…</p>
-    </div>
-    <div v-else-if="apiStatus.error" class="api-status-view error">
-      <ServerCrash :size="28" />
-      <p class="api-error-title">Não foi possível conectar à API</p>
-      <p class="api-error-detail">{{ apiStatus.error }}</p>
-      <button class="retry-btn" type="button" @click="checkApiStatus">Tentar novamente</button>
-    </div>
+      <div v-if="apiStatus.checking" class="api-status-view">
+        <Loader2 :size="28" class="spin" />
+        <p>Conectando ao servidor da API (astros_upscale_api)…</p>
+      </div>
+      <div v-else-if="apiStatus.error" class="api-status-view error">
+        <ServerCrash :size="28" />
+        <p class="api-error-title">Não foi possível conectar à API</p>
+        <p class="api-error-detail">{{ apiStatus.error }}</p>
+        <button class="retry-btn" type="button" @click="checkApiStatus">Tentar novamente</button>
+      </div>
 
-    <HomeView v-else-if="active === 'home'" @open-image="active = 'imagem'" />
-    <LicenseActivationView v-else-if="isMediaScreen && !licenseUsable" />
-    <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
-    <ComponentsView v-else-if="active === 'modelos'" />
-    <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
-    <SettingsView v-else-if="active === 'configuracoes'" />
-    <CompressConvertView v-else-if="active === 'otimizar'" />
-    <VideoView v-else-if="active === 'video'" />
-    <AudioView v-else-if="active === 'audio'" />
-    <div v-else class="placeholder-view">
-      <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
-    </div>
+      <HomeView v-else-if="active === 'home'" @open-image="active = 'imagem'" />
+      <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
+      <ComponentsView v-else-if="active === 'modelos'" />
+      <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
+      <SettingsView v-else-if="active === 'configuracoes'" />
+      <CompressConvertView v-else-if="active === 'otimizar'" />
+      <VideoView v-else-if="active === 'video'" />
+      <AudioView v-else-if="active === 'audio'" />
+      <div v-else class="placeholder-view">
+        <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
+      </div>
+    </template>
   </div>
 </template>
 

@@ -10,7 +10,6 @@ import {
   FolderOpen,
   Trash2,
   RotateCcw,
-  Bug,
   Check,
   Award
 } from '@lucide/vue'
@@ -24,13 +23,8 @@ import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/s
 import { ACCENT_COLORS, type AccentColor } from '../theme'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { clearHistory, historyState } from '../store/history'
-import { initLicense } from '../store/license'
 import { listComponents } from '../backend'
 import { api, hasNativeApi } from '../api'
-
-function reloadLicense(): void {
-  initLicense()
-}
 
 const { t } = useI18n()
 
@@ -97,7 +91,6 @@ async function pickDefaultOutputFolder(): Promise<void> {
 }
 
 const appVersion = ref<string | null>(null)
-const appPaths = ref<{ documents: string; repoRoot: string; apiBaseUrl: string } | null>(null)
 const electronVersions = (
   window as unknown as { electron?: { process?: { versions?: Record<string, string> } } }
 ).electron?.process?.versions
@@ -106,17 +99,11 @@ async function loadDiagnostics(): Promise<void> {
   if (!hasNativeApi) return
   try {
     appVersion.value = await api.getAppVersion()
-    appPaths.value = await api.getAppPaths()
   } catch {
     // diagnostics are informational only — a failure here shouldn't block the page
   }
 }
 loadDiagnostics()
-
-async function openDevTools(): Promise<void> {
-  if (!hasNativeApi) return
-  await api.openDevTools()
-}
 
 const historyCount = computed(() => historyState.entries.length)
 
@@ -423,39 +410,6 @@ const outputFolderLabel = computed(
               Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
               Node {{ electronVersions.node }}
             </span>
-          </SettingRow>
-          <SettingRow label="Servidor da API">
-            <span class="fixed-value mono">{{ appPaths?.apiBaseUrl ?? '—' }}</span>
-          </SettingRow>
-          <SettingRow
-            label="Servidor de licenciamento"
-            description="Endereço do interface/astros_licensing_service — vazio desativa o módulo de licença"
-          >
-            <input
-              v-model="settingsState.licensingServiceUrl"
-              type="text"
-              placeholder="http://127.0.0.1:8766"
-              class="number-input licensing-url-input"
-              @change="reloadLicense"
-            />
-          </SettingRow>
-          <SettingRow label="Pasta do repositório">
-            <span class="fixed-value mono truncate" :title="appPaths?.repoRoot">{{
-              appPaths?.repoRoot ?? '—'
-            }}</span>
-          </SettingRow>
-          <SettingRow
-            label="Opções de depuração"
-            description="Abre o DevTools do Chromium para inspecionar a interface"
-          >
-            <button
-              class="secondary-btn"
-              type="button"
-              :disabled="!hasNativeApi"
-              @click="openDevTools"
-            >
-              <Bug :size="14" /> Abrir DevTools
-            </button>
           </SettingRow>
         </div>
       </section>

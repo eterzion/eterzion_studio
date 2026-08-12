@@ -29,10 +29,6 @@ export interface AppSettings {
   animationsEnabled: boolean
   density: 'compact' | 'standard' | 'comfortable'
   language: SupportedLocale | 'auto'
-  // Empty by default — no license infrastructure is deployed anywhere by
-  // default (see docs/processing-protection-architecture.md). Set to a real
-  // interface/astros_licensing_service URL to enable the license module.
-  licensingServiceUrl: string
 }
 
 function defaults(): AppSettings {
@@ -55,8 +51,7 @@ function defaults(): AppSettings {
     thumbnailSize: 'md',
     animationsEnabled: true,
     density: 'standard',
-    language: 'auto',
-    licensingServiceUrl: ''
+    language: 'auto'
   }
 }
 

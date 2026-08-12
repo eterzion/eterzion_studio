@@ -16,6 +16,8 @@ import {
   Sun,
   ChevronsLeft,
   ChevronsRight,
+  ChevronRight,
+  ChevronDown,
   LifeBuoy,
   Globe,
   BookOpen,
@@ -23,7 +25,8 @@ import {
   MessageCircle,
   Mail,
   HelpCircle,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck
 } from '@lucide/vue'
 
 defineProps<{
@@ -107,7 +110,6 @@ function openExternal(url: string): void {
       <div class="brand-icon"><Atom :size="20" /></div>
       <div v-if="!collapsed" class="brand-text">
         <span class="brand-name">Astros Upscale</span>
-        <span class="brand-version">v2.0.0</span>
       </div>
       <button
         class="collapse-btn"
@@ -141,12 +143,22 @@ function openExternal(url: string): void {
       <div class="support-block">
         <button
           class="nav-item support-toggle"
+          :class="{ active: supportOpen && !collapsed }"
           type="button"
           :title="t('sidebar.support')"
           @click="toggleSupport"
         >
           <LifeBuoy :size="18" class="nav-icon" />
-          <span v-if="!collapsed" class="nav-label">{{ t('sidebar.support') }}</span>
+          <span v-if="!collapsed" class="nav-item-text">
+            <span class="nav-label">{{ t('sidebar.support') }}</span>
+            <span class="nav-sublabel">{{ t('sidebar.links.help') }}</span>
+          </span>
+          <component
+            :is="supportOpen ? ChevronDown : ChevronRight"
+            v-if="!collapsed"
+            :size="15"
+            class="chevron"
+          />
         </button>
         <Transition name="support-collapse">
           <div v-if="supportOpen && !collapsed" class="support-list">
@@ -175,22 +187,32 @@ function openExternal(url: string): void {
         <span class="active-bar" />
         <Settings :size="18" class="nav-icon" />
         <span v-if="!collapsed" class="nav-label">{{ t('nav.settings') }}</span>
+        <ChevronRight v-if="!collapsed" :size="15" class="chevron" />
       </button>
 
+      <p v-if="!collapsed" class="section-label">{{ t('sidebar.darkMode') }}</p>
       <button
-        class="theme-toggle"
+        class="nav-item theme-toggle"
         type="button"
         :title="t('sidebar.toggleTheme')"
         @click="emit('toggleTheme')"
       >
         <component :is="darkMode ? Moon : Sun" :size="16" class="nav-icon" />
-        <span v-if="!collapsed">{{
+        <span v-if="!collapsed" class="nav-label">{{
           darkMode ? t('sidebar.darkMode') : t('sidebar.lightMode')
         }}</span>
         <span v-if="!collapsed" class="switch" :class="{ on: darkMode }"
           ><span class="knob"
         /></span>
       </button>
+
+      <div v-if="!collapsed" class="version-badge">
+        <ShieldCheck :size="16" class="version-badge-icon" />
+        <div class="version-badge-text">
+          <span class="version-badge-name">Astros Upscale</span>
+          <span class="version-badge-number">v2.0.0</span>
+        </div>
+      </div>
     </div>
   </aside>
 </template>
@@ -258,16 +280,6 @@ function openExternal(url: string): void {
   text-overflow: ellipsis;
 }
 
-.brand-version {
-  flex-shrink: 0;
-  font-size: 10px;
-  font-weight: var(--fw-semibold);
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-  padding: 1px 6px;
-  border-radius: 999px;
-}
-
 .collapse-btn {
   flex-shrink: 0;
   width: 26px;
@@ -321,8 +333,8 @@ function openExternal(url: string): void {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 9px var(--space-2);
-  border-radius: var(--radius-sm);
+  padding: 11px var(--space-3);
+  border-radius: var(--radius-md);
   border: none;
   background: transparent;
   color: var(--text-secondary);
@@ -334,6 +346,33 @@ function openExternal(url: string): void {
   transition:
     background var(--transition-fast),
     color var(--transition-fast);
+}
+
+.nav-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+
+.nav-sublabel {
+  font-size: 11px;
+  font-weight: var(--fw-regular, 400);
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  flex-shrink: 0;
+  margin-left: auto;
+  color: var(--text-tertiary);
+  transition: transform var(--transition-fast);
+}
+
+.nav-item.active .chevron {
+  color: var(--color-primary);
 }
 
 .sidebar.collapsed .nav-item {
@@ -355,6 +394,7 @@ function openExternal(url: string): void {
 .nav-item.active {
   background: var(--color-primary-soft);
   color: var(--color-primary);
+  font-weight: var(--fw-semibold);
 }
 
 .active-bar {
@@ -464,38 +504,6 @@ function openExternal(url: string): void {
   opacity: 0.6;
 }
 
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: var(--fs-caption);
-  cursor: pointer;
-  padding: 9px var(--space-2);
-  border-radius: var(--radius-sm);
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.theme-toggle:hover {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: -2px;
-}
-
-.sidebar.collapsed .theme-toggle {
-  justify-content: center;
-  padding: 10px;
-  width: 44px;
-}
-
 .switch {
   margin-left: auto;
   width: 32px;
@@ -526,6 +534,42 @@ function openExternal(url: string): void {
   transform: translateX(14px);
 }
 
+.version-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 9px var(--space-2);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: var(--radius-md);
+}
+
+.version-badge-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+
+.version-badge-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.version-badge-name {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.version-badge-number {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
 @media (max-width: 880px) {
   .sidebar:not(.collapsed) {
     width: 68px;
@@ -539,10 +583,12 @@ function openExternal(url: string): void {
 
   .sidebar:not(.collapsed) .brand-text,
   .sidebar:not(.collapsed) .nav-label,
+  .sidebar:not(.collapsed) .nav-item-text,
+  .sidebar:not(.collapsed) .chevron,
   .sidebar:not(.collapsed) .section-label,
-  .sidebar:not(.collapsed) .theme-toggle span:not(.switch),
   .sidebar:not(.collapsed) .switch,
-  .sidebar:not(.collapsed) .support-list {
+  .sidebar:not(.collapsed) .support-list,
+  .sidebar:not(.collapsed) .version-badge {
     display: none;
   }
 
