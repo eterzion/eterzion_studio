@@ -78,45 +78,30 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
 <template>
   <div class="license-block">
     <div class="license-card">
-      <div class="icon-badge" :class="'tone-' + licenseState.status">
-        <span class="badge-particle p1" /><span class="badge-particle p2" /><span
-          class="badge-particle p3"
-        />
-        <component
-          :is="icon"
-          :size="36"
-          :class="{ spin: licenseState.status === 'checking' }"
-          class="license-icon"
-        />
+      <div class="header-group">
+        <div class="icon-badge" :class="'tone-' + licenseState.status">
+          <span class="badge-particle p1" /><span class="badge-particle p2" /><span class="badge-particle p3" />
+          <component :is="icon" :size="36" :class="{ spin: licenseState.status === 'checking' }" class="license-icon" />
+        </div>
+        <h1>{{ copy.title }}</h1>
+        <p class="license-body">{{ copy.body }}</p>
       </div>
-      <h1>{{ copy.title }}</h1>
-      <p class="license-body">{{ copy.body }}</p>
 
       <template v-if="licenseState.status !== 'checking'">
         <hr class="divider" />
 
-        <label class="field-label" for="activation-license-id">ID da licença</label>
-        <div class="input-wrap">
-          <KeyRound :size="15" class="input-icon" />
-          <input
-            id="activation-license-id"
-            v-model="licenseInput"
-            type="text"
-            placeholder="lic_..."
-            class="license-input"
-            @keydown.enter="submit"
-          />
-          <button
-            class="copy-btn"
-            type="button"
-            title="Copiar"
-            :disabled="!licenseInput.trim()"
-            @click="copyInput"
-          >
-            <Copy :size="14" />
-          </button>
+        <div class="field-group">
+          <label class="field-label" for="activation-license-id">ID da licença</label>
+          <div class="input-wrap">
+            <KeyRound :size="15" class="input-icon" />
+            <input id="activation-license-id" v-model="licenseInput" type="text" placeholder="lic_..."
+              class="license-input" @keydown.enter="submit" />
+            <button class="copy-btn" type="button" title="Copiar" :disabled="!licenseInput.trim()" @click="copyInput">
+              <Copy :size="14" />
+            </button>
+          </div>
+          <p v-if="copied" class="copied-hint">Copiado!</p>
         </div>
-        <p v-if="copied" class="copied-hint">Copiado!</p>
 
         <div v-if="licenseState.status === 'error'" class="fetch-error-box">
           <XCircle :size="18" class="fetch-error-icon" />
@@ -131,22 +116,19 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
           </div>
         </div>
 
-        <button
-          v-if="isPrimaryActivate"
-          class="primary-btn"
-          type="button"
-          :disabled="!licenseInput.trim()"
-          @click="submit"
-        >
-          <ShieldCheck :size="16" /> Ativar
-        </button>
-        <button v-else class="primary-btn" type="button" @click="refreshLicenseStatus">
-          <RefreshCw :size="16" /> Tentar novamente
-        </button>
+        <div class="actions-group">
+          <button v-if="isPrimaryActivate" class="primary-btn" type="button" :disabled="!licenseInput.trim()"
+            @click="submit">
+            <ShieldCheck :size="16" /> Ativar
+          </button>
+          <button v-else class="primary-btn" type="button" @click="refreshLicenseStatus">
+            <RefreshCw :size="16" /> Tentar novamente
+          </button>
 
-        <button class="secondary-btn" type="button" @click="openHelp">
-          <HelpCircle :size="16" /> Precisa de ajuda?
-        </button>
+          <button class="secondary-btn" type="button" @click="openHelp">
+            <HelpCircle :size="16" /> Precisa de ajuda?
+          </button>
+        </div>
 
         <hr class="divider" />
 
@@ -157,7 +139,8 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
             <p class="release-detail">Libere esta licença para utilizar aqui.</p>
           </div>
           <button class="release-link" type="button" @click="deactivateLicense">
-            Liberar licença <ArrowRight :size="14" />
+            Liberar licença
+            <ArrowRight :size="14" />
           </button>
         </div>
       </template>
@@ -180,14 +163,22 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-2);
   width: 100%;
   max-width: 460px;
   text-align: center;
+  padding: var(--space-4);
   background: var(--surface-1);
   border: 1px solid var(--border-1, var(--surface-border-soft));
   border-radius: var(--radius-lg, 16px);
   padding: var(--space-6) var(--space-5);
+}
+
+.header-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 28px;
 }
 
 .icon-badge {
@@ -198,7 +189,6 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  margin-bottom: var(--space-3);
   background: radial-gradient(circle, var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%, transparent 70%);
 }
 
@@ -240,12 +230,14 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   top: 6px;
   right: 14px;
 }
+
 .badge-particle.p2 {
   bottom: 10px;
   left: 4px;
   width: 3px;
   height: 3px;
 }
+
 .badge-particle.p3 {
   top: 30px;
   right: -2px;
@@ -256,6 +248,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
 .spin {
   animation: spin 1s linear infinite;
 }
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -278,7 +271,15 @@ h1 {
   width: 100%;
   border: none;
   border-top: 1px solid var(--surface-border-soft);
-  margin: var(--space-2) 0;
+  margin: 0 0 24px;
+}
+
+.field-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
 }
 
 .field-label {
@@ -338,7 +339,7 @@ h1 {
   align-self: flex-end;
   font-size: 11px;
   color: var(--color-success);
-  margin: -4px 0 0;
+  margin: 0;
 }
 
 .fetch-error-box {
@@ -351,6 +352,7 @@ h1 {
   border: 1px solid var(--color-danger-soft);
   border-radius: var(--radius-sm);
   padding: var(--space-3);
+  margin-bottom: 20px;
 }
 
 .fetch-error-icon {
@@ -372,6 +374,14 @@ h1 {
   font-size: var(--fs-caption);
 }
 
+.actions-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
 .primary-btn {
   width: 100%;
   display: flex;
@@ -386,7 +396,6 @@ h1 {
   font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   cursor: pointer;
-  margin-top: 4px;
 }
 
 .primary-btn:disabled {
