@@ -1,6 +1,27 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.1.0 → 2.2.0 (2026-08-12)
+
+MINOR bump rationale: a new principle (X. Interface Structure Is Adapted, Not Templated) was
+added. It adds rules that did not previously exist — it does not remove or weaken anything, so
+it is not a MAJOR change; it is more than a wording clarification, so it is not a PATCH.
+
+Added principles: X. Interface Structure Is Adapted, Not Templated (no empty domain/application
+layers inside interface/ — that logic already lives in api/ per Principle IX; component
+organisation follows reuse, not a rigid 5-tier taxonomy; the Electron bridge and the HTTP/WS
+client are isolated and named for what they do, not given DDD-style repository/port ceremony; no
+abstraction without a real consumer; dead code is deleted, not archived under legacy/old/v1
+naming).
+Modified sections: Governance → Compliance review (added Principle X to the mandatory review
+gate list).
+Removed sections: none.
+Templates requiring review: none — the addition is additive and does not contradict existing
+guidance in spec/plan/tasks templates.
+
+---
+Previous report
+---------------
 Version change: 2.0.0 → 2.1.0 (2026-08-12)
 
 MINOR bump rationale: a new principle (IX. Two-Layer Architecture) was added. It adds a rule that
@@ -330,6 +351,47 @@ validation, error handling, and licence enforcement in two places instead of one
 layer is authoritative" ambiguous — the same failure mode Principle I exists to prevent, applied to
 runtime architecture instead of specifications.
 
+### X. Interface Structure Is Adapted, Not Templated
+
+Generic architectural templates (Atomic Design, Clean Architecture, layered folder conventions)
+inform how `interface/` is organised, but MUST be adapted to what this specific application
+actually is — a thin Electron/Vue presentation client — never applied literally when a literal
+application would create structure with no real purpose.
+
+- **No empty domain/application layers.** Because Principle IX already requires every piece of
+  business logic to live in `api/`, `interface/` MUST NOT contain `domain/`, `application/`, or
+  `use-cases/` directories. A layer that would hold nothing (or near-nothing) because the logic it
+  is supposed to contain lives elsewhere is not architecture, it is decoration.
+- **Component organisation follows reuse, not a fixed taxonomy.** `interface/` is not obligated
+  to use the full Atomic Design five-tier split (atoms/molecules/organisms/templates/pages). A
+  simpler split — generic, reusable primitives versus composite blocks tied to one feature — MUST
+  be used only where it measurably reduces fragmentation, and MUST NOT be imposed as a taxonomy
+  exercise on a component count too small to need it.
+- **External-access code is isolated and named for what it does.** The boundary code that talks
+  to something outside the renderer process (the Electron `contextBridge` bridge, the HTTP/WebSocket
+  client that talks to `api/astros_upscale_api`) MUST be kept out of components and views — no
+  component or view may call `fetch`/IPC directly — and MUST be named so its purpose is obvious
+  from the name alone. It MUST NOT be dressed up as a `repository`/`port`/`adapter` abstraction
+  when there is, and will only ever be, one real implementation.
+- **No abstraction without a real consumer.** Interfaces or contracts for a single implementation,
+  wrapper functions that only forward a call, `index.ts` files that exist only to re-export, and
+  splitting a file for line-count reasons alone (with no distinct responsibility behind the split)
+  are all prohibited. A file MUST be split only when it has genuinely separable responsibilities,
+  is reused from more than one place, or splitting it measurably improves testability or
+  maintainability — never on size alone.
+- **Dead code is deleted, not archived.** Files or folders named/suffixed `old`, `legacy`,
+  `deprecated`, `backup`, `copy`, `temp`, `v1`, `previous` (or equivalent) MUST NOT exist in
+  `interface/`. If the current flow does not use it, it is removed — "keeping it just in case" is
+  not a valid reason to keep unreferenced code in a version-controlled repository.
+
+**Rationale:** this project already carries the scar tissue of applying structure for its own
+sake — three independently-grown backend surfaces before Principle IX consolidated them. Importing
+a generic "medium/large web project" template wholesale into a small, thin Electron renderer would
+reproduce that exact mistake on the frontend: folders that exist to satisfy a pattern instead of a
+real need, adding indirection a ~20-component app never asked for. Principle II (Reuse First) and
+this principle share the same instinct — prefer what the codebase already needs over what a
+template says it should have.
+
 ## Licensing and Distribution Constraints
 
 These constraints follow from Principle IV and from the product being closed-source and commercial.
@@ -398,8 +460,8 @@ weakens a principle MUST state explicitly what risk is being accepted and by who
 **Compliance review.** Every plan produced by `/speckit.plan` MUST be checkable against these
 principles, and `/speckit.analyze` MUST verify compliance before implementation is authorised.
 Principles IV (Commercial License Only), III (Performance First), II (Reuse First),
-V (Models Are Internal), VIII (Tests Required) and IX (Two-Layer Architecture) are the mandatory
-review gates.
+V (Models Are Internal), VIII (Tests Required), IX (Two-Layer Architecture) and
+X (Interface Structure Is Adapted, Not Templated) are the mandatory review gates.
 
 Complexity MUST be justified. A simpler implementation that satisfies the specification is
 preferred to a more capable one that exceeds it.
@@ -452,4 +514,30 @@ separate secrets) is unaffected — only its location in the repository tree cha
 *Risk accepted:* none — this principle only adds structure that the codebase did not previously
 have; it does not permit anything that was previously forbidden.
 
-**Version**: 2.1.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
+**v2.2.0 — 2026-08-12 — Principle X added: Interface Structure Is Adapted, Not Templated**
+
+*What changed:* added a new principle governing the internal organisation of `interface/`:
+no empty `domain/`/`application/`/`use-cases/` layers, component grouping by reuse instead of a
+rigid five-tier taxonomy, an isolated and clearly-named external-access layer (Electron bridge +
+HTTP/WS client) instead of DDD-style repository/port ceremony, no abstraction without a real
+consumer, and no archived dead code under `legacy`/`old`/`v1`-style naming. Added Principle X to
+the mandatory `/speckit.analyze` compliance review gates in Governance.
+
+*Why:* a generic "medium/large web project" template (Atomic Design + Clean Architecture,
+domain/application/infrastructure/presentation layers) was proposed for `interface/`. Applied
+literally, it would create `domain/` and `application/` folders holding little or nothing, because
+Principle IX already requires all business logic to live in `api/` — the same "structure for its
+own sake" failure mode Principle IX itself was written to correct on the backend side, this time
+on the frontend. This principle makes explicit that generic templates are a source of ideas to
+adapt, not a checklist to satisfy.
+
+*Migration:* no existing compliant code becomes non-compliant. `interface/` today has no
+`domain/`/`application/` folders and, per audit, only one confirmed dead file
+(`components/Versions.vue`, unused electron-vite boilerplate) — this principle governs the
+reorganisation carried out under the feature spec that follows it, and does not itself move or
+delete any files.
+
+*Risk accepted:* none — this principle only adds structure/constraints the codebase did not
+previously have codified; it does not permit anything previously forbidden.
+
+**Version**: 2.2.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
