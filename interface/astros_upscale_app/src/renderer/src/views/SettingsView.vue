@@ -11,7 +11,21 @@ import {
   Trash2,
   RotateCcw,
   Check,
-  Award
+  Award,
+  ExternalLink,
+  ChevronDown,
+  ChevronRight,
+  Info,
+  ShieldCheck,
+  Scale,
+  Image as ImageIcon,
+  Palette,
+  Film,
+  Video,
+  AudioLines,
+  Music2,
+  Scan,
+  PlayCircle
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import SettingRow from '../components/SettingRow.vue'
@@ -45,21 +59,112 @@ const languageOptions = computed(() => [
 // CC-BY-4.0/Apache-2.0 NOTICE terms) — never an internal routing identifier;
 // `capability` is the same human-facing label used everywhere else in the
 // product (FR-009/FR-063), always listed first.
-const CREDITS = [
-  { capability: 'Melhoria de imagem — Foto', work: '4xNomosWebPhoto_RealPLKSR', author: 'Philip Hofmann (Phhofm)', license: 'CC-BY-4.0' },
-  { capability: 'Melhoria de imagem — Anime/Ilustração', work: '2xHFA2kSPAN', author: 'Philip Hofmann (Phhofm)', license: 'CC-BY-4.0' },
-  { capability: 'Melhoria de vídeo — Anime/Animação', work: 'Real-ESRGAN (realesr-animevideov3)', author: 'Xintao Wang', license: 'BSD-3-Clause' },
-  { capability: 'Melhoria de vídeo — Filmagem real', work: '2xPublic_realplksr_dysample_layernorm_real', author: 'Philip Hofmann (Phhofm)', license: 'Apache-2.0' },
-  { capability: 'Melhoria de áudio — Voz', work: 'audiosronnx', author: 'TigreGotico', license: 'Apache-2.0' },
+// icon/tint are purely presentational (match the capability icons used
+// elsewhere, e.g. ComponentsView.vue) — never derived from or exposing an
+// internal engine_ref (FR-009/FR-063).
+const CREDITS: {
+  capability: string
+  work: string
+  author: string
+  license: string
+  note?: string
+  icon: unknown
+  tint: string
+}[] = [
+  {
+    capability: 'Melhoria de imagem — Foto',
+    work: '4xNomosWebPhoto_RealPLKSR',
+    author: 'Philip Hofmann (Phhofm)',
+    license: 'CC-BY-4.0',
+    icon: ImageIcon,
+    tint: '#3b82f6'
+  },
+  {
+    capability: 'Melhoria de imagem — Anime/Ilustração',
+    work: '2xHFA2kSPAN',
+    author: 'Philip Hofmann (Phhofm)',
+    license: 'CC-BY-4.0',
+    icon: Palette,
+    tint: '#a855f7'
+  },
+  {
+    capability: 'Melhoria de vídeo — Anime/Animação',
+    work: 'Real-ESRGAN (realesr-animevideov3)',
+    author: 'Xintao Wang',
+    license: 'BSD-3-Clause',
+    icon: Film,
+    tint: '#f59e0b'
+  },
+  {
+    capability: 'Melhoria de vídeo — Filmagem real',
+    work: '2xPublic_realplksr_dysample_layernorm_real',
+    author: 'Philip Hofmann (Phhofm)',
+    license: 'Apache-2.0',
+    icon: Video,
+    tint: '#ef4444'
+  },
+  {
+    capability: 'Melhoria de áudio — Voz',
+    work: 'audiosronnx',
+    author: 'TigreGotico',
+    license: 'Apache-2.0',
+    icon: AudioLines,
+    tint: '#14b8a6'
+  },
   {
     capability: 'Melhoria de áudio — Música',
     work: 'SonicMaster',
     author: 'AMAAI Lab',
-    license: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open, ver MODEL_LICENSES.md §3-bis)',
+    license: 'Apache-2.0',
+    note: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open, ver MODEL_LICENSES.md §3-bis)',
+    icon: Music2,
+    tint: '#ec4899'
   },
-  { capability: 'Realce de rosto (imagem)', work: 'YuNet', author: 'OpenCV / libfacedetection', license: 'MIT' },
-  { capability: 'Processamento de mídia', work: 'FFmpeg', author: 'FFmpeg developers', license: 'LGPL v2.1+ (build de distribuição)' },
+  {
+    capability: 'Realce de rosto (imagem)',
+    work: 'YuNet',
+    author: 'OpenCV / libfacedetection',
+    license: 'MIT',
+    icon: Scan,
+    tint: '#22c55e'
+  },
+  {
+    capability: 'Processamento de mídia',
+    work: 'FFmpeg',
+    author: 'FFmpeg developers',
+    license: 'LGPL v2.1+',
+    note: '(build de distribuição)',
+    icon: PlayCircle,
+    tint: '#3b82f6'
+  }
 ]
+
+const LICENSE_TONES: Record<string, string> = {
+  'CC-BY-4.0': '#3b82f6',
+  'BSD-3-Clause': '#a855f7',
+  'Apache-2.0': '#22c55e',
+  MIT: '#94a3b8',
+  'LGPL v2.1+': '#94a3b8'
+}
+function licenseTone(license: string): string {
+  return LICENSE_TONES[license] ?? '#94a3b8'
+}
+
+const expandedCredit = ref<string | null>(null)
+function toggleCredit(work: string): void {
+  expandedCredit.value = expandedCredit.value === work ? null : work
+}
+
+async function openDocsFile(relativePath: string): Promise<void> {
+  if (!hasNativeApi) return
+  try {
+    const { repoRoot } = await api.getAppPaths()
+    await api.openPath(`${repoRoot}/${relativePath}`)
+  } catch {
+    // best-effort — no toast infra here, and a missing/unreachable doc file
+    // shouldn't block the rest of the page.
+  }
+}
 
 const clearConfirm = ref(false)
 function confirmClearHistory(): void {
@@ -415,23 +520,84 @@ const outputFolderLabel = computed(
       </section>
 
       <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><Award :size="18" /></div>
-          <div>
+        <div class="group-header credits-header">
+          <div class="group-icon credits-icon"><Award :size="18" /></div>
+          <div class="credits-header-text">
             <h2 class="group-title">Créditos</h2>
-            <p class="group-description">
-              Atribuição obrigatória dos componentes usados (ver docs/models/MODEL_LICENSES.md)
-            </p>
+            <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
+            <button
+              class="credits-doc-link"
+              type="button"
+              :disabled="!hasNativeApi"
+              @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
+            >
+              Saiba mais em docs/models/MODEL_LICENSES.md <ExternalLink :size="12" />
+            </button>
           </div>
+          <button
+            class="btn-outline credits-doc-btn"
+            type="button"
+            :disabled="!hasNativeApi"
+            @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
+          >
+            <ExternalLink :size="14" /> Ver documentação <ChevronRight :size="14" />
+          </button>
         </div>
         <div class="group-body credits-body">
           <ul class="credits-list">
-            <li v-for="credit in CREDITS" :key="credit.capability">
-              <span class="credit-name">{{ credit.capability }}</span>
-              <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
-              <span class="credit-license">{{ credit.license }}</span>
+            <li v-for="credit in CREDITS" :key="credit.work">
+              <div class="credit-row">
+                <div class="credit-icon" :style="{ background: credit.tint + '22', color: credit.tint }">
+                  <component :is="credit.icon" :size="18" />
+                </div>
+                <div class="credit-main">
+                  <div class="credit-title-row">
+                    <span class="credit-name">{{ credit.capability }}</span>
+                  </div>
+                  <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
+                  <p v-if="credit.note" class="credit-note">
+                    <Info :size="12" /> {{ credit.note }}
+                  </p>
+                </div>
+                <span
+                  class="credit-license-badge"
+                  :style="{
+                    background: licenseTone(credit.license) + '22',
+                    color: licenseTone(credit.license)
+                  }"
+                  >{{ credit.license }}</span
+                >
+                <button
+                  class="credit-expand-btn"
+                  type="button"
+                  :title="expandedCredit === credit.work ? 'Recolher' : 'Detalhes'"
+                  @click="toggleCredit(credit.work)"
+                >
+                  <component :is="expandedCredit === credit.work ? ChevronDown : ChevronRight" :size="16" />
+                </button>
+              </div>
+              <p v-if="expandedCredit === credit.work" class="credit-detail">
+                Distribuído sob licença {{ credit.license }}. Consulte
+                docs/models/MODEL_LICENSES.md para o texto completo da licença e demais
+                condições de uso.
+              </p>
             </li>
           </ul>
+        </div>
+        <div class="credits-footer">
+          <ShieldCheck :size="18" class="credits-footer-icon" />
+          <div class="credits-footer-text">
+            <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
+            <p>Em caso de dúvidas, consulte a documentação completa.</p>
+          </div>
+          <button
+            class="btn-outline"
+            type="button"
+            :disabled="!hasNativeApi"
+            @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
+          >
+            <Scale :size="14" /> Sobre licenças <ExternalLink :size="12" />
+          </button>
         </div>
       </section>
     </div>
@@ -465,6 +631,68 @@ const outputFolderLabel = computed(
   border-radius: var(--radius-lg);
 }
 
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--surface-border);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--surface-3);
+}
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.credits-header {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.credits-icon {
+  background: #14b8a622;
+  color: #14b8a6;
+}
+.credits-header-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.credits-doc-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 2px;
+  color: var(--color-primary);
+  font-size: var(--fs-caption);
+  cursor: pointer;
+}
+.credits-doc-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.credits-doc-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.credits-doc-btn {
+  flex-shrink: 0;
+}
+
 .credits-body {
   padding: var(--space-3);
 }
@@ -474,29 +702,110 @@ const outputFolderLabel = computed(
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 .credits-list li {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  font-size: var(--fs-body-sm);
   padding: var(--space-2) 0;
   border-bottom: 1px solid var(--border-1);
 }
 .credits-list li:last-child {
   border-bottom: none;
 }
+.credit-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+.credit-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.credit-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.credit-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
 .credit-name {
   font-weight: 600;
-  min-width: 220px;
+  font-size: var(--fs-body-sm);
+  color: var(--text-primary);
 }
 .credit-author {
   color: var(--text-secondary);
+  font-size: var(--fs-body-sm);
 }
-.credit-license {
+.credit-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 2px 0 0;
   color: var(--text-tertiary);
-  margin-left: auto;
+  font-size: var(--fs-caption);
+}
+.credit-license-badge {
+  flex-shrink: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  white-space: nowrap;
+}
+.credit-expand-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+.credit-expand-btn:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+.credit-detail {
+  margin: var(--space-2) 0 0 50px;
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+}
+
+.credits-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-top: 1px solid var(--surface-border-soft);
+  background: var(--surface-2);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+.credits-footer-icon {
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.credits-footer-text {
+  flex: 1;
+  min-width: 0;
+}
+.credits-footer-text p {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
 }
 
 .group-header {
