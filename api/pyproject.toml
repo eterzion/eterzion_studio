@@ -43,14 +43,11 @@ audio = [
     "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",
 ]
 
-[project.scripts]
-astros-upscale = "astros_upscale.cli:main"
-
 [tool.setuptools.packages.find]
 include = ["astros_upscale*"]
 
 [tool.pytest.ini_options]
-addopts = "tests/"
+addopts = "astros_upscale/tests/"
 
 [tool.yapf]
 based_on_style = "pep8"

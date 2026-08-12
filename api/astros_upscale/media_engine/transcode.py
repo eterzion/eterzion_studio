@@ -23,7 +23,7 @@ _warned_this_process = False
 def _bundled_ffmpeg_path() -> str | None:
     """Path to the ffmpeg binary electron-builder packages alongside the app.
 
-    The Electron main process (interface/astros_upscale_app/src/main/apiProcess.ts)
+    The Electron main process (interface/src/main/apiProcess.ts)
     sets ASTROS_FFMPEG_DIR to the extraResources 'ffmpeg' folder when a bundled
     LGPL build exists for the current platform (see electron-builder.yml and
     docs/models/MODEL_LICENSES.md §5). Unset in dev or on platforms without one

@@ -36,16 +36,16 @@ Ver `plan.md` → Project Structure para a árvore final completa. Resumo:
 **Purpose**: preparar uma linha de base segura e reversível antes de qualquer movimentação de
 arquivo.
 
-- [ ] T001 Confirmar árvore de trabalho git limpa (`git status` sem alterações pendentes) antes de
+- [x] T001 Confirmar árvore de trabalho git limpa (`git status` sem alterações pendentes) antes de
   iniciar; se houver algo, parar e reportar em vez de prosseguir sobre estado sujo.
-- [ ] T002 Capturar contagem de testes baseline: rodar `pytest` em `interface/astros_upscale_api`,
+- [x] T002 Capturar contagem de testes baseline: rodar `pytest` em `interface/astros_upscale_api`,
   `interface/astros_licensing_service` e na raiz (pacote `astros_upscale`), registrar
   quantidade de testes coletados/passando de cada um, para comparar depois da migração (SC-002).
-- [ ] T003 Tirar um backup de `interface/astros_licensing_service/storage/licensing.db` (cópia de
+- [x] T003 Tirar um backup de `interface/astros_licensing_service/storage/licensing.db` (cópia de
   arquivo, ex. `licensing.db.pre-migration.bak`, fora da árvore versionada) e registrar a
   contagem de linhas de cada tabela (`licenses`, `installations`, `authorizations`, `packages`)
   via `sqlite3`, para comparar depois da migração (SC-007).
-- [ ] T004 Criar o diretório `api/` na raiz do repositório (vazio, só a pasta).
+- [x] T004 Criar o diretório `api/` na raiz do repositório (vazio, só a pasta).
 
 **Checkpoint**: linha de base capturada, seguro prosseguir.
 
@@ -58,26 +58,26 @@ histórico de cada arquivo). Nenhuma história de usuário pode ser validada ant
 
 **⚠️ CRITICAL**: nenhuma tarefa de US1–US4 pode começar antes desta fase estar completa.
 
-- [ ] T005 [P] `git mv interface/astros_upscale_api api/astros_upscale_api`
-- [ ] T006 [P] `git mv interface/astros_licensing_service api/astros_licensing_service`
-- [ ] T007 [P] `git mv astros_upscale api/astros_upscale`
-- [ ] T008 [P] `git mv tests api/astros_upscale/tests` (os 7 arquivos de teste da raiz, que testam
+- [x] T005 [P] `git mv interface/astros_upscale_api api/astros_upscale_api`
+- [x] T006 [P] `git mv interface/astros_licensing_service api/astros_licensing_service`
+- [x] T007 [P] `git mv astros_upscale api/astros_upscale`
+- [x] T008 [P] `git mv tests api/astros_upscale/tests` (os 7 arquivos de teste da raiz, que testam
   `astros_upscale` diretamente — ver `research.md` Decisão 5)
-- [ ] T009 [P] `git mv pyproject.toml api/pyproject.toml`
-- [ ] T010 [P] `git mv requirements.txt api/requirements.txt` (se distinto do
+- [x] T009 [P] `git mv pyproject.toml api/pyproject.toml`
+- [x] T010 [P] `git mv requirements.txt api/requirements.txt` (se distinto do
   `requirements.txt` de cada serviço — confirmar que não há colisão de nome antes de mover;
   renomear para `api/requirements-root.txt` se houver conflito de conteúdo com um já existente
   em `api/astros_upscale_api/` ou `api/astros_licensing_service/`)
-- [ ] T011 Mover o conteúdo de `interface/astros_upscale_app/` um nível acima, para que ele passe
+- [x] T011 Mover o conteúdo de `interface/astros_upscale_app/` um nível acima, para que ele passe
   a SER `interface/` diretamente (ex.: `git mv interface/astros_upscale_app/* interface/` a
   partir de um diretório temporário, ou renomear `interface` → `interface_old`, criar `interface`
   novo, mover o conteúdo — usar a sequência que preserva melhor a detecção de rename do git;
   confirmar ao final que `interface/astros_upscale_app/` não existe mais e `interface/package.json`
   existe diretamente).
-- [ ] T012 Verificar que `astros_upscale.egg-info/` (artefato de build, não versionado ou
+- [x] T012 Verificar que `astros_upscale.egg-info/` (artefato de build, não versionado ou
   versionado por engano) na raiz é removido/ignorado — não deve ser movido, é regenerado por
   `pip install -e`.
-- [ ] T013 Rodar `git status` e conferir visualmente que o git detectou as movimentações acima
+- [x] T013 Rodar `git status` e conferir visualmente que o git detectou as movimentações acima
   como renames (não como delete+add não relacionados) — se não detectar, considerar isso um
   sinal de alerta antes de prosseguir (histórico de arquivo se perderia).
 
@@ -98,15 +98,15 @@ físico — esta fase valida e corrige detalhes de organização).
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] Confirmar que a raiz do repositório contém apenas: `api/`, `interface/`,
+- [x] T014 [US1] Confirmar que a raiz do repositório contém apenas: `api/`, `interface/`,
   `models/`, `docs/`, `scripts/`, `specs/`, `.specify/`, `.github/`, `.venv/`, `README.md`,
   `LICENSE`, `.gitignore` — nenhuma outra pasta de código-fonte de aplicação. Registrar qualquer
   arquivo/pasta fora dessa lista para decisão (mover para dentro de `api/`/`interface/`, ou
   confirmar que é um arquivo global legítimo).
-- [ ] T015 [US1] Revisar `api/astros_upscale_api/`, `api/astros_licensing_service/`,
+- [x] T015 [US1] Revisar `api/astros_upscale_api/`, `api/astros_licensing_service/`,
   `api/astros_upscale/` e confirmar que nenhuma pasta nova artificial foi criada além do que
   `plan.md` especifica — cada uma deve refletir 1:1 sua estrutura interna pré-migração.
-- [ ] T016 [US1] Atualizar `README.md` (se ele documentar a estrutura de pastas antiga) para
+- [x] T016 [US1] Atualizar `README.md` (se ele documentar a estrutura de pastas antiga) para
   refletir `api/`/`interface/`.
 
 **Checkpoint**: estrutura de diretórios validada e documentada. (Os serviços ainda não rodam —
@@ -126,41 +126,41 @@ equivalente, sem invocar nenhum comando de terminal.
 
 ### Implementation for User Story 2
 
-- [ ] T017 [US2] Remover `astros_upscale.cli:main` (e a seção `[project.scripts]`
+- [x] T017 [US2] Remover `astros_upscale.cli:main` (e a seção `[project.scripts]`
   correspondente, se existir só por causa dele) de `api/pyproject.toml`.
-- [ ] T018 [US2] Apagar `api/astros_upscale/cli.py`.
-- [ ] T019 [P] [US2] Reinstalar o pacote em modo editável a partir do novo local:
+- [x] T018 [US2] Apagar `api/astros_upscale/cli.py`.
+- [x] T019 [P] [US2] Reinstalar o pacote em modo editável a partir do novo local:
   `pip install -e ./api` (ou equivalente) no `.venv` da raiz, substituindo a instalação antiga
   feita a partir de `/pyproject.toml`. Confirmar `python -c "import astros_upscale; print(astros_upscale.__file__)"`
   resolve para `api/astros_upscale/__init__.py`.
-- [ ] T020 [US2] Editar `api/astros_upscale_api/app/core/component_manager.py`:
+- [x] T020 [US2] Editar `api/astros_upscale_api/app/core/component_manager.py`:
   `_REPO_ROOT = APP_DIR.parent.parent.parent` → `APP_DIR.parent.parent` (agora aponta para
   `api/`, onde vive `pyproject.toml` — ver `research.md` Decisão 6). Atualizar também o
   comentário na linha anterior e a mensagem de erro em `_pip_install_audio_extra` que menciona
   "astros_upscale ao lado" para refletir o novo caminho relativo.
-- [ ] T021 [US2] Corrigir o comentário sobre "3 níveis" em
+- [x] T021 [US2] Corrigir o comentário sobre "3 níveis" em
   `api/astros_upscale_api/app/config.py` (o valor computado de `models_dir` não muda, só o
   comentário que documenta o caminho `interface/astros_upscale_api/app` → atualizar para
   `api/astros_upscale_api/app`).
-- [ ] T022 [P] [US2] Editar `api/astros_upscale_api/tests/conftest.py`: remover
+- [x] T022 [P] [US2] Editar `api/astros_upscale_api/tests/conftest.py`: remover
   `sys.path.insert(0, str(Path(__file__).resolve().parents[3]))` (desnecessário — `astros_upscale`
   agora é importado como pacote instalado); reavaliar se o `sys.path.insert(0, str(Path(__file__).resolve().parent.parent))`
   restante ainda é necessário dado como pytest resolve `rootdir`/`sys.path` a partir do novo local
   — remover também se supérfluo.
-- [ ] T023 [P] [US2] Editar `scripts/mirror_models.py` e `scripts/benchmark_profiles.py`:
+- [x] T023 [P] [US2] Editar `scripts/mirror_models.py` e `scripts/benchmark_profiles.py`:
   confirmar que `from astros_upscale.core import ...` / `from astros_upscale.utils.download import ...`
   continuam resolvendo corretamente contra o pacote agora instalado a partir de `api/` (nenhuma
   mudança de linha de import deve ser necessária se T019 foi feito corretamente — só validar).
-- [ ] T024 [US2] Rodar `pytest api/astros_upscale/tests/` e confirmar que os 7 arquivos passam a
+- [x] T024 [US2] Rodar `pytest api/astros_upscale/tests/` e confirmar que os 7 arquivos passam a
   partir do novo local, sem `sys.path` manual.
-- [ ] T025 [US2] Rodar `pytest api/astros_upscale_api -m "not slow"` e confirmar que os 28
+- [x] T025 [US2] Rodar `pytest api/astros_upscale_api -m "not slow"` e confirmar que os 28
   arquivos passam a partir do novo local.
-- [ ] T026 [US2] Validar manualmente (ou via script) cada linha da tabela "cli.py command
+- [x] T026 [US2] Validar manualmente (ou via script) cada linha da tabela "cli.py command
   handlers vs API routes" de `research.md`: subir `api/astros_upscale_api` (`python run.py`) e
   chamar `POST /jobs` (image/video/audio via `media_type`), `POST /jobs` com
   `operation=compress|convert`, e `POST /components/{id}/install`/`.../update`, confirmando
   resposta 2xx equivalente ao que o comando de terminal correspondente produzia (SC-004).
-- [ ] T027 [US2] Grep final: `grep -rn "astros_upscale\.cli" .` deve retornar vazio em todo o
+- [x] T027 [US2] Grep final: `grep -rn "astros_upscale\.cli" .` deve retornar vazio em todo o
   repositório (fora de `specs/`/documentação histórica).
 
 **Checkpoint**: nenhuma funcionalidade exige mais um comando de terminal; a API local roda a
@@ -177,26 +177,26 @@ tela muda; nenhum arquivo de `interface/` importa módulo interno de `api/`.
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Editar `interface/src/main/apiProcess.ts`: `resolveRepoRoot()` deixa de procurar
+- [x] T028 [US3] Editar `interface/src/main/apiProcess.ts`: `resolveRepoRoot()` deixa de procurar
   `pyproject.toml` subindo diretórios e passa a procurar um diretório que contenha, ao mesmo
   tempo, uma subpasta `api` e uma subpasta `interface` (ver `research.md` Decisão 7).
-- [ ] T029 [US3] No mesmo arquivo, atualizar `apiDir` de
+- [x] T029 [US3] No mesmo arquivo, atualizar `apiDir` de
   `join(repoRoot, 'interface', 'astros_upscale_api')` para
   `join(repoRoot, 'api', 'astros_upscale_api')`. Confirmar que `API_BASE_URL`
   (`http://127.0.0.1:8765`) permanece inalterado (a porta não muda).
-- [ ] T030 [P] [US3] Grep em `interface/`: `grep -rn "^from app\|require(.*api/astros" interface/src`
+- [x] T030 [P] [US3] Grep em `interface/`: `grep -rn "^from app\|require(.*api/astros" interface/src`
   deve retornar vazio — nenhum arquivo de interface importa módulo Python de `api/` diretamente
   (FR-007).
-- [ ] T031 [US3] Rodar `cd interface && pnpm install && pnpm lint && pnpm typecheck` e confirmar
+- [x] T031 [US3] Rodar `cd interface && pnpm install && pnpm lint && pnpm typecheck` e confirmar
   zero erros novos introduzidos pela movimentação (os mesmos warnings pré-existentes são
   aceitáveis, conforme padrão já estabelecido neste projeto).
-- [ ] T032 [US3] Rodar `cd interface && pnpm dev` (ou o comando de desenvolvimento do Electron) e
+- [x] T032 [US3] Rodar `cd interface && pnpm dev` (ou o comando de desenvolvimento do Electron) e
   confirmar que a API local sobe automaticamente a partir do novo caminho, sem configuração
   manual (SC-005).
-- [ ] T033 [US3] Percorrer manualmente, no app aberto: ativação de licença, importação de um
+- [x] T033 [US3] Percorrer manualmente, no app aberto: ativação de licença, importação de um
   arquivo, processamento via fila, exportação, tela de Configurações/Créditos — confirmar
   nenhuma diferença visual/funcional perceptível em relação ao estado pré-migração (SC-006).
-- [ ] T034 [US3] Grep final: `grep -rn "interface/astros_upscale_api\|interface/astros_licensing_service" .`
+- [x] T034 [US3] Grep final: `grep -rn "interface/astros_upscale_api\|interface/astros_licensing_service" .`
   deve retornar vazio em todo o repositório (fora de `specs/`/documentação histórica) (SC-003).
 
 **Checkpoint**: a interface funciona ponta a ponta a partir do novo caminho, sem regressão
@@ -215,23 +215,23 @@ ativações/autorizações funcionam e os dados pré-existentes estão intactos.
 
 ### Implementation for User Story 4
 
-- [ ] T035 [US4] Criar `api/astros_licensing_service/Dockerfile`, espelhando o padrão de
+- [x] T035 [US4] Criar `api/astros_licensing_service/Dockerfile`, espelhando o padrão de
   `api/astros_upscale_api/Dockerfile` (base `python:3.11-slim`, copia `requirements.txt` + `app/`
   + `run.py`, roda `uvicorn app.main:app --host 0.0.0.0 --port 8766`) — ver `research.md` Decisão 8.
-- [ ] T036 [US4] Editar `api/astros_licensing_service/tools/build_package.py`: corrigir o caminho
+- [x] T036 [US4] Editar `api/astros_licensing_service/tools/build_package.py`: corrigir o caminho
   hardcoded para `astros_upscale_api/app/core/upscaler.py`, hoje relativo a partir de
   `interface/astros_licensing_service/tools/`, para refletir a nova posição relativa (ambos os
   serviços agora são irmãos dentro de `api/`).
-- [ ] T037 [US4] Rodar `pytest api/astros_licensing_service` (6 arquivos) e confirmar que passam
+- [x] T037 [US4] Rodar `pytest api/astros_licensing_service` (6 arquivos) e confirmar que passam
   a partir do novo local.
-- [ ] T038 [US4] Subir `api/astros_licensing_service` sozinho (`python run.py`, sem a API local
+- [x] T038 [US4] Subir `api/astros_licensing_service` sozinho (`python run.py`, sem a API local
   rodando) e confirmar `GET /health` responde e que o SQLite em
   `api/astros_licensing_service/storage/licensing.db` contém a mesma contagem de linhas por
   tabela capturada em T003 (zero perda de dados, SC-007).
-- [ ] T039 [P] [US4] Confirmar (grep) que `api/astros_licensing_service/app/` não é importado por
+- [x] T039 [P] [US4] Confirmar (grep) que `api/astros_licensing_service/app/` não é importado por
   nenhum arquivo Python dentro de `api/astros_upscale_api/app/` — a comunicação continua
   exclusivamente via `licensing_service_url` (HTTP), nunca por import direto.
-- [ ] T040 [US4] Confirmar que `api/astros_licensing_service/app/config.py` e
+- [x] T040 [US4] Confirmar que `api/astros_licensing_service/app/config.py` e
   `api/astros_upscale_api/app/config.py` continuam com portas/segredos/bancos de dados
   independentes — nenhum valor de configuração foi acidentalmente compartilhado ou fundido
   durante a movimentação.
@@ -246,41 +246,41 @@ independente da API local, com seus dados preservados.
 **Purpose**: pontos de configuração/build que nenhuma história individual cobre sozinha, e a
 varredura final de limpeza.
 
-- [ ] T041 [P] Atualizar `.github/workflows/tests.yml`: os 3 jobs mudam `working-directory` e
+- [x] T041 [P] Atualizar `.github/workflows/tests.yml`: os 3 jobs mudam `working-directory` e
   `sparse-checkout` de `interface/astros_upscale_api` → `api/astros_upscale_api`,
   `interface/astros_licensing_service` → `api/astros_licensing_service`,
   `interface/astros_upscale_app` → `interface` (o job de sparse-checkout do Windows passa a
   incluir `api` como um todo, ou especificamente `api/astros_upscale`, `models`,
   `api/astros_upscale_api`).
-- [ ] T042 [P] Revisar `api/astros_upscale_api/pyinstaller.spec` linha a linha por caminhos
+- [x] T042 [P] Revisar `api/astros_upscale_api/pyinstaller.spec` linha a linha por caminhos
   relativos que dependiam da antiga profundidade `interface/astros_upscale_api` (ex.: referências
   a `../../` para alcançar `astros_upscale` ou `/models`) e corrigir conforme a nova estrutura.
-- [ ] T043 [P] Atualizar `docs/processing-protection-architecture.md` e
+- [x] T043 [P] Atualizar `docs/processing-protection-architecture.md` e
   `docs/audit/phase0-inventory.md` (se citarem os caminhos antigos como referência de arquitetura
   ativa, não como histórico) para os novos caminhos.
-- [ ] T044 Remover `astros_upscale.egg-info/` da raiz (artefato de build do local antigo, se ainda
+- [x] T044 Remover `astros_upscale.egg-info/` da raiz (artefato de build do local antigo, se ainda
   presente) e confirmar que o novo `pip install -e ./api` gera seu próprio artefato de build
   dentro de `api/` (git-ignorado).
-- [ ] T045 Varredura final: `grep -rln "interface/astros_upscale_api\|interface/astros_licensing_service\|interface/astros_upscale_app" .`
+- [x] T045 Varredura final: `grep -rln "interface/astros_upscale_api\|interface/astros_licensing_service\|interface/astros_upscale_app" .`
   em todo o repositório (código, configuração, CI, docs versionados) — zero ocorrências fora de
   `specs/002-api-interface-split/` (que documenta o histórico da migração) e do `CHANGELOG`/
   histórico de commits.
-- [ ] T046 Rodar a suíte completa mais uma vez (`api/astros_upscale`, `api/astros_upscale_api`,
+- [x] T046 Rodar a suíte completa mais uma vez (`api/astros_upscale`, `api/astros_upscale_api`,
   `api/astros_licensing_service`) e comparar a contagem de testes com a linha de base capturada
   em T002 — nenhum teste deve ter sido perdido (SC-002).
-- [ ] T047 Executar `quickstart.md` do início ao fim, item por item, e marcar cada critério de
+- [x] T047 Executar `quickstart.md` do início ao fim, item por item, e marcar cada critério de
   sucesso (SC-001 a SC-007) como validado.
-- [ ] T049 Validar FR-008 (api/ não depende de interface/): rodar
+- [x] T049 Validar FR-008 (api/ não depende de interface/): rodar
   `grep -rln "interface/" api/ --include="*.py"` (deve retornar vazio, fora de comentários
   puramente descritivos que não afetam import/execução) e, em seguida, renomear temporariamente
   `interface/` (ex. para `interface_disabled/`) e confirmar que `pytest api/astros_upscale`,
   `pytest api/astros_upscale_api -m "not slow"` e `pytest api/astros_licensing_service` continuam
   passando com `interface/` ausente — depois desfazer o rename.
-- [ ] T050 Validar que `models/` (raiz) e os diretórios `storage/` de cada serviço
+- [x] T050 Validar que `models/` (raiz) e os diretórios `storage/` de cada serviço
   (`api/astros_upscale_api/app/storage/`, `api/astros_licensing_service/storage/`) permanecem no
   mesmo local e com o mesmo conteúdo de antes da Fase 2 — nenhum arquivo de dados foi movido,
   duplicado ou versionado por engano durante os `git mv` de código.
-- [ ] T048 Apagar os backups temporários criados em T003 (`licensing.db.pre-migration.bak`) depois
+- [x] T048 Apagar os backups temporários criados em T003 (`licensing.db.pre-migration.bak`) depois
   que T038 confirmar integridade dos dados.
 
 ---

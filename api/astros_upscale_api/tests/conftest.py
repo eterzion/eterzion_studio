@@ -4,9 +4,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-# astros_upscale (the core package, imported by app.core.upscaler) lives three
-# levels above this service, same layout app/config.py itself relies on.
-sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+# astros_upscale (the core package, imported by app.core.upscaler) is a real
+# installed dependency now (pip install -e ./api), not resolved via sys.path
+# climbing — see specs/002-api-interface-split/research.md Decisão 3.
 
 import pytest
 

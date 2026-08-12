@@ -2,7 +2,7 @@
 wire, or persists locally, may carry file bytes, content hashes, or any
 field derived from the media being processed (FR-062). The licensing
 service's own payload-shape audit lives in
-interface/astros_licensing_service/tests/test_no_content_leakage.py — a
+api/astros_licensing_service/tests/test_no_content_leakage.py — a
 different Python package, not importable from here."""
 from __future__ import annotations
 

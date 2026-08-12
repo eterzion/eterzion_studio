@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     # /activations and /authorizations directly — needs CORS. 'app://.' covers the
     # packaged app (file:// origin normalizes to 'null' in some Electron configs,
     # covered too); 5173 is the Vite dev server, matching astros_upscale_api's own
-    # cors_origins in interface/astros_upscale_api/app/config.py.
+    # cors_origins in api/astros_upscale_api/app/config.py.
     cors_origins: list[str] = ['http://localhost:5173', 'app://.', 'null']
 
     default_activation_limit: int = 2

@@ -11,7 +11,9 @@ class Settings(BaseSettings):
     port: int = 8765
     # 'null' covers the packaged Electron app (loaded via file://, which sends Origin: null).
     cors_origins: list[str] = ['http://localhost:5173', 'app://.', 'null']
-    # APP_DIR = <repo>/interface/astros_upscale_api/app -> repo root is 3 levels up
+    # APP_DIR = <repo>/api/astros_upscale_api/app -> repo root is 3 levels up.
+    # /models stays at the true git repo root (data, not application source),
+    # unlike component_manager.py's _REPO_ROOT which points at api/ instead.
     models_dir: str = str((APP_DIR.parent.parent.parent / 'models').resolve())
     uploads_dir: str = str((APP_DIR / 'storage' / 'uploads').resolve())
     outputs_dir: str = str((APP_DIR / 'storage' / 'outputs').resolve())
@@ -19,7 +21,7 @@ class Settings(BaseSettings):
     api_key: str | None = None  # required only when hosted remotely
 
     # Fase 4 — pacote temporário de execução. licensing_service_url points at
-    # the separate service in interface/astros_licensing_service. Empty =
+    # the separate service in api/astros_licensing_service. Empty =
     # protected loading disabled, isolated_worker.py falls back to the plain
     # static import — orthogonal to whether a job was ALLOWED to be created
     # at all (that's license_gate.py's job, governed by dev_allow_unlicensed

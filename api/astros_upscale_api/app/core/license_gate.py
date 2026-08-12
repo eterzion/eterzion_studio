@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from app.config import settings
 from app.core import license_cache, offline_tolerance
 
-# Statuses a license row (interface/astros_licensing_service/app/licensing.py)
+# Statuses a license row (api/astros_licensing_service/app/licensing.py)
 # can carry. Only 'active' passes the gate — anything else (suspended,
 # refunded, revoked, ...) is a real reason to block, per FR-060.
 _ACTIVE_STATUS = 'active'

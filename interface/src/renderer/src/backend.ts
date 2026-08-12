@@ -1,4 +1,4 @@
-// Client for the astros_upscale_api FastAPI server (interface/astros_upscale_api).
+// Client for the astros_upscale_api FastAPI server (api/astros_upscale_api).
 // Mirrors app/models/schemas.py — keep the two in sync when either changes.
 
 const BASE_URL = 'http://127.0.0.1:8765'

@@ -390,7 +390,7 @@ não funcionavam.
 ### Empacotamento resolvido (2026-08-11) — build LGPL vendorizada, fetch-at-build-time
 
 O app agora empacota um FFmpeg LGPL para Windows e Linux, buscado durante o build (não
-comitado no git) por `interface/astros_upscale_app/scripts/fetch-ffmpeg.mjs` a partir da
+comitado no git) por `interface/scripts/fetch-ffmpeg.mjs` a partir da
 fonte pública **BtbN/FFmpeg-Builds** (<https://github.com/BtbN/FFmpeg-Builds>), releases
 `ffmpeg-n8.1-latest-{win64,linux64}-lgpl-shared-8.1`. O script pina o nome exato do asset e
 seu SHA256 (não confia em "latest" resolvido no momento do fetch) e recusa-se a usar o binário
@@ -522,7 +522,7 @@ configuration: --enable-gpl --enable-version3 ... --enable-libx264 --enable-libx
 ```
 
 **Estado inalterado desde 2026-08-08: a build ainda é GPL.** Confirmado também, via inspeção de
-`interface/astros_upscale_app/electron-builder.yml` e de `dist/win-unpacked/`, que o instalador
+`interface/electron-builder.yml` e de `dist/win-unpacked/`, que o instalador
 **não embute nenhum binário `ffmpeg`/`ffmpeg.exe` próprio** — o único `ffmpeg.dll` presente no
 build do Electron é o do próprio Chromium (mídia HTML5), não o binário CLI que
 `astros_upscale/media_engine/transcode.py` invoca via `shutil.which('ffmpeg')`. O backend Python

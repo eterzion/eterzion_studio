@@ -10,7 +10,7 @@ binding) before it's ever executed — see app/core/protected_loader.py on the
 astros_upscale_api side for how it's consumed.
 
 Usage: python tools/build_package.py
-Run from interface/astros_licensing_service, with astros_upscale_api as a
+Run from api/astros_licensing_service, with astros_upscale_api as a
 sibling directory (the default repo layout).
 """
 from __future__ import annotations

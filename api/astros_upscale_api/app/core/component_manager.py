@@ -36,9 +36,13 @@ from app.config import APP_DIR, settings
 from app.core import profile_resolver
 from app.core.license_registry import get_model_license
 
-# APP_DIR = <repo>/interface/astros_upscale_api/app -> repo root is 3 levels up
-# (same resolution app/config.py uses for models_dir).
-_REPO_ROOT = APP_DIR.parent.parent.parent
+# APP_DIR = <repo>/api/astros_upscale_api/app -> the api/ package root (where
+# pyproject.toml and the astros_upscale[audio] extras group live) is 2 levels
+# up. This is deliberately NOT the git repo root (contrast with config.py's
+# models_dir, which still climbs 3 levels to /models) — pyproject.toml moved
+# into api/ during the api/+interface/ reorganisation, so "source checkout
+# present" now means "api/ is present", not "the repo root is present".
+_REPO_ROOT = APP_DIR.parent.parent
 
 CAPABILITY_LABELS: dict[str, str] = {
     'photo': 'Melhoria de imagem — Foto',

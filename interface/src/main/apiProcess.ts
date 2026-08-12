@@ -15,17 +15,24 @@ export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
   return existsSync(join(dir, binaryName)) ? dir : null
 }
 
-/** Locates the astros_upscale repo root (the folder with pyproject.toml) from the
- *  compiled main process location (out/main) or, in dev, from process.cwd(). */
+/** Locates the astros_upscale repo root — the directory that has both an `api/`
+ *  and an `interface/` subfolder, per the api/+interface/ repository layout — from
+ *  the compiled main process location (out/main) or, in dev, from process.cwd().
+ *  This folder is `interface/` itself now (there's no astros_upscale_app/ nesting
+ *  level anymore), so candidate depths are one shallower than before the
+ *  api/+interface/ reorganisation. `pyproject.toml` used to be the marker, but it
+ *  now lives at api/pyproject.toml, not at the repo root, so it can't be used here
+ *  anymore — see specs/002-api-interface-split/research.md Decisão 7. */
 export function resolveRepoRoot(): string {
   const candidates = [
-    resolve(__dirname, '../../../..'),
-    resolve(process.cwd(), '../..'),
+    resolve(__dirname, '../../..'),
     resolve(process.cwd(), '..'),
     process.cwd()
   ]
   for (const candidate of candidates) {
-    if (existsSync(join(candidate, 'pyproject.toml'))) return candidate
+    if (existsSync(join(candidate, 'api')) && existsSync(join(candidate, 'interface'))) {
+      return candidate
+    }
   }
   return candidates[0]
 }
@@ -66,7 +73,7 @@ export interface ApiReadyResult {
 
 /** Ensures the astros_upscale_api FastAPI server is reachable at API_BASE_URL — reuses
  *  it if the user already started it manually (e.g. `python run.py` in a terminal),
- *  otherwise spawns it from the repo's astros_upscale_api/ folder using the shared .venv.
+ *  otherwise spawns it from the repo's api/astros_upscale_api/ folder using the shared .venv.
  *  `resourcesPath` (Electron's `process.resourcesPath`) is used to locate a bundled
  *  FFmpeg, if any, for this platform. */
 export async function ensureApiRunning(
@@ -77,7 +84,7 @@ export async function ensureApiRunning(
     return { ready: true, baseUrl: API_BASE_URL, startedByApp: false }
   }
 
-  const apiDir = join(repoRoot, 'interface', 'astros_upscale_api')
+  const apiDir = join(repoRoot, 'api', 'astros_upscale_api')
   const runScript = join(apiDir, 'run.py')
   if (!existsSync(runScript)) {
     return {
