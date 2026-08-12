@@ -3,7 +3,19 @@ import { computed } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
 import SummaryCards from '../components/SummaryCards.vue'
-import { Image, Film, Headphones, Rocket, ArrowRight, Trash2, ChevronDown, ListChecks } from '@lucide/vue'
+import {
+  Image,
+  Film,
+  Headphones,
+  Rocket,
+  Layers,
+  History,
+  Settings,
+  ArrowRight,
+  Trash2,
+  ChevronDown,
+  ListChecks
+} from '@lucide/vue'
 import { queueState, removeJob, setActiveJob } from '../store/jobs'
 import type { NavKey } from '../types'
 
@@ -39,6 +51,24 @@ const CATEGORIES: { key: NavKey; label: string; description: string; icon: unkno
     label: 'Otimizar',
     description: 'Comprima ou converta imagens, vídeos e áudios sem IA.',
     icon: Rocket
+  },
+  {
+    key: 'modelos',
+    label: 'Modelos',
+    description: 'Instale, atualize ou remova os componentes de cada capacidade.',
+    icon: Layers
+  },
+  {
+    key: 'historico',
+    label: 'Histórico',
+    description: 'Veja os arquivos já processados anteriormente.',
+    icon: History
+  },
+  {
+    key: 'configuracoes',
+    label: 'Configurações',
+    description: 'Ajuste preferências gerais, tema e processamento.',
+    icon: Settings
   }
 ]
 
