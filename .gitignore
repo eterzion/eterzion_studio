@@ -14,6 +14,9 @@ __pycache__/
 # Distribution / packaging
 .Python
 build/
+# electron-builder's buildResources (icons, entitlements) — source-controlled
+# config, not build output; unlike every other build/ dir in this repo.
+!interface/build/
 develop-eggs/
 dist/
 downloads/
