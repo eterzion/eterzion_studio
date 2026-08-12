@@ -24,11 +24,7 @@ export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
  *  now lives at api/pyproject.toml, not at the repo root, so it can't be used here
  *  anymore — see specs/002-api-interface-split/research.md Decisão 7. */
 export function resolveRepoRoot(): string {
-  const candidates = [
-    resolve(__dirname, '../../..'),
-    resolve(process.cwd(), '..'),
-    process.cwd()
-  ]
+  const candidates = [resolve(__dirname, '../../..'), resolve(process.cwd(), '..'), process.cwd()]
   for (const candidate of candidates) {
     if (existsSync(join(candidate, 'api')) && existsSync(join(candidate, 'interface'))) {
       return candidate

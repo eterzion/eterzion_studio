@@ -12,7 +12,7 @@ import {
   ShieldAlert,
   Download
 } from '@lucide/vue'
-import { api, hasNativeApi, type DescribedFile } from '../api'
+import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
 import {
   createLocalJob,
   processJob as apiProcessJob,
@@ -21,20 +21,16 @@ import {
   getJob,
   type ContentType,
   type SecondaryElements
-} from '../backend'
+} from '../apiClient'
 import { recordSimpleJob } from '../store/history'
+import { usePickFiles } from '../composables/usePickFiles'
 
 // T049/FR-081 to FR-086: video-enhance jobs of its own (never touches
 // store/jobs.ts's queueState, same reasoning as CompressConvertView.vue —
 // video needs its own secondary-elements confirmation step that image jobs
 // never go through).
 type LocalStatus =
-  | 'configuring'
-  | 'queued'
-  | 'awaiting_confirmation'
-  | 'processing'
-  | 'done'
-  | 'error'
+  'configuring' | 'queued' | 'awaiting_confirmation' | 'processing' | 'done' | 'error'
 
 interface VideoJob {
   id: string
@@ -115,16 +111,7 @@ async function addFile(described: DescribedFile): Promise<void> {
   })
 }
 
-async function pickFiles(): Promise<void> {
-  if (!hasNativeApi) {
-    importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
-    return
-  }
-  const result = await api.selectFiles()
-  if (result.canceled) return
-  importError.value = null
-  for (const f of result.files) await addFile(f)
-}
+const { pickFiles } = usePickFiles(addFile, importError)
 
 function removeJob(job: VideoJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -318,7 +305,9 @@ function exportAll(): void {
               </li>
             </ul>
             <div class="confirm-actions">
-              <button class="btn-outline small" type="button" @click="removeJob(job)">Cancelar</button>
+              <button class="btn-outline small" type="button" @click="removeJob(job)">
+                Cancelar
+              </button>
               <button class="primary-btn small" type="button" @click="confirmAndProcess(job)">
                 Continuar mesmo assim
               </button>

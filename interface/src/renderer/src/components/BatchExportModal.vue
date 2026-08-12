@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { X, Loader2, CheckCircle2, AlertCircle, FolderOpen } from '@lucide/vue'
 import type { Job, ExportOptions } from '../store/jobs'
 import { exportOne } from '../store/jobs'
-import { api, hasNativeApi } from '../api'
+import { api, hasNativeApi } from '../nativeBridge'
 import AppSelect from './AppSelect.vue'
 
 const formatOptions = [

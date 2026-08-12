@@ -25,7 +25,7 @@ import {
   deleteComponent,
   type ComponentSummary,
   type ComponentDetails
-} from '../backend'
+} from '../apiClient'
 import { licenseState, refreshLicenseStatus } from '../store/license'
 
 // UI-only copy/icon per capability — content_type slugs, not raw model
@@ -104,11 +104,19 @@ async function toggleDetails(component: ComponentSummary): Promise<void> {
   }
 }
 
-async function runAction(component: ComponentSummary, action: 'install' | 'update' | 'delete'): Promise<void> {
+async function runAction(
+  component: ComponentSummary,
+  action: 'install' | 'update' | 'delete'
+): Promise<void> {
   busyId.value = component.id
   actionError.value = null
   try {
-    const fn = action === 'install' ? installComponent : action === 'update' ? updateComponent : deleteComponent
+    const fn =
+      action === 'install'
+        ? installComponent
+        : action === 'update'
+          ? updateComponent
+          : deleteComponent
     const updated = await fn(component.id)
     const index = components.value.findIndex((c) => c.id === component.id)
     if (index !== -1) components.value[index] = updated
@@ -122,9 +130,12 @@ async function runAction(component: ComponentSummary, action: 'install' | 'updat
 
 function stateLabel(state: ComponentSummary['install_state']): string {
   return (
-    { not_installed: 'Não instalado', installing: 'Instalando…', installed: 'Instalado', update_available: 'Atualização disponível' }[
-      state
-    ] ?? state
+    {
+      not_installed: 'Não instalado',
+      installing: 'Instalando…',
+      installed: 'Instalado',
+      update_available: 'Atualização disponível'
+    }[state] ?? state
   )
 }
 </script>
@@ -150,16 +161,17 @@ function stateLabel(state: ComponentSummary['install_state']): string {
       <p v-if="loadError" class="banner-error"><AlertCircle :size="14" /> {{ loadError }}</p>
       <p v-if="actionError" class="banner-error"><AlertCircle :size="14" /> {{ actionError }}</p>
 
-      <div v-if="loading" class="status-row">
-        <Loader2 :size="18" class="spin" /> Carregando…
-      </div>
+      <div v-if="loading" class="status-row"><Loader2 :size="18" class="spin" /> Carregando…</div>
 
       <div v-else class="component-list">
         <div v-for="component in components" :key="component.id" class="component-card">
           <div class="component-row">
             <div
               class="component-icon"
-              :style="{ background: capabilityMeta(component.id).tint + '22', color: capabilityMeta(component.id).tint }"
+              :style="{
+                background: capabilityMeta(component.id).tint + '22',
+                color: capabilityMeta(component.id).tint
+              }"
             >
               <component :is="capabilityMeta(component.id).icon" :size="18" />
             </div>
@@ -203,7 +215,10 @@ function stateLabel(state: ComponentSummary['install_state']): string {
                 <RefreshCw :size="14" /> Atualizar
               </button>
               <button
-                v-if="component.install_state === 'installed' || component.install_state === 'update_available'"
+                v-if="
+                  component.install_state === 'installed' ||
+                  component.install_state === 'update_available'
+                "
                 class="btn-outline small danger"
                 type="button"
                 :disabled="busyId === component.id"

@@ -37,8 +37,8 @@ import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/s
 import { ACCENT_COLORS, type AccentColor } from '../theme'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { clearHistory, historyState } from '../store/history'
-import { listComponents } from '../backend'
-import { api, hasNativeApi } from '../api'
+import { listComponents } from '../apiClient'
+import { api, hasNativeApi } from '../nativeBridge'
 
 const { t } = useI18n()
 
@@ -547,7 +547,10 @@ const outputFolderLabel = computed(
           <ul class="credits-list">
             <li v-for="credit in CREDITS" :key="credit.work">
               <div class="credit-row">
-                <div class="credit-icon" :style="{ background: credit.tint + '22', color: credit.tint }">
+                <div
+                  class="credit-icon"
+                  :style="{ background: credit.tint + '22', color: credit.tint }"
+                >
                   <component :is="credit.icon" :size="18" />
                 </div>
                 <div class="credit-main">
@@ -573,13 +576,15 @@ const outputFolderLabel = computed(
                   :title="expandedCredit === credit.work ? 'Recolher' : 'Detalhes'"
                   @click="toggleCredit(credit.work)"
                 >
-                  <component :is="expandedCredit === credit.work ? ChevronDown : ChevronRight" :size="16" />
+                  <component
+                    :is="expandedCredit === credit.work ? ChevronDown : ChevronRight"
+                    :size="16"
+                  />
                 </button>
               </div>
               <p v-if="expandedCredit === credit.work" class="credit-detail">
-                Distribuído sob licença {{ credit.license }}. Consulte
-                docs/models/MODEL_LICENSES.md para o texto completo da licença e demais
-                condições de uso.
+                Distribuído sob licença {{ credit.license }}. Consulte docs/models/MODEL_LICENSES.md
+                para o texto completo da licença e demais condições de uso.
               </p>
             </li>
           </ul>

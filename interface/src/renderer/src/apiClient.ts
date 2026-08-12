@@ -45,7 +45,8 @@ export interface Adjustments {
 export type MediaType = 'image' | 'video' | 'audio'
 export type Operation = 'enhance' | 'compress' | 'convert'
 export type Profile = 'fast' | 'balanced' | 'quality'
-export type ContentType = 'photo' | 'anime_image' | 'real_video' | 'anime_video' | 'speech' | 'music'
+export type ContentType =
+  'photo' | 'anime_image' | 'real_video' | 'anime_video' | 'speech' | 'music'
 
 export interface OutputTarget {
   format: string
@@ -69,13 +70,7 @@ export interface MediaRequest {
 }
 
 export type JobStatusValue =
-  | 'pending'
-  | 'pending_confirmation'
-  | 'queued'
-  | 'processing'
-  | 'done'
-  | 'error'
-  | 'cancelled'
+  'pending' | 'pending_confirmation' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
 export type ErrorCategory =
   | 'out_of_memory'
   | 'corrupted_input'
@@ -182,7 +177,8 @@ export async function deleteComponent(componentId: string): Promise<ComponentSum
   return res.json()
 }
 
-export type LicenseState = 'active' | 'offline_tolerance' | 'offline_expiring' | 'blocked' | 'not_activated'
+export type LicenseState =
+  'active' | 'offline_tolerance' | 'offline_expiring' | 'blocked' | 'not_activated'
 
 export interface LicenseStatusResponse {
   state: LicenseState
@@ -214,7 +210,10 @@ export async function releaseLicense(): Promise<void> {
   if (!res.ok) throw new Error(await extractError(res))
 }
 
-export async function createLocalJob(mediaRequest: MediaRequest, adjustments: Adjustments): Promise<string> {
+export async function createLocalJob(
+  mediaRequest: MediaRequest,
+  adjustments: Adjustments
+): Promise<string> {
   const res = await fetch(`${BASE_URL}/jobs/local`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -228,7 +227,10 @@ export async function createLocalJob(mediaRequest: MediaRequest, adjustments: Ad
 /** Populates the editable content-type indicator (FR-096) with a real
  *  detected default before a Job exists — the person can still override it
  *  in the request sent to createLocalJob(). */
-export async function detectContentType(inputPath: string, mediaType: MediaType): Promise<ContentType> {
+export async function detectContentType(
+  inputPath: string,
+  mediaType: MediaType
+): Promise<ContentType> {
   const res = await fetch(`${BASE_URL}/jobs/detect-content-type`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -242,7 +244,9 @@ export async function detectContentType(inputPath: string, mediaType: MediaType)
 /** FR-082/FR-084 — moves a video-enhance job out of pending_confirmation once
  *  the person has seen and accepted what the probe found would be lost. */
 export async function confirmSecondaryElements(jobId: string): Promise<void> {
-  const res = await fetch(`${BASE_URL}/jobs/${jobId}/confirm-secondary-elements`, { method: 'POST' })
+  const res = await fetch(`${BASE_URL}/jobs/${jobId}/confirm-secondary-elements`, {
+    method: 'POST'
+  })
   if (!res.ok) throw new Error(await extractError(res))
 }
 

@@ -2,16 +2,25 @@
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
-import { Upload, FolderOpen, Loader2, CheckCircle2, XCircle, AlertCircle, Download } from '@lucide/vue'
-import { api, hasNativeApi, type DescribedFile } from '../api'
+import {
+  Upload,
+  FolderOpen,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Download
+} from '@lucide/vue'
+import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
 import {
   createLocalJob,
   processJob as apiProcessJob,
   subscribeJobProgress,
   getJob,
   type MediaType
-} from '../backend'
+} from '../apiClient'
 import { recordSimpleJob } from '../store/history'
+import { usePickFiles } from '../composables/usePickFiles'
 
 // Otimizar (CompressConvertView) already has a Comprimir/Converter toggle per
 // job — this view is a focused, format-only entry point to the same backend
@@ -63,7 +72,11 @@ const FORMATS_BY_MEDIA_TYPE: Record<MediaType, string[]> = {
   audio: ['mp3', 'm4a', 'ogg', 'opus', 'flac']
 }
 
-const KIND_TO_MEDIA_TYPE: Record<string, MediaType> = { Imagem: 'image', Vídeo: 'video', Áudio: 'audio' }
+const KIND_TO_MEDIA_TYPE: Record<string, MediaType> = {
+  Imagem: 'image',
+  Vídeo: 'video',
+  Áudio: 'audio'
+}
 
 const jobs = ref<ConvertJob[]>([])
 const importError = ref<string | null>(null)
@@ -96,16 +109,7 @@ async function addFile(described: DescribedFile): Promise<void> {
   })
 }
 
-async function pickFiles(): Promise<void> {
-  if (!hasNativeApi) {
-    importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
-    return
-  }
-  const result = await api.selectFiles()
-  if (result.canceled) return
-  importError.value = null
-  for (const f of result.files) await addFile(f)
-}
+const { pickFiles } = usePickFiles(addFile, importError)
 
 function removeJob(job: ConvertJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -127,8 +131,15 @@ async function runJob(job: ConvertJob): Promise<void> {
           conflict: 'rename'
         }
       },
-      { denoise: 50, deblur: 0, detail_recovery: 0, face_correction: false, face_recovery_strength: 80,
-        denoise_filter_enabled: false, denoise_filter_strength: 45 }
+      {
+        denoise: 50,
+        deblur: 0,
+        detail_recovery: 0,
+        face_correction: false,
+        face_recovery_strength: 80,
+        denoise_filter_enabled: false,
+        denoise_filter_strength: 45
+      }
     )
     job.backendJobId = backendJobId
     syncHistory(job)
@@ -153,7 +164,8 @@ async function runJob(job: ConvertJob): Promise<void> {
       () => {
         getJob(backendJobId)
           .then((status) => {
-            job.status = status.status === 'done' ? 'done' : status.status === 'error' ? 'error' : job.status
+            job.status =
+              status.status === 'done' ? 'done' : status.status === 'error' ? 'error' : job.status
             job.outputPath = status.output_path ?? job.outputPath
             syncHistory(job)
           })
@@ -210,8 +222,8 @@ function fmtBytes(bytes: number | undefined): string {
 
     <div class="converter-content">
       <p class="hint">
-        Converta imagens, vídeos e áudios para outro formato de arquivo, sem IA — mantém
-        dimensões e duração originais, só muda o container/codec de saída.
+        Converta imagens, vídeos e áudios para outro formato de arquivo, sem IA — mantém dimensões e
+        duração originais, só muda o container/codec de saída.
       </p>
       <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 

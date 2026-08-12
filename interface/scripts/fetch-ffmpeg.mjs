@@ -24,7 +24,16 @@
  * See docs/models/MODEL_LICENSES.md §5 for that pendency.
  */
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, rmSync, chmodSync, readdirSync, copyFileSync, readFileSync, writeFileSync } from 'node:fs'
+import {
+  existsSync,
+  mkdirSync,
+  rmSync,
+  chmodSync,
+  readdirSync,
+  copyFileSync,
+  readFileSync,
+  writeFileSync
+} from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
@@ -86,7 +95,10 @@ function findWindowsXzDir() {
   // `where` reports.
   const where = spawnSync('where', ['git'], { encoding: 'utf8' })
   if (where.status !== 0 || !where.stdout) return null
-  const gitExePaths = where.stdout.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+  const gitExePaths = where.stdout
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean)
   for (const gitExe of gitExePaths) {
     const gitBin = dirname(gitExe)
     const gitRoot = dirname(gitBin)
@@ -131,7 +143,7 @@ function extractArchive(archivePath, destDir) {
     if (!xzDir) {
       throw new Error(
         'Extracting .tar.xz on Windows needs an `xz` executable on PATH (bsdtar shells out to ' +
-          'it) and none was found, including Git for Windows\' bundled copy. Install Git for ' +
+          "it) and none was found, including Git for Windows' bundled copy. Install Git for " +
           'Windows (https://git-scm.com/download/win) or 7-Zip, or add an `xz.exe` to PATH.'
       )
     }
@@ -149,7 +161,9 @@ function tryRmSync(path) {
   try {
     rmSync(path, { recursive: true, force: true })
   } catch (error) {
-    console.warn(`[fetch-ffmpeg] could not clean up ${path} (${error.message}); leaving it in place`)
+    console.warn(
+      `[fetch-ffmpeg] could not clean up ${path} (${error.message}); leaving it in place`
+    )
   }
 }
 
@@ -174,12 +188,15 @@ function copyDirFiltered(srcDir, destDir, keep) {
 
 async function fetchPlatform(platform, { force }) {
   const target = TARGETS[platform]
-  if (!target) throw new Error(`Unknown platform "${platform}". Known: ${Object.keys(TARGETS).join(', ')}`)
+  if (!target)
+    throw new Error(`Unknown platform "${platform}". Known: ${Object.keys(TARGETS).join(', ')}`)
 
   const outDir = join(RESOURCES_ROOT, platform)
   const binaryOut = join(outDir, target.binarySubpath)
   if (!force && existsSync(binaryOut)) {
-    console.log(`[fetch-ffmpeg] ${platform}: already present at ${binaryOut} (use --force to re-fetch)`)
+    console.log(
+      `[fetch-ffmpeg] ${platform}: already present at ${binaryOut} (use --force to re-fetch)`
+    )
     return
   }
 

@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { api, hasNativeApi, type DescribedFile } from '../api'
+import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
 import {
   createLocalJob,
   detectContentType,
@@ -13,7 +13,7 @@ import {
   type ExportRequest,
   type ContentType,
   type Profile
-} from '../backend'
+} from '../apiClient'
 import { recordJob } from './history'
 import { settingsState } from './settings'
 

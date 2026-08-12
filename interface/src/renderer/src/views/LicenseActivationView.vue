@@ -80,8 +80,15 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
     <div class="license-card">
       <div class="header-group">
         <div class="icon-badge" :class="'tone-' + licenseState.status">
-          <span class="badge-particle p1" /><span class="badge-particle p2" /><span class="badge-particle p3" />
-          <component :is="icon" :size="36" :class="{ spin: licenseState.status === 'checking' }" class="license-icon" />
+          <span class="badge-particle p1" /><span class="badge-particle p2" /><span
+            class="badge-particle p3"
+          />
+          <component
+            :is="icon"
+            :size="36"
+            :class="{ spin: licenseState.status === 'checking' }"
+            class="license-icon"
+          />
         </div>
         <h1>{{ copy.title }}</h1>
         <p class="license-body">{{ copy.body }}</p>
@@ -94,9 +101,21 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
           <label class="field-label" for="activation-license-id">ID da licença</label>
           <div class="input-wrap">
             <KeyRound :size="15" class="input-icon" />
-            <input id="activation-license-id" v-model="licenseInput" type="text" placeholder="lic_..."
-              class="license-input" @keydown.enter="submit" />
-            <button class="copy-btn" type="button" title="Copiar" :disabled="!licenseInput.trim()" @click="copyInput">
+            <input
+              id="activation-license-id"
+              v-model="licenseInput"
+              type="text"
+              placeholder="lic_..."
+              class="license-input"
+              @keydown.enter="submit"
+            />
+            <button
+              class="copy-btn"
+              type="button"
+              title="Copiar"
+              :disabled="!licenseInput.trim()"
+              @click="copyInput"
+            >
               <Copy :size="14" />
             </button>
           </div>
@@ -117,8 +136,13 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
         </div>
 
         <div class="actions-group">
-          <button v-if="isPrimaryActivate" class="primary-btn" type="button" :disabled="!licenseInput.trim()"
-            @click="submit">
+          <button
+            v-if="isPrimaryActivate"
+            class="primary-btn"
+            type="button"
+            :disabled="!licenseInput.trim()"
+            @click="submit"
+          >
             <ShieldCheck :size="16" /> Ativar
           </button>
           <button v-else class="primary-btn" type="button" @click="refreshLicenseStatus">
@@ -189,7 +213,11 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: radial-gradient(circle, var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%,
+    transparent 70%
+  );
 }
 
 .icon-badge::before {

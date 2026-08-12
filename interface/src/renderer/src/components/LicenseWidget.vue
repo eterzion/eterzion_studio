@@ -63,10 +63,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         Tolerância offline: {{ licenseState.offlineDaysRemaining }} dia(s) restante(s)
       </p>
 
-      <template v-if="licenseState.status === 'active' || licenseState.status === 'offline_tolerance' || licenseState.status === 'offline_expiring'">
-        <p class="popover-detail success">
-          <ShieldCheck :size="13" /> Ativa nesta instalação
-        </p>
+      <template
+        v-if="
+          licenseState.status === 'active' ||
+          licenseState.status === 'offline_tolerance' ||
+          licenseState.status === 'offline_expiring'
+        "
+      >
+        <p class="popover-detail success"><ShieldCheck :size="13" /> Ativa nesta instalação</p>
         <button class="popover-btn danger" type="button" @click="deactivateLicense">
           Desativar nesta instalação
         </button>

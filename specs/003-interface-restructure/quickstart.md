@@ -45,6 +45,9 @@ Abrir o app e percorrer manualmente: Home → cada categoria (Imagem/Vídeo/Áud
 → Modelos → Histórico → ativação de licença. Nenhuma tela deve ter diferença visual ou de
 comportamento perceptível em relação ao estado anterior.
 
-Testar especificamente `useFileIntake` nas 5 views que passam a usá-lo (Imagem, Vídeo, Áudio,
-Otimizar, Converter): seletor de arquivo, drag-and-drop, e colar (paste) devem continuar
-funcionando exatamente como antes em cada uma.
+Testar especificamente `usePickFiles` nas 4 views que passam a usá-lo (Vídeo, Áudio, Otimizar,
+Converter): o seletor de arquivo deve continuar funcionando exatamente como antes em cada uma.
+Imagem (`ImageEditorView.vue`) não usa esse composable — sua lógica de importação (seletor, pasta,
+drag-and-drop, colar) permanece inline, ver Decisão de escopo em `research.md` — e deve ser testada
+à parte: seletor, `pickFolder`, drag-and-drop e colar (paste), além de zoom/pan do viewport, prévia
+de denoise e o painel de exportação (formato/qualidade/destino/conflito).

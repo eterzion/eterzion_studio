@@ -2,8 +2,16 @@
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
-import { Upload, FolderOpen, Loader2, CheckCircle2, XCircle, AlertCircle, Download } from '@lucide/vue'
-import { api, hasNativeApi, type DescribedFile } from '../api'
+import {
+  Upload,
+  FolderOpen,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Download
+} from '@lucide/vue'
+import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
 import {
   createLocalJob,
   detectContentType,
@@ -11,8 +19,9 @@ import {
   subscribeJobProgress,
   getJob,
   type ContentType
-} from '../backend'
+} from '../apiClient'
 import { recordSimpleJob } from '../store/history'
+import { usePickFiles } from '../composables/usePickFiles'
 
 // T057/FR-081-086 don't apply to audio (no secondary streams to lose) — this
 // mirrors VideoView.vue's job-list shape without the confirmation step.
@@ -97,16 +106,7 @@ async function addFile(described: DescribedFile): Promise<void> {
   }
 }
 
-async function pickFiles(): Promise<void> {
-  if (!hasNativeApi) {
-    importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
-    return
-  }
-  const result = await api.selectFiles()
-  if (result.canceled) return
-  importError.value = null
-  for (const f of result.files) await addFile(f)
-}
+const { pickFiles } = usePickFiles(addFile, importError)
 
 function removeJob(job: AudioJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -157,7 +157,8 @@ async function runJob(job: AudioJob): Promise<void> {
       () => {
         getJob(backendJobId)
           .then((status) => {
-            job.status = status.status === 'done' ? 'done' : status.status === 'error' ? 'error' : job.status
+            job.status =
+              status.status === 'done' ? 'done' : status.status === 'error' ? 'error' : job.status
             job.outputPath = status.output_path ?? job.outputPath
             syncHistory(job)
           })
@@ -209,8 +210,8 @@ function exportAll(): void {
 
     <div class="audio-content">
       <p class="hint">
-        Reduz ruído, normaliza o volume e melhora a clareza da voz ou restaura a música,
-        conforme o tipo de conteúdo detectado.
+        Reduz ruído, normaliza o volume e melhora a clareza da voz ou restaura a música, conforme o
+        tipo de conteúdo detectado.
       </p>
       <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 

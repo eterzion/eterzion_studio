@@ -1,5 +1,10 @@
 import { reactive } from 'vue'
-import { activateLicenseKey, getLicenseStatus, releaseLicense, type LicenseState } from '../backend'
+import {
+  activateLicenseKey,
+  getLicenseStatus,
+  releaseLicense,
+  type LicenseState
+} from '../apiClient'
 
 // T036/T038: this store is now a thin wrapper over the LOCAL API's /license/*
 // facade — it used to call the remote licensing service directly from the

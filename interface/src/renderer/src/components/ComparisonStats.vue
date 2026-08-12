@@ -25,7 +25,11 @@ const resolutionLabel = computed(
     `${fmtDim(props.job.outputMeta?.width)}×${fmtDim(props.job.outputMeta?.height)}`
 )
 
-const PROFILE_LABEL: Record<string, string> = { fast: 'Rápido', balanced: 'Equilibrado', quality: 'Qualidade' }
+const PROFILE_LABEL: Record<string, string> = {
+  fast: 'Rápido',
+  balanced: 'Equilibrado',
+  quality: 'Qualidade'
+}
 
 const modelSummary = computed(() => {
   const c = props.job.scaleConfig

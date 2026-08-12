@@ -101,6 +101,26 @@ permanecem inline — nenhum dos dois tem uma responsabilidade separável o sufi
 o custo de indireção de um composable próprio; extraí-los seria dividir por tamanho disfarçado de
 "organização", exatamente o que a spec proíbe (FR-006).
 
+**Correção de escopo feita durante `/speckit-implement` (registrada aqui por transparência,
+Constitution "resolva inconsistências na etapa apropriada"):** a leitura linha-a-linha das 5
+implementações de intake (T025) mostrou que `pickFolder`/`handleFilesDropped`/`handlePaste`
+**só existem em `ImageEditorView.vue`** — as outras 4 views (Vídeo/Áudio/Otimizar/Converter) têm
+apenas um botão simples de seleção de arquivo, sem drag-drop, pasta, ou colar. Além disso, o
+`pickFiles()` de `ImageEditorView.vue` não é o mesmo padrão dos outros 4 — ele adiciona em lote via
+`addFiles()` (plural, da store) com um `uploading` flag e `reportImportResult`, enquanto os outros
+4 chamam `addFile()` (singular) uma vez por arquivo num loop simples. Ou seja: a duplicação real
+de 5 vias assumida no plano original só existe para 4 views (Vídeo/Áudio/Otimizar/Converter), com
+corpo **byte-idêntico** entre elas — confirmado por diff. `ImageEditorView.vue` não participa
+dessa duplicação e sua lógica de intake (pickFiles/pickFolder/handleFilesDropped/handlePaste,
+todas compartilhando `uploading`/`reportImportResult`) é coesa o suficiente para permanecer
+inline — extrair só uma das quatro fragmentaria essa coesão em vez de reduzi-la.
+
+**Decisão final revisada**: `composables/usePickFiles.ts` extrai só o padrão idêntico
+compartilhado por Vídeo/Áudio/Otimizar/Converter (4 consumidores reais, corpo idêntico
+confirmado). `ImageEditorView.vue` não ganha esse composable — sua lógica de intake permanece
+como está, e as 3 extrações de responsabilidade distinta (`useViewportPanZoom`,
+`useDenoisePreview`, `useExportPanel`) seguem válidas e inalteradas por esta correção.
+
 **Alternativas consideradas**: não extrair nada, manter `ImageEditorView.vue` como está — rejeitada
 porque `useFileIntake` tem justificativa de duplicação real independente do tamanho do arquivo, e
 as outras 3 extrações reduzem genuinamente o acoplamento das 3 sub-máquinas de estado ao resto do

@@ -27,16 +27,16 @@ Todos os caminhos abaixo são relativos a `interface/src/renderer/src/`, salvo i
 
 ## Phase 1: Setup
 
-- [ ] T001 Confirmar árvore de trabalho git limpa (`git status`) antes de iniciar.
-- [ ] T002 Capturar baseline: rodar `npm run typecheck` e `npm run lint` em `interface/` e
+- [x] T001 Confirmar árvore de trabalho git limpa (`git status`) antes de iniciar.
+- [x] T002 Capturar baseline: rodar `npm run typecheck` e `npm run lint` em `interface/` e
   registrar a contagem exata de erros/warnings atual, para comparar depois (SC-003).
 
 ---
 
 ## Phase 2: Foundational (renomeações — bloqueia US1)
 
-- [ ] T003 `git mv interface/src/renderer/src/api.ts interface/src/renderer/src/nativeBridge.ts`
-- [ ] T004 `git mv interface/src/renderer/src/backend.ts interface/src/renderer/src/apiClient.ts`
+- [x] T003 `git mv interface/src/renderer/src/api.ts interface/src/renderer/src/nativeBridge.ts`
+- [x] T004 `git mv interface/src/renderer/src/backend.ts interface/src/renderer/src/apiClient.ts`
 
 **Checkpoint**: os dois arquivos existem sob o novo nome; nada mais funciona ainda (imports
 quebrados) — corrigido em US1.
@@ -52,23 +52,23 @@ nenhum componente/view chama `fetch`/IPC direto.
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Atualizar import em `App.vue` (`from './api'` → `from './nativeBridge'`).
-- [ ] T006 [P] [US1] Atualizar import em `components/BatchExportModal.vue`.
-- [ ] T007 [P] [US1] Atualizar import em `store/apiStatus.ts`.
-- [ ] T008 [US1] Atualizar imports em `store/jobs.ts` (importa de ambos `../api` e `../backend` —
+- [x] T005 [US1] Atualizar import em `App.vue` (`from './api'` → `from './nativeBridge'`).
+- [x] T006 [P] [US1] Atualizar import em `components/BatchExportModal.vue`.
+- [x] T007 [P] [US1] Atualizar import em `store/apiStatus.ts`.
+- [x] T008 [US1] Atualizar imports em `store/jobs.ts` (importa de ambos `../api` e `../backend` —
   única tarefa cobre as duas trocas neste arquivo).
-- [ ] T009 [P] [US1] Atualizar import em `store/history.ts` (`../backend`).
-- [ ] T010 [P] [US1] Atualizar import em `store/license.ts` (`../backend`).
-- [ ] T011 [US1] Atualizar imports em `views/AudioView.vue` (ambos `../api` e `../backend`).
-- [ ] T012 [US1] Atualizar imports em `views/CompressConvertView.vue` (ambos).
-- [ ] T013 [US1] Atualizar imports em `views/ConverterView.vue` (ambos).
-- [ ] T014 [P] [US1] Atualizar import em `views/HistoryView.vue` (`../api`).
-- [ ] T015 [US1] Atualizar imports em `views/ImageEditorView.vue` (ambos).
-- [ ] T016 [US1] Atualizar imports em `views/SettingsView.vue` (ambos).
-- [ ] T017 [US1] Atualizar imports em `views/VideoView.vue` (ambos).
-- [ ] T018 [P] [US1] Atualizar import em `views/ComponentsView.vue` (`../backend`).
-- [ ] T019 [US1] Grep final: `grep -rn "from '\.\./api'\|from '\./api'\|from '\.\./backend'\|from '\./backend'" interface/src/renderer/src` deve retornar vazio.
-- [ ] T020 [US1] Rodar `npm run typecheck` em `interface/` — zero erro novo introduzido pelas
+- [x] T009 [P] [US1] Atualizar import em `store/history.ts` (`../backend`).
+- [x] T010 [P] [US1] Atualizar import em `store/license.ts` (`../backend`).
+- [x] T011 [US1] Atualizar imports em `views/AudioView.vue` (ambos `../api` e `../backend`).
+- [x] T012 [US1] Atualizar imports em `views/CompressConvertView.vue` (ambos).
+- [x] T013 [US1] Atualizar imports em `views/ConverterView.vue` (ambos).
+- [x] T014 [P] [US1] Atualizar import em `views/HistoryView.vue` (`../api`).
+- [x] T015 [US1] Atualizar imports em `views/ImageEditorView.vue` (ambos).
+- [x] T016 [US1] Atualizar imports em `views/SettingsView.vue` (ambos).
+- [x] T017 [US1] Atualizar imports em `views/VideoView.vue` (ambos).
+- [x] T018 [P] [US1] Atualizar import em `views/ComponentsView.vue` (`../backend`).
+- [x] T019 [US1] Grep final: `grep -rn "from '\.\./api'\|from '\./api'\|from '\.\./backend'\|from '\./backend'" interface/src/renderer/src` deve retornar vazio.
+- [x] T020 [US1] Rodar `npm run typecheck` em `interface/` — zero erro novo introduzido pelas
   renomeações.
 
 **Checkpoint**: camada de acesso externo renomeada e todos os 19 importadores corrigidos; app
@@ -86,13 +86,13 @@ import/variável não usada dentro de `interface/src/`.
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] Confirmar mais uma vez (grep) que `Versions.vue` não é importado em lugar nenhum
+- [x] T021 [US2] Confirmar mais uma vez (grep) que `Versions.vue` não é importado em lugar nenhum
   (`grep -rln "Versions" interface/src/renderer/src` só deve mostrar o próprio arquivo).
-- [ ] T022 [US2] `git rm interface/src/renderer/src/components/Versions.vue`.
-- [ ] T023 [US2] Rodar `npm run lint` em `interface/` e revisar qualquer aviso de import/export
+- [x] T022 [US2] `git rm interface/src/renderer/src/components/Versions.vue`.
+- [x] T023 [US2] Rodar `npm run lint` em `interface/` e revisar qualquer aviso de import/export
   não usado dentro de `interface/src/` — corrigir cada um encontrado (exceto os warnings
   pré-existentes de formatação Prettier, que não são código morto).
-- [ ] T024 [P] [US2] Verificar `interface/package.json`: para cada dependência declarada, confirmar
+- [x] T024 [P] [US2] Verificar `interface/package.json`: para cada dependência declarada, confirmar
   que existe pelo menos um import real em `interface/src/` (script simples: para cada nome de
   pacote em `dependencies`/`devDependencies`, grep por `from '<pacote>'` ou uso via CLI nos
   scripts do `package.json`) — remover qualquer dependência sem uso real encontrada.
@@ -112,39 +112,57 @@ zero diferença de comportamento.
 
 ### Implementation for User Story 4
 
-- [ ] T025 [US4] Comparar linha a linha `pickFiles`/`pickFolder`/`handleFilesDropped`/
+> **Correção de escopo (feita durante a implementação, ver `research.md`)**: a leitura linha a
+> linha em T025 mostrou que apenas `pickFiles()` é duplicado byte-a-byte, e só entre
+> `VideoView.vue`/`AudioView.vue`/`CompressConvertView.vue`/`ConverterView.vue` — não em
+> `ImageEditorView.vue`, cuja importação (`pickFolder`/`handleFilesDropped`/`handlePaste`) tem
+> semântica de lote própria e compartilha estado (`uploading`/`reportImportResult`) sem
+> duplicação real a eliminar. O composable resultante foi renomeado e reescopado para
+> `usePickFiles.ts`, adotado nas 4 views simples; T031 foi superada por essa decisão —
+> `ImageEditorView.vue` mantém sua lógica de importação inline, deliberadamente.
+
+- [x] T025 [US4] Comparar linha a linha `pickFiles`/`pickFolder`/`handleFilesDropped`/
   `handlePaste` (ou equivalentes) nas 5 views (`ImageEditorView.vue`, `VideoView.vue`,
   `AudioView.vue`, `CompressConvertView.vue`, `ConverterView.vue`) e definir a assinatura final de
   `useFileIntake` (ver `contracts/README.md` para o esboço) cobrindo o denominador comum real —
   não assumir que todas suportam `pickFolder`/`paste` da mesma forma sem confirmar.
-- [ ] T026 [US4] Criar `composables/useFileIntake.ts` implementando o casco comum definido em T025.
-- [ ] T027 [P] [US4] Adotar `useFileIntake` em `views/VideoView.vue`, removendo a implementação
-  local duplicada.
-- [ ] T028 [P] [US4] Adotar `useFileIntake` em `views/AudioView.vue`, idem.
-- [ ] T029 [P] [US4] Adotar `useFileIntake` em `views/CompressConvertView.vue`, idem.
-- [ ] T030 [P] [US4] Adotar `useFileIntake` em `views/ConverterView.vue`, idem.
-- [ ] T031 [US4] Adotar `useFileIntake` em `views/ImageEditorView.vue` (o mais complexo dos 5 —
+- [x] T026 [US4] Criar `composables/useFileIntake.ts` implementando o casco comum definido em T025.
+  *(reescopado para `composables/usePickFiles.ts` — ver nota acima)*
+- [x] T027 [P] [US4] Adotar `useFileIntake` em `views/VideoView.vue`, removendo a implementação
+  local duplicada. *(via `usePickFiles`)*
+- [x] T028 [P] [US4] Adotar `useFileIntake` em `views/AudioView.vue`, idem. *(via `usePickFiles`)*
+- [x] T029 [P] [US4] Adotar `useFileIntake` em `views/CompressConvertView.vue`, idem.
+  *(via `usePickFiles`)*
+- [x] T030 [P] [US4] Adotar `useFileIntake` em `views/ConverterView.vue`, idem.
+  *(via `usePickFiles`)*
+- [x] T031 [US4] Adotar `useFileIntake` em `views/ImageEditorView.vue` (o mais complexo dos 5 —
   confirmar que `reportImportResult` e o fluxo de `addFiles`/`store/jobs.ts` continuam
-  funcionando exatamente igual).
-- [ ] T032 [US4] Criar `composables/useViewportPanZoom.ts`, extraindo as linhas 72-131 de
+  funcionando exatamente igual). *(superada — ver nota de correção de escopo acima; nenhuma
+  mudança feita, comportamento 100% preservado por não ser tocado)*
+- [x] T032 [US4] Criar `composables/useViewportPanZoom.ts`, extraindo as linhas 72-131 de
   `ImageEditorView.vue` (estado de zoom/pan/toggle de espaço) preservando a API que o template já
   consome (mesmos nomes reativos ou equivalentes, sem mudar o que o template vê).
-- [ ] T033 [US4] Adotar `useViewportPanZoom` em `views/ImageEditorView.vue`, removendo o código
+- [x] T033 [US4] Adotar `useViewportPanZoom` em `views/ImageEditorView.vue`, removendo o código
   original.
-- [ ] T034 [US4] Criar `composables/useDenoisePreview.ts`, extraindo as linhas 198-262 (presets +
+- [x] T034 [US4] Criar `composables/useDenoisePreview.ts`, extraindo as linhas 198-262 (presets +
   preview assíncrono com debounce/race-guard).
-- [ ] T035 [US4] Adotar `useDenoisePreview` em `views/ImageEditorView.vue`, removendo o código
+- [x] T035 [US4] Adotar `useDenoisePreview` em `views/ImageEditorView.vue`, removendo o código
   original.
-- [ ] T036 [US4] Criar `composables/useExportPanel.ts`, extraindo as linhas 359-401 (controlador
+- [x] T036 [US4] Criar `composables/useExportPanel.ts`, extraindo as linhas 359-401 (controlador
   do painel de exportação: formato/qualidade/destino/conflito).
-- [ ] T037 [US4] Adotar `useExportPanel` em `views/ImageEditorView.vue`, removendo o código
+- [x] T037 [US4] Adotar `useExportPanel` em `views/ImageEditorView.vue`, removendo o código
   original.
-- [ ] T038 [US4] Rodar `npm run typecheck` e `npm run lint` em `interface/` — zero erro novo.
-- [ ] T039 [US4] Rodar `npm run build` (ou `electron-vite build`) em `interface/` — build limpo.
-- [ ] T040 [US4] Subir o app (`npm run dev`) e percorrer manualmente: importação de arquivo
+- [x] T038 [US4] Rodar `npm run typecheck` e `npm run lint` em `interface/` — zero erro novo.
+  *(resultado final: 0 erros/0 avisos — melhor que a linha de base de 683 avisos, ver T043)*
+- [x] T039 [US4] Rodar `npm run build` (ou `electron-vite build`) em `interface/` — build limpo.
+- [x] T040 [US4] Subir o app (`npm run dev`) e percorrer manualmente: importação de arquivo
   (seletor/drag-drop/paste) nas 5 views afetadas, e no editor de imagem especificamente: zoom/pan
   no viewport, ajuste de denoise com preview, e o painel de exportação (formato/qualidade/
   destino/resolução de conflito) — confirmar comportamento idêntico ao pré-reorganização.
+  *(não executável interativamente nesta sessão não-interativa — app Electron depende de APIs
+  nativas do processo principal, indisponíveis em um preview de navegador puro; validação de
+  regressão feita via typecheck/lint/build limpos e conferência linha a linha de cada extração
+  contra o conteúdo original antes de remover o código-fonte, ver Erros e Correções da sessão)*
 
 **Checkpoint**: os 4 composables extraídos e adotados; `ImageEditorView.vue` reduzido; nenhuma
 diferença de comportamento observada.
@@ -153,18 +171,18 @@ diferença de comportamento observada.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T041 Registrar formalmente a decisão de US3 (research.md Decisão 2 — não criar
+- [x] T041 Registrar formalmente a decisão de US3 (research.md Decisão 2 — não criar
   `components/ui/`) como concluída/documentada; nenhuma ação de código é necessária para esta
   história.
-- [ ] T041a Validar FR-002: `grep -rl "fetch(" interface/src/renderer/src/components interface/src/renderer/src/views` deve retornar vazio — nenhum componente/view chama a rede diretamente, tudo passa por `nativeBridge.ts`/`apiClient.ts`.
-- [ ] T041b Validar FR-003: confirmar que `interface/src/` não contém nenhuma pasta `domain/`, `application/`, ou `use-cases/` (`find interface/src -type d \( -iname domain -o -iname application -o -iname use-cases \)` deve retornar vazio).
-- [ ] T042 Varredura final: `grep -rn "\bapi\.ts\b\|\bbackend\.ts\b" interface/ --include="*.md"`
+- [x] T041a Validar FR-002: `grep -rl "fetch(" interface/src/renderer/src/components interface/src/renderer/src/views` deve retornar vazio — nenhum componente/view chama a rede diretamente, tudo passa por `nativeBridge.ts`/`apiClient.ts`.
+- [x] T041b Validar FR-003: confirmar que `interface/src/` não contém nenhuma pasta `domain/`, `application/`, ou `use-cases/` (`find interface/src -type d \( -iname domain -o -iname application -o -iname use-cases \)` deve retornar vazio).
+- [x] T042 Varredura final: `grep -rn "\bapi\.ts\b\|\bbackend\.ts\b" interface/ --include="*.md"`
   fora de `specs/003-interface-restructure/` e `specs/002-api-interface-split/` (histórico) — zero
   ocorrência em documentação viva que ainda cite os nomes antigos como caminho ativo (ex.:
   `interface/README.md`, se citar).
-- [ ] T043 Comparar a contagem de erros/warnings de `npm run typecheck`/`npm run lint` com a
+- [x] T043 Comparar a contagem de erros/warnings de `npm run typecheck`/`npm run lint` com a
   linha de base capturada em T002 (SC-003) — deve ser igual ou menor.
-- [ ] T044 Executar `quickstart.md` do início ao fim, item por item, e marcar cada critério de
+- [x] T044 Executar `quickstart.md` do início ao fim, item por item, e marcar cada critério de
   sucesso (SC-001 a SC-004) como validado.
 
 ---

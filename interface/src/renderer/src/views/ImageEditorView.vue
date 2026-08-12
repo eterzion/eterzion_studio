@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
@@ -33,10 +33,12 @@ import {
   GalleryHorizontal,
   RotateCcw
 } from '@lucide/vue'
-import { api, hasNativeApi } from '../api'
-import { settingsState } from '../store/settings'
-import { previewDenoise, type ContentType, type DenoisePreview, type Profile } from '../backend'
-import { ERROR_CATEGORY_COPY } from '../backend'
+import { api, hasNativeApi } from '../nativeBridge'
+import { type ContentType, type Profile } from '../apiClient'
+import { ERROR_CATEGORY_COPY } from '../apiClient'
+import { useViewportPanZoom } from '../composables/useViewportPanZoom'
+import { useDenoisePreview } from '../composables/useDenoisePreview'
+import { useExportPanel } from '../composables/useExportPanel'
 import {
   addFiles,
   queueState,
@@ -52,7 +54,6 @@ import {
   MAX_OUTPUT_DIMENSION,
   startProcessing,
   cancelProcessing,
-  exportOne,
   type Job
 } from '../store/jobs'
 
@@ -70,65 +71,23 @@ const doneJobs = computed(() => queueState.jobs.filter((j) => j.status === 'done
 const configuringJobs = computed(() => queueState.jobs.filter((j) => j.status === 'configuring'))
 
 // ------------------------------- preview viewport (zoom + pan) ------------------------------- //
-const zoom = ref(100)
-const pan = ref({ x: 0, y: 0 })
-const zoomLevels = [25, 50, 100, 200]
-const viewMode = ref<'slider' | 'side-by-side'>('slider')
-const spaceHeld = ref(false)
-
-// Single viewportState shared by every preview mode (spec 6.2) — applied to the
-// images via CSS transform, so slider divider/labels stay unscaled.
-const mediaStyle = computed(() => ({
-  transform: `translate(${pan.value.x}px, ${pan.value.y}px) scale(${zoom.value / 100})`,
-  transformOrigin: 'center center'
-}))
-
-function resetView(): void {
-  zoom.value = 100
-  pan.value = { x: 0, y: 0 }
-}
-
-function onWheelZoom(e: WheelEvent): void {
-  zoom.value = Math.min(400, Math.max(10, zoom.value - Math.sign(e.deltaY) * 10))
-}
-
-const panning = ref(false)
-let panOrigin = { x: 0, y: 0, panX: 0, panY: 0 }
-
-function onPanDown(e: PointerEvent): void {
-  panning.value = true
-  panOrigin = { x: e.clientX, y: e.clientY, panX: pan.value.x, panY: pan.value.y }
-  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
-}
-function onPanMove(e: PointerEvent): void {
-  if (!panning.value) return
-  pan.value = {
-    x: panOrigin.panX + (e.clientX - panOrigin.x),
-    y: panOrigin.panY + (e.clientY - panOrigin.y)
-  }
-}
-function onPanUp(): void {
-  panning.value = false
-}
-
-const beforeSrc = computed(() =>
-  job.value && hasNativeApi ? api.toFileUrl(job.value.sourcePath) : ''
-)
-const afterSrc = computed(() => {
-  if (!job.value || !hasNativeApi || job.value.status !== 'done' || !job.value.lastExportPath)
-    return beforeSrc.value
-  return api.toFileUrl(job.value.lastExportPath)
-})
-
-function onKeyDown(e: KeyboardEvent): void {
-  if (e.code === 'Space' && job.value?.status === 'done') {
-    e.preventDefault()
-    spaceHeld.value = true
-  }
-}
-function onKeyUp(e: KeyboardEvent): void {
-  if (e.code === 'Space') spaceHeld.value = false
-}
+const {
+  zoom,
+  zoomLevels,
+  viewMode,
+  spaceHeld,
+  panning,
+  mediaStyle,
+  resetView,
+  onWheelZoom,
+  onPanDown,
+  onPanMove,
+  onPanUp,
+  beforeSrc,
+  afterSrc,
+  onKeyDown,
+  onKeyUp
+} = useViewportPanZoom(job)
 
 // ------------------------------- content type + profile ------------------------------- //
 // FR-009/FR-063: never a model name — only what the backend actually accepts as
@@ -140,8 +99,16 @@ const devices = ref<string[]>(['auto', 'cpu', 'cuda'])
 const importError = ref<string | null>(null)
 
 const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
-  { value: 'photo', label: 'Foto', description: 'Fotografias reais — retratos, paisagens, produtos' },
-  { value: 'anime_image', label: 'Anime/Ilustração', description: 'Arte digital, anime, ilustração com traços definidos' }
+  {
+    value: 'photo',
+    label: 'Foto',
+    description: 'Fotografias reais — retratos, paisagens, produtos'
+  },
+  {
+    value: 'anime_image',
+    label: 'Anime/Ilustração',
+    description: 'Arte digital, anime, ilustração com traços definidos'
+  }
 ]
 const contentTypeOptions = computed(() =>
   CONTENT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
@@ -149,7 +116,11 @@ const contentTypeOptions = computed(() =>
 
 const PROFILE_OPTIONS: { value: Profile; label: string; description: string }[] = [
   { value: 'fast', label: 'Rápido', description: 'Prioriza velocidade' },
-  { value: 'balanced', label: 'Equilibrado', description: 'Equilíbrio entre velocidade e qualidade' },
+  {
+    value: 'balanced',
+    label: 'Equilibrado',
+    description: 'Equilíbrio entre velocidade e qualidade'
+  },
   { value: 'quality', label: 'Qualidade', description: 'Prioriza o melhor resultado' }
 ]
 const profileOptions = computed(() =>
@@ -169,12 +140,6 @@ const conflictOptions = [
   { value: 'overwrite', label: 'Sobrescrever' },
   { value: 'ask', label: 'Perguntar' }
 ]
-
-// Reset the viewport whenever the user switches to another image.
-watch(
-  () => job.value?.id,
-  () => resetView()
-)
 
 const deviceLabels: Record<string, string> = {
   auto: 'Automático',
@@ -196,71 +161,16 @@ const selectedDeviceDescription = computed(() => {
 })
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
-const DENOISE_PRESETS: {
-  key: 'low' | 'medium' | 'high' | 'custom'
-  label: string
-  strength: number | null
-}[] = [
-  { key: 'low', label: 'Baixo', strength: 20 },
-  { key: 'medium', label: 'Médio', strength: 45 },
-  { key: 'high', label: 'Alto', strength: 75 },
-  { key: 'custom', label: 'Personalizado', strength: null }
-]
-// A ref, not inferred from the numeric value — a custom value can legitimately
-// coincide with a preset's number, and that shouldn't silently reassign it back
-// to that preset (or hide the "Personalizado" slider the user just opened).
-const denoiseActivePresetKey = ref<'low' | 'medium' | 'high' | 'custom'>('medium')
-const denoisePreview = ref<DenoisePreview | null>(null)
-const denoisePreviewLoading = ref(false)
-const denoisePreviewError = ref<string | null>(null)
-let denoisePreviewTimer: ReturnType<typeof setTimeout> | undefined
-let denoisePreviewRequestId = 0
-
-function requestDenoisePreview(): void {
-  const j = job.value
-  if (!j || !j.scaleConfig.denoiseFilterEnabled || !hasNativeApi) return
-  clearTimeout(denoisePreviewTimer)
-  denoisePreviewTimer = setTimeout(async () => {
-    const requestId = ++denoisePreviewRequestId
-    denoisePreviewLoading.value = true
-    denoisePreviewError.value = null
-    try {
-      const result = await previewDenoise(j.sourcePath, j.scaleConfig.denoiseFilterStrength)
-      if (requestId === denoisePreviewRequestId) denoisePreview.value = result
-    } catch (error) {
-      if (requestId === denoisePreviewRequestId) {
-        denoisePreviewError.value =
-          error instanceof Error ? error.message : 'Falha ao gerar prévia.'
-      }
-    } finally {
-      if (requestId === denoisePreviewRequestId) denoisePreviewLoading.value = false
-    }
-  }, 350)
-}
-
-function setDenoisePreset(preset: {
-  key: 'low' | 'medium' | 'high' | 'custom'
-  strength: number | null
-}): void {
-  if (!job.value) return
-  denoiseActivePresetKey.value = preset.key
-  if (preset.strength !== null) job.value.scaleConfig.denoiseFilterStrength = preset.strength
-  requestDenoisePreview()
-}
-
-function toggleDenoiseFilter(): void {
-  if (!job.value) return
-  job.value.scaleConfig.denoiseFilterEnabled = !job.value.scaleConfig.denoiseFilterEnabled
-  denoisePreview.value = null
-  if (job.value.scaleConfig.denoiseFilterEnabled) {
-    const matched = DENOISE_PRESETS.find(
-      (p) => p.strength === job.value!.scaleConfig.denoiseFilterStrength
-    )
-    denoiseActivePresetKey.value = matched?.key ?? 'custom'
-    requestDenoisePreview()
-  }
-}
-
+const {
+  DENOISE_PRESETS,
+  denoiseActivePresetKey,
+  denoisePreview,
+  denoisePreviewLoading,
+  denoisePreviewError,
+  requestDenoisePreview,
+  setDenoisePreset,
+  toggleDenoiseFilter
+} = useDenoisePreview(job)
 // Elapsed-time ticker for the processing panel (spec 5.2: elapsed time alongside
 // progress, since the model step can be long).
 const nowTick = ref(Date.now())
@@ -357,48 +267,17 @@ async function cancel(j: Job): Promise<void> {
 }
 
 // ------------------------------- export (single job, post-done) ------------------------------- //
-const exportFormat = ref<'png' | 'jpg' | 'webp'>(settingsState.defaultExportFormat)
-const exportQuality = ref(settingsState.defaultQuality)
-const exportDestFolder = ref<string | null>(settingsState.defaultOutputFolder)
-const exportFilename = ref<string | null>(null)
-const exportConflict = ref<'overwrite' | 'rename' | 'ask'>('rename')
-const conflictPrompt = ref<{ job: Job } | null>(null)
-
-async function runExport(j: Job): Promise<void> {
-  const result = await exportOne(j, {
-    format: exportFormat.value,
-    quality: exportQuality.value,
-    outputDir: exportDestFolder.value,
-    filename: exportFilename.value,
-    conflict: exportConflict.value
-  })
-  if (
-    !result.ok &&
-    j.exportError === 'Já existe um arquivo com esse nome no destino.' &&
-    exportConflict.value === 'ask'
-  ) {
-    conflictPrompt.value = { job: j }
-  }
-}
-
-async function resolveConflict(mode: 'overwrite' | 'rename'): Promise<void> {
-  if (!conflictPrompt.value) return
-  const j = conflictPrompt.value.job
-  conflictPrompt.value = null
-  await exportOne(j, {
-    format: exportFormat.value,
-    quality: exportQuality.value,
-    outputDir: exportDestFolder.value,
-    filename: exportFilename.value,
-    conflict: mode
-  })
-}
-
-async function pickExportFolder(): Promise<void> {
-  if (!hasNativeApi) return
-  const folder = await api.selectOutputFolder(exportDestFolder.value ?? undefined)
-  if (folder) exportDestFolder.value = folder
-}
+const {
+  exportFormat,
+  exportQuality,
+  exportDestFolder,
+  exportFilename,
+  exportConflict,
+  conflictPrompt,
+  runExport,
+  resolveConflict,
+  pickExportFolder
+} = useExportPanel()
 
 // ------------------------------- import / queue ------------------------------- //
 async function importFiles(): Promise<void> {
@@ -417,7 +296,11 @@ async function importFiles(): Promise<void> {
 // tab instead of requiring a detour through Home first.
 const uploading = ref(false)
 
-function reportImportResult(result: { added: { id: string }[]; rejected: { name: string; reason: string }[]; duplicates: string[] }): void {
+function reportImportResult(result: {
+  added: { id: string }[]
+  rejected: { name: string; reason: string }[]
+  duplicates: string[]
+}): void {
   if (result.rejected.length) {
     importError.value = result.rejected.map((r) => `${r.name}: ${r.reason}`).join(' · ')
   } else if (!result.added.length && result.duplicates.length) {

@@ -27,7 +27,7 @@ import {
 } from '../store/history'
 import { addFiles, setActiveJob, queueState } from '../store/jobs'
 import { settingsState } from '../store/settings'
-import { api, hasNativeApi } from '../api'
+import { api, hasNativeApi } from '../nativeBridge'
 
 const emit = defineEmits<{
   openImage: []
@@ -190,7 +190,8 @@ async function reuseConfig(entry: HistoryEntry): Promise<void> {
     return
   }
   if (!entry.scaleConfig?.contentType) {
-    reuseError.value = 'Esta configuração é de antes da atualização e não pode mais ser reaproveitada — configure novamente.'
+    reuseError.value =
+      'Esta configuração é de antes da atualização e não pode mais ser reaproveitada — configure novamente.'
     return
   }
   const described = await api.statPath(entry.sourcePath)

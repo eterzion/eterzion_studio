@@ -17,7 +17,7 @@ import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
 import { initLicense, isHardBlocked, licenseState } from './store/license'
 import { currentResolvedTheme } from './theme'
-import { hasNativeApi } from './api'
+import { hasNativeApi } from './nativeBridge'
 
 const active = ref<NavKey>('home')
 const darkMode = computed(() => currentResolvedTheme.value === 'dark')
