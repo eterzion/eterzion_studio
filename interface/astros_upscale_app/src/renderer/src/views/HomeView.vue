@@ -8,9 +8,6 @@ import {
   Film,
   Headphones,
   Rocket,
-  Layers,
-  History,
-  Settings,
   ArrowRight,
   Trash2,
   ChevronDown,
@@ -64,27 +61,6 @@ const CATEGORIES: {
     description: 'Comprima ou converta imagens, vídeos e áudios sem IA.',
     icon: Rocket,
     tint: '#22c55e'
-  },
-  {
-    key: 'modelos',
-    label: 'Modelos',
-    description: 'Instale, atualize ou remova os componentes de cada capacidade.',
-    icon: Layers,
-    tint: '#f59e0b'
-  },
-  {
-    key: 'historico',
-    label: 'Histórico',
-    description: 'Veja os arquivos já processados anteriormente.',
-    icon: History,
-    tint: '#f472b6'
-  },
-  {
-    key: 'configuracoes',
-    label: 'Configurações',
-    description: 'Ajuste preferências gerais, tema e processamento.',
-    icon: Settings,
-    tint: '#94a3b8'
   }
 ]
 
