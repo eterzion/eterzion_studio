@@ -115,13 +115,13 @@ function openImage(id?: string): void {
           @click="emit('navigate', category.key)"
         >
           <div class="category-icon">
-            <component :is="category.icon" :size="22" />
+            <component :is="category.icon" :size="26" />
           </div>
           <div class="category-text">
             <span class="category-label">{{ category.label }}</span>
             <span class="category-description">{{ category.description }}</span>
           </div>
-          <span class="category-arrow"><ArrowRight :size="16" /></span>
+          <span class="category-arrow"><ArrowRight :size="17" /></span>
         </button>
       </div>
 
@@ -229,17 +229,19 @@ function openImage(id?: string): void {
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: center;
-  gap: var(--space-3);
+  flex-direction: column;
+  align-items: flex-start;
   text-align: left;
   background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--tint) 14%, var(--surface-1)) 0%,
-    var(--surface-1) 75%
+    160deg,
+    color-mix(in srgb, var(--tint) 16%, var(--surface-1)) 0%,
+    var(--surface-1) 65%
   );
-  border: 1px solid color-mix(in srgb, var(--tint) 26%, var(--surface-border-soft));
+  border: 1px solid color-mix(in srgb, var(--tint) 28%, var(--surface-border-soft));
   border-radius: var(--radius-lg);
   padding: var(--space-4);
+  padding-bottom: 52px;
+  min-height: 220px;
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -250,11 +252,15 @@ function openImage(id?: string): void {
 .category-card::after {
   content: '';
   position: absolute;
-  inset: auto -30% -60% auto;
-  width: 140px;
-  height: 140px;
+  inset: -20% -30% auto auto;
+  width: 200px;
+  height: 200px;
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--tint) 22%, transparent), transparent 70%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--tint) 26%, transparent),
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -270,50 +276,54 @@ function openImage(id?: string): void {
 }
 
 .category-icon {
+  position: relative;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--tint);
   background: color-mix(in srgb, var(--tint) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tint) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tint) 34%, transparent);
+  margin-bottom: var(--space-3);
 }
 
 .category-text {
   position: relative;
-  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
 }
 
 .category-label {
-  font-size: 16px;
+  font-size: 19px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
 }
 
 .category-description {
-  font-size: var(--fs-caption);
-  color: var(--text-tertiary);
-  line-height: 1.4;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+  line-height: 1.5;
 }
 
 .category-arrow {
-  position: relative;
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--tint);
-  background: color-mix(in srgb, var(--tint) 16%, transparent);
+  background: color-mix(in srgb, var(--tint) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tint) 28%, transparent);
 }
 
 .queue-section {
