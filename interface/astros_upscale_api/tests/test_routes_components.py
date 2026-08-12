@@ -64,10 +64,37 @@ class TestComponentDetails:
 
 
 class TestInstallUpdateDelete:
-    def test_install_speech_returns_422_with_actionable_message(self, client):
+    def test_install_speech_returns_422_when_no_source_checkout_present(self, client, tmp_path, monkeypatch):
+        """install/update now really run `pip install <repo>[audio]` (see
+        component_manager._pip_install_audio_extra) — this test forces the
+        real "no pyproject.toml next to this process" failure path instead
+        of letting a real pip/git install run during the suite."""
+        from app.core import component_manager
+
+        monkeypatch.setattr(component_manager, '_REPO_ROOT', tmp_path)
         res = client.post('/components/speech/install')
         assert res.status_code == 422
         assert 'pip install' in res.json()['detail']
+
+    def test_install_speech_returns_200_when_pip_succeeds(self, client, monkeypatch):
+        from app.core import component_manager
+
+        class Usage:
+            free = 100 * 1024 * 1024 * 1024
+
+        def fake_run(cmd, **kwargs):
+            class Result:
+                returncode = 0
+                stdout = ''
+                stderr = ''
+
+            return Result()
+
+        monkeypatch.setattr(component_manager.shutil, 'disk_usage', lambda path: Usage())
+        monkeypatch.setattr(component_manager.subprocess, 'run', fake_run)
+        res = client.post('/components/speech/install')
+        assert res.status_code == 200
+        assert res.json()['id'] == 'speech'
 
     def test_delete_music_returns_422(self, client):
         res = client.delete('/components/music')

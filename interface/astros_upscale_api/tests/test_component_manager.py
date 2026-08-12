@@ -53,10 +53,99 @@ class TestListComponents:
             component_manager.get_component_details('not-a-real-component')
 
 
-class TestAudioComponentsRefuseAutomatedActions:
-    def test_install_speech_refuses_with_an_actionable_message(self):
-        with pytest.raises(ComponentActionUnsupportedError, match='pip install'):
+class TestAudioComponentsInstallViaRealPip:
+    """speech/music share one pyproject.toml [audio] extra — install/update
+    run a real `pip install <repo>[audio]` (subprocess.run is the only
+    thing worth mocking here: actually invoking pip/git in a unit test
+    would be slow and network-dependent, same reasoning as the `slow`
+    marker on the image/video download round trip below)."""
+
+    @pytest.fixture(autouse=True)
+    def plenty_of_disk_space(self, monkeypatch):
+        # Real disk_usage() would make these tests flaky depending on how
+        # full the machine running them happens to be — the low-space path
+        # itself is covered separately below with a real mock.
+        class Usage:
+            free = 100 * 1024 * 1024 * 1024
+
+        monkeypatch.setattr(component_manager.shutil, 'disk_usage', lambda path: Usage())
+
+    def test_install_refuses_when_disk_space_is_low(self, monkeypatch):
+        """A real incident: an unmocked audio install once filled a dev
+        machine's C: drive to 0 bytes free mid-session. This is the guard
+        that must stop that from happening again."""
+
+        class LowUsage:
+            free = 500 * 1024 * 1024  # 500 MiB, below the 3 GiB floor
+
+        monkeypatch.setattr(component_manager.shutil, 'disk_usage', lambda path: LowUsage())
+        with pytest.raises(ComponentActionUnsupportedError, match='[Ee]spaço em disco'):
             component_manager.install_component('speech')
+
+    def test_install_speech_runs_pip_install_of_the_shared_extra(self, monkeypatch):
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+
+            class Result:
+                returncode = 0
+                stdout = ''
+                stderr = ''
+
+            return Result()
+
+        monkeypatch.setattr(component_manager.subprocess, 'run', fake_run)
+
+        result = component_manager.install_component('speech')
+
+        assert len(calls) == 1
+        cmd = calls[0]
+        assert cmd[0] == component_manager.sys.executable
+        assert cmd[1:4] == ['-m', 'pip', 'install']
+        assert cmd[-1].endswith('[audio]')
+        assert result.id == 'speech'
+
+    def test_update_music_runs_pip_install_with_upgrade_flag(self, monkeypatch):
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+
+            class Result:
+                returncode = 0
+                stdout = ''
+                stderr = ''
+
+            return Result()
+
+        monkeypatch.setattr(component_manager.subprocess, 'run', fake_run)
+
+        component_manager.update_component('music')
+
+        assert '--upgrade' in calls[0]
+
+    def test_install_raises_with_real_pip_output_on_failure(self, monkeypatch):
+        def fake_run(cmd, **kwargs):
+            class Result:
+                returncode = 1
+                stdout = ''
+                stderr = 'ERROR: could not find a version that satisfies sonicmaster'
+
+            return Result()
+
+        monkeypatch.setattr(component_manager.subprocess, 'run', fake_run)
+
+        with pytest.raises(ComponentActionUnsupportedError, match='sonicmaster'):
+            component_manager.install_component('speech')
+
+    def test_install_refuses_when_no_source_checkout_present(self, tmp_path, monkeypatch):
+        """A packaged build has neither pip nor this repo's pyproject.toml
+        next to it — must fail with an actionable message, not a raw
+        FileNotFoundError from pip itself."""
+        monkeypatch.setattr(component_manager, '_REPO_ROOT', tmp_path)
+        with pytest.raises(ComponentActionUnsupportedError, match='pip install astros_upscale'):
+            component_manager.install_component('music')
 
     def test_delete_music_refuses(self):
         with pytest.raises(ComponentActionUnsupportedError):

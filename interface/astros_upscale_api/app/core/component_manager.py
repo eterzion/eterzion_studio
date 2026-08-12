@@ -12,22 +12,33 @@ Two real backends, one per kind of implementation:
   (delete the cached weight file(s)).
 - audio content types: no per-file weight download in the same sense —
   `speech` (audiosronnx) and `music` (SonicMaster) are Python
-  packages/scripts installed via `pip install astros_upscale[audio]`, not
-  something this process can safely download+exec on demand. Their
-  "install_state" reports real availability (is the package importable /
-  is the script on PATH); "install"/"update" for these honestly refuse
-  with an actionable message instead of pretending to run a download.
+  packages/scripts, both declared under this repo's own `[audio]` extra
+  (pyproject.toml) rather than downloaded weight files. "install"/"update"
+  run a real `pip install <repo>[audio]` in this process's own
+  interpreter (sys.executable) — the two share one extras group, so
+  installing/updating either one installs both. Only works when this
+  process is running from a source checkout with pyproject.toml (true in
+  dev; a packaged build has neither pip nor the repo tree, so this would
+  fail with pip's own real error — never silently no-ops). Deletion still
+  refuses: uninstalling a shared dependency (e.g. torch) from under a
+  running interpreter has no safe undo.
 """
 from __future__ import annotations
 
 import os
 import shutil
+import subprocess
+import sys
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from app.config import settings
+from app.config import APP_DIR, settings
 from app.core import profile_resolver
 from app.core.license_registry import get_model_license
+
+# APP_DIR = <repo>/interface/astros_upscale_api/app -> repo root is 3 levels up
+# (same resolution app/config.py uses for models_dir).
+_REPO_ROOT = APP_DIR.parent.parent.parent
 
 CAPABILITY_LABELS: dict[str, str] = {
     'photo': 'Melhoria de imagem — Foto',
@@ -133,14 +144,51 @@ def get_component_details(component_id: str) -> ComponentInfo:
     return _component_info(component_id)
 
 
-def install_component(component_id: str) -> ComponentInfo:
-    """Real download + real SHA-256 verification (astros_upscale.core.resolve_model),
-    or an honest refusal for the two audio components this process can't
-    safely install on demand."""
-    if component_id in _AUDIO_CONTENT_TYPES:
+# pip's download/build cache lives under the user profile (Windows:
+# %LOCALAPPDATA%\pip\cache), which is very often on a different, smaller
+# drive than this repo — checking free space there, not next to the repo,
+# is what actually prevents a real incident: a mid-session audio install
+# once filled a dev machine's C: drive to 0 bytes free this way.
+_MIN_FREE_BYTES_FOR_AUDIO_INSTALL = 3 * 1024 * 1024 * 1024  # 3 GiB
+
+
+def _pip_install_audio_extra(*extra_args: str) -> None:
+    """Real `pip install` of this repo's `[audio]` extra, run in this
+    process's own interpreter (sys.executable) so the result is importable
+    immediately — no separate venv, no silent no-op. `speech` and `music`
+    share this one extras group (pyproject.toml), so this installs/updates
+    both together regardless of which component the person clicked."""
+    if not (_REPO_ROOT / 'pyproject.toml').is_file():
         raise ComponentActionUnsupportedError(
-            'Este componente é instalado via "pip install astros_upscale[audio]", não por esta tela — '
-            'consulte a documentação de instalação.')
+            'Não foi possível instalar: esta cópia do aplicativo não tem o código-fonte '
+            f'do astros_upscale ao lado ({_REPO_ROOT}). Instale manualmente com '
+            '"pip install astros_upscale[audio]".')
+
+    free_bytes = shutil.disk_usage(os.path.expanduser('~')).free
+    if free_bytes < _MIN_FREE_BYTES_FOR_AUDIO_INSTALL:
+        free_mb = free_bytes / (1024 * 1024)
+        raise ComponentActionUnsupportedError(
+            f'Espaço em disco insuficiente para instalar os componentes de áudio '
+            f'(SonicMaster + dependências): apenas {free_mb:.0f} MB livres, são '
+            f'necessários pelo menos {_MIN_FREE_BYTES_FOR_AUDIO_INSTALL // (1024 * 1024)} MB. '
+            'Libere espaço e tente novamente.')
+
+    target = f'{_REPO_ROOT}[audio]'
+    cmd = [sys.executable, '-m', 'pip', 'install', *extra_args, target]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    if result.returncode != 0:
+        raise ComponentActionUnsupportedError(
+            f'pip falhou (código {result.returncode}) instalando os componentes de áudio:\n'
+            f'{result.stderr[-2000:] or result.stdout[-2000:]}')
+
+
+def install_component(component_id: str) -> ComponentInfo:
+    """Real download + real SHA-256 verification (astros_upscale.core.resolve_model)
+    for image/video; a real `pip install` of the shared [audio] extra for
+    speech/music (see _pip_install_audio_extra)."""
+    if component_id in _AUDIO_CONTENT_TYPES:
+        _pip_install_audio_extra()
+        return _component_info(component_id)
     implementation = profile_resolver._CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)
@@ -152,8 +200,8 @@ def install_component(component_id: str) -> ComponentInfo:
 
 def update_component(component_id: str) -> ComponentInfo:
     if component_id in _AUDIO_CONTENT_TYPES:
-        raise ComponentActionUnsupportedError(
-            'Este componente é atualizado via "pip install --upgrade", não por esta tela.')
+        _pip_install_audio_extra('--upgrade')
+        return _component_info(component_id)
     implementation = profile_resolver._CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)

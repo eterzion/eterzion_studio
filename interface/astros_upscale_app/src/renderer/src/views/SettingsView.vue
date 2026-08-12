@@ -454,7 +454,9 @@ const outputFolderLabel = computed(
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  width: 100%;
   max-width: 860px;
+  margin: 0 auto;
 }
 
 .settings-group {
