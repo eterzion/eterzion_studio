@@ -8,6 +8,7 @@ import ComponentsView from './views/ComponentsView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
 import CompressConvertView from './views/CompressConvertView.vue'
+import ConverterView from './views/ConverterView.vue'
 import VideoView from './views/VideoView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
@@ -76,6 +77,7 @@ onMounted(() => {
       <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
       <SettingsView v-else-if="active === 'configuracoes'" />
       <CompressConvertView v-else-if="active === 'otimizar'" />
+      <ConverterView v-else-if="active === 'converter'" />
       <VideoView v-else-if="active === 'video'" />
       <AudioView v-else-if="active === 'audio'" />
       <div v-else class="placeholder-view">

@@ -3,18 +3,8 @@ import { computed } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
 import SummaryCards from '../components/SummaryCards.vue'
-import {
-  Image,
-  Film,
-  Headphones,
-  Rocket,
-  ArrowRight,
-  Trash2,
-  ChevronDown,
-  FolderOpen,
-  Info,
-  ExternalLink
-} from '@lucide/vue'
+import CategoryIcon from '../components/CategoryIcon.vue'
+import { ArrowRight, Trash2, ChevronDown, FolderOpen, Info, ExternalLink } from '@lucide/vue'
 import { queueState, removeJob, setActiveJob } from '../store/jobs'
 import type { NavKey } from '../types'
 
@@ -22,46 +12,19 @@ const emit = defineEmits<{
   navigate: [key: NavKey]
 }>()
 
-// Upload lives on each category tab now (Imagem/Vídeo/Áudio/Otimizar each
-// own their intake directly) — Home keeps the launcher cards plus the
+// Upload lives on each category tab now (Imagem/Vídeo/Áudio/Otimizar/Converter
+// each own their intake directly) — Home keeps the launcher cards plus the
 // original image queue/stats, just without the drop zone that used to sit
 // above them. Each card owns a fixed accent (independent of the user's
 // chosen theme accent) so the grid reads as a set of distinct destinations.
-const CATEGORIES: {
-  key: NavKey
-  label: string
-  description: string
-  icon: unknown
-  tint: string
-}[] = [
-  {
-    key: 'imagem',
-    label: 'Imagem',
-    description: 'Aumente a resolução de fotos e ilustrações com IA.',
-    icon: Image,
-    tint: '#3b82f6'
-  },
-  {
-    key: 'video',
-    label: 'Vídeo',
-    description: 'Aumente a resolução de vídeos preservando fps e áudio.',
-    icon: Film,
-    tint: '#a855f7'
-  },
-  {
-    key: 'audio',
-    label: 'Áudio',
-    description: 'Reduza ruído, normalize volume e melhore a clareza da voz ou música.',
-    icon: Headphones,
-    tint: '#06b6d4'
-  },
-  {
-    key: 'otimizar',
-    label: 'Otimizar',
-    description: 'Comprima ou converta imagens, vídeos e áudios sem IA.',
-    icon: Rocket,
-    tint: '#22c55e'
-  }
+type CategoryVariant = 'imagem' | 'video' | 'audio' | 'otimizar' | 'converter'
+
+const CATEGORIES: { key: NavKey; label: string; variant: CategoryVariant; tint: string }[] = [
+  { key: 'imagem', label: 'Imagem', variant: 'imagem', tint: '#3b82f6' },
+  { key: 'video', label: 'Vídeo', variant: 'video', tint: '#a855f7' },
+  { key: 'audio', label: 'Áudio', variant: 'audio', tint: '#06b6d4' },
+  { key: 'otimizar', label: 'Otimizar', variant: 'otimizar', tint: '#22c55e' },
+  { key: 'converter', label: 'Converter', variant: 'converter', tint: '#f97316' }
 ]
 
 const jobs = computed(() => queueState.jobs)
@@ -78,13 +41,6 @@ const statusLabel = computed(() => {
   if (jobs.value.length) return 'Configurando'
   return 'Vazio'
 })
-const statusTone = computed(() => {
-  if (jobs.value.some((j) => j.status === 'processing')) return 'warning'
-  if (jobs.value.length && jobs.value.every((j) => j.status === 'done')) return 'success'
-  if (jobs.value.some((j) => j.status === 'error')) return 'danger'
-  return 'primary'
-})
-
 function clearQueue(): void {
   for (const j of [...jobs.value]) removeJob(j.id)
 }
@@ -114,12 +70,9 @@ function openImage(id?: string): void {
           :style="{ '--tint': category.tint }"
           @click="emit('navigate', category.key)"
         >
+          <span class="category-label">{{ category.label }}</span>
           <div class="category-icon">
-            <component :is="category.icon" :size="26" />
-          </div>
-          <div class="category-text">
-            <span class="category-label">{{ category.label }}</span>
-            <span class="category-description">{{ category.description }}</span>
+            <CategoryIcon :variant="category.variant" :tint="category.tint" />
           </div>
           <span class="category-arrow"><ArrowRight :size="17" /></span>
         </button>
@@ -130,11 +83,10 @@ function openImage(id?: string): void {
           <div class="queue-heading">
             <div class="queue-icon"><FolderOpen :size="18" /></div>
             <div>
-              <h2 class="queue-title">Fila de processamento ({{ fileCount }})</h2>
+              <h2 class="queue-title">Fila de processamento</h2>
               <p class="queue-subtitle">
+                <span class="queue-dot">●</span>
                 {{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }}
-                <span class="queue-dot">·</span>
-                <span class="queue-status" :class="`tone-${statusTone}`">{{ statusLabel }}</span>
               </p>
             </div>
           </div>
@@ -221,7 +173,7 @@ function openImage(id?: string): void {
 
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-3);
 }
 
@@ -232,16 +184,12 @@ function openImage(id?: string): void {
   flex-direction: column;
   align-items: flex-start;
   text-align: left;
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--tint) 16%, var(--surface-1)) 0%,
-    var(--surface-1) 65%
-  );
-  border: 1px solid color-mix(in srgb, var(--tint) 28%, var(--surface-border-soft));
+  background: color-mix(in srgb, var(--tint) 6%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--tint) 30%, var(--surface-border-soft));
   border-radius: var(--radius-lg);
   padding: var(--space-4);
-  padding-bottom: 52px;
-  min-height: 220px;
+  padding-bottom: 56px;
+  aspect-ratio: 1 / 1.05;
   cursor: pointer;
   transition:
     transform var(--transition-fast),
@@ -249,25 +197,10 @@ function openImage(id?: string): void {
     box-shadow var(--transition-fast);
 }
 
-.category-card::after {
-  content: '';
-  position: absolute;
-  inset: -20% -30% auto auto;
-  width: 200px;
-  height: 200px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    color-mix(in srgb, var(--tint) 26%, transparent),
-    transparent 70%
-  );
-  pointer-events: none;
-}
-
 .category-card:hover {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--tint) 45%, var(--surface-border-soft));
-  box-shadow: var(--shadow-sm);
+  border-color: color-mix(in srgb, var(--tint) 55%, var(--surface-border-soft));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint) 30%, transparent), var(--shadow-sm);
 }
 
 .category-card:focus-visible {
@@ -275,55 +208,44 @@ function openImage(id?: string): void {
   outline-offset: -2px;
 }
 
-.category-icon {
-  position: relative;
-  flex-shrink: 0;
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--tint);
-  background: color-mix(in srgb, var(--tint) 20%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tint) 34%, transparent);
-  margin-bottom: var(--space-3);
-}
-
-.category-text {
-  position: relative;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
 .category-label {
-  font-size: 19px;
+  position: relative;
+  font-size: 17px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
 }
 
-.category-description {
-  font-size: var(--fs-label);
-  color: var(--text-secondary);
-  line-height: 1.5;
+.category-icon {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: var(--space-3) 0;
+  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--tint) 55%, transparent));
 }
 
 .category-arrow {
   position: absolute;
-  right: var(--space-4);
+  left: 50%;
   bottom: var(--space-4);
+  transform: translateX(-50%);
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--tint);
-  background: color-mix(in srgb, var(--tint) 18%, transparent);
-  border: 1px solid color-mix(in srgb, var(--tint) 28%, transparent);
+  background: color-mix(in srgb, var(--tint) 16%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--tint) 45%, transparent);
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.category-card:hover .category-arrow {
+  background: color-mix(in srgb, var(--tint) 28%, var(--surface-1));
 }
 
 .queue-section {
@@ -376,28 +298,10 @@ function openImage(id?: string): void {
 }
 
 .queue-dot {
-  margin: 0 4px;
-  color: var(--text-tertiary);
-}
-
-.queue-status {
-  font-weight: var(--fw-medium);
-}
-
-.queue-status.tone-primary {
+  margin-right: 6px;
+  font-size: 8px;
   color: var(--color-primary);
-}
-
-.queue-status.tone-success {
-  color: var(--color-success);
-}
-
-.queue-status.tone-warning {
-  color: var(--color-warning);
-}
-
-.queue-status.tone-danger {
-  color: var(--color-danger);
+  vertical-align: 1px;
 }
 
 .queue-actions {
