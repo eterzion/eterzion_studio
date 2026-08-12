@@ -1,5 +1,4 @@
 {
-  "app": { "name": "Astros Upscale" },
   "nav": {
     "home": "Home",
     "image": "Image",
@@ -12,7 +11,6 @@
     "settings": "Settings"
   },
   "sidebar": {
-    "navigation": "Navigation",
     "support": "Support",
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
@@ -21,27 +19,21 @@
     "toggleTheme": "Toggle light/dark theme",
     "links": {
       "site": "Official website",
-      "docs": "Documentation",
-      "github": "GitHub",
       "discord": "Discord",
       "faq": "FAQ",
       "help": "Help center",
       "email": "Support email"
     }
   },
-  "common": {
-    "cancel": "Cancel",
-    "save": "Save",
-    "confirm": "Confirm",
-    "delete": "Delete",
-    "close": "Close"
-  },
   "settings": {
     "title": "Settings",
     "general": {
       "title": "General",
       "description": "General application preferences",
-      "language": { "label": "Language", "description": "Automatically detected from Windows on first launch" },
+      "language": {
+        "label": "Language",
+        "description": "Automatically detected from Windows on first launch"
+      },
       "theme": {
         "label": "Theme",
         "description": "Light, dark, or follow Windows",
@@ -49,46 +41,23 @@
         "dark": "Dark",
         "auto": "Automatic"
       },
-      "accent": { "label": "Accent color", "description": "Main color used for buttons, links, and active elements" },
-      "autoUpdate": { "label": "Automatic updates", "description": "Check for new versions on startup (coming soon)" },
-      "outputFolder": { "label": "Default output folder", "description": "Used as the initial suggestion when exporting", "same": "Same folder as the original image" },
-      "exportFormat": { "label": "Default image format", "description": "Pre-selected when opening the export panel" }
-    },
-    "processing": {
-      "title": "Processing",
-      "description": "Defaults used when configuring a new image",
-      "defaultModel": { "label": "Default model", "description": "Set on the Models tab", "none": "None set" },
-      "defaultScale": { "label": "Default scale", "description": "Pre-selected factor for new images" },
-      "lockAspect": { "label": "Keep aspect ratio automatically", "description": "Locks width/height in custom mode" },
-      "quality": { "label": "Image quality", "description": "Default for .jpg/.webp export" },
-      "concurrentJobs": { "label": "Concurrent jobs", "description": "Fixed at 1 by the current processing architecture (serial queue, single worker)" }
-    },
-    "history": {
-      "title": "History",
-      "count": "{count} entry saved locally | {count} entries saved locally",
-      "limit": { "label": "Maximum number of entries", "description": "The oldest ones are removed once exceeded" },
-      "autoCleanup": { "label": "Automatic cleanup", "description": "Removes entries older than the period below" },
-      "keepFor": { "label": "Keep for", "description": "Days before automatic removal", "days7": "7 days", "days30": "30 days", "days90": "90 days" },
-      "clear": { "label": "Clear history manually", "description": "Removes all saved entries — does not affect exported files", "button": "Clear history", "confirm": "Confirm deletion" },
-      "clearCache": { "label": "Clear cache", "description": "Reloads the model list directly from the API", "button": "Clear cache", "success": "Model cache refreshed from the API.", "error": "Failed to refresh: {error}" }
-    },
-    "interface": {
-      "title": "Interface",
-      "description": "Customize information display and density",
-      "showDescriptions": { "label": "Show model descriptions", "description": "Shows a short purpose summary on the Models tab cards" },
-      "showBadges": { "label": "Show commercial-use indicators", "description": "License badge on models" },
-      "thumbnailSize": { "label": "Thumbnail size", "description": "Queue, editor, and history", "small": "Small", "medium": "Medium", "large": "Large" },
-      "animations": { "label": "Enable animations", "description": "Interface transitions and microanimations" },
-      "density": { "label": "Interface density", "description": "Spacing between elements", "compact": "Compact", "standard": "Standard", "comfortable": "Comfortable" }
-    },
-    "advanced": {
-      "title": "Advanced",
-      "description": "Diagnostics and technical information",
-      "appVersion": "App version",
-      "runtime": "Runtime versions",
-      "apiServer": "API server",
-      "repoFolder": "Repository folder",
-      "debug": { "label": "Debug options", "description": "Opens Chromium DevTools to inspect the interface", "button": "Open DevTools" }
+      "accent": {
+        "label": "Accent color",
+        "description": "Main color used for buttons, links, and active elements"
+      },
+      "autoUpdate": {
+        "label": "Automatic updates",
+        "description": "Check for new versions on startup (coming soon)"
+      },
+      "outputFolder": {
+        "label": "Default output folder",
+        "description": "Used as the initial suggestion when exporting",
+        "same": "Same folder as the original image"
+      },
+      "exportFormat": {
+        "label": "Default image format",
+        "description": "Pre-selected when opening the export panel"
+      }
     }
   }
 }

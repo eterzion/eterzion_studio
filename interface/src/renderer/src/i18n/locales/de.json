@@ -1,5 +1,4 @@
 {
-  "app": { "name": "Astros Upscale" },
   "nav": {
     "home": "Start",
     "image": "Bild",
@@ -12,7 +11,6 @@
     "settings": "Einstellungen"
   },
   "sidebar": {
-    "navigation": "Navigation",
     "support": "Support",
     "collapse": "Seitenleiste einklappen",
     "expand": "Seitenleiste ausklappen",
@@ -21,27 +19,21 @@
     "toggleTheme": "Hell/Dunkel-Modus umschalten",
     "links": {
       "site": "Offizielle Website",
-      "docs": "Dokumentation",
-      "github": "GitHub",
       "discord": "Discord",
       "faq": "FAQ",
       "help": "Hilfe-Center",
       "email": "Support-E-Mail"
     }
   },
-  "common": {
-    "cancel": "Abbrechen",
-    "save": "Speichern",
-    "confirm": "Bestätigen",
-    "delete": "Löschen",
-    "close": "Schließen"
-  },
   "settings": {
     "title": "Einstellungen",
     "general": {
       "title": "Allgemein",
       "description": "Allgemeine Anwendungseinstellungen",
-      "language": { "label": "Sprache", "description": "Beim ersten Start automatisch von Windows erkannt" },
+      "language": {
+        "label": "Sprache",
+        "description": "Beim ersten Start automatisch von Windows erkannt"
+      },
       "theme": {
         "label": "Design",
         "description": "Helles, dunkles oder an Windows angepasstes Erscheinungsbild",
@@ -49,46 +41,23 @@
         "dark": "Dunkel",
         "auto": "Automatisch"
       },
-      "accent": { "label": "Akzentfarbe", "description": "Hauptfarbe für Schaltflächen, Links und aktive Elemente" },
-      "autoUpdate": { "label": "Automatische Updates", "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)" },
-      "outputFolder": { "label": "Standard-Ausgabeordner", "description": "Wird als anfänglicher Vorschlag beim Exportieren verwendet", "same": "Gleicher Ordner wie das Originalbild" },
-      "exportFormat": { "label": "Standard-Bildformat", "description": "Beim Öffnen des Exportbereichs vorausgewählt" }
-    },
-    "processing": {
-      "title": "Verarbeitung",
-      "description": "Standardwerte beim Einrichten eines neuen Bildes",
-      "defaultModel": { "label": "Standardmodell", "description": "Im Reiter Modelle festgelegt", "none": "Keines festgelegt" },
-      "defaultScale": { "label": "Standardskalierung", "description": "Vorausgewählter Faktor für neue Bilder" },
-      "lockAspect": { "label": "Seitenverhältnis automatisch beibehalten", "description": "Sperrt Breite/Höhe im benutzerdefinierten Modus" },
-      "quality": { "label": "Bildqualität", "description": "Standard für den Export als .jpg/.webp" },
-      "concurrentJobs": { "label": "Gleichzeitige Aufgaben", "description": "Durch die aktuelle Verarbeitungsarchitektur fest auf 1 (serielle Warteschlange, ein Worker)" }
-    },
-    "history": {
-      "title": "Verlauf",
-      "count": "{count} lokal gespeicherter Eintrag | {count} lokal gespeicherte Einträge",
-      "limit": { "label": "Maximale Anzahl an Einträgen", "description": "Die ältesten werden bei Überschreitung entfernt" },
-      "autoCleanup": { "label": "Automatische Bereinigung", "description": "Entfernt Einträge, die älter sind als der folgende Zeitraum" },
-      "keepFor": { "label": "Aufbewahren für", "description": "Tage vor der automatischen Entfernung", "days7": "7 Tage", "days30": "30 Tage", "days90": "90 Tage" },
-      "clear": { "label": "Verlauf manuell löschen", "description": "Entfernt alle gespeicherten Einträge — betrifft nicht exportierte Dateien", "button": "Verlauf löschen", "confirm": "Löschen bestätigen" },
-      "clearCache": { "label": "Cache leeren", "description": "Lädt die Modellliste direkt von der API neu", "button": "Cache leeren", "success": "Modell-Cache von der API aktualisiert.", "error": "Aktualisierung fehlgeschlagen: {error}" }
-    },
-    "interface": {
-      "title": "Oberfläche",
-      "description": "Anzeige von Informationen und Dichte anpassen",
-      "showDescriptions": { "label": "Modellbeschreibungen anzeigen", "description": "Zeigt eine kurze Zweckbeschreibung auf den Karten im Reiter Modelle" },
-      "showBadges": { "label": "Hinweise zur kommerziellen Nutzung anzeigen", "description": "Lizenz-Badge bei Modellen" },
-      "thumbnailSize": { "label": "Miniaturgröße", "description": "Warteschlange, Editor und Verlauf", "small": "Klein", "medium": "Mittel", "large": "Groß" },
-      "animations": { "label": "Animationen aktivieren", "description": "Übergänge und Mikroanimationen der Oberfläche" },
-      "density": { "label": "Oberflächendichte", "description": "Abstand zwischen Elementen", "compact": "Kompakt", "standard": "Standard", "comfortable": "Komfortabel" }
-    },
-    "advanced": {
-      "title": "Erweitert",
-      "description": "Diagnose und technische Informationen",
-      "appVersion": "App-Version",
-      "runtime": "Runtime-Versionen",
-      "apiServer": "API-Server",
-      "repoFolder": "Repository-Ordner",
-      "debug": { "label": "Debug-Optionen", "description": "Öffnet die Chromium-DevTools zur Überprüfung der Oberfläche", "button": "DevTools öffnen" }
+      "accent": {
+        "label": "Akzentfarbe",
+        "description": "Hauptfarbe für Schaltflächen, Links und aktive Elemente"
+      },
+      "autoUpdate": {
+        "label": "Automatische Updates",
+        "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)"
+      },
+      "outputFolder": {
+        "label": "Standard-Ausgabeordner",
+        "description": "Wird als anfänglicher Vorschlag beim Exportieren verwendet",
+        "same": "Gleicher Ordner wie das Originalbild"
+      },
+      "exportFormat": {
+        "label": "Standard-Bildformat",
+        "description": "Beim Öffnen des Exportbereichs vorausgewählt"
+      }
     }
   }
 }

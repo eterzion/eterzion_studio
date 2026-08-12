@@ -104,7 +104,3 @@ export function setLanguage(language: SupportedLocale | 'auto'): void {
   settingsState.language = language
   setLocale(language === 'auto' ? detectSystemLocale() : language)
 }
-
-export function resetSettings(): void {
-  Object.assign(settingsState, defaults())
-}

@@ -1,5 +1,4 @@
 {
-  "app": { "name": "Astros Upscale" },
   "nav": {
     "home": "ホーム",
     "image": "画像",
@@ -12,7 +11,6 @@
     "settings": "設定"
   },
   "sidebar": {
-    "navigation": "ナビゲーション",
     "support": "サポート",
     "collapse": "サイドバーを折りたたむ",
     "expand": "サイドバーを展開する",
@@ -21,27 +19,21 @@
     "toggleTheme": "ライト/ダークテーマを切り替え",
     "links": {
       "site": "公式サイト",
-      "docs": "ドキュメント",
-      "github": "GitHub",
       "discord": "Discord",
       "faq": "よくある質問",
       "help": "ヘルプセンター",
       "email": "サポートメール"
     }
   },
-  "common": {
-    "cancel": "キャンセル",
-    "save": "保存",
-    "confirm": "確認",
-    "delete": "削除",
-    "close": "閉じる"
-  },
   "settings": {
     "title": "設定",
     "general": {
       "title": "一般",
       "description": "アプリケーションの一般設定",
-      "language": { "label": "言語", "description": "初回起動時にWindowsから自動検出" },
+      "language": {
+        "label": "言語",
+        "description": "初回起動時にWindowsから自動検出"
+      },
       "theme": {
         "label": "テーマ",
         "description": "ライト、ダーク、またはWindowsに合わせる",
@@ -49,46 +41,23 @@
         "dark": "ダーク",
         "auto": "自動"
       },
-      "accent": { "label": "アクセントカラー", "description": "ボタン、リンク、アクティブ要素に使用するメインカラー" },
-      "autoUpdate": { "label": "自動更新", "description": "起動時に新しいバージョンを確認する（近日公開）" },
-      "outputFolder": { "label": "既定の出力フォルダー", "description": "エクスポート時の初期候補として使用" , "same": "元の画像と同じフォルダー" },
-      "exportFormat": { "label": "既定の画像形式", "description": "エクスポートパネルを開いたときに事前選択されます" }
-    },
-    "processing": {
-      "title": "処理",
-      "description": "新しい画像を設定する際の既定値",
-      "defaultModel": { "label": "既定のモデル", "description": "「モデル」タブで設定", "none": "未設定" },
-      "defaultScale": { "label": "既定の拡大率", "description": "新しい画像に事前選択される倍率" },
-      "lockAspect": { "label": "アスペクト比を自動保持", "description": "カスタムモードで幅と高さを固定" },
-      "quality": { "label": "画質", "description": ".jpg/.webpでのエクスポート時の既定値" },
-      "concurrentJobs": { "label": "同時タスク数", "description": "現在の処理アーキテクチャにより1に固定（シリアルキュー、単一ワーカー）" }
-    },
-    "history": {
-      "title": "履歴",
-      "count": "ローカルに{count}件保存済み",
-      "limit": { "label": "最大保存件数", "description": "超過すると最も古いものが削除されます" },
-      "autoCleanup": { "label": "自動クリーンアップ", "description": "以下の期間より古い履歴を削除します" },
-      "keepFor": { "label": "保持期間", "description": "自動削除までの日数", "days7": "7日間", "days30": "30日間", "days90": "90日間" },
-      "clear": { "label": "履歴を手動で消去", "description": "保存済みの履歴をすべて削除します — エクスポート済みファイルには影響しません", "button": "履歴を消去", "confirm": "削除を確認" },
-      "clearCache": { "label": "キャッシュを消去", "description": "APIからモデル一覧を直接再読み込みします", "button": "キャッシュを消去", "success": "モデルキャッシュをAPIから更新しました。", "error": "更新に失敗しました: {error}" }
-    },
-    "interface": {
-      "title": "インターフェース",
-      "description": "情報の表示と密度をカスタマイズ",
-      "showDescriptions": { "label": "モデルの説明を表示", "description": "「モデル」タブのカードに用途の概要を表示します" },
-      "showBadges": { "label": "商用利用インジケーターを表示", "description": "モデルにライセンスバッジを表示" },
-      "thumbnailSize": { "label": "サムネイルサイズ", "description": "キュー、エディター、履歴", "small": "小", "medium": "中", "large": "大" },
-      "animations": { "label": "アニメーションを有効化", "description": "インターフェースの遷移とマイクロアニメーション" },
-      "density": { "label": "インターフェースの密度", "description": "要素間の間隔", "compact": "コンパクト", "standard": "標準", "comfortable": "ゆったり" }
-    },
-    "advanced": {
-      "title": "詳細設定",
-      "description": "診断と技術情報",
-      "appVersion": "アプリのバージョン",
-      "runtime": "ランタイムのバージョン",
-      "apiServer": "APIサーバー",
-      "repoFolder": "リポジトリフォルダー",
-      "debug": { "label": "デバッグオプション", "description": "Chromium DevToolsを開いてインターフェースを検査します", "button": "DevToolsを開く" }
+      "accent": {
+        "label": "アクセントカラー",
+        "description": "ボタン、リンク、アクティブ要素に使用するメインカラー"
+      },
+      "autoUpdate": {
+        "label": "自動更新",
+        "description": "起動時に新しいバージョンを確認する（近日公開）"
+      },
+      "outputFolder": {
+        "label": "既定の出力フォルダー",
+        "description": "エクスポート時の初期候補として使用",
+        "same": "元の画像と同じフォルダー"
+      },
+      "exportFormat": {
+        "label": "既定の画像形式",
+        "description": "エクスポートパネルを開いたときに事前選択されます"
+      }
     }
   }
 }

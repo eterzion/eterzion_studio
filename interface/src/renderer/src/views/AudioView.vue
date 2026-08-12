@@ -13,6 +13,7 @@ import {
   detectContentType,
   processJob as apiProcessJob,
   getJob,
+  defaultAdjustments,
   type ContentType
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
@@ -120,15 +121,7 @@ async function runJob(job: AudioJob): Promise<void> {
         input_path: job.file.path,
         content_type_override: job.contentType
       },
-      {
-        denoise: 50,
-        deblur: 0,
-        detail_recovery: 0,
-        face_correction: false,
-        face_recovery_strength: 80,
-        denoise_filter_enabled: false,
-        denoise_filter_strength: 45
-      }
+      defaultAdjustments()
     )
     job.backendJobId = backendJobId
     syncHistory(job)

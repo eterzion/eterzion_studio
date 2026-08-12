@@ -265,13 +265,6 @@ export async function getJob(jobId: string): Promise<JobStatus> {
   return res.json()
 }
 
-export async function listJobs(): Promise<JobStatus[]> {
-  const res = await fetch(`${BASE_URL}/jobs`)
-  if (!res.ok) throw new Error(await extractError(res))
-  const data = await res.json()
-  return data.jobs as JobStatus[]
-}
-
 /** Re-encodes an already-processed job to the requested format/destination —
  *  never re-runs the model, so this is always fast (see routes_jobs.py). */
 export async function exportJob(jobId: string, request: ExportRequest): Promise<string> {

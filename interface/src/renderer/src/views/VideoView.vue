@@ -13,6 +13,7 @@ import {
   processJob as apiProcessJob,
   confirmSecondaryElements,
   getJob,
+  defaultAdjustments,
   type ContentType,
   type SecondaryElements
 } from '../services/api'
@@ -169,15 +170,7 @@ async function runJob(job: VideoJob): Promise<void> {
         content_type_override: job.contentType,
         scale: job.scale
       },
-      {
-        denoise: 50,
-        deblur: 0,
-        detail_recovery: 0,
-        face_correction: false,
-        face_recovery_strength: 80,
-        denoise_filter_enabled: false,
-        denoise_filter_strength: 45
-      }
+      defaultAdjustments()
     )
     job.backendJobId = backendJobId
 

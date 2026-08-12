@@ -516,17 +516,6 @@ export async function cancelProcessing(job: Job): Promise<void> {
   job.backendJobId = null
 }
 
-export function waitForSettled(job: Job): Promise<void> {
-  return new Promise((resolvePromise) => {
-    const check = (): void => {
-      if (job.status === 'done' || job.status === 'error' || job.status === 'cancelled')
-        resolvePromise()
-      else setTimeout(check, 300)
-    }
-    check()
-  })
-}
-
 export interface ExportOptions {
   format: 'png' | 'jpg' | 'webp' | 'tiff'
   quality: number
@@ -563,9 +552,4 @@ export async function exportOne(
       : message
     return { ok: false, error: job.exportError }
   }
-}
-
-export function stopAllWatchers(): void {
-  jobUnsubscribers.forEach((fn) => fn())
-  jobUnsubscribers.clear()
 }

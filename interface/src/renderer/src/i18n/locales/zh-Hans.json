@@ -1,5 +1,4 @@
 {
-  "app": { "name": "Astros Upscale" },
   "nav": {
     "home": "主页",
     "image": "图像",
@@ -12,7 +11,6 @@
     "settings": "设置"
   },
   "sidebar": {
-    "navigation": "导航",
     "support": "支持",
     "collapse": "收起侧边栏",
     "expand": "展开侧边栏",
@@ -21,27 +19,21 @@
     "toggleTheme": "切换浅色/深色主题",
     "links": {
       "site": "官方网站",
-      "docs": "文档",
-      "github": "GitHub",
       "discord": "Discord",
       "faq": "常见问题",
       "help": "帮助中心",
       "email": "支持邮箱"
     }
   },
-  "common": {
-    "cancel": "取消",
-    "save": "保存",
-    "confirm": "确认",
-    "delete": "删除",
-    "close": "关闭"
-  },
   "settings": {
     "title": "设置",
     "general": {
       "title": "常规",
       "description": "应用程序的常规首选项",
-      "language": { "label": "语言", "description": "首次启动时自动从 Windows 检测" },
+      "language": {
+        "label": "语言",
+        "description": "首次启动时自动从 Windows 检测"
+      },
       "theme": {
         "label": "主题",
         "description": "浅色、深色，或跟随 Windows",
@@ -49,46 +41,23 @@
         "dark": "深色",
         "auto": "自动"
       },
-      "accent": { "label": "强调色", "description": "用于按钮、链接和活动元素的主色" },
-      "autoUpdate": { "label": "自动更新", "description": "启动时检查新版本（即将推出）" },
-      "outputFolder": { "label": "默认输出文件夹", "description": "导出时作为初始建议使用", "same": "与原始图像相同的文件夹" },
-      "exportFormat": { "label": "默认图像格式", "description": "打开导出面板时预先选择" }
-    },
-    "processing": {
-      "title": "处理",
-      "description": "配置新图像时使用的默认值",
-      "defaultModel": { "label": "默认模型", "description": "在“模型”标签页中设置", "none": "未设置" },
-      "defaultScale": { "label": "默认缩放比例", "description": "新图像的预选倍率" },
-      "lockAspect": { "label": "自动保持纵横比", "description": "在自定义模式下锁定宽度/高度" },
-      "quality": { "label": "图像质量", "description": "导出为 .jpg/.webp 时的默认值" },
-      "concurrentJobs": { "label": "并发任务数", "description": "受当前处理架构限制固定为 1（串行队列，单个工作进程）" }
-    },
-    "history": {
-      "title": "历史记录",
-      "count": "本地已保存 {count} 条记录",
-      "limit": { "label": "最大记录数", "description": "超出后将删除最早的记录" },
-      "autoCleanup": { "label": "自动清理", "description": "删除早于以下期限的记录" },
-      "keepFor": { "label": "保留期限", "description": "自动删除前的天数", "days7": "7 天", "days30": "30 天", "days90": "90 天" },
-      "clear": { "label": "手动清除历史记录", "description": "删除所有已保存的记录——不会影响已导出的文件", "button": "清除历史记录", "confirm": "确认删除" },
-      "clearCache": { "label": "清除缓存", "description": "直接从 API 重新加载模型列表", "button": "清除缓存", "success": "模型缓存已从 API 更新。", "error": "更新失败：{error}" }
-    },
-    "interface": {
-      "title": "界面",
-      "description": "自定义信息显示和密度",
-      "showDescriptions": { "label": "显示模型说明", "description": "在“模型”标签页卡片上显示用途简介" },
-      "showBadges": { "label": "显示商业用途标识", "description": "在模型上显示许可证徽章" },
-      "thumbnailSize": { "label": "缩略图大小", "description": "队列、编辑器和历史记录", "small": "小", "medium": "中", "large": "大" },
-      "animations": { "label": "启用动画", "description": "界面过渡和微动画" },
-      "density": { "label": "界面密度", "description": "元素间距", "compact": "紧凑", "standard": "标准", "comfortable": "宽松" }
-    },
-    "advanced": {
-      "title": "高级",
-      "description": "诊断和技术信息",
-      "appVersion": "应用版本",
-      "runtime": "运行时版本",
-      "apiServer": "API 服务器",
-      "repoFolder": "仓库文件夹",
-      "debug": { "label": "调试选项", "description": "打开 Chromium DevTools 以检查界面", "button": "打开 DevTools" }
+      "accent": {
+        "label": "强调色",
+        "description": "用于按钮、链接和活动元素的主色"
+      },
+      "autoUpdate": {
+        "label": "自动更新",
+        "description": "启动时检查新版本（即将推出）"
+      },
+      "outputFolder": {
+        "label": "默认输出文件夹",
+        "description": "导出时作为初始建议使用",
+        "same": "与原始图像相同的文件夹"
+      },
+      "exportFormat": {
+        "label": "默认图像格式",
+        "description": "打开导出面板时预先选择"
+      }
     }
   }
 }

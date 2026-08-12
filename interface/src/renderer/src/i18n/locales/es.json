@@ -1,5 +1,4 @@
 {
-  "app": { "name": "Astros Upscale" },
   "nav": {
     "home": "Inicio",
     "image": "Imagen",
@@ -12,7 +11,6 @@
     "settings": "Ajustes"
   },
   "sidebar": {
-    "navigation": "Navegación",
     "support": "Soporte",
     "collapse": "Contraer barra lateral",
     "expand": "Expandir barra lateral",
@@ -21,27 +19,21 @@
     "toggleTheme": "Alternar tema claro/oscuro",
     "links": {
       "site": "Sitio oficial",
-      "docs": "Documentación",
-      "github": "GitHub",
       "discord": "Discord",
       "faq": "Preguntas frecuentes",
       "help": "Centro de ayuda",
       "email": "Correo de soporte"
     }
   },
-  "common": {
-    "cancel": "Cancelar",
-    "save": "Guardar",
-    "confirm": "Confirmar",
-    "delete": "Eliminar",
-    "close": "Cerrar"
-  },
   "settings": {
     "title": "Ajustes",
     "general": {
       "title": "General",
       "description": "Preferencias generales de la aplicación",
-      "language": { "label": "Idioma", "description": "Detectado automáticamente de Windows en el primer inicio" },
+      "language": {
+        "label": "Idioma",
+        "description": "Detectado automáticamente de Windows en el primer inicio"
+      },
       "theme": {
         "label": "Tema",
         "description": "Apariencia clara, oscura, o siguiendo a Windows",
@@ -49,46 +41,23 @@
         "dark": "Oscuro",
         "auto": "Automático"
       },
-      "accent": { "label": "Color de acento", "description": "Color principal usado en botones, enlaces y elementos activos" },
-      "autoUpdate": { "label": "Actualizaciones automáticas", "description": "Buscar nuevas versiones al iniciar (próximamente)" },
-      "outputFolder": { "label": "Carpeta de salida predeterminada", "description": "Usada como sugerencia inicial al exportar", "same": "Misma carpeta que la imagen original" },
-      "exportFormat": { "label": "Formato de imagen predeterminado", "description": "Preseleccionado al abrir el panel de exportación" }
-    },
-    "processing": {
-      "title": "Procesamiento",
-      "description": "Valores predeterminados al configurar una nueva imagen",
-      "defaultModel": { "label": "Modelo predeterminado", "description": "Definido en la pestaña Modelos", "none": "Ninguno definido" },
-      "defaultScale": { "label": "Escala predeterminada", "description": "Factor preseleccionado para nuevas imágenes" },
-      "lockAspect": { "label": "Mantener proporción automáticamente", "description": "Bloquea ancho/alto en modo personalizado" },
-      "quality": { "label": "Calidad de imagen", "description": "Predeterminado para exportar en .jpg/.webp" },
-      "concurrentJobs": { "label": "Tareas simultáneas", "description": "Fijo en 1 por la arquitectura actual de procesamiento (cola en serie, un worker)" }
-    },
-    "history": {
-      "title": "Historial",
-      "count": "{count} registro guardado localmente | {count} registros guardados localmente",
-      "limit": { "label": "Límite máximo de registros", "description": "Los más antiguos se eliminan al superarlo" },
-      "autoCleanup": { "label": "Limpieza automática", "description": "Elimina registros más antiguos que el período siguiente" },
-      "keepFor": { "label": "Conservar durante", "description": "Días antes de la eliminación automática", "days7": "7 días", "days30": "30 días", "days90": "90 días" },
-      "clear": { "label": "Limpiar historial manualmente", "description": "Elimina todos los registros guardados — no afecta a los archivos exportados", "button": "Limpiar historial", "confirm": "Confirmar eliminación" },
-      "clearCache": { "label": "Limpiar caché", "description": "Vuelve a cargar la lista de modelos directamente desde la API", "button": "Limpiar caché", "success": "Caché de modelos actualizada desde la API.", "error": "Error al actualizar: {error}" }
-    },
-    "interface": {
-      "title": "Interfaz",
-      "description": "Personaliza la visualización de información y densidad",
-      "showDescriptions": { "label": "Mostrar descripciones de los modelos", "description": "Muestra un resumen del propósito en las tarjetas de la pestaña Modelos" },
-      "showBadges": { "label": "Mostrar indicadores de uso comercial", "description": "Distintivo de licencia en los modelos" },
-      "thumbnailSize": { "label": "Tamaño de las miniaturas", "description": "Cola, editor e historial", "small": "Pequeñas", "medium": "Medianas", "large": "Grandes" },
-      "animations": { "label": "Activar animaciones", "description": "Transiciones y microanimaciones de la interfaz" },
-      "density": { "label": "Densidad de la interfaz", "description": "Espaciado entre elementos", "compact": "Compacta", "standard": "Estándar", "comfortable": "Confortable" }
-    },
-    "advanced": {
-      "title": "Avanzado",
-      "description": "Diagnóstico e información técnica",
-      "appVersion": "Versión de la aplicación",
-      "runtime": "Versiones del runtime",
-      "apiServer": "Servidor de la API",
-      "repoFolder": "Carpeta del repositorio",
-      "debug": { "label": "Opciones de depuración", "description": "Abre las DevTools de Chromium para inspeccionar la interfaz", "button": "Abrir DevTools" }
+      "accent": {
+        "label": "Color de acento",
+        "description": "Color principal usado en botones, enlaces y elementos activos"
+      },
+      "autoUpdate": {
+        "label": "Actualizaciones automáticas",
+        "description": "Buscar nuevas versiones al iniciar (próximamente)"
+      },
+      "outputFolder": {
+        "label": "Carpeta de salida predeterminada",
+        "description": "Usada como sugerencia inicial al exportar",
+        "same": "Misma carpeta que la imagen original"
+      },
+      "exportFormat": {
+        "label": "Formato de imagen predeterminado",
+        "description": "Preseleccionado al abrir el panel de exportación"
+      }
     }
   }
 }

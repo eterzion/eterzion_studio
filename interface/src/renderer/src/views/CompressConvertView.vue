@@ -13,6 +13,7 @@ import {
   createLocalJob,
   processJob as apiProcessJob,
   getJob,
+  defaultAdjustments,
   type MediaType,
   type Operation
 } from '../services/api'
@@ -129,15 +130,7 @@ async function runJob(job: OptimizeJob): Promise<void> {
           conflict: 'rename'
         }
       },
-      {
-        denoise: 50,
-        deblur: 0,
-        detail_recovery: 0,
-        face_correction: false,
-        face_recovery_strength: 80,
-        denoise_filter_enabled: false,
-        denoise_filter_strength: 45
-      }
+      defaultAdjustments()
     )
     job.backendJobId = backendJobId
     syncHistory(job)
