@@ -20,13 +20,11 @@ import {
   ChevronDown,
   LifeBuoy,
   Globe,
-  BookOpen,
-  Code2,
   MessageCircle,
   Mail,
   HelpCircle,
   ExternalLink,
-  ShieldCheck
+  Tag
 } from '@lucide/vue'
 
 defineProps<{
@@ -55,16 +53,6 @@ const items = computed<{ key: NavKey; label: string; icon: unknown }[]>(() => [
 // são placeholders para o módulo de suporte não abrir links inexistentes.
 const supportLinks = computed<{ label: string; icon: unknown; url: string }[]>(() => [
   { label: t('sidebar.links.site'), icon: Globe, url: 'https://example.com/astros-upscale' },
-  {
-    label: t('sidebar.links.docs'),
-    icon: BookOpen,
-    url: 'https://example.com/astros-upscale/docs'
-  },
-  {
-    label: t('sidebar.links.github'),
-    icon: Code2,
-    url: 'https://github.com/example/astros-upscale'
-  },
   { label: t('sidebar.links.discord'), icon: MessageCircle, url: 'https://discord.gg/example' },
   {
     label: t('sidebar.links.faq'),
@@ -138,7 +126,6 @@ function openExternal(url: string): void {
     </nav>
 
     <div class="sidebar-footer">
-      <p v-if="!collapsed" class="section-label">{{ t('sidebar.support') }}</p>
       <div class="support-block">
         <button
           class="nav-item support-toggle"
@@ -205,7 +192,7 @@ function openExternal(url: string): void {
       </button>
 
       <div v-if="!collapsed" class="version-badge">
-        <ShieldCheck :size="16" class="version-badge-icon" />
+        <Tag :size="16" class="version-badge-icon" />
         <span class="version-badge-number">v2.0.0</span>
       </div>
     </div>

@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
-import { Upload, FolderOpen, Loader2, CheckCircle2, XCircle, AlertCircle } from '@lucide/vue'
+import { Upload, FolderOpen, Loader2, CheckCircle2, XCircle, AlertCircle, Download } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../api'
 import {
   createLocalJob,
@@ -176,11 +176,18 @@ async function runJob(job: AudioJob): Promise<void> {
 }
 
 const configuringCount = computed(() => jobs.value.filter((j) => j.status === 'configuring').length)
+const doneCount = computed(() => jobs.value.filter((j) => j.status === 'done').length)
 
 async function runAll(): Promise<void> {
   for (const job of jobs.value) {
     if (job.status === 'configuring') await runJob(job)
   }
+}
+
+function exportAll(): void {
+  if (!hasNativeApi) return
+  const done = jobs.value.find((j) => j.status === 'done' && j.outputPath)
+  if (done?.outputPath) api.showItemInFolder(done.outputPath)
 }
 </script>
 
@@ -193,6 +200,9 @@ async function runAll(): Promise<void> {
         </button>
         <button class="btn-outline" type="button" :disabled="!configuringCount" @click="runAll">
           Processar todos
+        </button>
+        <button class="btn-outline" type="button" :disabled="!doneCount" @click="exportAll">
+          <Download :size="15" /> Exportar tudo
         </button>
       </template>
     </TopBar>
