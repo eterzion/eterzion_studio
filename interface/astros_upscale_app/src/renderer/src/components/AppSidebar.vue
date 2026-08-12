@@ -132,7 +132,6 @@ function openExternal(url: string): void {
         :title="item.label"
         @click="emit('navigate', item.key)"
       >
-        <span class="active-bar" />
         <component :is="item.icon" :size="18" class="nav-icon" />
         <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
       </button>
@@ -184,7 +183,6 @@ function openExternal(url: string): void {
         :title="t('nav.settings')"
         @click="emit('navigate', 'configuracoes')"
       >
-        <span class="active-bar" />
         <Settings :size="18" class="nav-icon" />
         <span v-if="!collapsed" class="nav-label">{{ t('nav.settings') }}</span>
         <ChevronRight v-if="!collapsed" :size="15" class="chevron" />
@@ -208,10 +206,7 @@ function openExternal(url: string): void {
 
       <div v-if="!collapsed" class="version-badge">
         <ShieldCheck :size="16" class="version-badge-icon" />
-        <div class="version-badge-text">
-          <span class="version-badge-name">Astros Upscale</span>
-          <span class="version-badge-number">v2.0.0</span>
-        </div>
+        <span class="version-badge-number">v2.0.0</span>
       </div>
     </div>
   </aside>
@@ -219,7 +214,7 @@ function openExternal(url: string): void {
 
 <style scoped>
 .sidebar {
-  width: 224px;
+  width: 248px;
   flex-shrink: 0;
   height: 100vh;
   background: var(--surface-1);
@@ -397,26 +392,6 @@ function openExternal(url: string): void {
   font-weight: var(--fw-semibold);
 }
 
-.active-bar {
-  position: absolute;
-  left: -1px;
-  top: 4px;
-  bottom: 4px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--color-primary);
-  opacity: 0;
-  transform: scaleY(0.4);
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
-}
-
-.nav-item.active .active-bar {
-  opacity: 1;
-  transform: scaleY(1);
-}
-
 .nav-icon {
   flex-shrink: 0;
 }
@@ -537,7 +512,8 @@ function openExternal(url: string): void {
 .version-badge {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  gap: 6px;
   margin-top: 4px;
   padding: 9px var(--space-2);
   border: 1px solid var(--surface-border-soft);
@@ -549,24 +525,9 @@ function openExternal(url: string): void {
   color: var(--color-primary);
 }
 
-.version-badge-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.version-badge-name {
+.version-badge-number {
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
-  color: var(--text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.version-badge-number {
-  font-size: 10px;
   color: var(--text-tertiary);
 }
 
