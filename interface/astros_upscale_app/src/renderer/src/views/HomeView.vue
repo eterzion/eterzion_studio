@@ -14,7 +14,9 @@ import {
   ArrowRight,
   Trash2,
   ChevronDown,
-  ListChecks
+  FolderOpen,
+  Info,
+  ExternalLink
 } from '@lucide/vue'
 import { queueState, removeJob, setActiveJob } from '../store/jobs'
 import type { NavKey } from '../types'
@@ -26,49 +28,63 @@ const emit = defineEmits<{
 // Upload lives on each category tab now (Imagem/Vídeo/Áudio/Otimizar each
 // own their intake directly) — Home keeps the launcher cards plus the
 // original image queue/stats, just without the drop zone that used to sit
-// above them.
-const CATEGORIES: { key: NavKey; label: string; description: string; icon: unknown }[] = [
+// above them. Each card owns a fixed accent (independent of the user's
+// chosen theme accent) so the grid reads as a set of distinct destinations.
+const CATEGORIES: {
+  key: NavKey
+  label: string
+  description: string
+  icon: unknown
+  tint: string
+}[] = [
   {
     key: 'imagem',
     label: 'Imagem',
     description: 'Aumente a resolução de fotos e ilustrações com IA.',
-    icon: Image
+    icon: Image,
+    tint: '#3b82f6'
   },
   {
     key: 'video',
     label: 'Vídeo',
     description: 'Aumente a resolução de vídeos preservando fps e áudio.',
-    icon: Film
+    icon: Film,
+    tint: '#a855f7'
   },
   {
     key: 'audio',
     label: 'Áudio',
     description: 'Reduza ruído, normalize volume e melhore a clareza da voz ou música.',
-    icon: Headphones
+    icon: Headphones,
+    tint: '#06b6d4'
   },
   {
     key: 'otimizar',
     label: 'Otimizar',
     description: 'Comprima ou converta imagens, vídeos e áudios sem IA.',
-    icon: Rocket
+    icon: Rocket,
+    tint: '#22c55e'
   },
   {
     key: 'modelos',
     label: 'Modelos',
     description: 'Instale, atualize ou remova os componentes de cada capacidade.',
-    icon: Layers
+    icon: Layers,
+    tint: '#f59e0b'
   },
   {
     key: 'historico',
     label: 'Histórico',
     description: 'Veja os arquivos já processados anteriormente.',
-    icon: History
+    icon: History,
+    tint: '#f472b6'
   },
   {
     key: 'configuracoes',
     label: 'Configurações',
     description: 'Ajuste preferências gerais, tema e processamento.',
-    icon: Settings
+    icon: Settings,
+    tint: '#94a3b8'
   }
 ]
 
@@ -86,6 +102,12 @@ const statusLabel = computed(() => {
   if (jobs.value.length) return 'Configurando'
   return 'Vazio'
 })
+const statusTone = computed(() => {
+  if (jobs.value.some((j) => j.status === 'processing')) return 'warning'
+  if (jobs.value.length && jobs.value.every((j) => j.status === 'done')) return 'success'
+  if (jobs.value.some((j) => j.status === 'error')) return 'danger'
+  return 'primary'
+})
 
 function clearQueue(): void {
   for (const j of [...jobs.value]) removeJob(j.id)
@@ -102,7 +124,10 @@ function openImage(id?: string): void {
     <TopBar title="Home" />
 
     <div class="home-content">
-      <p class="intro">O que você quer melhorar hoje?</p>
+      <div class="intro-group">
+        <p class="intro">O que você quer melhorar hoje?</p>
+        <p class="intro-subtitle">Escolha uma opção abaixo para melhorar sua mídia com IA.</p>
+      </div>
 
       <div class="category-grid">
         <button
@@ -110,6 +135,7 @@ function openImage(id?: string): void {
           :key="category.key"
           class="category-card"
           type="button"
+          :style="{ '--tint': category.tint }"
           @click="emit('navigate', category.key)"
         >
           <div class="category-icon">
@@ -119,18 +145,20 @@ function openImage(id?: string): void {
             <span class="category-label">{{ category.label }}</span>
             <span class="category-description">{{ category.description }}</span>
           </div>
-          <ArrowRight :size="18" class="category-arrow" />
+          <span class="category-arrow"><ArrowRight :size="16" /></span>
         </button>
       </div>
 
       <section class="queue-section">
         <div class="queue-header">
           <div class="queue-heading">
-            <div class="queue-icon"><ListChecks :size="16" /></div>
+            <div class="queue-icon"><FolderOpen :size="18" /></div>
             <div>
-              <h2 class="queue-title">Fila ({{ fileCount }})</h2>
+              <h2 class="queue-title">Fila de processamento ({{ fileCount }})</h2>
               <p class="queue-subtitle">
-                {{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }} · {{ statusLabel }}
+                {{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }}
+                <span class="queue-dot">·</span>
+                <span class="queue-status" :class="`tone-${statusTone}`">{{ statusLabel }}</span>
               </p>
             </div>
           </div>
@@ -165,6 +193,17 @@ function openImage(id?: string): void {
         :status-label="statusLabel"
         quality-label="Pronto para melhorar"
       />
+
+      <div class="tip-bar">
+        <div class="tip-icon"><Info :size="16" /></div>
+        <p class="tip-text">
+          <strong>Dica:</strong> use configurações otimizadas para resultados ainda melhores e
+          mais rápidos.
+        </p>
+        <button class="btn-outline tip-btn" type="button" @click="emit('navigate', 'configuracoes')">
+          Ver configurações <ExternalLink :size="14" />
+        </button>
+      </div>
     </div>
   </div>
 </template>
@@ -187,10 +226,21 @@ function openImage(id?: string): void {
   gap: var(--space-4);
 }
 
+.intro-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
 .intro {
-  font-size: var(--fs-h3, 1.1rem);
+  font-size: 22px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
+}
+
+.intro-subtitle {
+  font-size: var(--fs-label);
+  color: var(--text-tertiary);
 }
 
 .category-grid {
@@ -200,52 +250,73 @@ function openImage(id?: string): void {
 }
 
 .category-card {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: var(--space-3);
   text-align: left;
-  background: var(--surface-1);
-  border: 1px solid var(--surface-border-soft);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tint) 14%, var(--surface-1)) 0%,
+    var(--surface-1) 75%
+  );
+  border: 1px solid color-mix(in srgb, var(--tint) 26%, var(--surface-border-soft));
   border-radius: var(--radius-lg);
   padding: var(--space-4);
   cursor: pointer;
   transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast);
+    transform var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.category-card::after {
+  content: '';
+  position: absolute;
+  inset: auto -30% -60% auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--tint) 22%, transparent), transparent 70%);
+  pointer-events: none;
 }
 
 .category-card:hover {
-  background: var(--surface-2);
-  border-color: var(--color-primary-soft);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--tint) 45%, var(--surface-border-soft));
+  box-shadow: var(--shadow-sm);
 }
 
 .category-card:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--tint);
   outline-offset: -2px;
 }
 
 .category-icon {
   flex-shrink: 0;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
+  color: var(--tint);
+  background: color-mix(in srgb, var(--tint) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tint) 32%, transparent);
 }
 
 .category-text {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 
 .category-label {
-  font-size: var(--fs-label);
+  font-size: 16px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
 }
@@ -253,11 +324,20 @@ function openImage(id?: string): void {
 .category-description {
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
+  line-height: 1.4;
 }
 
 .category-arrow {
+  position: relative;
   flex-shrink: 0;
-  color: var(--text-tertiary);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tint);
+  background: color-mix(in srgb, var(--tint) 16%, transparent);
 }
 
 .queue-section {
@@ -298,7 +378,7 @@ function openImage(id?: string): void {
 }
 
 .queue-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
 }
@@ -307,6 +387,31 @@ function openImage(id?: string): void {
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
   margin-top: 2px;
+}
+
+.queue-dot {
+  margin: 0 4px;
+  color: var(--text-tertiary);
+}
+
+.queue-status {
+  font-weight: var(--fw-medium);
+}
+
+.queue-status.tone-primary {
+  color: var(--color-primary);
+}
+
+.queue-status.tone-success {
+  color: var(--color-success);
+}
+
+.queue-status.tone-warning {
+  color: var(--color-warning);
+}
+
+.queue-status.tone-danger {
+  color: var(--color-danger);
 }
 
 .queue-actions {
@@ -375,5 +480,43 @@ function openImage(id?: string): void {
   text-align: center;
   border: 1px dashed var(--surface-border-soft);
   border-radius: var(--radius-md);
+}
+
+.tip-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: color-mix(in srgb, var(--color-primary) 8%, var(--surface-1));
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--surface-border-soft));
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+}
+
+.tip-icon {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.tip-text {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-label);
+  color: var(--text-secondary);
+}
+
+.tip-text strong {
+  color: var(--color-primary);
+  font-weight: var(--fw-semibold);
+}
+
+.tip-btn {
+  flex-shrink: 0;
 }
 </style>
