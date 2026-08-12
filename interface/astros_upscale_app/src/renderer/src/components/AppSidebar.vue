@@ -109,7 +109,6 @@ function openExternal(url: string): void {
       </button>
     </div>
 
-    <p v-if="!collapsed" class="section-label">{{ t('sidebar.navigation') }}</p>
     <nav class="nav">
       <button
         v-for="item in items"
@@ -175,7 +174,6 @@ function openExternal(url: string): void {
         <ChevronRight v-if="!collapsed" :size="15" class="chevron" />
       </button>
 
-      <p v-if="!collapsed" class="section-label">{{ t('sidebar.darkMode') }}</p>
       <button
         class="nav-item theme-toggle"
         type="button"

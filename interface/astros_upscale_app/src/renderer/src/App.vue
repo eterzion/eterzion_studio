@@ -70,7 +70,7 @@ onMounted(() => {
         <button class="retry-btn" type="button" @click="checkApiStatus">Tentar novamente</button>
       </div>
 
-      <HomeView v-else-if="active === 'home'" @open-image="active = 'imagem'" />
+      <HomeView v-else-if="active === 'home'" @navigate="navigate" />
       <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
       <ComponentsView v-else-if="active === 'modelos'" />
       <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />

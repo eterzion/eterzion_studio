@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import TopBar from '../components/TopBar.vue'
+import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import CompareSlider from '../components/CompareSlider.vue'
@@ -410,6 +411,101 @@ async function importFiles(): Promise<void> {
   const upload = await addFiles(result.files)
   if (!job.value && upload.added[0]) setActiveJob(upload.added[0].id)
 }
+
+// Empty-state upload — same intake as the old HomeView drop zone (pick/drop/
+// folder/paste all land in the same store/jobs.ts queue), now local to this
+// tab instead of requiring a detour through Home first.
+const uploading = ref(false)
+
+function reportImportResult(result: { added: { id: string }[]; rejected: { name: string; reason: string }[]; duplicates: string[] }): void {
+  if (result.rejected.length) {
+    importError.value = result.rejected.map((r) => `${r.name}: ${r.reason}`).join(' · ')
+  } else if (!result.added.length && result.duplicates.length) {
+    importError.value = `Este(s) arquivo(s) já está(ão) na fila: ${result.duplicates.join(', ')}.`
+  } else {
+    importError.value = null
+  }
+  if (result.added.length) setActiveJob(result.added[0].id)
+}
+
+async function pickFiles(): Promise<void> {
+  if (!hasNativeApi) {
+    importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
+    return
+  }
+  uploading.value = true
+  try {
+    const result = await api.selectFiles()
+    if (result.canceled) return
+    reportImportResult(await addFiles(result.files))
+  } catch (error) {
+    importError.value = error instanceof Error ? error.message : 'Falha ao selecionar arquivos.'
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function pickFolder(): Promise<void> {
+  if (!hasNativeApi) {
+    importError.value = 'Seleção de pasta disponível apenas no aplicativo desktop.'
+    return
+  }
+  uploading.value = true
+  try {
+    const result = await api.selectFolder()
+    if (result.canceled) return
+    if (result.files.length === 0) {
+      importError.value = 'Nenhuma imagem compatível foi encontrada nessa pasta.'
+      return
+    }
+    reportImportResult(await addFiles(result.files))
+  } catch (error) {
+    importError.value = error instanceof Error ? error.message : 'Falha ao selecionar a pasta.'
+  } finally {
+    uploading.value = false
+  }
+}
+
+async function handleFilesDropped(dropped: File[]): Promise<void> {
+  if (!hasNativeApi) {
+    importError.value = 'Arraste e solte disponível apenas no aplicativo desktop.'
+    return
+  }
+  uploading.value = true
+  try {
+    const described = await Promise.all(
+      dropped.map((file) => api.statPath(api.getPathForFile(file)))
+    )
+    reportImportResult(await addFiles(described.filter((d) => d !== null)))
+  } catch (error) {
+    importError.value = error instanceof Error ? error.message : 'Falha ao importar os arquivos.'
+  } finally {
+    uploading.value = false
+  }
+}
+
+// Spec 3.1: "Colar imagem (Ctrl+V) → verifica clipboard → salva temp file → cria Job" —
+// only wired while this tab has no active job, matching HomeView's old scope
+// (once editing a specific image, Ctrl+V isn't expected to import a new one).
+async function handlePaste(event: ClipboardEvent): Promise<void> {
+  if (!hasNativeApi || job.value) return
+  const item = Array.from(event.clipboardData?.items ?? []).find((i) => i.type.startsWith('image/'))
+  if (!item) return
+  const blob = item.getAsFile()
+  if (!blob) return
+  try {
+    const buffer = await blob.arrayBuffer()
+    const ext = item.type === 'image/jpeg' ? '.jpg' : item.type === 'image/webp' ? '.webp' : '.png'
+    const path = await api.saveTempImage(buffer, ext)
+    const described = await api.statPath(path)
+    if (described) reportImportResult(await addFiles([described]))
+  } catch (error) {
+    importError.value = error instanceof Error ? error.message : 'Falha ao colar a imagem.'
+  }
+}
+
+onMounted(() => window.addEventListener('paste', handlePaste))
+onUnmounted(() => window.removeEventListener('paste', handlePaste))
 </script>
 
 <template>
@@ -439,7 +535,15 @@ async function importFiles(): Promise<void> {
     </TopBar>
 
     <div v-if="!job" class="empty-state">
-      <p>Nenhuma imagem selecionada. Volte para a Home e escolha um arquivo na fila.</p>
+      <div class="empty-state-inner">
+        <UploadZone
+          :error="importError"
+          :loading="uploading"
+          @pick-files="pickFiles"
+          @pick-folder="pickFolder"
+          @files-dropped="handleFilesDropped"
+        />
+      </div>
     </div>
 
     <div v-else class="editor-body">
@@ -1036,6 +1140,11 @@ async function importFiles(): Promise<void> {
   font-size: var(--fs-label);
   padding: var(--space-4);
   text-align: center;
+}
+
+.empty-state-inner {
+  width: 100%;
+  max-width: 640px;
 }
 
 .editor-body {
