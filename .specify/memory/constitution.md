@@ -1,6 +1,24 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.0.0 → 2.1.0 (2026-08-12)
+
+MINOR bump rationale: a new principle (IX. Two-Layer Architecture) was added. It adds a rule that
+did not previously exist — it does not remove or weaken anything, so it is not a MAJOR change; it
+is more than a wording clarification, so it is not a PATCH.
+
+Added principles: IX. Two-Layer Architecture (interface/ ↔ api/ separation; no CLI/command layer
+between them; the licensing service stays a separate process even though it is organised inside
+api/).
+Modified sections: Governance → Compliance review (added Principle IX to the mandatory review
+gate list).
+Removed sections: none.
+Templates requiring review: none — the addition is additive and does not contradict existing
+guidance in spec/plan/tasks templates.
+
+---
+Previous report
+---------------
 Version change: 1.0.0 → 2.0.0 (2026-08-08)
 
 MAJOR bump rationale: Principle V was redefined in a way that PERMITS what it previously
@@ -266,6 +284,52 @@ Test integrity rules:
 **Rationale:** this product processes irreplaceable user files and enforces a paid licence. A test
 suite that passes by mocking the thing under test provides false confidence about both.
 
+### IX. Two-Layer Architecture
+
+The repository MUST be organised into exactly two top-level source layers: `api/` and `interface/`.
+No third layer of commands, scripts, or prompts MAY sit between them.
+
+```
+interface/  → the Electron/Vue application: screens, components, state, HTTP/WebSocket clients.
+api/        → everything else that is not the visual application: the HTTP API, the licensing
+              service, business logic, persistence, configuration, integrations, and the service
+              logic formerly exposed only as CLI commands.
+```
+
+Mandatory rules:
+
+- **One channel.** `interface/` MUST communicate with `api/` exclusively over HTTP/WebSocket,
+  through explicit, versionable API contracts (request/response schemas). `interface/` MUST NOT
+  import, `require`, or otherwise directly reference an `api/` source module, package, or internal
+  file path.
+- **No reverse dependency.** `api/` MUST NOT depend on, import, or read any file specific to
+  `interface/` (its components, assets, build output, or configuration). `api/` MUST be runnable
+  and testable with `interface/` absent.
+- **No command layer between them.** A user MUST NOT need to run a terminal command to use any
+  product capability. Business logic that today exists only behind a CLI entry point (argument
+  parser, interactive prompt, `if __name__ == '__main__':` command dispatch) MUST be refactored so
+  the underlying logic becomes a service callable from `api/`'s HTTP routes, and the command-line
+  entry point that only parsed arguments and printed to a terminal MUST be removed once nothing
+  depends on it. This is a **REUSE/REFACTOR** move under Principle II, not a rewrite: the logic
+  itself moves, it is not reimplemented from scratch.
+- **Folder separation is not process separation.** Organising the licensing service's source under
+  `api/` (e.g. `api/licensing/`) is a filesystem/repository concern only. It MUST continue to run
+  as its own process, on its own port, with its own secrets and its own persistence, and MUST NOT
+  share a process, an in-memory secret, or a signing key with the local desktop API — this
+  requirement is unchanged from how the licensing service already operates and is not relaxed by
+  where its source files live.
+- **Development-time build/packaging references** (Dockerfiles, PyInstaller specs, CI workflow
+  paths, the Electron main process's resolution of where to launch the local API) MUST be updated
+  to match the new layout as part of any change that moves files — a reorganisation MUST NOT leave
+  stale paths that happen to still work by accident.
+
+**Rationale:** this project already had three sibling backend surfaces (a root CLI package, a
+local desktop API, and a separate licensing service) that grew independently, each reachable in a
+different way. A user-facing command layer between the interface and the backend duplicates
+validation, error handling, and licence enforcement in two places instead of one, and makes "which
+layer is authoritative" ambiguous — the same failure mode Principle I exists to prevent, applied to
+runtime architecture instead of specifications.
+
 ## Licensing and Distribution Constraints
 
 These constraints follow from Principle IV and from the product being closed-source and commercial.
@@ -334,7 +398,8 @@ weakens a principle MUST state explicitly what risk is being accepted and by who
 **Compliance review.** Every plan produced by `/speckit.plan` MUST be checkable against these
 principles, and `/speckit.analyze` MUST verify compliance before implementation is authorised.
 Principles IV (Commercial License Only), III (Performance First), II (Reuse First),
-V (Models Are Internal) and VIII (Tests Required) are the mandatory review gates.
+V (Models Are Internal), VIII (Tests Required) and IX (Two-Layer Architecture) are the mandatory
+review gates.
 
 Complexity MUST be justified. A simpler implementation that satisfies the specification is
 preferred to a more capable one that exceeds it.
@@ -363,4 +428,28 @@ required by v1.0.0 still stands — only the informational disclosure is newly p
 acceptable because the view offers no choice, so it cannot shift an engineering decision onto the
 user, and the product remains free to change implementations.
 
-**Version**: 2.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-08
+**v2.1.0 — 2026-08-12 — Principle IX added: Two-Layer Architecture**
+
+*What changed:* added a new principle requiring the repository to be organised into exactly two
+top-level source layers, `api/` and `interface/`, communicating only over HTTP/WebSocket, with no
+CLI/command layer between them. Added Principle IX to the mandatory `/speckit.analyze` compliance
+review gates in Governance.
+
+*Why:* the repository had grown three independently-evolving backend surfaces — a root-level CLI
+package (`astros_upscale`), a local desktop API (`interface/astros_upscale_api`), and a separate
+licensing service (`interface/astros_licensing_service`) — plus the Electron frontend, each
+reachable through a different mechanism (terminal commands, HTTP, filesystem/subprocess coupling).
+This ambiguity about which layer is authoritative is the same failure mode Principle I (Spec
+First) exists to prevent, applied to runtime architecture. Consolidating into two layers with one
+communication channel removes it.
+
+*Migration:* existing code is not yet compliant — `astros_upscale/cli.py` exposes an interactive
+command layer, and the three backend surfaces are not yet organised under a single `api/` root.
+This amendment governs the reorganisation carried out under feature spec that follows it; it does
+not itself move any files. The licensing service's operational isolation (separate process,
+separate secrets) is unaffected — only its location in the repository tree changes.
+
+*Risk accepted:* none — this principle only adds structure that the codebase did not previously
+have; it does not permit anything that was previously forbidden.
+
+**Version**: 2.1.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
