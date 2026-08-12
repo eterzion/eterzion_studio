@@ -17,6 +17,8 @@ import {
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
+import AppButton from '../components/atoms/AppButton.vue'
+import AppBadge from '../components/atoms/AppBadge.vue'
 import {
   historyState,
   removeHistoryEntry,
@@ -27,7 +29,7 @@ import {
 } from '../store/history'
 import { addFiles, setActiveJob, queueState } from '../store/jobs'
 import { settingsState } from '../store/settings'
-import { api, hasNativeApi } from '../nativeBridge'
+import { api, hasNativeApi } from '../services/native'
 
 const emit = defineEmits<{
   openImage: []
@@ -136,9 +138,12 @@ const filteredEntries = computed(() => {
   return list
 })
 
-const statusMeta: Record<HistoryStatus, { label: string; icon: unknown; tone: string }> = {
+const statusMeta: Record<
+  HistoryStatus,
+  { label: string; icon: unknown; tone: 'success' | 'info' | 'neutral' | 'danger' }
+> = {
   done: { label: 'Concluído', icon: CircleCheck, tone: 'success' },
-  processing: { label: 'Processando', icon: LoaderCircle, tone: 'primary' },
+  processing: { label: 'Processando', icon: LoaderCircle, tone: 'info' },
   queued: { label: 'Aguardando', icon: Clock, tone: 'neutral' },
   error: { label: 'Falhou', icon: CircleX, tone: 'danger' },
   cancelled: { label: 'Cancelado', icon: CircleX, tone: 'neutral' }
@@ -244,7 +249,7 @@ function applyLimit(): void {
         <HistoryIcon :size="40" />
         <h2>Nenhum processamento realizado</h2>
         <p>As imagens processadas aparecerão aqui.</p>
-        <button class="primary-btn" type="button" @click="goProcess">Processar imagem</button>
+        <AppButton variant="primary" size="lg" @click="goProcess">Processar imagem</AppButton>
       </div>
 
       <template v-else>
@@ -321,14 +326,14 @@ function applyLimit(): void {
               <div class="card-info">
                 <div class="card-info-top">
                   <span class="file-name">{{ entry.fileName }}</span>
-                  <span class="status-badge" :class="'tone-' + statusMeta[entry.status].tone">
+                  <AppBadge :tone="statusMeta[entry.status].tone">
                     <component
                       :is="statusMeta[entry.status].icon"
                       :size="12"
-                      :class="{ spin: entry.status === 'processing' }"
+                      :class="{ 'animate-spin': entry.status === 'processing' }"
                     />
                     {{ statusMeta[entry.status].label }}
-                  </span>
+                  </AppBadge>
                 </div>
                 <div class="card-meta">
                   <span>{{ fmtDateTime(entry.createdAt) }}</span>
@@ -453,18 +458,6 @@ function applyLimit(): void {
   margin-top: var(--space-2);
 }
 
-.primary-btn {
-  margin-top: var(--space-2);
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px 20px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
 .toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -517,7 +510,7 @@ function applyLimit(): void {
 .limit-control {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--text-secondary);
 }
@@ -634,49 +627,9 @@ function applyLimit(): void {
   max-width: 240px;
 }
 
-.status-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: var(--fw-semibold);
-  padding: 2px 8px;
-  border-radius: 999px;
-}
-
-.tone-success {
-  color: var(--color-success);
-  background: var(--color-success-soft);
-}
-
-.tone-primary {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
-}
-
-.tone-neutral {
-  color: var(--text-secondary);
-  background: var(--surface-3);
-}
-
-.tone-danger {
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .card-meta {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
   font-family: var(--font-mono);
@@ -768,7 +721,7 @@ function applyLimit(): void {
   border-top: 1px solid var(--surface-border-soft);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .detail-item {

@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { KeyRound, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2 } from '@lucide/vue'
 import { licenseState, activateLicense, deactivateLicense } from '../store/license'
+import AppButton from './atoms/AppButton.vue'
 
 const open = ref(false)
 const licenseInput = ref('')
@@ -50,7 +51,11 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       title="Licença"
       @click="open = !open"
     >
-      <component :is="meta.icon" :size="14" :class="{ spin: licenseState.status === 'checking' }" />
+      <component
+        :is="meta.icon"
+        :size="14"
+        :class="{ 'animate-spin': licenseState.status === 'checking' }"
+      />
       <span class="license-pill-label">{{ meta.label }}</span>
     </button>
 
@@ -71,9 +76,9 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         "
       >
         <p class="popover-detail success"><ShieldCheck :size="13" /> Ativa nesta instalação</p>
-        <button class="popover-btn danger" type="button" @click="deactivateLicense">
+        <AppButton variant="danger" class="mt-1" @click="deactivateLicense">
           Desativar nesta instalação
-        </button>
+        </AppButton>
       </template>
 
       <template v-else>
@@ -89,14 +94,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
         />
         <p class="popover-hint">Enviado por e-mail após a compra.</p>
         <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
-        <button
-          class="popover-btn primary"
-          type="button"
+        <AppButton
+          variant="primary"
+          class="mt-1"
           :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
           @click="submit"
         >
           {{ licenseState.status === 'checking' ? 'Ativando…' : 'Ativar' }}
-        </button>
+        </AppButton>
       </template>
     </div>
   </div>
@@ -110,10 +115,10 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .license-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   height: 34px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: 1px solid var(--surface-border-soft);
   background: var(--surface-1);
   color: var(--text-secondary);
@@ -145,16 +150,6 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   background: var(--color-danger-soft);
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .license-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -168,7 +163,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
   padding: var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .popover-title {
@@ -223,31 +218,6 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 
 .popover-error {
   font-size: 11px;
-  color: var(--color-danger);
-}
-
-.popover-btn {
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  margin-top: 4px;
-}
-
-.popover-btn.primary {
-  background: var(--color-primary);
-  color: #fff;
-}
-
-.popover-btn.primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.popover-btn.danger {
-  background: var(--color-danger-soft);
   color: var(--color-danger);
 }
 </style>

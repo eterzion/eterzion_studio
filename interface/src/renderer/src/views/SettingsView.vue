@@ -33,12 +33,13 @@ import SettingSwitch from '../components/SettingSwitch.vue'
 import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
+import AppButton from '../components/atoms/AppButton.vue'
 import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/settings'
 import { ACCENT_COLORS, type AccentColor } from '../theme'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { clearHistory, historyState } from '../store/history'
-import { listComponents } from '../apiClient'
-import { api, hasNativeApi } from '../nativeBridge'
+import { listComponents } from '../services/api'
+import { api, hasNativeApi } from '../services/native'
 
 const { t } = useI18n()
 
@@ -297,14 +298,14 @@ const outputFolderLabel = computed(
               <span class="folder-picker-value" :title="outputFolderLabel">{{
                 outputFolderLabel
               }}</span>
-              <button
-                class="icon-btn"
-                type="button"
+              <AppButton
+                variant="secondary"
+                icon-only
                 :disabled="!hasNativeApi"
                 @click="pickDefaultOutputFolder"
               >
-                <FolderOpen :size="15" />
-              </button>
+                <template #icon><FolderOpen :size="15" /></template>
+              </AppButton>
             </div>
           </SettingRow>
           <SettingRow
@@ -424,20 +425,17 @@ const outputFolderLabel = computed(
             label="Limpar histórico manualmente"
             description="Remove todos os registros salvos — não afeta os arquivos exportados"
           >
-            <button
-              class="danger-btn"
-              type="button"
-              :disabled="!historyCount"
-              @click="confirmClearHistory"
-            >
-              <Trash2 :size="14" /> {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
-            </button>
+            <AppButton variant="danger" :disabled="!historyCount" @click="confirmClearHistory">
+              <template #icon><Trash2 :size="14" /></template>
+              {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
+            </AppButton>
           </SettingRow>
           <SettingRow label="Limpar cache" description="Recarrega a lista de modelos direto da API">
             <div class="cache-row">
-              <button class="secondary-btn" type="button" @click="clearModelsCache">
-                <RotateCcw :size="14" /> Limpar cache
-              </button>
+              <AppButton variant="secondary" @click="clearModelsCache">
+                <template #icon><RotateCcw :size="14" /></template>
+                Limpar cache
+              </AppButton>
               <span v-if="cacheMessage" class="cache-message"
                 ><Check :size="12" /> {{ cacheMessage }}</span
               >
@@ -534,14 +532,15 @@ const outputFolderLabel = computed(
               Saiba mais em docs/models/MODEL_LICENSES.md <ExternalLink :size="12" />
             </button>
           </div>
-          <button
-            class="btn-outline credits-doc-btn"
-            type="button"
+          <AppButton
+            variant="outline"
+            class="credits-doc-btn"
             :disabled="!hasNativeApi"
             @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
           >
-            <ExternalLink :size="14" /> Ver documentação <ChevronRight :size="14" />
-          </button>
+            <template #icon><ExternalLink :size="14" /></template>
+            Ver documentação <ChevronRight :size="14" />
+          </AppButton>
         </div>
         <div class="group-body credits-body">
           <ul class="credits-list">
@@ -595,14 +594,14 @@ const outputFolderLabel = computed(
             <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
             <p>Em caso de dúvidas, consulte a documentação completa.</p>
           </div>
-          <button
-            class="btn-outline"
-            type="button"
+          <AppButton
+            variant="outline"
             :disabled="!hasNativeApi"
             @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
           >
-            <Scale :size="14" /> Sobre licenças <ExternalLink :size="12" />
-          </button>
+            <template #icon><Scale :size="14" /></template>
+            Sobre licenças <ExternalLink :size="12" />
+          </AppButton>
         </div>
       </section>
     </div>
@@ -634,28 +633,6 @@ const outputFolderLabel = computed(
   background: var(--surface-1);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-lg);
-}
-
-.btn-outline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-outline:hover:not(:disabled) {
-  background: var(--surface-3);
-}
-.btn-outline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .credits-header {
@@ -711,7 +688,7 @@ const outputFolderLabel = computed(
 }
 .credits-list li {
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--border-1);
+  border-bottom: 1px solid var(--surface-border);
 }
 .credits-list li:last-child {
   border-bottom: none;
@@ -762,7 +739,7 @@ const outputFolderLabel = computed(
 .credit-license-badge {
   flex-shrink: 0;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
@@ -854,7 +831,7 @@ const outputFolderLabel = computed(
 .folder-picker {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   max-width: 320px;
 }
 
@@ -864,30 +841,6 @@ const outputFolderLabel = computed(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.icon-btn {
-  flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-3);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.icon-btn:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--surface-2);
-}
-
-.icon-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .quality-control {
@@ -943,51 +896,13 @@ const outputFolderLabel = computed(
 .link-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   background: none;
   border: none;
   color: var(--color-primary);
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   cursor: pointer;
-}
-
-.danger-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--color-danger-soft);
-  border: 1px solid var(--color-danger);
-  color: var(--color-danger);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.danger-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondary-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.secondary-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .cache-row {
@@ -1020,7 +935,7 @@ const outputFolderLabel = computed(
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--on-primary);
   cursor: pointer;
   transition:
     transform var(--transition-fast),

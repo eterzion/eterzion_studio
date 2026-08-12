@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import type { ContentType, MediaType } from '../apiClient'
+import type { ContentType, MediaType } from '../services/api'
 import type { Job, JobStatus, ScaleConfig } from './jobs'
 import { settingsState } from './settings'
 

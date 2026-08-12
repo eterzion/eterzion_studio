@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
-import { ChevronDown, Search, Loader2, AlertCircle, Check } from '@lucide/vue'
+import { ChevronDown, Search, AlertCircle, Check } from '@lucide/vue'
+import AppSpinner from './atoms/AppSpinner.vue'
 import { useTruncated } from '../composables/useTruncated'
 
 export interface SelectOption {
@@ -205,7 +206,7 @@ watch(filteredOptions, () => {
           <span v-else class="trigger-placeholder">{{ placeholder }}</span>
         </slot>
       </span>
-      <Loader2 v-if="loading" :size="15" class="spin trigger-icon" />
+      <AppSpinner v-if="loading" :size="15" class="trigger-icon" />
       <ChevronDown v-else :size="15" class="trigger-icon chevron" :class="{ open }" />
     </button>
 
@@ -342,16 +343,6 @@ watch(filteredOptions, () => {
   transform: rotate(180deg);
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .error-text {
   display: flex;
   align-items: center;
@@ -386,7 +377,7 @@ watch(filteredOptions, () => {
 .search-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   padding: 8px 10px;
   border-bottom: 1px solid var(--surface-border-soft);
   flex-shrink: 0;
@@ -429,7 +420,7 @@ watch(filteredOptions, () => {
 .option {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-1-5);
   width: 100%;
   text-align: left;
   padding: 8px 10px;

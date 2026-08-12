@@ -1,6 +1,7 @@
 import '@fontsource-variable/inter'
 import '@fontsource-variable/jetbrains-mono'
 import './assets/main.css'
+import './styles/tailwind.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'

@@ -99,6 +99,13 @@ function openImage(id?: string): void {
 </template>
 
 <style scoped>
+/* FR-004 exception: this screen's category-card system (color-mix(), radial gradients,
+   layered box-shadows, clamp()-based responsive type, all driven by a per-card --tint CSS
+   custom property) is genuinely complex, bespoke, and — per research.md Audit (b) — uses
+   one-off color literals deliberately excluded from tokenization (none repeat elsewhere).
+   Converting it to Tailwind's arbitrary-value syntax would trade one form of literal values
+   for another with no reduction in duplication and real risk of a gradient/shadow typo, so
+   it stays hand-written. */
 .home-view {
   flex: 1;
   min-width: 0;

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { Loader2, ServerCrash } from '@lucide/vue'
+import { ServerCrash } from '@lucide/vue'
 import AppSidebar from './components/AppSidebar.vue'
+import AppButton from './components/atoms/AppButton.vue'
+import AppSpinner from './components/atoms/AppSpinner.vue'
 import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
 import ComponentsView from './views/ComponentsView.vue'
@@ -17,7 +19,7 @@ import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
 import { initLicense, isHardBlocked, licenseState } from './store/license'
 import { currentResolvedTheme } from './theme'
-import { hasNativeApi } from './nativeBridge'
+import { hasNativeApi } from './services/native'
 
 const active = ref<NavKey>('home')
 const darkMode = computed(() => currentResolvedTheme.value === 'dark')
@@ -61,14 +63,14 @@ onMounted(() => {
       />
 
       <div v-if="apiStatus.checking" class="api-status-view">
-        <Loader2 :size="28" class="spin" />
+        <AppSpinner :size="28" class="text-accent" />
         <p>Conectando ao servidor da API (astros_upscale_api)…</p>
       </div>
       <div v-else-if="apiStatus.error" class="api-status-view error">
         <ServerCrash :size="28" />
         <p class="api-error-title">Não foi possível conectar à API</p>
         <p class="api-error-detail">{{ apiStatus.error }}</p>
-        <button class="retry-btn" type="button" @click="checkApiStatus">Tentar novamente</button>
+        <AppButton variant="primary" size="lg" @click="checkApiStatus">Tentar novamente</AppButton>
       </div>
 
       <HomeView v-else-if="active === 'home'" @navigate="navigate" />
@@ -132,28 +134,5 @@ onMounted(() => {
   white-space: pre-wrap;
   font-size: var(--fs-caption);
   color: var(--text-secondary);
-}
-
-.retry-btn {
-  margin-top: var(--space-2);
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 9px 18px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-  color: var(--color-primary);
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

@@ -1,19 +1,19 @@
 import { reactive } from 'vue'
-import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
+import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   detectContentType,
   processJob as apiProcessJob,
   cancelJob as apiCancelJob,
   exportJob as apiExportJob,
-  subscribeJobProgress,
   getJob,
   type JobStatus as ApiJobStatus,
   type ErrorCategory,
   type ExportRequest,
   type ContentType,
   type Profile
-} from '../apiClient'
+} from '../services/api'
+import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
 
@@ -535,7 +535,7 @@ export interface ExportOptions {
   conflict: 'overwrite' | 'rename' | 'ask'
 }
 
-/** done -> exporting -> exported. Never re-runs the model — see backend.ts/exportJob. */
+/** done -> exporting -> exported. Never re-runs the model — see services/api.ts's exportJob. */
 export async function exportOne(
   job: Job,
   options: ExportOptions

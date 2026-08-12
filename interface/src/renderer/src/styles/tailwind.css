@@ -1,0 +1,53 @@
+/* Preflight (Tailwind's base-reset layer) is intentionally NOT imported — theme.css already
+   provides the app's own global reset (box-sizing, body margin, button font-family), and
+   pulling in Preflight too would change default browser-element styling (buttons, inputs,
+   headings) globally, before any component has actually been migrated to Tailwind utilities —
+   an unrequested visual change (FR-003) this feature must not introduce as a side effect of
+   merely configuring the build. */
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Maps Tailwind's theme namespace onto the tokens theme.css already defines, so theme.css
+   stays the single source of truth (it's what actually switches at runtime via
+   [data-theme]/[data-accent]/[data-density] attributes — see theme.css's own comments).
+
+   Radius, font-family and shadow are intentionally NOT re-declared here: theme.css already
+   names them --radius-sm/md/lg, --font-sans/mono, --shadow-sm/md — identical to Tailwind's
+   own theme keys, so a var() reference here would self-reference (CSS custom-property
+   cycle → invalid). Since those three are static (not theme/accent/density-reactive, unlike
+   colors/spacing below), components reference them directly via Tailwind v4's
+   `utility-(--custom-property)` arbitrary-value syntax, e.g. `rounded-(--radius-md)`,
+   `font-(--font-sans)`, `shadow-(--shadow-sm)` — no duplication, no collision. */
+@theme {
+  --color-surface-0: var(--surface-0);
+  --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-border: var(--surface-border);
+  --color-surface-border-soft: var(--surface-border-soft);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-hover);
+  --color-accent-soft: var(--color-primary-soft);
+
+  --color-state-success: var(--color-success);
+  --color-state-success-soft: var(--color-success-soft);
+  --color-state-warning: var(--color-warning);
+  --color-state-warning-soft: var(--color-warning-soft);
+  --color-state-danger: var(--color-danger);
+  --color-state-danger-soft: var(--color-danger-soft);
+
+  --color-on-primary: var(--on-primary);
+
+  /* Tailwind's --spacing-* namespace doesn't collide with the app's --space-* */
+  --spacing-1: var(--space-1);
+  --spacing-1-5: var(--space-1-5);
+  --spacing-2: var(--space-2);
+  --spacing-3: var(--space-3);
+  --spacing-4: var(--space-4);
+  --spacing-5: var(--space-5);
+}

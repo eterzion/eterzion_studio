@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
+import AppButton from '../components/atoms/AppButton.vue'
+import AppSpinner from '../components/atoms/AppSpinner.vue'
+import AppBadge from '../components/atoms/AppBadge.vue'
 import {
   Download,
   RefreshCw,
   Trash2,
   Info,
-  Loader2,
   AlertCircle,
   ShieldAlert,
   Image,
@@ -25,7 +27,7 @@ import {
   deleteComponent,
   type ComponentSummary,
   type ComponentDetails
-} from '../apiClient'
+} from '../services/api'
 import { licenseState, refreshLicenseStatus } from '../store/license'
 
 // UI-only copy/icon per capability — content_type slugs, not raw model
@@ -144,12 +146,13 @@ function stateLabel(state: ComponentSummary['install_state']): string {
   <div class="components-view">
     <TopBar title="Componentes">
       <template #actions>
-        <button class="btn-outline" type="button" @click="refresh">
-          <RefreshCw :size="15" /> Atualizar
-        </button>
-        <span v-if="licenseState.status === 'error'" class="license-error-badge">
+        <AppButton variant="outline" @click="refresh">
+          <template #icon><RefreshCw :size="15" /></template>
+          Atualizar
+        </AppButton>
+        <AppBadge v-if="licenseState.status === 'error'" tone="danger">
           <ShieldAlert :size="13" /> Erro de licença
-        </span>
+        </AppBadge>
       </template>
     </TopBar>
 
@@ -161,7 +164,7 @@ function stateLabel(state: ComponentSummary['install_state']): string {
       <p v-if="loadError" class="banner-error"><AlertCircle :size="14" /> {{ loadError }}</p>
       <p v-if="actionError" class="banner-error"><AlertCircle :size="14" /> {{ actionError }}</p>
 
-      <div v-if="loading" class="status-row"><Loader2 :size="18" class="spin" /> Carregando…</div>
+      <div v-if="loading" class="status-row"><AppSpinner :size="18" /> Carregando…</div>
 
       <div v-else class="component-list">
         <div v-for="component in components" :key="component.id" class="component-card">
@@ -188,50 +191,53 @@ function stateLabel(state: ComponentSummary['install_state']): string {
               </p>
             </div>
             <div class="component-actions">
-              <button
-                class="icon-btn"
-                type="button"
+              <AppButton
+                variant="ghost"
+                icon-only
                 title="Detalhes técnicos"
                 @click="toggleDetails(component)"
               >
-                <Info :size="16" />
-              </button>
-              <button
+                <template #icon><Info :size="16" /></template>
+              </AppButton>
+              <AppButton
                 v-if="component.install_state === 'not_installed'"
-                class="btn-outline small"
-                type="button"
+                variant="outline"
+                size="sm"
                 :disabled="busyId === component.id"
                 @click="runAction(component, 'install')"
               >
-                <Download :size="14" /> Instalar
-              </button>
-              <button
+                <template #icon><Download :size="14" /></template>
+                Instalar
+              </AppButton>
+              <AppButton
                 v-if="component.install_state === 'update_available'"
-                class="btn-outline small"
-                type="button"
+                variant="outline"
+                size="sm"
                 :disabled="busyId === component.id"
                 @click="runAction(component, 'update')"
               >
-                <RefreshCw :size="14" /> Atualizar
-              </button>
-              <button
+                <template #icon><RefreshCw :size="14" /></template>
+                Atualizar
+              </AppButton>
+              <AppButton
                 v-if="
                   component.install_state === 'installed' ||
                   component.install_state === 'update_available'
                 "
-                class="btn-outline small danger"
-                type="button"
+                variant="danger"
+                size="sm"
                 :disabled="busyId === component.id"
                 @click="runAction(component, 'delete')"
               >
-                <Trash2 :size="14" /> Remover
-              </button>
-              <Loader2 v-if="busyId === component.id" :size="16" class="spin" />
+                <template #icon><Trash2 :size="14" /></template>
+                Remover
+              </AppButton>
+              <AppSpinner v-if="busyId === component.id" :size="16" />
             </div>
           </div>
 
           <div v-if="expandedId === component.id" class="details-panel">
-            <Loader2 v-if="detailsLoading === component.id" :size="16" class="spin" />
+            <AppSpinner v-if="detailsLoading === component.id" :size="16" />
             <dl v-else-if="details[component.id]" class="details-grid">
               <dt>Nome técnico</dt>
               <dd>{{ details[component.id].technical_name }}</dd>
@@ -255,9 +261,10 @@ function stateLabel(state: ComponentSummary['install_state']): string {
             Verifique sua conexão com a internet ou tente novamente mais tarde.
           </p>
         </div>
-        <button class="btn-outline" type="button" @click="refreshLicenseStatus">
-          <RefreshCw :size="14" /> Tentar novamente
-        </button>
+        <AppButton variant="outline" @click="refreshLicenseStatus">
+          <template #icon><RefreshCw :size="14" /></template>
+          Tentar novamente
+        </AppButton>
       </div>
     </div>
   </div>
@@ -283,23 +290,12 @@ function stateLabel(state: ComponentSummary['install_state']): string {
   color: var(--text-secondary);
   font-size: var(--fs-body-sm);
 }
-.license-error-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-  border-radius: 999px;
-  padding: 5px 10px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-}
 .license-banner {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   background: var(--surface-1);
-  border: 1px solid var(--border-1);
+  border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   padding: var(--space-3);
 }
@@ -342,7 +338,7 @@ function stateLabel(state: ComponentSummary['install_state']): string {
 }
 .component-card {
   background: var(--surface-1);
-  border: 1px solid var(--border-1);
+  border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   padding: var(--space-3);
   display: flex;
@@ -408,19 +404,8 @@ function stateLabel(state: ComponentSummary['install_state']): string {
   align-items: center;
   gap: var(--space-2);
 }
-.btn-outline.small {
-  padding: 4px 10px;
-  font-size: var(--fs-body-sm);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-.btn-outline.small.danger {
-  color: var(--color-danger);
-  border-color: var(--color-danger);
-}
 .details-panel {
-  border-top: 1px solid var(--border-1);
+  border-top: 1px solid var(--surface-border);
   padding-top: var(--space-2);
 }
 .details-grid {
@@ -439,13 +424,5 @@ function stateLabel(state: ComponentSummary['install_state']): string {
 }
 .provenance {
   word-break: break-all;
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

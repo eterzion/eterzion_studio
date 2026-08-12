@@ -1,6 +1,33 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.3.0 → 2.4.0 (2026-08-12)
+
+MINOR bump rationale: Principle X (Interface Structure Is Adapted, Not Templated) was materially
+expanded — it adds permission and constraints that did not previously exist (Atomic Design tiers,
+Tailwind design tokens, and a `services/` split, each conditional on a confirmed duplication audit)
+without removing or weakening any existing rule, so it is not a MAJOR change; it is more than a
+wording clarification, so it is not a PATCH.
+
+Modified principles: X. Interface Structure Is Adapted, Not Templated (unchanged title — the
+"component organisation follows reuse, not a fixed taxonomy" clause is extended to state that
+Atomic Design tiers MAY be adopted once an audit confirms real, repeated component duplication;
+a new clause permits a Tailwind-based design system to replace hand-written CSS under the same
+"real duplication, not a template" test, with a hard requirement to preserve existing visual
+behaviour; the "external-access code is isolated" clause is extended to cover a possible
+`services/api|websocket|native` split replacing `apiClient.ts`/`nativeBridge.ts`, forbidding empty
+scaffolds for traffic that doesn't exist; "no abstraction without a real consumer" and "dead code
+deleted, not archived" are restated as applying identically to these new allowances, not relaxed
+by them).
+Modified sections: none outside Principle X — Governance's compliance review gate list already
+names Principle X, no change needed there.
+Removed sections: none.
+Templates requiring review: none — the change narrows/extends conditions under an existing
+principle and does not contradict spec/plan/tasks template guidance.
+
+---
+Previous report
+---------------
 Version change: 2.2.0 → 2.3.0 (2026-08-12)
 
 MINOR bump rationale: a new principle (XI. API Structure Is Consolidated By Domain, Not By Class)
@@ -384,28 +411,54 @@ application would create structure with no real purpose.
 - **No empty domain/application layers.** Because Principle IX already requires every piece of
   business logic to live in `api/`, `interface/` MUST NOT contain `domain/`, `application/`, or
   `use-cases/` directories. A layer that would hold nothing (or near-nothing) because the logic it
-  is supposed to contain lives elsewhere is not architecture, it is decoration.
-- **Component organisation follows reuse, not a fixed taxonomy.** `interface/` is not obligated
-  to use the full Atomic Design five-tier split (atoms/molecules/organisms/templates/pages). A
-  simpler split — generic, reusable primitives versus composite blocks tied to one feature — MUST
-  be used only where it measurably reduces fragmentation, and MUST NOT be imposed as a taxonomy
-  exercise on a component count too small to need it.
+  is supposed to contain lives elsewhere is not architecture, it is decoration. This rule is not
+  relaxed by anything below.
+- **Component organisation follows reuse, confirmed by audit, not a fixed taxonomy.**
+  `interface/` is not obligated to use the full Atomic Design five-tier split
+  (atoms/molecules/organisms/templates/pages), and MUST NOT adopt it as a taxonomy exercise on a
+  component count too small to need it. Once a concrete audit of the actual components and views
+  confirms real, repeated duplication (the same button/card/form-field/modal pattern reimplemented
+  independently across multiple files), some or all Atomic Design tiers MAY be adopted as the
+  organising structure for `components/` — adopted only for the tiers that duplication actually
+  justifies, not applied uniformly out of consistency for its own sake. A tier with one or two
+  members that could as easily sit in a flatter structure is not justified by this clause.
+- **A Tailwind-based design system MAY replace hand-written CSS, without becoming a redesign.**
+  The current hand-written stylesheets (`base.css`, `main.css`, `theme.css`) MAY be replaced by
+  Tailwind CSS utilities plus a small set of semantic design tokens (colour, spacing, typography,
+  radius, shadow — expressed as Tailwind theme extensions, not scattered literals), when doing so
+  measurably removes real, repeated duplication across component styles. The migration MUST
+  preserve existing visual behaviour — colours, spacing, typography, layout, hierarchy — as it
+  stands today; a visual change is permitted only where it fixes a confirmed inconsistency between
+  screens, never as an unrequested redesign riding along with the structural change. Hand-written
+  CSS MAY remain where Tailwind genuinely cannot express the need (Electron-specific integration,
+  custom scrollbars, complex pseudo-elements, third-party library overrides, non-trivial
+  animation) — it MUST NOT remain merely out of convenience once an equivalent utility exists.
 - **External-access code is isolated and named for what it does.** The boundary code that talks
   to something outside the renderer process (the Electron `contextBridge` bridge, the HTTP/WebSocket
   client that talks to `api/astros_upscale_api`) MUST be kept out of components and views — no
   component or view may call `fetch`/IPC directly — and MUST be named so its purpose is obvious
   from the name alone. It MUST NOT be dressed up as a `repository`/`port`/`adapter` abstraction
-  when there is, and will only ever be, one real implementation.
+  when there is, and will only ever be, one real implementation. Where the volume of HTTP
+  endpoints or Electron-bridge calls genuinely justifies splitting today's single `apiClient.ts`/
+  `nativeBridge.ts` into a `services/` layer (e.g. `services/api/`, `services/native/`), the same
+  naming-for-what-it-does rule applies to each resulting file; a `services/websocket/` (or any
+  other) split MUST NOT be created as an empty or near-empty scaffold when the application has no
+  corresponding real traffic to centralise there.
 - **No abstraction without a real consumer.** Interfaces or contracts for a single implementation,
   wrapper functions that only forward a call, `index.ts` files that exist only to re-export, and
   splitting a file for line-count reasons alone (with no distinct responsibility behind the split)
-  are all prohibited. A file MUST be split only when it has genuinely separable responsibilities,
-  is reused from more than one place, or splitting it measurably improves testability or
-  maintainability — never on size alone.
+  are all prohibited — this applies identically to Atomic Design tiers, design tokens, and the
+  `services/` split described above: each one MUST be justified by a real, cited duplication or
+  responsibility, not created to satisfy the shape of a template. A file MUST be split only when
+  it has genuinely separable responsibilities, is reused from more than one place, or splitting it
+  measurably improves testability or maintainability — never on size alone.
 - **Dead code is deleted, not archived.** Files or folders named/suffixed `old`, `legacy`,
   `deprecated`, `backup`, `copy`, `temp`, `v1`, `previous` (or equivalent) MUST NOT exist in
   `interface/`. If the current flow does not use it, it is removed — "keeping it just in case" is
-  not a valid reason to keep unreferenced code in a version-controlled repository.
+  not a valid reason to keep unreferenced code in a version-controlled repository. This rule is
+  not relaxed by anything above: once a component, style, or module is superseded by its Atomic
+  Design/Tailwind/`services/` equivalent, the superseded version MUST be deleted in the same body
+  of work, not kept alongside it "for comparison."
 
 **Rationale:** this project already carries the scar tissue of applying structure for its own
 sake — three independently-grown backend surfaces before Principle IX consolidated them. Importing
@@ -413,7 +466,13 @@ a generic "medium/large web project" template wholesale into a small, thin Elect
 reproduce that exact mistake on the frontend: folders that exist to satisfy a pattern instead of a
 real need, adding indirection a ~20-component app never asked for. Principle II (Reuse First) and
 this principle share the same instinct — prefer what the codebase already needs over what a
-template says it should have.
+template says it should have. `interface/` has since grown to roughly 19 components and 10 views
+with confirmed repeated UI patterns (buttons, cards, form fields, modals reimplemented
+independently) and CSS that a README already claimed was Tailwind-based but wasn't — the same
+instinct that kept this principle's original judgment conditional ("too small to need it") is what
+now permits Atomic Design tiers, Tailwind design tokens, and a `services/` split once an audit
+confirms the condition that was previously absent is now present. The bar does not move: structure
+is still earned by demonstrated duplication, never assumed from a template's shape.
 
 ### XI. API Structure Is Consolidated By Domain, Not By Class
 
@@ -541,6 +600,49 @@ preferred to a more capable one that exceeds it.
 
 ### Amendment log
 
+**v2.4.0 — 2026-08-12 — Principle X expanded: Atomic Design, Tailwind design tokens and a
+`services/` split MAY be adopted once duplication is confirmed**
+
+*What changed:* Principle X's "component organisation follows reuse, not a fixed taxonomy" clause
+now explicitly permits adopting Atomic Design tiers (atoms/molecules/organisms/templates/pages —
+whichever tiers duplication actually justifies, not necessarily all five) once a concrete audit
+confirms real, repeated UI duplication. A new clause permits replacing the hand-written stylesheets
+(`base.css`, `main.css`, `theme.css`) with Tailwind CSS plus a small set of semantic design tokens
+under the same "confirmed duplication, not a template" test, with a hard requirement to preserve
+existing visual behaviour — this is a refactor, not a redesign, unless a change fixes a confirmed
+cross-screen inconsistency. The "external-access code is isolated and named for what it does"
+clause is extended to cover a possible split of today's single `apiClient.ts`/`nativeBridge.ts`
+into a `services/api/`, `services/websocket/`, `services/native/` layer, with the constraint that a
+sub-folder MUST NOT exist as an empty scaffold for traffic the application doesn't actually have
+(e.g. no `services/websocket/` unless the app genuinely uses a WebSocket). The existing "no empty
+domain/application layers", "no abstraction without a real consumer", and "dead code deleted, not
+archived" rules are restated as applying identically to all of the above — explicitly not relaxed.
+
+*Why:* a full interface/ refactor was requested (Atomic Design, an internal design system,
+complete Tailwind migration, an explicit services/ layer) that sits in real tension with this
+principle's original, more skeptical wording ("not obligated to use the full ... split", "MUST NOT
+be imposed ... on a component count too small to need it"). The request itself already agrees with
+Principle X's underlying instinct — it explicitly frames the target structure as "uma referência
+arquitetural, não uma obrigação literal", asks for pragmatic tier adoption rather than a checklist,
+and forbids empty directories/files, unused abstractions, and unnecessary `index.ts` files. So this
+amendment is not a reversal of Principle X's philosophy; it is that same philosophy applied to a
+scale trigger the original wording reserved judgment on. `interface/` has grown to roughly 19
+components and 10 views, with an audit-confirmable amount of repeated button/card/form-field/modal
+UI, and its README already (inaccurately) claimed Tailwind was already in use — the condition
+Principle X's "too small to need it" language was waiting for is now plausibly met, but the
+principle still requires that condition to be *confirmed by audit*, not assumed from the shape of
+a template, before any tier, token, or services/ sub-folder is created.
+
+*Migration:* no existing compliant code becomes non-compliant by this amendment alone. It
+authorises — but does not itself perform — the reorganisation carried out under the feature spec
+that follows it. The duplication audit required by this amendment is part of that feature's
+`/speckit.plan`/`/speckit.tasks` work, not of this constitutional change.
+
+*Risk accepted:* none beyond what Principle X already accepted when first ratified — this
+amendment only makes explicit, conditional permission for structure the codebase did not
+previously have codified; it does not permit skipping the audit, and it does not permit anything
+that contradicts the "adapted, not templated" instinct the rest of the principle still enforces.
+
 **v2.0.0 — 2026-08-08 — Principle V bounded exception for technical disclosure**
 
 *What changed:* Principle V previously forbade exposing model names anywhere, unconditionally. It
@@ -644,4 +746,4 @@ itself move, merge, or delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 2.3.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
+**Version**: 2.4.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12

@@ -98,7 +98,7 @@ function onPointerUp(): void {
   color: var(--text-primary);
   background: rgba(11, 14, 20, 0.72);
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   letter-spacing: 0.03em;
   pointer-events: none;
 }

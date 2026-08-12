@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { api, hasNativeApi } from '../nativeBridge'
+import { api, hasNativeApi } from '../services/native'
 import { settingsState } from '../store/settings'
 import { exportOne, type Job } from '../store/jobs'
 

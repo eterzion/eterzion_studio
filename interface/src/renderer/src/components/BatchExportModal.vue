@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { X, Loader2, CheckCircle2, AlertCircle, FolderOpen } from '@lucide/vue'
+import { X, CheckCircle2, AlertCircle, FolderOpen } from '@lucide/vue'
 import type { Job, ExportOptions } from '../store/jobs'
 import { exportOne } from '../store/jobs'
-import { api, hasNativeApi } from '../nativeBridge'
+import { api, hasNativeApi } from '../services/native'
 import AppSelect from './AppSelect.vue'
+import AppButton from './atoms/AppButton.vue'
+import AppSpinner from './atoms/AppSpinner.vue'
 
 const formatOptions = [
   { value: 'png', label: '.png' },
@@ -71,7 +73,9 @@ async function run(): Promise<void> {
     <div class="modal">
       <div class="modal-header">
         <h3>Exportar tudo</h3>
-        <button class="icon-btn" type="button" @click="emit('close')"><X :size="18" /></button>
+        <AppButton variant="ghost" icon-only @click="emit('close')">
+          <template #icon><X :size="18" /></template>
+        </AppButton>
       </div>
 
       <div v-if="!finished" class="modal-body">
@@ -101,25 +105,26 @@ async function run(): Promise<void> {
               :value="outputDir ?? 'Mesma pasta do original'"
               readonly
             />
-            <button class="folder-btn" type="button" @click="pickFolder">
-              <FolderOpen :size="15" />
-            </button>
+            <AppButton variant="secondary" icon-only @click="pickFolder">
+              <template #icon><FolderOpen :size="15" /></template>
+            </AppButton>
           </div>
         </div>
 
         <p v-if="running" class="progress-text">
-          <Loader2 :size="14" class="spin" /> Exportando {{ doneCount }} de
+          <AppSpinner :size="14" /> Exportando {{ doneCount }} de
           {{ selectedJobs.length }}
         </p>
 
-        <button
-          class="btn-primary"
-          type="button"
+        <AppButton
+          variant="primary"
+          size="lg"
+          class="w-full"
           :disabled="running || !selectedJobs.length"
           @click="run"
         >
           Exportar {{ selectedJobs.length }} imagem{{ selectedJobs.length === 1 ? '' : 's' }}
-        </button>
+        </AppButton>
       </div>
 
       <div v-else class="modal-body">
@@ -138,7 +143,9 @@ async function run(): Promise<void> {
             <span v-if="!r.ok" class="report-error">{{ r.error }}</span>
           </div>
         </div>
-        <button class="btn-primary" type="button" @click="emit('close')">Fechar</button>
+        <AppButton variant="primary" size="lg" class="w-full" @click="emit('close')"
+          >Fechar</AppButton
+        >
       </div>
     </div>
   </div>
@@ -180,13 +187,6 @@ async function run(): Promise<void> {
   color: var(--text-primary);
 }
 
-.icon-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
 .modal-body {
   padding: var(--space-4);
   display: flex;
@@ -202,7 +202,7 @@ async function run(): Promise<void> {
 .job-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
   max-height: 180px;
   overflow-y: auto;
 }
@@ -225,7 +225,7 @@ async function run(): Promise<void> {
 .field-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .field-label {
@@ -255,38 +255,12 @@ async function run(): Promise<void> {
   white-space: nowrap;
 }
 
-.folder-btn {
-  flex-shrink: 0;
-  width: 36px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-3);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
 .progress-text {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--text-secondary);
-}
-
-.btn-primary {
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .report-summary {
@@ -298,7 +272,7 @@ async function run(): Promise<void> {
 .report-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
 }
 
@@ -315,15 +289,5 @@ async function run(): Promise<void> {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 </style>

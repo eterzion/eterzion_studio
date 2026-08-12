@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { ChevronDown, Copy, Check } from '@lucide/vue'
+import AppButton from './atoms/AppButton.vue'
 
 defineProps<{
   summary: string
@@ -29,10 +30,10 @@ async function copy(text: string): Promise<void> {
     </button>
     <div v-if="open" class="details-body">
       <pre class="details-text">{{ text }}</pre>
-      <button class="copy-btn" type="button" @click="copy(text)">
-        <component :is="copied ? Check : Copy" :size="12" />
+      <AppButton variant="secondary" size="sm" @click="copy(text)">
+        <template #icon><component :is="copied ? Check : Copy" :size="12" /></template>
         {{ copied ? 'Copiado' : 'Copiar' }}
-      </button>
+      </AppButton>
     </div>
   </div>
 </template>
@@ -67,7 +68,7 @@ async function copy(text: string): Promise<void> {
 .details-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .details-text {
@@ -84,23 +85,5 @@ async function copy(text: string): Promise<void> {
   white-space: pre-wrap;
   overflow-wrap: break-word;
   word-break: break-word;
-}
-
-.copy-btn {
-  align-self: flex-start;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.copy-btn:hover {
-  color: var(--text-primary);
 }
 </style>

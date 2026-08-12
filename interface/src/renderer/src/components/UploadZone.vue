@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { UploadCloud, FolderOpen, FolderUp, FileWarning, Loader2 } from '@lucide/vue'
+import { UploadCloud, FolderOpen, FolderUp, FileWarning } from '@lucide/vue'
+import AppButton from './atoms/AppButton.vue'
+import AppSpinner from './atoms/AppSpinner.vue'
+import AppBadge from './atoms/AppBadge.vue'
 
 withDefaults(
   defineProps<{
@@ -60,16 +63,16 @@ function onKeydown(e: KeyboardEvent): void {
     <div class="drop-ring" aria-hidden="true" />
 
     <template v-if="loading">
-      <Loader2 :size="26" class="icon-circle-spin" />
+      <AppSpinner :size="26" class="icon-circle-spin" />
       <h3 class="upload-title">Importando arquivos…</h3>
     </template>
     <template v-else-if="error">
       <div class="icon-circle icon-error"><FileWarning :size="26" /></div>
       <h3 class="upload-title">Não foi possível importar os arquivos</h3>
       <p class="upload-subtitle">{{ error }}</p>
-      <button class="btn-primary" type="button" @click.stop="emit('pickFiles')">
+      <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
         Tentar novamente
-      </button>
+      </AppButton>
     </template>
     <template v-else>
       <div class="icon-circle" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
@@ -81,19 +84,21 @@ function onKeydown(e: KeyboardEvent): void {
       </p>
 
       <div class="upload-actions">
-        <button class="btn-primary" type="button" @click.stop="emit('pickFiles')">
-          <FolderOpen :size="16" /> Selecionar arquivos
-        </button>
-        <button class="btn-secondary" type="button" @click.stop="emit('pickFolder')">
-          <FolderUp :size="16" /> Selecionar pasta
-        </button>
+        <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
+          <template #icon><FolderOpen :size="16" /></template>
+          Selecionar arquivos
+        </AppButton>
+        <AppButton variant="secondary" size="lg" @click.stop="emit('pickFolder')">
+          <template #icon><FolderUp :size="16" /></template>
+          Selecionar pasta
+        </AppButton>
       </div>
 
       <div class="upload-meta">
         <div class="format-chips">
-          <span v-for="fmt in ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']" :key="fmt" class="chip">{{
-            fmt
-          }}</span>
+          <AppBadge v-for="fmt in ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']" :key="fmt" tone="neutral">
+            {{ fmt }}
+          </AppBadge>
         </div>
         <span class="upload-limit">até 500 MB por arquivo</span>
       </div>
@@ -199,13 +204,6 @@ function onKeydown(e: KeyboardEvent): void {
 .icon-circle-spin {
   color: var(--color-primary);
   margin-bottom: var(--space-1);
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 .upload-title {
@@ -232,7 +230,7 @@ function onKeydown(e: KeyboardEvent): void {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   margin-top: var(--space-2);
 }
 
@@ -240,70 +238,12 @@ function onKeydown(e: KeyboardEvent): void {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   max-width: 480px;
-}
-
-.chip {
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  color: var(--text-tertiary);
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border-soft);
-  padding: 3px 9px;
-  border-radius: 999px;
 }
 
 .upload-limit {
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
-}
-
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 9px 16px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-}
-
-.btn-primary:focus-visible {
-  outline: 2px solid #fff;
-  outline-offset: 2px;
-}
-
-.btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-2);
-  color: var(--text-primary);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm);
-  padding: 9px 16px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.btn-secondary:hover {
-  background: var(--surface-3);
-}
-
-.btn-secondary:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
 </style>

@@ -150,6 +150,7 @@
 :root {
   /* Spacing grid */
   --space-1: 4px;
+  --space-1-5: 6px;
   --space-2: 8px;
   --space-3: 16px;
   --space-4: 24px;
@@ -159,6 +160,11 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
+  --radius-full: 999px;
+
+  /* Text/icon on a colored (accent/primary) background — always white regardless of
+     light/dark theme, since accent colors are chosen for contrast against white. */
+  --on-primary: #fff;
 
   /* Typography */
   --font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -191,6 +197,7 @@ body {
    reaches the whole app without per-component changes. */
 :root[data-density='compact'] {
   --space-1: 3px;
+  --space-1-5: 4.5px;
   --space-2: 6px;
   --space-3: 12px;
   --space-4: 18px;
@@ -200,6 +207,7 @@ body {
 
 :root[data-density='comfortable'] {
   --space-1: 6px;
+  --space-1-5: 8px;
   --space-2: 10px;
   --space-3: 20px;
   --space-4: 30px;

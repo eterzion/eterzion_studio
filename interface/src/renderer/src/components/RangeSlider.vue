@@ -91,14 +91,14 @@ function onInput(e: Event): void {
   right: 0;
   top: 50%;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
   transform: translateY(-50%);
 }
 
 .fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--color-primary);
 }
 

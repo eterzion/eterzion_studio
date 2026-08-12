@@ -1,6 +1,6 @@
 import { ref, type ComputedRef, type Ref } from 'vue'
-import { hasNativeApi } from '../nativeBridge'
-import { previewDenoise, type DenoisePreview } from '../apiClient'
+import { hasNativeApi } from '../services/native'
+import { previewDenoise, type DenoisePreview } from '../services/api'
 
 type DenoisePresetKey = 'low' | 'medium' | 'high' | 'custom'
 

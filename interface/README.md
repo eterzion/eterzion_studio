@@ -52,9 +52,45 @@ o fluxo de ativação em desenvolvimento, rode-o à parte (veja
 `api/astros_licensing_service/`).
 
 O app fala com `http://127.0.0.1:8765` — hoje esse endereço é uma constante
-fixa em `src/main/apiProcess.ts` e `src/renderer/src/apiClient.ts` (não há
+fixa em `src/main/apiProcess.ts` e `src/renderer/src/services/api.ts` (não há
 `.env`/`VITE_API_BASE_URL` lido em tempo de build); para apontar para uma
 API remota é preciso editar essas duas constantes diretamente.
+
+## Estrutura
+
+```
+src/
+├── main/                    # processo principal do Electron
+│   ├── index.ts             # bootstrap: liga janela, IPC e protocolo custom
+│   ├── apiProcess.ts        # inicia/encerra api/astros_upscale_api
+│   ├── protocols/           # protocolo astros-media:// (serve preview/thumbnails)
+│   ├── windows/             # criação da BrowserWindow
+│   └── ipc/                 # handlers IPC (diálogos nativos, app info)
+│
+├── preload/                 # contextBridge — única ponte renderer → main
+│
+└── renderer/src/
+    ├── App.vue, main.ts
+    ├── views/                # as 10 telas do app
+    ├── components/
+    │   ├── atoms/            # AppButton, AppSpinner, AppBadge
+    │   ├── molecules/        # JobCard, EmptyState
+    │   └── *.vue             # demais componentes, sem tier forçado
+    ├── services/
+    │   ├── api.ts            # cliente HTTP de api/astros_upscale_api
+    │   ├── websocket.ts       # progresso de job em tempo real (WebSocket)
+    │   └── native.ts          # wrapper sobre window.api (preload)
+    ├── store/                # estado global (jobs, history, settings, license, apiStatus)
+    ├── composables/
+    ├── i18n/                 # vue-i18n, 11 idiomas
+    ├── styles/tailwind.css   # config do Tailwind (tokens mapeados de assets/theme.css)
+    └── assets/theme.css      # fonte da verdade dos design tokens (cor, spacing, radius…)
+```
+
+Os tiers `atoms/`/`molecules/` só existem para os componentes com duplicação
+real confirmada (ver `specs/005-interface-design-system/research.md`) — a
+maioria dos componentes continua solta em `components/`, sem taxonomia
+forçada (Princípio X da constituição do projeto).
 
 ## Empacotar um instalador
 

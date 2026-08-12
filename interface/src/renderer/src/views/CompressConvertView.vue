@@ -3,24 +3,20 @@ import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
-import {
-  Upload,
-  FolderOpen,
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
-  Download
-} from '@lucide/vue'
-import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
+import AppButton from '../components/atoms/AppButton.vue'
+import AppSpinner from '../components/atoms/AppSpinner.vue'
+import JobCard from '../components/molecules/JobCard.vue'
+import EmptyState from '../components/molecules/EmptyState.vue'
+import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download } from '@lucide/vue'
+import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   processJob as apiProcessJob,
-  subscribeJobProgress,
   getJob,
   type MediaType,
   type Operation
-} from '../apiClient'
+} from '../services/api'
+import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
 
@@ -210,15 +206,17 @@ function fmtBytes(bytes: number | undefined): string {
   <div class="optimize-view">
     <TopBar title="Otimizar">
       <template #actions>
-        <button class="btn-outline" type="button" @click="pickFiles">
-          <Upload :size="15" /> Importar
-        </button>
-        <button class="btn-outline" type="button" :disabled="!configuringCount" @click="runAll">
+        <AppButton variant="outline" @click="pickFiles">
+          <template #icon><Upload :size="15" /></template>
+          Importar
+        </AppButton>
+        <AppButton variant="outline" :disabled="!configuringCount" @click="runAll">
           Processar todos
-        </button>
-        <button class="btn-outline" type="button" :disabled="!doneCount" @click="exportAll">
-          <Download :size="15" /> Exportar tudo
-        </button>
+        </AppButton>
+        <AppButton variant="outline" :disabled="!doneCount" @click="exportAll">
+          <template #icon><Download :size="15" /></template>
+          Exportar tudo
+        </AppButton>
       </template>
     </TopBar>
 
@@ -229,22 +227,22 @@ function fmtBytes(bytes: number | undefined): string {
       </p>
       <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
-      <div v-if="!jobs.length" class="empty-state">
-        <p>Nenhum arquivo importado ainda.</p>
-        <button class="primary-btn" type="button" @click="pickFiles">
-          <Upload :size="15" /> Importar arquivo
-        </button>
-      </div>
+      <EmptyState
+        v-if="!jobs.length"
+        message="Nenhum arquivo importado ainda."
+        action-label="Importar arquivo"
+        @action="pickFiles"
+      >
+        <template #icon><Upload :size="15" /></template>
+      </EmptyState>
 
       <div v-else class="job-list">
-        <div v-for="job in jobs" :key="job.id" class="job-card">
-          <div class="job-card-header">
-            <span class="job-name">{{ job.file.name }}</span>
-            <button class="icon-btn" type="button" title="Remover" @click="removeJob(job)">
-              <XCircle :size="16" />
-            </button>
-          </div>
-
+        <JobCard
+          v-for="job in jobs"
+          :key="job.id"
+          :file-name="job.file.name"
+          @remove="removeJob(job)"
+        >
           <div v-if="job.status === 'configuring'" class="job-config">
             <div class="op-tabs">
               <button
@@ -282,32 +280,33 @@ function fmtBytes(bytes: number | undefined): string {
               />
             </div>
 
-            <button class="primary-btn" type="button" @click="runJob(job)">Processar</button>
+            <AppButton variant="primary" size="lg" @click="runJob(job)">Processar</AppButton>
           </div>
 
           <div v-else class="job-status">
             <div v-if="job.status === 'queued' || job.status === 'processing'" class="status-row">
-              <Loader2 :size="16" class="spin" />
+              <AppSpinner :size="16" />
               <span>{{ job.progress }}%</span>
             </div>
             <div v-else-if="job.status === 'done'" class="status-row done">
               <CheckCircle2 :size="16" />
               <span>Concluído — {{ fmtBytes(job.outputSizeBytes) }}</span>
-              <button
+              <AppButton
                 v-if="hasNativeApi && job.outputPath"
-                class="btn-outline small"
-                type="button"
+                variant="outline"
+                size="sm"
                 @click="api.showItemInFolder(job.outputPath!)"
               >
-                <FolderOpen :size="14" /> Abrir pasta
-              </button>
+                <template #icon><FolderOpen :size="14" /></template>
+                Abrir pasta
+              </AppButton>
             </div>
             <div v-else-if="job.status === 'error'" class="status-row error">
               <AlertCircle :size="16" />
               <span>{{ job.error }}</span>
             </div>
           </div>
-        </div>
+        </JobCard>
       </div>
     </div>
   </div>
@@ -340,37 +339,10 @@ function fmtBytes(bytes: number | undefined): string {
   color: var(--color-danger);
   font-size: var(--fs-body-sm);
 }
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-6);
-  color: var(--text-secondary);
-}
 .job-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-.job-card {
-  background: var(--surface-1);
-  border: 1px solid var(--border-1);
-  border-radius: var(--radius-md);
-  padding: var(--space-3);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-.job-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.job-name {
-  font-weight: 600;
-  font-size: var(--fs-label);
 }
 .op-tabs {
   display: flex;
@@ -380,14 +352,14 @@ function fmtBytes(bytes: number | undefined): string {
   flex: 1;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  border: 1px solid var(--border-1);
+  border: 1px solid var(--surface-border);
   background: var(--surface-2);
   color: var(--text-secondary);
   cursor: pointer;
 }
 .op-tab.active {
   background: var(--color-primary);
-  color: var(--on-primary, #fff);
+  color: var(--on-primary);
   border-color: var(--color-primary);
 }
 .field {
@@ -413,17 +385,5 @@ function fmtBytes(bytes: number | undefined): string {
 }
 .status-row.error {
   color: var(--color-danger);
-}
-.spin {
-  animation: spin 1s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.btn-outline.small {
-  padding: 4px 8px;
-  font-size: var(--fs-body-sm);
 }
 </style>

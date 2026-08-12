@@ -127,7 +127,7 @@ defineProps<{
 .summary-track {
   height: 5px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--tone-dark) 72%, #07121e);
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
 }

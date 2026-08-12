@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft } from '@lucide/vue'
 import LicenseWidget from './LicenseWidget.vue'
+import AppButton from './atoms/AppButton.vue'
 
 withDefaults(
   defineProps<{
@@ -18,9 +19,9 @@ defineEmits<{
 <template>
   <header class="topbar">
     <div class="topbar-left">
-      <button v-if="showBack" class="icon-btn" type="button" @click="$emit('back')">
-        <ArrowLeft :size="18" />
-      </button>
+      <AppButton v-if="showBack" variant="secondary" icon-only size="lg" @click="$emit('back')">
+        <template #icon><ArrowLeft :size="18" /></template>
+      </AppButton>
       <h1 class="page-title">{{ title }}</h1>
     </div>
 
@@ -61,24 +62,6 @@ defineEmits<{
   gap: var(--space-2);
 }
 
-.icon-btn {
-  width: 34px;
-  height: 34px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border-soft);
-  background: var(--surface-1);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.icon-btn:hover {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-
 .avatar {
   width: 34px;
   height: 34px;
@@ -87,7 +70,7 @@ defineEmits<{
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
-  color: #fff;
+  color: var(--on-primary);
   font-size: 13px;
   font-weight: var(--fw-semibold);
 }

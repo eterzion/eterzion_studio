@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { Clock, Loader2, CheckCircle2, AlertCircle, CircleX, X, Image } from '@lucide/vue'
 import type { Job } from '../store/jobs'
+import AppButton from './atoms/AppButton.vue'
 
 const props = defineProps<{
   job: Job
@@ -53,9 +54,9 @@ const sizeLabel = computed(
     <div class="info">
       <div class="info-top">
         <span class="file-name">{{ job.fileName }}</span>
-        <button class="remove-btn" type="button" @click.stop="$emit('remove', job.id)">
-          <X :size="14" />
-        </button>
+        <AppButton variant="ghost" icon-only size="sm" @click.stop="$emit('remove', job.id)">
+          <template #icon><X :size="14" /></template>
+        </AppButton>
       </div>
       <div class="meta">
         <span>Imagem · {{ job.sourceMeta.format }}</span>
@@ -69,7 +70,7 @@ const sizeLabel = computed(
         <component
           :is="statusMeta.icon"
           :size="13"
-          :class="{ spin: job.status === 'processing' }"
+          :class="{ 'animate-spin': job.status === 'processing' }"
         />
         <span>{{ statusMeta.label }}</span>
       </div>
@@ -142,7 +143,7 @@ const sizeLabel = computed(
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .info-top {
@@ -161,21 +162,6 @@ const sizeLabel = computed(
   white-space: nowrap;
 }
 
-.remove-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 4px;
-  flex-shrink: 0;
-}
-
-.remove-btn:hover {
-  color: var(--text-primary);
-  background: var(--surface-3);
-}
-
 .meta {
   display: flex;
   gap: var(--space-2);
@@ -186,7 +172,7 @@ const sizeLabel = computed(
 .status-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
 }
@@ -207,26 +193,16 @@ const sizeLabel = computed(
   color: var(--color-danger);
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .progress-track {
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
   overflow: hidden;
 }
 
 .progress-fill {
   height: 100%;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   transition: width 200ms ease;
 }
 

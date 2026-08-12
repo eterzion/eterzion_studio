@@ -1,5 +1,5 @@
 import type { Ref } from 'vue'
-import { api, hasNativeApi, type DescribedFile } from '../nativeBridge'
+import { api, hasNativeApi, type DescribedFile } from '../services/native'
 
 // Consolidates the native "pick files → per-file callback" shell that was
 // byte-identical across VideoView/AudioView/CompressConvertView/ConverterView

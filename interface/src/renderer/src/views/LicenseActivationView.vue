@@ -9,16 +9,10 @@ import {
   Copy,
   XCircle,
   RefreshCw,
-  HelpCircle,
-  Package,
-  ArrowRight
+  HelpCircle
 } from '@lucide/vue'
-import {
-  licenseState,
-  activateLicense,
-  deactivateLicense,
-  refreshLicenseStatus
-} from '../store/license'
+import { licenseState, activateLicense, refreshLicenseStatus } from '../store/license'
+import AppButton from '../components/atoms/AppButton.vue'
 
 // T039: rendered by App.vue INSTEAD of the whole app shell (no sidebar)
 // whenever isHardBlocked() is true — before the first successful check this
@@ -86,7 +80,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
           <component
             :is="icon"
             :size="36"
-            :class="{ spin: licenseState.status === 'checking' }"
+            :class="{ 'animate-spin': licenseState.status === 'checking' }"
             class="license-icon"
           />
         </div>
@@ -109,15 +103,16 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
               class="license-input"
               @keydown.enter="submit"
             />
-            <button
-              class="copy-btn"
-              type="button"
+            <AppButton
+              variant="ghost"
+              icon-only
+              size="sm"
               title="Copiar"
               :disabled="!licenseInput.trim()"
               @click="copyInput"
             >
-              <Copy :size="14" />
-            </button>
+              <template #icon><Copy :size="14" /></template>
+            </AppButton>
           </div>
           <p v-if="copied" class="copied-hint">Copiado!</p>
         </div>
@@ -136,36 +131,32 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
         </div>
 
         <div class="actions-group">
-          <button
+          <AppButton
             v-if="isPrimaryActivate"
-            class="primary-btn"
-            type="button"
+            variant="primary"
+            size="lg"
+            class="w-full"
             :disabled="!licenseInput.trim()"
             @click="submit"
           >
-            <ShieldCheck :size="16" /> Ativar
-          </button>
-          <button v-else class="primary-btn" type="button" @click="refreshLicenseStatus">
-            <RefreshCw :size="16" /> Tentar novamente
-          </button>
+            <template #icon><ShieldCheck :size="16" /></template>
+            Ativar
+          </AppButton>
+          <AppButton
+            v-else
+            variant="primary"
+            size="lg"
+            class="w-full"
+            @click="refreshLicenseStatus"
+          >
+            <template #icon><RefreshCw :size="16" /></template>
+            Tentar novamente
+          </AppButton>
 
-          <button class="secondary-btn" type="button" @click="openHelp">
-            <HelpCircle :size="16" /> Precisa de ajuda?
-          </button>
-        </div>
-
-        <hr class="divider" />
-
-        <div class="release-row">
-          <Package :size="18" class="release-icon" />
-          <div class="release-text">
-            <p class="release-title">Já ativou em outra instalação?</p>
-            <p class="release-detail">Libere esta licença para utilizar aqui.</p>
-          </div>
-          <button class="release-link" type="button" @click="deactivateLicense">
-            Liberar licença
-            <ArrowRight :size="14" />
-          </button>
+          <AppButton variant="ghost" size="lg" class="w-full" @click="openHelp">
+            <template #icon><HelpCircle :size="16" /></template>
+            Precisa de ajuda?
+          </AppButton>
         </div>
       </template>
     </div>
@@ -192,7 +183,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   text-align: center;
   padding: var(--space-4);
   background: var(--surface-1);
-  border: 1px solid var(--border-1, var(--surface-border-soft));
+  border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-lg, 16px);
   padding: var(--space-6) var(--space-5);
 }
@@ -273,16 +264,6 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   height: 3px;
 }
 
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 h1 {
   font-size: var(--fs-h3, 1.4rem);
   margin: 0;
@@ -322,7 +303,7 @@ h1 {
   align-items: center;
   gap: 8px;
   background: var(--surface-2);
-  border: 1px solid var(--border-1, var(--surface-border-soft));
+  border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-sm);
   padding: 0 10px;
 }
@@ -341,26 +322,6 @@ h1 {
   padding: 10px 0;
   font-family: var(--font-mono);
   outline: none;
-}
-
-.copy-btn {
-  flex-shrink: 0;
-  background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-}
-
-.copy-btn:hover:not(:disabled) {
-  color: var(--text-primary);
-  background: var(--surface-3);
-}
-
-.copy-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 .copied-hint {
@@ -408,95 +369,5 @@ h1 {
   flex-direction: column;
   gap: 10px;
   margin-bottom: 28px;
-}
-
-.primary-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: var(--color-primary);
-  color: #fff;
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 11px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.primary-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.secondary-btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px solid var(--surface-border-soft);
-  border-radius: var(--radius-sm);
-  padding: 10px;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-}
-
-.secondary-btn:hover {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-
-.release-row {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  text-align: left;
-}
-
-.release-icon {
-  flex-shrink: 0;
-  color: var(--text-tertiary);
-}
-
-.release-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.release-title {
-  margin: 0;
-  font-size: var(--fs-body-sm);
-  font-weight: var(--fw-medium);
-  color: var(--text-primary);
-}
-
-.release-detail {
-  margin: 0;
-  font-size: var(--fs-caption);
-  color: var(--text-tertiary);
-}
-
-.release-link {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  color: var(--color-primary);
-  font-size: var(--fs-body-sm);
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-}
-
-.release-link:hover {
-  text-decoration: underline;
 }
 </style>

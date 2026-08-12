@@ -28,7 +28,7 @@ const emit = defineEmits<{
   width: 36px;
   height: 21px;
   flex-shrink: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: none;
   background: var(--surface-3);
   position: relative;

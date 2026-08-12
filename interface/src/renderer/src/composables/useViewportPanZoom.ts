@@ -1,5 +1,5 @@
 import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
-import { api, hasNativeApi } from '../nativeBridge'
+import { api, hasNativeApi } from '../services/native'
 
 interface ViewportJob {
   id: string

@@ -1,6 +1,7 @@
 import { resolve } from 'path'
 import { defineConfig } from 'electron-vite'
 import vue from '@vitejs/plugin-vue'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   main: {},
@@ -15,6 +16,6 @@ export default defineConfig({
     // allows this exact dev origin. If 5173 is busy, kill the stray process rather than
     // letting Vite silently pick another port (CORS would then reject every request).
     server: { port: 5173, strictPort: true },
-    plugins: [vue()]
+    plugins: [vue(), tailwindcss()]
   }
 })

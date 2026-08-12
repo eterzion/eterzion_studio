@@ -75,7 +75,7 @@ function fmtBytes(bytes: number | null): string {
 .info-panel {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .info-row {

@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { NavKey } from '../types'
+import AppButton from './atoms/AppButton.vue'
 import {
   Atom,
   Home,
@@ -101,14 +102,17 @@ function openExternal(url: string): void {
       <div v-if="!collapsed" class="brand-text">
         <span class="brand-name">Astros Upscale</span>
       </div>
-      <button
-        class="collapse-btn"
-        type="button"
+      <AppButton
+        variant="ghost"
+        icon-only
+        size="sm"
         :title="collapsed ? t('sidebar.expand') : t('sidebar.collapse')"
         @click="toggleCollapsed"
       >
-        <component :is="collapsed ? ChevronsRight : ChevronsLeft" :size="15" />
-      </button>
+        <template #icon
+          ><component :is="collapsed ? ChevronsRight : ChevronsLeft" :size="15"
+        /></template>
+      </AppButton>
     </div>
 
     <nav class="nav">
@@ -241,14 +245,14 @@ function openExternal(url: string): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--on-primary);
   background: linear-gradient(135deg, #8b5cf6, var(--color-primary));
 }
 
 .brand-text {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   min-width: 0;
   flex: 1;
 }
@@ -262,33 +266,11 @@ function openExternal(url: string): void {
   text-overflow: ellipsis;
 }
 
-.collapse-btn {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: var(--text-tertiary);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition:
-    background var(--transition-fast),
-    color var(--transition-fast);
-}
-
-.collapse-btn:hover {
-  background: var(--surface-3);
-  color: var(--text-primary);
-}
-
 /* Collapsed: stack icon above the toggle instead of hiding it — hiding it
    left no way back to expanded state, a real dead end found via user report. */
 .sidebar.collapsed .brand {
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .section-label {
@@ -471,7 +453,7 @@ function openExternal(url: string): void {
   width: 32px;
   height: 18px;
   flex-shrink: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
   position: relative;
   transition: background var(--transition-fast);
@@ -500,7 +482,7 @@ function openExternal(url: string): void {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-1-5);
   margin-top: 4px;
   padding: 9px var(--space-2);
   border: 1px solid var(--surface-border-soft);
@@ -542,7 +524,7 @@ function openExternal(url: string): void {
 
   .sidebar:not(.collapsed) .brand {
     flex-direction: column;
-    gap: 6px;
+    gap: var(--space-1-5);
   }
 
   .sidebar:not(.collapsed) .nav-item,

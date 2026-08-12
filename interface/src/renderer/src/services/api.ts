@@ -1,7 +1,7 @@
 // Client for the astros_upscale_api FastAPI server (api/astros_upscale_api).
 // Mirrors app/models/schemas.py — keep the two in sync when either changes.
 
-const BASE_URL = 'http://127.0.0.1:8765'
+export const BASE_URL = 'http://127.0.0.1:8765'
 
 // T069/T070 — GET /components (FR-063/FR-064): capability-first, never a raw
 // technical model identifier at the list level (FR-009). Replaces the old
@@ -303,29 +303,6 @@ export async function previewDenoise(inputPath: string, strength: number): Promi
   })
   if (!res.ok) throw new Error(await extractError(res))
   return res.json()
-}
-
-/** Subscribes to live progress for a job over the API's WebSocket. Returns an
- *  unsubscribe function. Falls back silently if the socket errors — callers should
- *  still poll getJob() once as a fallback if they need a guaranteed final state. */
-export function subscribeJobProgress(
-  jobId: string,
-  onUpdate: (status: JobStatus) => void,
-  onError?: (error: Event) => void
-): () => void {
-  const wsUrl = `${BASE_URL.replace('http', 'ws')}/ws/jobs/${jobId}`
-  const ws = new WebSocket(wsUrl)
-  ws.onmessage = (event) => {
-    try {
-      onUpdate(JSON.parse(event.data))
-    } catch {
-      // ignore malformed frame
-    }
-  }
-  if (onError) ws.onerror = onError
-  return () => {
-    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) ws.close()
-  }
 }
 
 export function defaultAdjustments(): Adjustments {

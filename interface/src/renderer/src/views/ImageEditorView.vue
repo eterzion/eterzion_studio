@@ -11,6 +11,8 @@ import AppSelect from '../components/AppSelect.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
 import ResolutionStepper from '../components/ResolutionStepper.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
+import AppButton from '../components/atoms/AppButton.vue'
+import AppSpinner from '../components/atoms/AppSpinner.vue'
 import {
   Minus,
   Plus,
@@ -33,9 +35,9 @@ import {
   GalleryHorizontal,
   RotateCcw
 } from '@lucide/vue'
-import { api, hasNativeApi } from '../nativeBridge'
-import { type ContentType, type Profile } from '../apiClient'
-import { ERROR_CATEGORY_COPY } from '../apiClient'
+import { api, hasNativeApi } from '../services/native'
+import { type ContentType, type Profile } from '../services/api'
+import { ERROR_CATEGORY_COPY } from '../services/api'
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
@@ -199,6 +201,11 @@ onUnmounted(() => {
 function switchScaleMode(j: Job, mode: 'preset' | 'custom'): void {
   j.scaleConfig.mode = mode
   if (mode === 'custom') ensureCustomSizeDefaults(j)
+}
+
+function setPresetFactor(j: Job, factor: 2 | 4): void {
+  j.scaleConfig.presetFactor = factor
+  syncCustomSizeToPreset(j)
 }
 
 function onCustomWidthInput(j: Job, raw: string): void {
@@ -395,25 +402,17 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   <div class="editor-view">
     <TopBar :title="job?.fileName ?? 'Nenhuma imagem selecionada'" show-back @back="$emit('back')">
       <template #actions>
-        <button class="btn-outline" type="button" @click="importFiles">
-          <Upload :size="15" /> Importar
-        </button>
-        <button
-          class="btn-outline"
-          type="button"
-          :disabled="!configuringJobs.length"
-          @click="processAll"
-        >
+        <AppButton variant="outline" @click="importFiles">
+          <template #icon><Upload :size="15" /></template>
+          Importar
+        </AppButton>
+        <AppButton variant="outline" :disabled="!configuringJobs.length" @click="processAll">
           Processar todos
-        </button>
-        <button
-          class="btn-outline"
-          type="button"
-          :disabled="!doneJobs.length"
-          @click="showBatchModal = true"
-        >
-          <Download :size="15" /> Exportar tudo
-        </button>
+        </AppButton>
+        <AppButton variant="outline" :disabled="!doneJobs.length" @click="showBatchModal = true">
+          <template #icon><Download :size="15" /></template>
+          Exportar tudo
+        </AppButton>
       </template>
     </TopBar>
 
@@ -576,9 +575,9 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
       <aside class="side-panel" :class="{ open: panelOpen }">
         <div class="panel-drawer-header">
           <span>Ajustes</span>
-          <button class="drawer-close" type="button" @click="panelOpen = false">
-            <X :size="18" />
-          </button>
+          <AppButton variant="ghost" icon-only @click="panelOpen = false">
+            <template #icon><X :size="18" /></template>
+          </AppButton>
         </div>
 
         <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
@@ -684,10 +683,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 class="scale-btn"
                 :class="{ active: job.scaleConfig.presetFactor === s }"
                 type="button"
-                @click="
-                  job.scaleConfig.presetFactor = s as 2 | 4;
-                  syncCustomSizeToPreset(job)
-                "
+                @click="setPresetFactor(job, s as 2 | 4)"
               >
                 {{ s }}x
               </button>
@@ -798,7 +794,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 Prévia indisponível fora do app desktop.
               </div>
               <div v-else class="denoise-preview">
-                <Loader2 v-if="denoisePreviewLoading" :size="16" class="spin" />
+                <AppSpinner v-if="denoisePreviewLoading" :size="16" />
                 <p v-else-if="denoisePreviewError" class="field-warning">
                   {{ denoisePreviewError }}
                 </p>
@@ -854,18 +850,19 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             </div>
           </CollapsiblePanel>
 
-          <button
-            class="apply-all-btn"
-            type="button"
+          <AppButton
+            variant="secondary"
+            class="w-full"
             :disabled="configuringJobs.length < 2"
             @click="applyConfigToAll(job)"
           >
             Aplicar esta configuração a todos ({{ configuringJobs.length }})
-          </button>
+          </AppButton>
 
-          <button
-            class="export-btn"
-            type="button"
+          <AppButton
+            variant="primary"
+            size="lg"
+            class="w-full"
             :disabled="!validity.valid"
             @click="process(job)"
           >
@@ -874,13 +871,13 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 ? 'Tentar novamente'
                 : 'Processar'
             }}
-          </button>
+          </AppButton>
         </template>
 
         <!-- ---------------------------- QUEUED / PROCESSING ---------------------------- -->
         <template v-else-if="job.status === 'queued' || job.status === 'processing'">
           <div class="processing-panel">
-            <Loader2 :size="28" class="spin" />
+            <AppSpinner :size="28" />
             <p v-if="job.status === 'queued'" class="processing-label">
               Na fila{{ job.queuePosition ? ` (posição ${job.queuePosition})` : '' }}
             </p>
@@ -893,7 +890,9 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 :style="{ width: (job.status === 'queued' ? 0 : job.progress) + '%' }"
               />
             </div>
-            <button class="cancel-btn" type="button" @click="cancel(job)">Cancelar</button>
+            <AppButton variant="outline" class="mt-2 text-state-danger" @click="cancel(job)">
+              Cancelar
+            </AppButton>
           </div>
         </template>
 
@@ -938,9 +937,9 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                   :value="exportDestFolder ?? 'Mesma pasta do original'"
                   readonly
                 />
-                <button class="folder-btn" type="button" @click="pickExportFolder">
-                  <FolderOpen :size="15" />
-                </button>
+                <AppButton variant="secondary" icon-only @click="pickExportFolder">
+                  <template #icon><FolderOpen :size="15" /></template>
+                </AppButton>
               </div>
             </div>
 
@@ -967,8 +966,20 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <div v-if="conflictPrompt" class="conflict-prompt">
               <p>Já existe um arquivo com esse nome. O que fazer?</p>
               <div class="conflict-actions">
-                <button type="button" @click="resolveConflict('rename')">Renomear</button>
-                <button type="button" @click="resolveConflict('overwrite')">Sobrescrever</button>
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  class="flex-1"
+                  @click="resolveConflict('rename')"
+                  >Renomear</AppButton
+                >
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  class="flex-1"
+                  @click="resolveConflict('overwrite')"
+                  >Sobrescrever</AppButton
+                >
               </div>
             </div>
 
@@ -979,23 +990,27 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               Exportado em: {{ job.lastExportPath }}
             </p>
 
-            <button
-              class="export-btn"
-              type="button"
+            <AppButton
+              variant="primary"
+              size="lg"
+              class="w-full"
               :disabled="job.exportState === 'exporting'"
               @click="runExport(job)"
             >
-              <component
-                :is="job.exportState === 'exporting' ? Loader2 : Download"
-                :size="16"
-                :class="{ spin: job.exportState === 'exporting' }"
-              />
+              <template #icon>
+                <component
+                  :is="job.exportState === 'exporting' ? Loader2 : Download"
+                  :size="16"
+                  :class="{ 'animate-spin': job.exportState === 'exporting' }"
+                />
+              </template>
               {{ job.exportState === 'exporting' ? 'Exportando…' : 'Exportar' }}
-            </button>
+            </AppButton>
 
-            <button class="reprocess-btn" type="button" @click="job.status = 'configuring'">
-              <RotateCcw :size="14" /> Ajustar e reprocessar
-            </button>
+            <AppButton variant="ghost" @click="job.status = 'configuring'">
+              <template #icon><RotateCcw :size="14" /></template>
+              Ajustar e reprocessar
+            </AppButton>
           </CollapsiblePanel>
         </template>
       </aside>
@@ -1060,7 +1075,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   gap: var(--space-1);
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 4px 6px;
 }
 
@@ -1095,7 +1110,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 4px;
 }
 
@@ -1180,7 +1195,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   color: #fff;
   background: rgba(11, 14, 20, 0.72);
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .hold-space-hint {
@@ -1199,7 +1214,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 4px;
 }
 
@@ -1213,7 +1228,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
   padding: 5px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   cursor: pointer;
 }
 
@@ -1315,8 +1330,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .banner-error,
 .banner-error-block,
 .banner-info,
-.apply-all-btn,
-.export-btn,
 .processing-panel,
 .panel-drawer-header {
   flex-shrink: 0;
@@ -1325,7 +1338,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .banner-error {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--color-danger);
   min-width: 0;
@@ -1341,13 +1354,13 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .banner-error-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .banner-info {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
+  gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--text-secondary);
   min-width: 0;
@@ -1358,7 +1371,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .field-label {
@@ -1367,7 +1380,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   color: var(--text-secondary);
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .badge {
@@ -1378,7 +1391,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   color: var(--text-tertiary);
   background: var(--surface-3);
   padding: 1px 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
 }
 
 .field-label-row {
@@ -1540,7 +1553,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .scale-btn.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .link-btn {
@@ -1550,7 +1563,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   border: 1px solid var(--surface-border);
   background: var(--surface-3);
   color: var(--text-secondary);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 3px 10px;
   font-size: 11px;
   font-weight: var(--fw-medium);
@@ -1585,7 +1598,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .slider-field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .slider-field.disabled {
@@ -1614,7 +1627,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .switch {
   width: 34px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   border: none;
   background: var(--surface-3);
   position: relative;
@@ -1656,7 +1669,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   padding: 4px;
 }
 
@@ -1706,76 +1719,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   white-space: nowrap;
 }
 
-.folder-btn {
-  flex-shrink: 0;
-  width: 36px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-3);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-
-.folder-btn:hover {
-  color: var(--text-primary);
-}
-
-.apply-all-btn {
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  padding: 9px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-  cursor: pointer;
-}
-
-.apply-all-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.export-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  padding: 11px;
-  border-radius: var(--radius-sm);
-  border: none;
-  background: var(--color-primary);
-  color: #fff;
-  font-size: var(--fs-label);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-}
-
-.export-btn:hover:not(:disabled) {
-  background: var(--color-primary-hover);
-}
-
-.export-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.reprocess-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: transparent;
-  border: 1px solid var(--surface-border-soft);
-  color: var(--text-secondary);
-  border-radius: var(--radius-sm);
-  padding: 8px;
-  font-size: var(--fs-caption);
-  cursor: pointer;
-}
-
 .processing-panel {
   display: flex;
   flex-direction: column;
@@ -1799,7 +1742,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .progress-track {
   width: 100%;
   height: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full);
   background: var(--surface-3);
   overflow: hidden;
 }
@@ -1808,18 +1751,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   height: 100%;
   background: var(--color-primary);
   transition: width 200ms ease;
-}
-
-.cancel-btn {
-  margin-top: var(--space-2);
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  color: var(--color-danger);
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
 }
 
 .conflict-prompt {
@@ -1835,50 +1766,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   display: flex;
   gap: var(--space-2);
   margin-top: var(--space-2);
-}
-
-.conflict-actions button {
-  flex: 1;
-  padding: 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-1);
-  color: var(--text-primary);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.spin {
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.btn-outline {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--surface-1);
-  border: 1px solid var(--surface-border);
-  color: var(--text-primary);
-  border-radius: var(--radius-sm);
-  padding: 7px 12px;
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  cursor: pointer;
-}
-
-.btn-outline:hover:not(:disabled) {
-  background: var(--surface-2);
-}
-
-.btn-outline:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 @media (max-width: 1000px) {
@@ -1903,15 +1790,15 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   .drawer-trigger {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--space-1-5);
     position: absolute;
     bottom: var(--space-3);
     right: var(--space-3);
     z-index: 3;
     background: var(--color-primary);
-    color: #fff;
+    color: var(--on-primary);
     border: none;
-    border-radius: 999px;
+    border-radius: var(--radius-full);
     padding: 10px 16px;
     font-size: var(--fs-label);
     font-weight: var(--fw-semibold);
@@ -1955,13 +1842,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
     padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--surface-border-soft);
     margin-bottom: var(--space-1);
-  }
-
-  .drawer-close {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
   }
 }
 </style>

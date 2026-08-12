@@ -1,5 +1,5 @@
 import { reactive } from 'vue'
-import { api, hasNativeApi } from '../nativeBridge'
+import { api, hasNativeApi } from '../services/native'
 
 export const apiStatus = reactive<{ checking: boolean; ready: boolean; error: string | null }>({
   checking: false,
