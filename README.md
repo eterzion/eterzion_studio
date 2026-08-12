@@ -34,11 +34,14 @@ automaticamente ao abrir o app; nenhuma configuração manual é necessária no
 dia a dia. Veja [interface/README.md](interface/README.md) para instalação,
 desenvolvimento e empacotamento do instalador.
 
-Para rodar a API isoladamente (desenvolvimento de backend, testes) ou
-entender melhor a divisão de responsabilidades, veja `api/astros_upscale_api/`
-(a própria API), `api/astros_upscale/` (a biblioteca de processamento de
-mídia usada por ela) e `api/astros_licensing_service/` (serviço de
-licenciamento, processo separado).
+Além da API de processamento, o app tem uma tela de ativação/status de
+licença que fala com `api/astros_licensing_service` — um segundo serviço
+FastAPI, processo separado, dono do seu próprio banco de licenças/instalações
+e integrado a Stripe/Mercado Pago para pagamentos.
+
+Para rodar cada serviço isoladamente (desenvolvimento de backend, testes),
+entender a divisão de responsabilidades ou ver as variáveis de ambiente
+suportadas, veja [api/README.md](api/README.md).
 
 ---
 

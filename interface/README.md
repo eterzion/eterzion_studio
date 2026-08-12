@@ -26,7 +26,7 @@ veja o `Dockerfile` em `api/astros_upscale_api/` para como subi-la.
 
 ```bash
 npm install
-npm run electron:preview   # builda tudo e abre a janela do Electron
+npm run build && npm run start   # builda tudo e abre a janela do Electron
 ```
 
 Desenvolvimento com hot-reload (abre no navegador, não numa janela Electron —
@@ -42,9 +42,19 @@ automaticamente a raiz do repositório (o diretório que contém tanto `api/`
 quanto `interface/`) e sobe `api/astros_upscale_api` sozinho se ela ainda não
 estiver rodando — nenhuma configuração manual é necessária no dia a dia.
 
-Por padrão o app fala com `http://127.0.0.1:8765` (arquivo `.env`); para
-apontar para uma API remota, edite `VITE_API_BASE_URL`/`VITE_API_KEY` em
-`.env.production` e rode `npm run build`.
+O app também tem uma tela de ativação/status de licença
+(`src/renderer/src/views/LicenseActivationView.vue`, com um indicador
+compacto em `components/LicenseWidget.vue`, sobre `store/license.ts`), que
+fala com `api/astros_licensing_service` — um segundo processo FastAPI,
+separado da API de processamento, na porta `8766` por padrão. Ele **não** é
+subido automaticamente pelo Electron como a API de processamento; para testar
+o fluxo de ativação em desenvolvimento, rode-o à parte (veja
+`api/astros_licensing_service/`).
+
+O app fala com `http://127.0.0.1:8765` — hoje esse endereço é uma constante
+fixa em `src/main/apiProcess.ts` e `src/renderer/src/apiClient.ts` (não há
+`.env`/`VITE_API_BASE_URL` lido em tempo de build); para apontar para uma
+API remota é preciso editar essas duas constantes diretamente.
 
 ## Empacotar um instalador
 
@@ -54,5 +64,11 @@ pip install pyinstaller
 pyinstaller pyinstaller.spec        # gera dist/astros-upscale-api(.exe)
 
 cd ../../interface
-npm run electron:build              # empacota tudo com electron-builder
+npm run build:win     # ou build:mac / build:linux — empacota tudo com electron-builder
 ```
+
+`build:win`/`build:linux` também baixam o ffmpeg empacotado automaticamente
+(`npm run fetch:ffmpeg:win`/`fetch:ffmpeg:linux`, ver
+[docs/models/MODEL_LICENSES.md](../docs/models/MODEL_LICENSES.md)) — não é
+preciso rodar esse passo manualmente. Para um build sem instalador (só a
+pasta descompactada), use `npm run build:unpack`.

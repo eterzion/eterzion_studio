@@ -49,8 +49,30 @@ cd api/astros_licensing_service && ../../.venv/Scripts/python.exe -m pytest --co
 ```
 
 Comparar a contagem de testes coletados com a linha de base capturada antes da reorganização —
-deve ser idêntica (nenhum teste removido). Depois, rodar a suíte completa das três subpastas —
-deve ser 100% verde.
+deve ser idêntica (nenhum teste removido). Depois, rodar a suíte completa — **sempre com
+`-n auto`** (pytest-xdist, já uma dependência de `requirements-dev.txt` de ambas as APIs e já
+usado por `.github/workflows/tests.yml`): sem paralelização, a suíte de `astros_upscale_api`
+sozinha varia de ~40s a vários minutos dependendo do estado do ambiente (imports pesados de
+torch, detecção real de hardware, chamadas reais a ffmpeg); com `-n auto` cai para ~30s
+de forma consistente. **Nunca rodar sem `-n auto` — é isso que mantém a validação local dentro
+de minutos, não do tempo variável e às vezes muito mais longo do modo serial.**
+
+```bash
+cd api
+../.venv/Scripts/python.exe -m pytest astros_upscale_api/tests -m "not slow" -n auto --no-cov -q
+../.venv/Scripts/python.exe -m pytest astros_upscale/tests astros_licensing_service/tests \
+  -m "not slow" -n auto --no-cov -q
+```
+
+(as duas invocações ficam separadas porque `astros_upscale_api` e `astros_licensing_service`
+têm, cada uma, seu próprio pacote Python chamado `app` — rodar as três subpastas em uma única
+invocação `pytest` faz a coleta colidir entre os dois `sys.path`/`app`, uma limitação
+arquitetural pré-existente e independente desta reorganização, documentada em
+`research.md`/`tasks.md` T040.)
+
+Resultado esperado: as duas invocações juntas somam 100% dos testes verdes em menos de um
+minuto no total nesta máquina (32 núcleos); mesmo em hardware mais modesto, `-n auto` deve manter
+o total bem abaixo de 5 minutos.
 
 ## 4. Import básico dos dois serviços (User Story 4)
 

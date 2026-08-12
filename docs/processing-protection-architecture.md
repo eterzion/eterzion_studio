@@ -9,11 +9,11 @@ Escopo: cobre a especificação completa recebida (defesa em profundidade para o
 
 | Fase | Status | Onde está o código |
 |---|---|---|
-| Fase 1 — Isolamento de processo | ✅ Implementada e testada | `secure_tempdir.py`, `isolated_worker.py`, `worker_supervisor.py`, `job_manager.py` (astros_upscale_api) |
-| Fase 2 — Identidade por instalação | ✅ Implementada e testada | `dpapi.py`, `install_identity.py`, `routes_identity.py` |
+| Fase 1 — Isolamento de processo | ✅ Implementada e testada | `api/astros_upscale_api/app/jobs.py` (as seções de worker supervisor e isolated worker) e `app/security.py` (secure tempdir) |
+| Fase 2 — Identidade por instalação | ✅ Implementada e testada | `api/astros_upscale_api/app/security.py` (DPAPI + install identity) e a rota de identidade em `app/routes.py` |
 | Fase 3 — Contas, licenciamento, cobrança | ✅ Implementada e testada (webhooks, ativação, autorização) — **não conectada a uma conta real de pagamento** | `api/astros_licensing_service/` (serviço novo e separado) |
-| Fase 4 — Pacote protegido da lógica de orquestração | ✅ Implementada e testada — empacota código-fonte cifrado+assinado, não binário nativo (ver ressalva abaixo) | `package_crypto.py`, `packages.py`, `routes_packages.py` (serviço) + `protected_loader.py` (API) |
-| Fase 5 — Runtime/anti-adulteração | ✅ Implementada e testada | `integrity.py` + checagens em `protected_loader.py` e `authorizations.py` |
+| Fase 4 — Pacote protegido da lógica de orquestração | ✅ Implementada e testada — empacota código-fonte cifrado+assinado, não binário nativo (ver ressalva abaixo) | `api/astros_licensing_service/app/packages.py` (a seção de encriptação de pacote) e `app/routes.py` (serviço) + `api/astros_upscale_api/app/security.py` (a seção de protected loader, API) |
+| Fase 5 — Runtime/anti-adulteração | ✅ Implementada e testada | `api/astros_upscale_api/app/security.py` (a seção de self-integrity check e a de protected loader) e `api/astros_licensing_service/app/licensing.py` (a seção de authorizations) |
 | Fase 6 — Hardware opcional (TPM, VBS, atestação) | ⬜ Não implementada — o próprio documento (§3) já recomendava tratar como melhoria futura, não bloqueador |
 
 ### O que foi testado de verdade (não só revisado)
@@ -22,7 +22,7 @@ Escopo: cobre a especificação completa recebida (defesa em profundidade para o
 - Fase 2: chave privada no disco tem a assinatura de um blob DPAPI real (não é um no-op); mesma identidade sobrevive a reinício; assinatura/verificação funciona; payload adulterado é rejeitado.
 - Fase 3: webhook do Stripe assinado de verdade (HMAC idêntico ao real) é aceito; payload adulterado e segredo errado são rejeitados; retry idempotente não duplica licença; limite de ativações simultâneas respeitado; autorização assinada verificada com a chave pública do serviço; anti-replay confirmado; revogação corta autorizações novas na hora.
 - Fase 4: job real processado pela classe `Upscaler` carregada dinamicamente do pacote cifrado (não do import estático) — confirmado pelos logs do serviço (4 chamadas reais: versão → autorização → pacote → chave pública) e pela imagem de saída correta.
-- Fase 5: worker recusa iniciar com `upscaler.py` adulterado; volta a funcionar depois de restaurar e regenerar o manifesto; pedido de autorização para versão antiga é rejeitado (409).
+- Fase 5: worker recusa iniciar com `app/processing.py` (onde a classe `Upscaler` vive hoje) adulterado; volta a funcionar depois de restaurar e regenerar o manifesto; pedido de autorização para versão antiga é rejeitado (409).
 - Regressão: com o serviço de licenciamento desligado (modo padrão, o que todo usuário real roda hoje), tudo continua funcionando exatamente como antes — job completo e cancelamento real.
 
 ### Dois bugs reais encontrados e corrigidos durante os próprios testes (não hipotéticos)
@@ -33,17 +33,17 @@ Escopo: cobre a especificação completa recebida (defesa em profundidade para o
 ### O que fica honestamente de fora, mesmo com as 5 fases prontas
 
 - **"Compilação nativa" (Fase 4)** — o que foi implementado é código-fonte Python cifrado e assinado, carregado e executado em memória. Isso já entrega: nunca fica em claro em disco, verificação de assinatura antes de executar, vínculo criptográfico real com a instalação. O que NÃO entrega: opacidade de um binário nativo de verdade (um atacante com acesso ao processo em execução ainda consegue inspecionar bytecode Python em memória). Compilar de verdade (Nuitka ou reescrita em Rust) continua sendo um projeto de tooling à parte.
-- **Revogação com fallback silencioso** — hoje, se a autorização falhar (licença revogada, por exemplo), o worker isolado cai de volta para o import estático local em vez de bloquear o processamento — porque o código estático ainda existe no repositório (é um repo de desenvolvimento). Numa build de produção real que não embarcasse mais `upscaler.py`, isso viraria bloqueio de verdade automaticamente. Essa é uma decisão de política (degradar vs. bloquear) que só faz sentido fechar quando houver uma build de produção real para testar contra.
+- **Revogação com fallback silencioso** — hoje, se a autorização falhar (licença revogada, por exemplo), o worker isolado cai de volta para o import estático local em vez de bloquear o processamento — porque o código estático ainda existe no repositório (é um repo de desenvolvimento). Numa build de produção real que não embarcasse mais `app/processing.py`, isso viraria bloqueio de verdade automaticamente. Essa é uma decisão de política (degradar vs. bloquear) que só faz sentido fechar quando houver uma build de produção real para testar contra.
 - **Conta real de pagamento** — a verificação de assinatura HMAC do Stripe e do Mercado Pago foi testada com segredos e payloads gerados localmente, usando exatamente o mesmo algoritmo documentado por cada provedor. Nunca foi exercitada contra uma conta viva, porque não existe uma.
 - **Hospedagem** — nada disso está publicado em lugar nenhum. `api/astros_licensing_service` roda local, com SQLite, pronto para virar um serviço de verdade quando houver onde hospedar.
 - **Medidas complementares do §6** (inferência dividida — já descartada, watermark forense, diversificação binária, detecção de anomalia, camada contratual) — continuam só documentadas, nenhuma foi implementada.
-- **Integração com a interface do Electron** — o app (`astros_upscale_app`) ainda não tem nenhuma tela para inserir a chave de licença, ativar/gerenciar instalações, ou mostrar status de licença. Todo o trabalho até aqui é backend/arquitetura; a UI de ativação é uma peça de trabalho separada, ainda não iniciada.
+- ~~**Integração com a interface do Electron** — o app ainda não tem nenhuma tela para inserir a chave de licença, ativar/gerenciar instalações, ou mostrar status de licença.~~ **Feito.** `interface/src/renderer/src/views/LicenseActivationView.vue` (tela de ativação/status) e `components/LicenseWidget.vue` (indicador compacto), sobre `store/license.ts` (wrapper fino em cima das rotas `/license/*` da API local descritas no §4.2 acima).
 
 ---
 
 ## 0. Achado crítico — leia antes de decidir investir nisso
 
-Antes de desenhar qualquer proteção, verifiquei o que `api/astros_upscale/core.py` realmente executa hoje. **Os 19 modelos registrados em `MODELS` são todos pesos públicos de terceiros**, baixados diretamente de URLs públicas do GitHub e do HuggingFace:
+Antes de desenhar qualquer proteção, verifiquei o que `api/astros_upscale/processing.py` realmente executa hoje. **Os 19 modelos registrados em `MODELS` são todos pesos públicos de terceiros**, baixados diretamente de URLs públicas do GitHub e do HuggingFace:
 
 ```
 https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth
@@ -57,7 +57,7 @@ https://huggingface.co/Phips/4xNomos2_hq_dat2/resolve/main/4xNomos2_hq_dat2.safe
 Isso não invalida a especificação — ela continua correta como arquitetura genérica de proteção de software. Mas para que o investimento (que é grande: dezenas de sistemas novos, um servidor de licenciamento, infraestrutura de assinatura) valha a pena, o ativo protegido precisa ser um destes:
 
 1. **Modelos proprietários futuros** — pesos treinados ou fine-tunados internamente, ainda não publicados. Se isso está no roadmap, a arquitetura abaixo se aplica diretamente a eles.
-2. **O pipeline de orquestração** (`core.py`: lógica de tiling, seleção de modelo, pós-processamento, ajustes) — é código original seu, então é um ativo legítimo de proteger, mas por ser lógica (não um blob de pesos), a defesa mais eficaz é mantê-la **rodando no servidor**, não distribuí-la ofuscada no cliente (ver §6).
+2. **O pipeline de orquestração** (`processing.py`: lógica de tiling, seleção de modelo, pós-processamento, ajustes) — é código original seu, então é um ativo legítimo de proteger, mas por ser lógica (não um blob de pesos), a defesa mais eficaz é mantê-la **rodando no servidor**, não distribuí-la ofuscada no cliente (ver §6).
 3. **A experiência/produto como serviço** (limitar quem pode rodar quantos jobs, monetização) — nesse caso o problema não é "esconder o código", é **controle de acesso e licenciamento**, que é uma arquitetura mais simples que DRM de binário.
 
 **Recomendação**: antes da Fase 1, decida explicitamente qual desses três é o objetivo real. O restante deste documento assume o cenário mais exigente (existem ou existirão modelos/lógica genuinamente proprietários), mas cada fase indica o que pode ser pulado se o objetivo for só (3).
@@ -67,7 +67,7 @@ Isso não invalida a especificação — ela continua correta como arquitetura g
 Duas decisões já foram tomadas e o restante deste documento reflete elas:
 
 1. **Os modelos (pesos) não precisam de proteção.** Confirmado — ficam exatamente como estão hoje: download público, sem criptografia, sem vínculo a instalação/licença. Isso elimina inteiramente a parte da especificação original sobre "modelo persistente" protegido, empacotamento de pesos por sessão, e a maior parte do custo da Fase 4 original.
-2. **Só a lógica de orquestração precisa de proteção** — isto é, o código que decide *como* usar os modelos: estratégia de tiling e overlap (`tile_process()` em `api/astros_upscale/core.py`), o limiar de tile e callback de progresso (`Upscaler` em `api/astros_upscale_api/app/core/upscaler.py`), e a aplicação de ajustes (denoise/sharpen/face recovery).
+2. **Só a lógica de orquestração precisa de proteção** — isto é, o código que decide *como* usar os modelos: estratégia de tiling e overlap (`tile_process()` em `api/astros_upscale/processing.py`), o limiar de tile e callback de progresso (`Upscaler` em `api/astros_upscale_api/app/processing.py`), e a aplicação de ajustes (denoise/sharpen/face recovery).
 3. **O processamento continua rodando na GPU do usuário** — decisão explícita de manter a velocidade e não assumir custo de GPU em servidor. Isso significa que a inferência dividida (§6.1, a proteção mais forte do documento) **não é aplicável aqui**: se o cálculo pesado precisa acontecer na máquina do usuário, a lógica que o comanda também precisa estar presente ali, ainda que protegida. Nenhuma arquitetura torna isso 100% opaco — apenas eleva o custo e reduz a janela de exposição, conforme o §1.
 
 Com isso, o escopo efetivo do projeto é: **Fase 1, Fase 2, uma Fase 4 bem mais enxuta (só a lógica, não pesos) e Fase 5**, mais uma **Fase 3 completa**, já que a decisão seguinte (§0.2) confirmou que vocês também querem controle de acesso por licença, não só proteção contra engenharia reversa.
@@ -124,7 +124,7 @@ Ponto importante de escopo: **o `astros_upscale_api` atual (FastAPI local) não 
 Cada fase é entregável isoladamente e não depende de fases posteriores para ter valor.
 
 ### Fase 1 — Isolamento de processo (sem depender de servidor novo)
-**O que entra:** mover a execução do modelo (hoje dentro do processo do `astros_upscale_api`) para um processo separado, filho, com IPC restrito (named pipe/socket local + token efêmero por sessão), sem shell, sem variáveis de ambiente completas, sem acesso arbitrário a disco. Diretório temporário privado com ACL restrita e nome aleatório para qualquer artefato que precise tocar disco. Limpeza determinística ao final/erro/cancelamento (a rotina de limpeza do job atual já existe parcialmente em `job_manager.py` — esta fase estende ela).
+**O que entra:** mover a execução do modelo (hoje dentro do processo do `astros_upscale_api`) para um processo separado, filho, com IPC restrito (named pipe/socket local + token efêmero por sessão), sem shell, sem variáveis de ambiente completas, sem acesso arbitrário a disco. Diretório temporário privado com ACL restrita e nome aleatório para qualquer artefato que precise tocar disco. Limpeza determinística ao final/erro/cancelamento (a rotina de limpeza do job atual já existe parcialmente em `app/jobs.py` — esta fase estende ela).
 **Por que primeiro:** não depende de nenhuma infraestrutura nova, é puramente engenharia local, e já reduz superfície de ataque (um bug no parsing de imagem não compromete o processo principal).
 **Esforço relativo:** médio. **Depende de servidor de licenciamento:** não.
 
@@ -186,9 +186,9 @@ Note que a licença é verificada uma vez por sessão de processamento (passo 2)
 | Componente atual | O que muda |
 |---|---|
 | `astros_upscale_api` (FastAPI local) | Deixa de rodar a lógica de tiling/ajustes no próprio processo; passa a orquestrar o processo isolado (Fase 1) e a se comunicar com o serviço remoto mínimo (Fase 3 simplificada) para obter a autorização/chave de sessão a cada job. |
-| `api/astros_upscale/core.py` | `tile_process()` e a lógica de blending/ajustes migram para o módulo protegido que roda dentro do executor isolado. O download e carregamento do peso do modelo em si **não muda** — continua público, sem DRM, exatamente como hoje. |
+| `api/astros_upscale/processing.py` | `tile_process()` e a lógica de blending/ajustes migram para o módulo protegido que roda dentro do executor isolado. O download e carregamento do peso do modelo em si **não muda** — continua público, sem DRM, exatamente como hoje. |
 | Download de modelos (`MODELS` dict) | Sem alteração — continua público, sem criptografia, sem vínculo a instalação (confirmado no §0.1). |
-| `job_manager.py` | Ganha os hooks de limpeza determinística (chaves, processo, artefatos) e o registro do watchdog. |
+| `app/jobs.py` | Ganha os hooks de limpeza determinística (chaves, processo, artefatos) e o registro do watchdog. |
 
 ---
 
