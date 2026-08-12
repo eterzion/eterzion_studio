@@ -89,9 +89,11 @@ function onInput(e: Event): void {
   position: absolute;
   left: 0;
   right: 0;
+  top: 50%;
   height: 4px;
   border-radius: 999px;
   background: var(--surface-3);
+  transform: translateY(-50%);
 }
 
 .fill {
