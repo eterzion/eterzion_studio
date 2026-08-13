@@ -419,6 +419,19 @@ Task: "Implementar dsp.py"
   chunking/crossfade (T035) foi extraída para `vendor/sonicmaster/stitching.py`, um módulo próprio
   que só depende de `torch` — necessário para tornar T033/T034 testáveis sem `diffusers`/
   `transformers` (dependências só do audio-worker isolado).
+- **Validação real do venv do audio-worker (2026-08-13)**: ao configurar o ambiente pela primeira
+  vez, `torch==2.4.0`/`torchaudio==2.4.0`/`torchvision==0.19.0` (pins originais do SonicMaster) não
+  têm wheel para Python 3.13 — único interpretador disponível no ambiente do projeto — e
+  `transformers==4.44.0` puxa `tokenizers<0.20`, que também não tem wheel cp313 e falha tentando
+  compilar via Rust. `audio_worker_requirements.txt` foi atualizado para `torch==2.6.0`/
+  `torchaudio==2.6.0`/`torchvision==0.21.0` (primeira série com wheel cp313) e
+  `transformers==4.46.3`; `diffusers`/`torchlibrosa`/`librosa` (Python puro) ficaram como estavam.
+  Detalhe completo em `research.md` Decisão 4. Validado com smoke test real (instalação completa +
+  import de todo o código vendorizado + instanciação de `TangoFlux`, 862.987.328 parâmetros) — sem
+  checkpoint/HF_TOKEN, que seguem bloqueando só T042/T043. O smoke test revelou dois imports mortos
+  do upstream (`datasets` em `model.py`, `pandas` a nível de módulo em `utils.py`) que só quebravam
+  porque o ambiente de inferência deliberadamente não instala dependências de treino — corrigidos e
+  documentados em `vendor/sonicmaster/NOTICE.md`.
 - **Correções de `/speckit.analyze`** (2026-08-13): T008/T008a redesenhados — `WorkerSupervisor`
   é hoje um singleton compartilhado por imagem/vídeo; um segundo supervisor dedicado
   (`get_audio_worker_supervisor()`) substitui a parametrização da instância única, que quebraria

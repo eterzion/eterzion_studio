@@ -1,7 +1,6 @@
 import torch
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import pandas as pd
 
 import torchaudio
 import random
@@ -145,6 +144,7 @@ class DPOText2AudioDataset(Dataset):
         return s1, s2, s3, s4, s5
 
     def collate_fn(self, data):
+        import pandas as pd  # training-only path (not used by vendored inference code)
         dat = pd.DataFrame(data)
         return [dat[i].tolist() for i in dat]
 
@@ -198,5 +198,6 @@ class Text2AudioDataset(Dataset):
         return s1, s2, s3, s4, s5, s6
 
     def collate_fn(self, data):
+        import pandas as pd  # training-only path (not used by vendored inference code)
         dat = pd.DataFrame(data)
         return [dat[i].tolist() for i in dat]

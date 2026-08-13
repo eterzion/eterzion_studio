@@ -100,6 +100,13 @@ python -m venv .audio_worker_venv
 .audio_worker_venv/Scripts/pip install -r audio_worker_requirements.txt
 ```
 
+`audio_worker_requirements.txt` pina `torch==2.6.0`/`torchaudio==2.6.0`/`torchvision==0.21.0`
+(primeira série do PyTorch com wheel para Python 3.13 — os pins originais do SonicMaster,
+`torch==2.4.0`, não têm wheel para 3.13) e `transformers==4.46.3` (a versão original 4.44.0 puxa
+`tokenizers<0.20`, que também não tem wheel para 3.13 e tenta compilar via Rust). Se o Python do
+sistema já for 3.13 (`python --version`), o comando acima funciona sem passo extra — não é
+necessário instalar um Python mais antigo. Veja `research.md` Decisão 4 para o detalhe completo.
+
 Depois, aponte `ASTROS_AUDIO_WORKER_PYTHON` para
 `api/astros_upscale_api/.audio_worker_venv/Scripts/python.exe`. O checkpoint do modelo
 (`model.safetensors`, ~3,29 GB) é baixado sob demanda no caminho configurado em

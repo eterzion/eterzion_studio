@@ -177,12 +177,29 @@ diferentes no mesmo arquivo.
    auditoria). Instalado num venv dedicado, separado do `.venv` raiz do projeto — não entra na
    instalação padrão do backend.
 4. **Estratégia de compatibilidade**: não tentar forçar o SonicMaster a rodar contra o
-   `torch==2.13.0` já usado pelo resto do projeto. O ambiente do audio-worker usa exatamente as
-   versões que o SonicMaster já testa contra (pinadas no próprio `requirements_sonic.txt`),
-   eliminando o risco de incompatibilidade em vez de tentar resolvê-lo — consistente com FR-023,
-   que já exige esse isolamento independentemente da questão de versão. Testar se uma versão mais
-   nova de `torch`/`diffusers` também funciona é um follow-up de otimização (poderia simplificar
-   para um único ambiente no futuro), não um bloqueador desta implementação.
+   `torch==2.13.0` já usado pelo resto do projeto. O ambiente do audio-worker usa versões
+   independentes do resto do projeto, eliminando o risco de incompatibilidade cruzada em vez de
+   tentar resolvê-lo — consistente com FR-023, que já exige esse isolamento independentemente da
+   questão de versão.
+   **Atualização (2026-08-13, validação real do operador)**: os pins exatos de
+   `requirements_sonic.txt` (`torch==2.4.0`/`torchaudio==2.4.0`/`torchvision==0.19.0`) não têm
+   wheel para Python 3.13 — só até cp312 — e o único interpretador Python disponível no ambiente do
+   projeto é o 3.13. Em vez de instalar um Python mais antigo só para o audio-worker, os três pins
+   foram atualizados para a primeira série do PyTorch com wheel cp313 (`torch==2.6.0`,
+   `torchaudio==2.6.0`, `torchvision==0.21.0` — a mais antiga com suporte, não a mais recente
+   disponível, para minimizar deriva de API em relação ao que o SonicMaster testou).
+   `transformers==4.44.0` também foi bloqueado indiretamente: sua dependência `tokenizers>=0.19,<0.20`
+   não tem wheel cp313 e tenta compilar via Rust (falha em ambiente sem toolchain Rust disponível)
+   — resolvido subindo para `transformers==4.46.3`, cuja faixa de `tokenizers` (`>=0.20,<0.21`) já
+   tem wheel pronta. `diffusers`/`torchlibrosa`/`librosa` são Python puro (sem wheel específica de
+   interpretador) e permaneceram nos pins originais. Validado com um smoke test real (instalação +
+   import de `model.py`/`utils.py`/`stitching.py`/`infer.py`/`worker_main.py` + instanciação de
+   `TangoFlux` a partir do config, 862.987.328 parâmetros) no venv isolado recriado com Python 3.13
+   — sem checkpoint/HF_TOKEN, que continuam bloqueando só a inferência real (T042/T043).
+   Esse smoke test revelou dois imports mortos/desnecessários herdados do upstream que quebravam
+   nesse ambiente mais enxuto (`datasets` nunca usado em `model.py`; `pandas` só usado por
+   `collate_fn`s de treino em `utils.py`) — corrigidos e documentados em
+   `vendor/sonicmaster/NOTICE.md`.
 5. **Checkpoint (3,29 GB) e VAE do Stable Audio Open**: não vendorizados nem baixados no build —
    baixados sob demanda no primeiro uso real (lazy load, FR-019), reaproveitando o padrão de
    download-com-checksum já usado para modelos de imagem/vídeo (`astros_upscale.processing`'s

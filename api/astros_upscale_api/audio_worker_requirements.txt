@@ -2,17 +2,24 @@
 # do backend. Ver specs/006-audio-engine-masterizacao/research.md Decisão 4 e
 # api/README.md para o setup completo.
 #
-# Pins exatos de requirements_sonic.txt do SonicMaster (github.com/AMAAI-Lab/SonicMaster,
+# Base: pins exatos de requirements_sonic.txt do SonicMaster (github.com/AMAAI-Lab/SonicMaster,
 # commit c4c0869c14bada6c5cb7d3decbcdc00e6a3050f5) — deliberadamente NÃO alinhados com o
 # torch/diffusers/transformers usados pelo resto do projeto (ver research.md: o isolamento
 # de ambiente elimina o risco de incompatibilidade em vez de tentar resolvê-lo).
 #
+# torch/torchaudio/torchvision foram atualizados para a primeira série com wheels para
+# Python 3.13 (torch==2.4.0 original não publica wheel para cp313 — só até cp312). Escolhida
+# a série mais antiga com suporte a 3.13 (2.6.0), não a mais recente disponível, para minimizar
+# deriva de API em relação aos pins que o SonicMaster efetivamente testou. transformers/diffusers/
+# torchlibrosa/librosa são pacotes Python puro (sem wheel específica de versão do interpretador)
+# e permanecem nos pins originais.
+#
 # Excluídos dos pins originais (só treino/avaliação, não usados por model.py em inferência):
 # accelerate, datasets, wandb, laion_clap.
-torch==2.4.0
-torchaudio==2.4.0
-torchvision==0.19.0
-transformers==4.44.0
+torch==2.6.0
+torchaudio==2.6.0
+torchvision==0.21.0
+transformers==4.46.3
 diffusers==0.30.0
 torchlibrosa==0.1.0
 librosa==0.11.0

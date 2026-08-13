@@ -17,8 +17,8 @@ coleção de scripts de pesquisa. Este projeto vendoriza só o necessário para 
 
 | Arquivo aqui | Origem | Adaptação |
 |---|---|---|
-| `model.py` | `model.py` | Cópia direta — define `TangoFlux` (arquitetura do modelo) |
-| `utils.py` | `utils.py` | Cópia direta — utilitários de áudio/dataset usados por `model.py` |
+| `model.py` | `model.py` | Cópia direta + remoção de um import morto de `datasets` (nunca referenciado no arquivo — dependência de treino, deliberadamente fora do ambiente de inferência) |
+| `utils.py` | `utils.py` | Cópia direta + `import pandas as pd` movido para dentro dos dois métodos `collate_fn` (só usados pelas classes `Dataset` de treino, nunca pelo caminho de inferência) — evita puxar `pandas` no ambiente de inferência só por um import de topo de arquivo não utilizado |
 | `configs/tangoflux_config.yaml` | `configs/tangoflux_config.yaml` | Cópia direta |
 | `infer.py` | `infer_single.py` | Baseado no único script de inferência do repositório de origem
 sem caminhos absolutos hardcoded — mantém a mesma interface de linha de comando
@@ -41,6 +41,16 @@ repositório.
 
 ## Modificações feitas neste código
 
-Nenhuma modificação de lógica foi feita em `model.py`/`utils.py` além da cópia direta. `infer.py`
-é adaptado de `infer_single.py` do repositório de origem (já era o script de referência sem
-caminhos hardcoded) — qualquer alteração futura deve ser documentada aqui.
+Nenhuma modificação de **lógica** foi feita em `model.py`/`utils.py` além da cópia direta — as duas
+mudanças (removida em 2026-08-13) são puramente de import, para permitir que o subconjunto de
+inferência funcione sem instalar `datasets`/`pandas` (dependências de treino, ver tabela acima):
+
+- `model.py`: removida a linha `from datasets import load_dataset, Audio` — nem `load_dataset` nem
+  `Audio` são referenciados em nenhum outro lugar do arquivo (import morto do upstream).
+- `utils.py`: `import pandas as pd` (nível de módulo) movido para dentro dos dois métodos
+  `collate_fn` que efetivamente usam `pd.DataFrame` — esses métodos pertencem a
+  `DPOText2AudioDataset`/`Text2AudioDataset`, usadas só em treino, nunca importadas pelo caminho de
+  inferência (`infer.py`/`worker_main.py`).
+
+`infer.py` é adaptado de `infer_single.py` do repositório de origem (já era o script de referência
+sem caminhos hardcoded) — qualquer alteração futura deve ser documentada aqui.
