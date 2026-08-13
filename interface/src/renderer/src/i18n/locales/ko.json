@@ -10,6 +10,18 @@
     "history": "기록",
     "settings": "설정"
   },
+  "home": {
+    "title": "오늘은 무엇을 개선하시겠습니까?",
+    "openAria": "{label} 열기",
+    "status": {
+      "processing": "처리 중",
+      "done": "완료",
+      "errors": "오류 있음",
+      "queued": "대기 중",
+      "configuring": "구성 중",
+      "empty": "비어 있음"
+    }
+  },
   "sidebar": {
     "support": "지원",
     "collapse": "사이드바 접기",
@@ -40,10 +52,6 @@
         "light": "라이트",
         "dark": "다크",
         "auto": "자동"
-      },
-      "accent": {
-        "label": "강조 색상",
-        "description": "버튼, 링크, 활성 요소에 사용되는 기본 색상"
       },
       "autoUpdate": {
         "label": "자동 업데이트",

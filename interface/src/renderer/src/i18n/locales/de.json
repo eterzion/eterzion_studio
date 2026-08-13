@@ -10,6 +10,18 @@
     "history": "Verlauf",
     "settings": "Einstellungen"
   },
+  "home": {
+    "title": "Was möchten Sie heute verbessern?",
+    "openAria": "{label} öffnen",
+    "status": {
+      "processing": "Wird verarbeitet",
+      "done": "Fertig",
+      "errors": "Mit Fehlern",
+      "queued": "In der Warteschlange",
+      "configuring": "Wird konfiguriert",
+      "empty": "Leer"
+    }
+  },
   "sidebar": {
     "support": "Support",
     "collapse": "Seitenleiste einklappen",
@@ -40,10 +52,6 @@
         "light": "Hell",
         "dark": "Dunkel",
         "auto": "Automatisch"
-      },
-      "accent": {
-        "label": "Akzentfarbe",
-        "description": "Hauptfarbe für Schaltflächen, Links und aktive Elemente"
       },
       "autoUpdate": {
         "label": "Automatische Updates",

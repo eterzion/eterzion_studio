@@ -106,7 +106,7 @@ class TestAudioComponentsInstallViaRealPip:
         assert cmd[-1].endswith('[audio]')
         assert result.id == 'speech'
 
-    def test_update_music_runs_pip_install_with_upgrade_flag(self, monkeypatch):
+    def test_update_speech_runs_pip_install_with_upgrade_flag(self, monkeypatch):
         calls = []
 
         def fake_run(cmd, **kwargs):
@@ -121,9 +121,32 @@ class TestAudioComponentsInstallViaRealPip:
 
         monkeypatch.setattr(processing.subprocess, 'run', fake_run)
 
-        processing.update_component('music')
+        processing.update_component('speech')
 
         assert '--upgrade' in calls[0]
+
+    def test_install_music_refuses_no_pip_involved(self, monkeypatch):
+        """specs/006-audio-engine-masterizacao: SonicMaster runs from an
+        isolated venv the operator sets up manually (api/README.md), never
+        pip-installed into this process — unlike speech, which still shares
+        the [audio] extra. Regression test for a real bug: this used to run
+        `_pip_install_audio_extra()` (a no-op for SonicMaster, which was
+        never in that extra) and then re-check the stale
+        `shutil.which('inference_fullsong.py')` — always False, so the
+        Components screen showed "not installed" forever even with a fully
+        configured, working audio-worker."""
+        calls = []
+        monkeypatch.setattr(processing.subprocess, 'run', lambda *a, **k: calls.append(a))
+        with pytest.raises(ComponentActionUnsupportedError, match='SonicMaster'):
+            processing.install_component('music')
+        assert not calls, 'install_component("music") must never shell out to pip'
+
+    def test_update_music_refuses_no_pip_involved(self, monkeypatch):
+        calls = []
+        monkeypatch.setattr(processing.subprocess, 'run', lambda *a, **k: calls.append(a))
+        with pytest.raises(ComponentActionUnsupportedError, match='SonicMaster'):
+            processing.update_component('music')
+        assert not calls
 
     def test_install_raises_with_real_pip_output_on_failure(self, monkeypatch):
         def fake_run(cmd, **kwargs):
@@ -142,10 +165,11 @@ class TestAudioComponentsInstallViaRealPip:
     def test_install_refuses_when_no_source_checkout_present(self, tmp_path, monkeypatch):
         """A packaged build has neither pip nor this repo's pyproject.toml
         next to it — must fail with an actionable message, not a raw
-        FileNotFoundError from pip itself."""
+        FileNotFoundError from pip itself. `speech` (not `music`): only
+        speech still installs via this pip path."""
         monkeypatch.setattr(processing, '_REPO_ROOT', tmp_path)
         with pytest.raises(ComponentActionUnsupportedError, match='pip install astros_upscale'):
-            processing.install_component('music')
+            processing.install_component('speech')
 
     def test_delete_music_refuses(self):
         with pytest.raises(ComponentActionUnsupportedError):

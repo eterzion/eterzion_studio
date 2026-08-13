@@ -10,6 +10,18 @@
     "history": "历史记录",
     "settings": "设置"
   },
+  "home": {
+    "title": "今天您想改善什么？",
+    "openAria": "打开{label}",
+    "status": {
+      "processing": "处理中",
+      "done": "已完成",
+      "errors": "有错误",
+      "queued": "排队中",
+      "configuring": "配置中",
+      "empty": "空"
+    }
+  },
   "sidebar": {
     "support": "支持",
     "collapse": "收起侧边栏",
@@ -40,10 +52,6 @@
         "light": "浅色",
         "dark": "深色",
         "auto": "自动"
-      },
-      "accent": {
-        "label": "强调色",
-        "description": "用于按钮、链接和活动元素的主色"
       },
       "autoUpdate": {
         "label": "自动更新",

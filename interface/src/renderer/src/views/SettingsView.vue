@@ -34,8 +34,7 @@ import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
-import { settingsState, setTheme, setAccentColor, setLanguage } from '../store/settings'
-import { ACCENT_COLORS, type AccentColor } from '../theme'
+import { settingsState, setTheme, setLanguage } from '../store/settings'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { clearHistory, historyState } from '../store/history'
 import { listComponents } from '../services/api'
@@ -256,33 +255,6 @@ const outputFolderLabel = computed(
               ]"
               @update:model-value="(v) => setTheme(v as 'dark' | 'light' | 'auto')"
             />
-          </SettingRow>
-          <SettingRow
-            :label="t('settings.general.accent.label')"
-            :description="t('settings.general.accent.description')"
-          >
-            <div
-              class="accent-swatches"
-              role="radiogroup"
-              :aria-label="t('settings.general.accent.label')"
-            >
-              <button
-                v-for="accent in ACCENT_COLORS"
-                :key="accent.value"
-                type="button"
-                class="accent-swatch"
-                :class="[
-                  `swatch-${accent.value}`,
-                  { active: settingsState.accentColor === accent.value }
-                ]"
-                role="radio"
-                :aria-checked="settingsState.accentColor === accent.value"
-                :title="accent.label"
-                @click="setAccentColor(accent.value as AccentColor)"
-              >
-                <Check v-if="settingsState.accentColor === accent.value" :size="13" />
-              </button>
-            </div>
           </SettingRow>
           <SettingRow
             :label="t('settings.general.autoUpdate.label')"
@@ -918,65 +890,5 @@ const outputFolderLabel = computed(
   gap: 4px;
   font-size: 11px;
   color: var(--color-success);
-}
-
-.accent-swatches {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.accent-swatch {
-  width: 26px;
-  height: 26px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  border: 2px solid transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--on-primary);
-  cursor: pointer;
-  transition:
-    transform var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
-.accent-swatch:hover {
-  transform: scale(1.08);
-}
-
-.accent-swatch:focus-visible {
-  outline: 2px solid var(--text-primary);
-  outline-offset: 2px;
-}
-
-.accent-swatch.active {
-  border-color: var(--text-primary);
-}
-
-.swatch-cyan {
-  background: #06b6d4;
-}
-.swatch-blue {
-  background: #3b82f6;
-}
-.swatch-purple {
-  background: #8b5cf6;
-}
-.swatch-green {
-  background: #22c55e;
-}
-.swatch-red {
-  background: #ef4444;
-}
-.swatch-orange {
-  background: #f97316;
-}
-.swatch-pink {
-  background: #ec4899;
-}
-.swatch-gray {
-  background: #64748b;
 }
 </style>

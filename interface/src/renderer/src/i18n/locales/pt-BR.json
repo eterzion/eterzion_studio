@@ -10,6 +10,18 @@
     "history": "Histórico",
     "settings": "Configurações"
   },
+  "home": {
+    "title": "O que você gostaria de melhorar hoje?",
+    "openAria": "Abrir {label}",
+    "status": {
+      "processing": "Processando",
+      "done": "Concluído",
+      "errors": "Com erros",
+      "queued": "Na fila",
+      "configuring": "Configurando",
+      "empty": "Vazio"
+    }
+  },
   "sidebar": {
     "support": "Suporte",
     "collapse": "Recolher barra lateral",
@@ -40,10 +52,6 @@
         "light": "Claro",
         "dark": "Escuro",
         "auto": "Automático"
-      },
-      "accent": {
-        "label": "Cor de destaque",
-        "description": "Cor principal usada em botões, links e elementos ativos"
       },
       "autoUpdate": {
         "label": "Atualizações automáticas",

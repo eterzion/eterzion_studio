@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ArrowRight, FolderOpen, Trash2 } from '@lucide/vue'
 import CategoryIcon from '../components/CategoryIcon.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
@@ -7,15 +8,18 @@ import SummaryCards from '../components/SummaryCards.vue'
 import { queueState, removeJob, setActiveJob } from '../store/jobs'
 import type { NavKey } from '../types'
 
+const { t } = useI18n()
 const emit = defineEmits<{ navigate: [key: NavKey] }>()
 type CategoryVariant = 'imagem' | 'video' | 'audio' | 'otimizar' | 'converter'
-const CATEGORIES: { key: NavKey; label: string; variant: CategoryVariant; tint: string }[] = [
-  { key: 'imagem', label: 'Image', variant: 'imagem', tint: '#1688ff' },
-  { key: 'video', label: 'Video', variant: 'video', tint: '#bd24ff' },
-  { key: 'audio', label: 'Audio', variant: 'audio', tint: '#20dced' },
-  { key: 'otimizar', label: 'Otimizar', variant: 'otimizar', tint: '#59ef23' },
-  { key: 'converter', label: 'Converter', variant: 'converter', tint: '#ff9d00' }
-]
+const CATEGORIES = computed<
+  { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
+>(() => [
+  { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: '#1688ff' },
+  { key: 'video', label: t('nav.video'), variant: 'video', tint: '#bd24ff' },
+  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: '#20dced' },
+  { key: 'otimizar', label: t('nav.optimize'), variant: 'otimizar', tint: '#59ef23' },
+  { key: 'converter', label: t('nav.converter'), variant: 'converter', tint: '#ff9d00' }
+])
 const jobs = computed(() => queueState.jobs)
 const fileCount = computed(() => jobs.value.length)
 const totalSizeLabel = computed(
@@ -23,12 +27,13 @@ const totalSizeLabel = computed(
     `${(jobs.value.reduce((sum, job) => sum + job.sourceMeta.sizeBytes, 0) / (1024 * 1024)).toFixed(2)} MB`
 )
 const statusLabel = computed(() => {
-  if (jobs.value.some((job) => job.status === 'processing')) return 'Processando'
-  if (jobs.value.length && jobs.value.every((job) => job.status === 'done')) return 'Concluído'
-  if (jobs.value.some((job) => job.status === 'error')) return 'Com erros'
-  if (jobs.value.some((job) => job.status === 'queued')) return 'Na fila'
-  if (jobs.value.length) return 'Configurando'
-  return 'Vazio'
+  if (jobs.value.some((job) => job.status === 'processing')) return t('home.status.processing')
+  if (jobs.value.length && jobs.value.every((job) => job.status === 'done'))
+    return t('home.status.done')
+  if (jobs.value.some((job) => job.status === 'error')) return t('home.status.errors')
+  if (jobs.value.some((job) => job.status === 'queued')) return t('home.status.queued')
+  if (jobs.value.length) return t('home.status.configuring')
+  return t('home.status.empty')
 })
 function clearQueue(): void {
   for (const job of [...jobs.value]) removeJob(job.id)
@@ -42,7 +47,7 @@ function openImage(id?: string): void {
 <template>
   <main class="home-view">
     <div class="home-panel">
-      <h1 class="home-title">What would you like to improve today?</h1>
+      <h1 class="home-title">{{ t('home.title') }}</h1>
       <div class="category-grid">
         <button
           v-for="category in CATEGORIES"
@@ -50,7 +55,7 @@ function openImage(id?: string): void {
           class="category-card"
           type="button"
           :style="{ '--tint': category.tint }"
-          :aria-label="`Abrir ${category.label}`"
+          :aria-label="t('home.openAria', { label: category.label })"
           @click="emit('navigate', category.key)"
         >
           <span class="category-label">{{ category.label }}</span>

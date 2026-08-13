@@ -10,6 +10,18 @@
     "history": "履歴",
     "settings": "設定"
   },
+  "home": {
+    "title": "今日は何を改善しますか？",
+    "openAria": "{label}を開く",
+    "status": {
+      "processing": "処理中",
+      "done": "完了",
+      "errors": "エラーあり",
+      "queued": "キュー待ち",
+      "configuring": "設定中",
+      "empty": "空"
+    }
+  },
   "sidebar": {
     "support": "サポート",
     "collapse": "サイドバーを折りたたむ",
@@ -40,10 +52,6 @@
         "light": "ライト",
         "dark": "ダーク",
         "auto": "自動"
-      },
-      "accent": {
-        "label": "アクセントカラー",
-        "description": "ボタン、リンク、アクティブ要素に使用するメインカラー"
       },
       "autoUpdate": {
         "label": "自動更新",

@@ -1,20 +1,11 @@
 import { reactive, watch } from 'vue'
-import {
-  applyAccent,
-  applyTheme,
-  getInitialAccent,
-  getInitialTheme,
-  watchSystemTheme,
-  type AccentColor,
-  type ThemeMode
-} from '../theme'
+import { applyTheme, getInitialTheme, watchSystemTheme, type ThemeMode } from '../theme'
 import { detectSystemLocale, setLocale, type SupportedLocale } from '../i18n'
 
 const STORAGE_KEY = 'astros-upscale:settings'
 
 export interface AppSettings {
   theme: ThemeMode
-  accentColor: AccentColor
   defaultOutputFolder: string | null
   defaultExportFormat: 'png' | 'jpg' | 'webp'
   defaultScalePreset: 2 | 4
@@ -37,7 +28,6 @@ function defaults(): AppSettings {
     // before Vue even mounts, to paint the right theme with no flash of the
     // wrong one. This just mirrors it so Configurações has something to bind to.
     theme: getInitialTheme(),
-    accentColor: getInitialAccent(),
     defaultOutputFolder: null,
     defaultExportFormat: 'png',
     defaultScalePreset: 4,
@@ -78,7 +68,6 @@ function applyToDom(s: AppSettings): void {
 }
 
 applyToDom(settingsState)
-applyAccent(settingsState.accentColor)
 watchSystemTheme(() => settingsState.theme)
 
 watch(
@@ -93,11 +82,6 @@ watch(
 export function setTheme(mode: ThemeMode): void {
   settingsState.theme = mode
   applyTheme(mode)
-}
-
-export function setAccentColor(accent: AccentColor): void {
-  settingsState.accentColor = accent
-  applyAccent(accent)
 }
 
 export function setLanguage(language: SupportedLocale | 'auto'): void {

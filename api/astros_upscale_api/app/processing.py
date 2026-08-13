@@ -708,13 +708,20 @@ def _audio_component(content_type: str, engine_ref: str) -> ComponentInfo:
             technical_name=engine_ref, version='pacote pip (sem versão fixada)',
             provenance=entry['reference'], license='Apache-2.0',
         )
-    # music / sonicmaster — see module docstring: script-based repo, no clean
-    # importable API to probe beyond "is the real CLI entry point on PATH".
-    script_available = bool(shutil.which('inference_fullsong.py') or shutil.which('inference_fullsong'))
+    # music / sonicmaster — specs/006-audio-engine-masterizacao: runs from a
+    # vendored inference subset in an isolated venv (audio_worker_requirements.txt),
+    # never pip-installed into this process — "installed" means the operator
+    # configured ASTROS_AUDIO_WORKER_PYTHON/ASTROS_AUDIO_WORKER_CHECKPOINT and
+    # both paths exist (api/README.md's setup section). GPU/VRAM/HF_TOKEN
+    # validity are runtime concerns (SonicMasterProvider.is_available()),
+    # not "installed" — this screen answers "is the venv+checkpoint set up",
+    # not "will an AI job succeed right now".
+    checkpoint_ready = bool(settings.audio_worker_python) and os.path.isfile(settings.audio_worker_python) \
+        and os.path.isfile(settings.audio_worker_checkpoint)
     return ComponentInfo(
         id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=0,
-        install_state='installed' if script_available else 'not_installed', update_available=False,
-        technical_name=engine_ref, version='pacote pip (sem versão fixada)',
+        install_state='installed' if checkpoint_ready else 'not_installed', update_available=False,
+        technical_name=engine_ref, version='ambiente isolado (ver api/README.md)',
         provenance='https://github.com/AMAAI-Lab/SonicMaster', license='Apache-2.0 (condicional — ver MODEL_LICENSES.md §3-bis)',
     )
 
@@ -783,7 +790,16 @@ def _pip_install_audio_extra(*extra_args: str) -> None:
 def install_component(component_id: str) -> ComponentInfo:
     """Real download + real SHA-256 verification (astros_upscale.processing.resolve_model)
     for image/video; a real `pip install` of the shared [audio] extra for
-    speech/music (see _pip_install_audio_extra)."""
+    speech (see _pip_install_audio_extra). `music` (SonicMaster) is
+    deliberately NOT installable from here — it runs from an isolated venv
+    the operator sets up manually (api/README.md), never pip-installed into
+    this process (specs/006-audio-engine-masterizacao)."""
+    if component_id == 'music':
+        raise ComponentActionUnsupportedError(
+            'A restauração de música por IA (SonicMaster) não é instalável por esta tela — ela '
+            'roda num ambiente Python isolado, separado deste processo. Configure-a manualmente '
+            'seguindo "Configurando o audio-worker" em api/README.md (venv próprio, checkpoint do '
+            'modelo, variável HF_TOKEN).')
     if component_id in _AUDIO_CONTENT_TYPES:
         _pip_install_audio_extra()
         return _component_info(component_id)
@@ -797,6 +813,11 @@ def install_component(component_id: str) -> ComponentInfo:
 
 
 def update_component(component_id: str) -> ComponentInfo:
+    if component_id == 'music':
+        raise ComponentActionUnsupportedError(
+            'A restauração de música por IA (SonicMaster) não é atualizável por esta tela — troque '
+            'as versões pinadas em audio_worker_requirements.txt e reinstale manualmente no venv '
+            'isolado do audio-worker.')
     if component_id in _AUDIO_CONTENT_TYPES:
         _pip_install_audio_extra('--upgrade')
         return _component_info(component_id)

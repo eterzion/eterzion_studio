@@ -10,6 +10,18 @@
     "history": "Historique",
     "settings": "Paramètres"
   },
+  "home": {
+    "title": "Que souhaitez-vous améliorer aujourd'hui ?",
+    "openAria": "Ouvrir {label}",
+    "status": {
+      "processing": "En cours",
+      "done": "Terminé",
+      "errors": "Avec erreurs",
+      "queued": "En file d'attente",
+      "configuring": "Configuration",
+      "empty": "Vide"
+    }
+  },
   "sidebar": {
     "support": "Assistance",
     "collapse": "Réduire la barre latérale",
@@ -40,10 +52,6 @@
         "light": "Clair",
         "dark": "Sombre",
         "auto": "Automatique"
-      },
-      "accent": {
-        "label": "Couleur d'accent",
-        "description": "Couleur principale utilisée pour les boutons, liens et éléments actifs"
       },
       "autoUpdate": {
         "label": "Mises à jour automatiques",

@@ -2,21 +2,8 @@ import { ref } from 'vue'
 
 export type ThemeMode = 'dark' | 'light' | 'auto'
 export type ResolvedTheme = 'dark' | 'light'
-export type AccentColor = 'cyan' | 'blue' | 'purple' | 'green' | 'red' | 'orange' | 'pink' | 'gray'
 
 const THEME_STORAGE_KEY = 'astros-upscale:theme'
-const ACCENT_STORAGE_KEY = 'astros-upscale:accent'
-
-export const ACCENT_COLORS: { value: AccentColor; label: string }[] = [
-  { value: 'cyan', label: 'Ciano' },
-  { value: 'blue', label: 'Azul' },
-  { value: 'purple', label: 'Roxo' },
-  { value: 'green', label: 'Verde' },
-  { value: 'red', label: 'Vermelho' },
-  { value: 'orange', label: 'Laranja' },
-  { value: 'pink', label: 'Rosa' },
-  { value: 'gray', label: 'Cinza' }
-]
 
 function systemPrefersLight(): boolean {
   return window.matchMedia?.('(prefers-color-scheme: light)').matches ?? false
@@ -33,11 +20,6 @@ export function getInitialTheme(): ThemeMode {
   return systemPrefersLight() ? 'light' : 'dark'
 }
 
-export function getInitialAccent(): AccentColor {
-  const stored = localStorage.getItem(ACCENT_STORAGE_KEY) as AccentColor | null
-  return stored && ACCENT_COLORS.some((a) => a.value === stored) ? stored : 'cyan'
-}
-
 /** Reactive mirror of the currently painted theme (post-'auto'-resolution) —
  * so UI like the sidebar's quick-toggle can reflect the real state, including
  * when it changes because Windows' own light/dark switch changed, not just
@@ -49,11 +31,6 @@ export function applyTheme(mode: ThemeMode): void {
   document.documentElement.setAttribute('data-theme', resolved)
   currentResolvedTheme.value = resolved
   localStorage.setItem(THEME_STORAGE_KEY, mode)
-}
-
-export function applyAccent(accent: AccentColor): void {
-  document.documentElement.setAttribute('data-accent', accent)
-  localStorage.setItem(ACCENT_STORAGE_KEY, accent)
 }
 
 let systemThemeListenerBound = false

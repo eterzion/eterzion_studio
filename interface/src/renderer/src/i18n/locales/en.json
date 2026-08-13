@@ -10,6 +10,18 @@
     "history": "History",
     "settings": "Settings"
   },
+  "home": {
+    "title": "What would you like to improve today?",
+    "openAria": "Open {label}",
+    "status": {
+      "processing": "Processing",
+      "done": "Done",
+      "errors": "With errors",
+      "queued": "Queued",
+      "configuring": "Configuring",
+      "empty": "Empty"
+    }
+  },
   "sidebar": {
     "support": "Support",
     "collapse": "Collapse sidebar",
@@ -40,10 +52,6 @@
         "light": "Light",
         "dark": "Dark",
         "auto": "Automatic"
-      },
-      "accent": {
-        "label": "Accent color",
-        "description": "Main color used for buttons, links, and active elements"
       },
       "autoUpdate": {
         "label": "Automatic updates",
