@@ -133,6 +133,7 @@ class SonicMasterProvider:
             prompt=instruction,
             output_path=output_path,
             num_inference_steps=profile.num_inference_steps,
+            hf_token=settings.hf_token,
         )
 
     def restore_full_song(self, input_path: str, instruction: str, strength: int = 50) -> str:

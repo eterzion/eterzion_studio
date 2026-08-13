@@ -13,7 +13,16 @@
 # independentemente da versão exata usada.
 #
 # Excluídos dos pins originais (só treino/avaliação, não usados por model.py em inferência):
-# accelerate, datasets, wandb, laion_clap.
+# datasets, wandb, laion_clap. `accelerate` foi excluído por engano na auditoria original (marcado
+# como "só treino") — na verdade `diffusers.from_pretrained()` o usa também em tempo de inferência
+# para `low_cpu_mem_usage` (carregamento de checkpoint mais eficiente); sem ele, funciona igual mas
+# emite um aviso sugerindo instalar. Corrigido/incluído abaixo depois de validação real.
+#
+# torchcodec NÃO está listado aqui de propósito: torchaudio 2.11's `torchaudio.load()` passou a
+# exigir torchcodec por padrão, mas torchcodec precisa das bibliotecas *compartilhadas* do FFmpeg
+# (libavcodec.dll etc.) — um build estático de ffmpeg (o padrão de dev deste projeto, ver
+# api/README.md §5) não as fornece, então o carregador nativo do torchcodec falha. `infer.py` usa
+# `soundfile` (já listado abaixo, sem dependência externa de FFmpeg) para ler o áudio de entrada.
 torch==2.13.0
 torchaudio==2.11.0
 torchvision==0.28.0
@@ -26,3 +35,4 @@ safetensors
 huggingface_hub
 pyyaml
 tqdm
+accelerate

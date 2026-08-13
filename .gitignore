@@ -135,3 +135,14 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# SonicMaster checkpoint (~3.3GB) — downloaded on demand per
+# specs/006-audio-engine-masterizacao/research.md, never committed (unlike
+# the much smaller image/video checkpoints already tracked under models/).
+models/sonicmaster.safetensors
+models/sonicmaster/
+
+# Ad hoc local audio fixtures generated manually while testing the
+# audio-engine (real pytest fixtures are synthesized inline in the test
+# files themselves, not committed as standalone files).
+/teste_*.wav

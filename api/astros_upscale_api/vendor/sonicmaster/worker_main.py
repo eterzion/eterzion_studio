@@ -37,6 +37,7 @@ def _handle_restore(msg: dict, send) -> None:
         num_inference_steps=msg.get('num_inference_steps', 10),
         guidance_scale=msg.get('guidance_scale', 1.0),
         seed=msg.get('seed', 0),
+        hf_token=msg.get('hf_token') or None,
     )
     send({'type': 'result', 'output_path': output_path})
 

@@ -31,7 +31,7 @@ from diffusers import AutoencoderOobleck
 from model import TangoFlux
 from stitching import split_into_chunks, stitch_chunks_with_crossfade
 
-hf_token = (
+_env_hf_token = (
     os.getenv("HF_TOKEN")
     or os.getenv("HUGGINGFACE_TOKEN")
     or os.getenv("HUGGINGFACEHUB_API_TOKEN")
@@ -62,11 +62,11 @@ def _load_model(ckpt_path: Path, config_path: str, device: str) -> TangoFlux:
     return model
 
 
-def _load_vae(device: str) -> AutoencoderOobleck:
+def _load_vae(device: str, hf_token: str | None = None) -> AutoencoderOobleck:
     if device in _vae_cache:
         return _vae_cache[device]
     vae = AutoencoderOobleck.from_pretrained(
-        "stabilityai/stable-audio-open-1.0", subfolder="vae", use_auth_token=hf_token,
+        "stabilityai/stable-audio-open-1.0", subfolder="vae", use_auth_token=hf_token or _env_hf_token,
     ).to(device)
     vae.eval()
     _vae_cache[device] = vae
@@ -100,25 +100,38 @@ def run_single_inference(
     guidance_scale: float = 1.0,
     solver: str = "Euler",
     seed: int = 0,
+    hf_token: str | None = None,
 ) -> str:
     """Restores `input_path` with SonicMaster, guided by `prompt`, and writes
     the result to `output_path`. Handles both a short clip (single chunk, no
     crossfade needed) and a full song (multiple chunks, overlap + crossfade +
     carried latent conditioning) with the same code path — a clip shorter
-    than `chunk_duration` naturally produces exactly one chunk (FR-016)."""
+    than `chunk_duration` naturally produces exactly one chunk (FR-016).
+    `hf_token` authenticates against the gated Stable Audio Open VAE repo —
+    explicitly passed by the caller (worker_main.py, from the API process's
+    own settings) rather than relying solely on this process's own
+    environment, which real operator testing found unreliable across
+    isolated-worker subprocess spawns on Windows."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.backends.cuda.matmul.allow_tf32 = True
     torch.backends.cudnn.allow_tf32 = True
 
     ckpt_path = _resolve_ckpt(ckpt)
     model = _load_model(ckpt_path, config, device)
-    vae = _load_vae(device)
+    vae = _load_vae(device, hf_token)
 
     in_path = Path(input_path)
     if not in_path.exists():
         raise FileNotFoundError(f"Input audio not found: {in_path}")
 
-    audio, sr = torchaudio.load(str(in_path))  # [C, T]
+    # soundfile, not torchaudio.load(): torchaudio's default backend now
+    # requires torchcodec, which itself needs FFmpeg *shared* libraries
+    # (libavcodec.dll etc.) — a static ffmpeg build (this project's dev
+    # default, see api/README.md) provides none, so torchcodec's native
+    # loader fails at import. soundfile (libsndfile, bundled in its wheel)
+    # needs no external FFmpeg at all.
+    raw, sr = sf.read(str(in_path), dtype="float32", always_2d=True)  # [T, C]
+    audio = torch.from_numpy(raw.T)  # [C, T]
     if audio.shape[0] == 1:
         audio = audio.repeat(2, 1)
     elif audio.shape[0] > 2:

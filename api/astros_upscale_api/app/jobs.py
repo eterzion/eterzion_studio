@@ -59,9 +59,12 @@ class WorkerFailure(RuntimeError):
         self.error_class = error_class
 
 
-def _restricted_env(authkey: str) -> dict[str, str]:
+def _restricted_env(authkey: str, extra_passthrough: tuple[str, ...] = ()) -> dict[str, str]:
     """Only what the interpreter/CUDA/DLL loader genuinely needs — not the
-    API process's full environment (no API keys, no unrelated secrets)."""
+    API process's full environment (no API keys, no unrelated secrets).
+    `extra_passthrough` lets a specific supervisor (e.g. the audio-worker's,
+    which needs HF_TOKEN to fetch the gated Stable Audio Open VAE) opt into a
+    few more names without widening what the image/video worker receives."""
     passthrough = (
         'SYSTEMROOT', 'SYSTEMDRIVE', 'PATH', 'TEMP', 'TMP', 'USERNAME', 'USERDOMAIN',
         'NUMBER_OF_PROCESSORS', 'PROCESSOR_ARCHITECTURE', 'CUDA_PATH', 'CUDA_VISIBLE_DEVICES',
@@ -69,7 +72,7 @@ def _restricted_env(authkey: str) -> dict[str, str]:
         # Needed for app.security's DPAPI-protected identity file (Fase 2/4)
         # to resolve the same per-user path the API process itself uses.
         'LOCALAPPDATA', 'APPDATA', 'USERPROFILE',
-    )
+    ) + extra_passthrough
     env = {k: os.environ[k] for k in passthrough if k in os.environ}
     env['ASTROS_WORKER_AUTHKEY'] = authkey
     return env
@@ -86,7 +89,10 @@ class WorkerSupervisor:
     two incompatible dependency sets (specs/006-audio-engine-masterizacao/
     research.md Decisão 3, found during /speckit.analyze)."""
 
-    def __init__(self, python_executable: str | None = None, spawn_args: list[str] | None = None) -> None:
+    def __init__(
+        self, python_executable: str | None = None, spawn_args: list[str] | None = None,
+        extra_env_passthrough: tuple[str, ...] = (),
+    ) -> None:
         self._lock = threading.Lock()
         self._listener: Listener | None = None
         self._conn = None
@@ -95,6 +101,12 @@ class WorkerSupervisor:
         self._authkey: str | None = None
         self._python_executable = python_executable or sys.executable
         self._spawn_args = spawn_args if spawn_args is not None else ['-m', 'app.jobs']
+        self._extra_env_passthrough = extra_env_passthrough
+        # Updated after every restore_audio() call (success or failure) — read by
+        # _audio_worker_idle_watchdog_loop() to release VRAM after real inactivity.
+        # None until the first call: an audio-worker instance never spawned yet
+        # is not "idle", it's simply not running (nothing to release).
+        self._last_used_at: float | None = None
 
     # ---------------------------------------------------------------- lifecycle
     def _spawn(self) -> None:
@@ -106,7 +118,7 @@ class WorkerSupervisor:
         self._process = subprocess.Popen(
             [self._python_executable, *self._spawn_args, self._listener.address],
             cwd=str(_API_ROOT),
-            env=_restricted_env(self._authkey),
+            env=_restricted_env(self._authkey, self._extra_env_passthrough),
             shell=False,
             stdin=subprocess.DEVNULL,
         )
@@ -278,21 +290,27 @@ class WorkerSupervisor:
         per-step progress the way image/video does). Only meaningful on an
         instance returned by `get_audio_worker_supervisor()`. Returns the
         output path. `timeout` bounds a single `conn.recv()` wait — real
-        inference over several chunks can legitimately take minutes."""
-        self.ensure_started()
-        assert self._conn is not None
-        self._conn.send({'type': 'restore', **payload})
-        if not self._conn.poll(timeout):
-            raise WorkerCrashed('O audio-worker não respondeu a tempo.')
+        inference over several chunks can legitimately take minutes.
+        Always stamps `_last_used_at` on the way out (success or failure) —
+        `_audio_worker_idle_watchdog_loop()` reads it to release VRAM after
+        real inactivity, not after a call that merely started."""
         try:
-            msg = self._conn.recv()
-        except (EOFError, OSError) as error:
-            raise WorkerCrashed('O audio-worker encerrou inesperadamente.') from error
-        if msg.get('type') == 'result':
-            return msg['output_path']
-        if msg.get('type') == 'error':
-            raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
-        raise WorkerFailure(f'Resposta inesperada do audio-worker: {msg!r}', 'UnexpectedMessage')
+            self.ensure_started()
+            assert self._conn is not None
+            self._conn.send({'type': 'restore', **payload})
+            if not self._conn.poll(timeout):
+                raise WorkerCrashed('O audio-worker não respondeu a tempo.')
+            try:
+                msg = self._conn.recv()
+            except (EOFError, OSError) as error:
+                raise WorkerCrashed('O audio-worker encerrou inesperadamente.') from error
+            if msg.get('type') == 'result':
+                return msg['output_path']
+            if msg.get('type') == 'error':
+                raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
+            raise WorkerFailure(f'Resposta inesperada do audio-worker: {msg!r}', 'UnexpectedMessage')
+        finally:
+            self._last_used_at = time.monotonic()
 
 
 _supervisor: WorkerSupervisor | None = None
@@ -320,6 +338,11 @@ def get_audio_worker_supervisor() -> WorkerSupervisor | None:
         _audio_worker_supervisor = WorkerSupervisor(
             python_executable=settings.audio_worker_python,
             spawn_args=[str(worker_main)],
+            # infer.py checks all three names for the Stable Audio Open VAE's
+            # gated-repo auth (research.md — VAE is a real, required inference
+            # dependency, not optional). Image/video's supervisor never gets
+            # these — _restricted_env's default passthrough is unchanged.
+            extra_env_passthrough=('HF_TOKEN', 'HUGGINGFACE_TOKEN', 'HUGGINGFACEHUB_API_TOKEN'),
         )
     return _audio_worker_supervisor
 
@@ -374,6 +397,7 @@ _listeners: dict[str, list['asyncio.Queue[dict]']] = {}
 _executor = ThreadPoolExecutor(max_workers=1)
 _worker_task: asyncio.Task | None = None
 _watchdog_task: asyncio.Task | None = None
+_audio_idle_watchdog_task: asyncio.Task | None = None
 _enqueue_counter = itertools.count(1)
 _processing_job_id: str | None = None
 
@@ -857,12 +881,39 @@ async def _watchdog_loop(interval_seconds: float = 20.0) -> None:
             supervisor.terminate()
 
 
+async def _audio_worker_idle_watchdog_loop(
+    idle_timeout_seconds: float = 300.0, check_interval_seconds: float = 30.0,
+) -> None:
+    """Releases the audio-worker's VRAM after real inactivity — FR-019 only
+    requires the model to stay loaded *for reuse across operations*, not
+    forever; on an 8GB GPU, SonicMaster's ~7.9GB footprint (measured, T043)
+    otherwise starves everything else indefinitely after a single job. Added
+    after real operator testing surfaced this, not part of the original
+    spec — a deliberate product decision, not a correctness fix. Never
+    touches a worker mid-job (same non-interference rule as _watchdog_loop),
+    and does nothing when the audio-worker isn't configured or was never
+    actually spawned."""
+    while True:
+        await asyncio.sleep(check_interval_seconds)
+        supervisor = _audio_worker_supervisor
+        if supervisor is None or not supervisor.is_alive():
+            continue
+        if _processing_job_id is not None:
+            continue
+        if supervisor._last_used_at is None:
+            continue
+        if time.monotonic() - supervisor._last_used_at >= idle_timeout_seconds:
+            supervisor.terminate()
+
+
 def start_worker() -> None:
-    global _worker_task, _watchdog_task
+    global _worker_task, _watchdog_task, _audio_idle_watchdog_task
     if _worker_task is None:
         _worker_task = asyncio.get_event_loop().create_task(_worker_loop())
     if _watchdog_task is None:
         _watchdog_task = asyncio.get_event_loop().create_task(_watchdog_loop())
+    if _audio_idle_watchdog_task is None:
+        _audio_idle_watchdog_task = asyncio.get_event_loop().create_task(_audio_worker_idle_watchdog_loop())
 
 
 def export_job(job_id: str, output_path: str, quality: int | None) -> None:

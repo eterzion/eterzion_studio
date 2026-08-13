@@ -453,12 +453,14 @@ class TangoFlux(nn.Module):
 
         progress_bar = tqdm(range(num_inference_steps), disable=disable_progress)
 
-        txt_ids = torch.zeros(bsz, encoder_hidden_states.shape[1], 3).to(device)
+        # 2D (no batch dim) — newer diffusers FluxTransformer2DModel releases deprecated the 3D
+        # form this upstream code originally passed (identical across the batch anyway, so
+        # dropping the redundant dim changes nothing about what the model sees).
+        txt_ids = torch.zeros(encoder_hidden_states.shape[1], 3).to(device)
         audio_ids = (
             torch.arange(self.audio_seq_len)
-            .unsqueeze(0)
             .unsqueeze(-1)
-            .repeat(bsz, 1, 3)
+            .repeat(1, 3)
             .to(device)
         )
 

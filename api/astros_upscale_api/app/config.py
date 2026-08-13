@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 APP_DIR = Path(__file__).resolve().parent
@@ -56,6 +57,14 @@ class Settings(BaseSettings):
     # (the same true repo-root data directory image/video checkpoints use).
     audio_worker_checkpoint: str = str(
         (APP_DIR.parent.parent.parent / 'models' / 'sonicmaster' / 'model.safetensors').resolve())
+    # Stable Audio Open's VAE is a gated HF repo (research.md — required at
+    # inference time, not optional). Read here — via `.env` or the plain
+    # (unprefixed) HF_TOKEN env var — and passed explicitly in the IPC
+    # message to the audio-worker (app.audio_engine.ai_provider), rather than
+    # relying on subprocess environment inheritance: that path repeatedly
+    # failed to carry a Windows user-level env var across terminal restarts
+    # during real operator testing.
+    hf_token: str = Field(default='', validation_alias='HF_TOKEN')
 
 
 settings = Settings()

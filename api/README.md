@@ -100,20 +100,40 @@ python -m venv .audio_worker_venv
 .audio_worker_venv/Scripts/pip install -r audio_worker_requirements.txt
 ```
 
-`audio_worker_requirements.txt` pina `torch==2.6.0`/`torchaudio==2.6.0`/`torchvision==0.21.0`
-(primeira série do PyTorch com wheel para Python 3.13 — os pins originais do SonicMaster,
-`torch==2.4.0`, não têm wheel para 3.13) e `transformers==4.46.3` (a versão original 4.44.0 puxa
-`tokenizers<0.20`, que também não tem wheel para 3.13 e tenta compilar via Rust). Se o Python do
-sistema já for 3.13 (`python --version`), o comando acima funciona sem passo extra — não é
-necessário instalar um Python mais antigo. Veja `research.md` Decisão 4 para o detalhe completo.
+`audio_worker_requirements.txt` pina `torch==2.13.0`/`torchaudio==2.11.0`/`torchvision==0.28.0`
+(a mesma combinação já usada pelo `.venv` principal do projeto — com wheel CUDA, ver abaixo),
+`transformers==5.5.0`/`diffusers==0.38.0` (majors bem à frente dos pins originais do SonicMaster,
+4.44.0/0.30.0, validados com smoke test real) e `accelerate` (usado por `diffusers` mesmo em
+inferência, para carregamento de checkpoint mais eficiente). Se o Python do sistema já for 3.13
+(`python --version`), o comando acima funciona sem passo extra. Veja `research.md` Decisão 4 para
+o detalhe completo.
+
+**GPU real, mas `is_available()` retorna falso**: por padrão, `pip install torch` instala a build
+**CPU-only** — mesmo com uma GPU NVIDIA física funcionando (`nvidia-smi` OK), `torch.cuda.is_available()`
+fica `False`. Reinstale com o índice CUDA, tanto no `.venv` principal quanto no `.audio_worker_venv`
+(troque `cu130` pela versão suportada pelo seu driver, `nvidia-smi` mostra em "CUDA Version"):
+```bash
+pip install --force-reinstall --no-deps torch==2.13.0+cu130 torchaudio==2.11.0+cu130 torchvision==0.28.0+cu130 --index-url https://download.pytorch.org/whl/cu130
+```
 
 Depois, aponte `ASTROS_AUDIO_WORKER_PYTHON` para
 `api/astros_upscale_api/.audio_worker_venv/Scripts/python.exe`. O checkpoint do modelo
 (`model.safetensors`, ~3,29 GB) é baixado sob demanda no caminho configurado em
 `ASTROS_AUDIO_WORKER_CHECKPOINT` (default: `models/sonicmaster/model.safetensors`), e o VAE que ele
 usa (`stabilityai/stable-audio-open-1.0`) exige uma conta Hugging Face com os termos aceitos e a
-variável `HF_TOKEN` configurada no ambiente do audio-worker — sem isso, o provedor fica
-indisponível e o app cai para DSP puro automaticamente, sem travar. Veja
+variável `HF_TOKEN` — configure-a no ambiente do processo **principal** (não precisa estar no
+ambiente do audio-worker isolado: `Settings.hf_token` lê `HF_TOKEN` uma vez no processo principal e
+repassa explicitamente na mensagem enviada ao worker, já que depender de herança de variável de
+ambiente entre processos se mostrou frágil em sessões reais de terminal Windows). Sem token válido,
+o provedor fica indisponível e o app cai para DSP puro automaticamente, sem travar.
+
+**Medido em hardware real (2026-08-13, RTX 4060, 8GB VRAM, torch+cu130)**: pico de VRAM **~7,9 GB**
+(quase satura uma GPU de 8GB) para um clipe curto (15s), tempo de processamento com modelo já
+carregado **~30s**. Por isso o audio-worker libera a VRAM automaticamente após 5 minutos sem uso
+real (nunca durante um job em andamento) — não precisa reiniciar a API manualmente só para liberar
+a GPU entre sessões de uso.
+
+Veja
 `specs/006-audio-engine-masterizacao/quickstart.md` para o passo a passo completo de validação.
 
 `ASTROS_WORKER_AUTHKEY` **não** é uma variável de configuração — é um

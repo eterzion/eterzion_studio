@@ -145,6 +145,25 @@ class TestRestore:
         assert payload['num_inference_steps'] == 14  # strength=75 profile
         assert out == payload['output_path']
 
+    def test_restore_sends_hf_token_from_settings_explicitly(self, monkeypatch, tmp_path):
+        """Regression test: HF_TOKEN reaching the audio-worker via subprocess
+        environment inheritance proved unreliable in real operator testing
+        (Windows terminal/session quirks) — the token is now read once by the
+        main process (Settings, HF_TOKEN unprefixed) and passed explicitly in
+        the IPC payload, same as ckpt/prompt/output_path."""
+        fake = _FakeSupervisor()
+        import app.jobs as jobs_module
+        monkeypatch.setattr(jobs_module, 'get_audio_worker_supervisor', lambda: fake)
+        ckpt = tmp_path / 'model.safetensors'
+        ckpt.write_bytes(b'')
+        monkeypatch.setattr(settings, 'audio_worker_checkpoint', str(ckpt))
+        monkeypatch.setattr(settings, 'hf_token', 'hf_fake_token_value')
+
+        provider = SonicMasterProvider()
+        provider.restore(str(tmp_path / 'in.wav'), 'restore clipping', strength=50)
+
+        assert fake.restore_calls[0]['hf_token'] == 'hf_fake_token_value'
+
     def test_strength_zero_uses_minimal_inference_profile(self, monkeypatch, tmp_path):
         fake = _FakeSupervisor()
         import app.jobs as jobs_module

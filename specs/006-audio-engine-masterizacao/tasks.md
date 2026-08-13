@@ -316,11 +316,22 @@ real (medição de desempenho, configuração operacional).
 - [x] T041 Rodar a suíte completa de `astros_upscale_api`
   (`pytest -m "not slow" -n auto`) — deve continuar 100% verde, incluindo
   `test_audio_processor.py` já existente antes desta feature.
-- [ ] T042 Rodar os 4 cenários de `quickstart.md` manualmente contra um ambiente real (audio-worker
-  configurado, `HF_TOKEN` válido, checkpoint baixado) — registrar o resultado de cada um.
-- [ ] T043 Medir VRAM e tempo de inferência reais do SonicMaster (um chunk de 30s, GPU disponível)
+- [x] T042 Rodar os 4 cenários de `quickstart.md` manualmente contra um ambiente real (audio-worker
+  configurado, `HF_TOKEN` válido, checkpoint baixado) — registrar o resultado de cada um. Rodado em
+  2026-08-13 numa máquina real (RTX 4060, 8GB VRAM) pelo operador do projeto: Cenário 1 (auto_master
+  com defeito real de clipping) — job completo (`status: "done"`), IA acionada de verdade,
+  `quality_verdict: {"outcome": "accepted"}`, reproduzido 2x. Cenário 4 (`audio_mode` ausente) — já
+  coberto por teste automatizado real de regressão (`test_routes_jobs.py`), reconfirmado. Cenário 2
+  (fallback sem GPU) — validado como efeito colateral: antes do fix de CUDA (ver abaixo), toda
+  tentativa caía em DSP puro sem travar/erro genérico, exatamente o comportamento esperado. Cenário
+  3 (rejeição do Quality Guard) não forçado manualmente — já coberto por teste automatizado real
+  (`TestQualityGuardRejection`).
+- [x] T043 Medir VRAM e tempo de inferência reais do SonicMaster (um chunk de 30s, GPU disponível)
   e documentar o número medido — nenhuma promessa de desempenho é escrita em UI/documentação antes
-  desta medição existir (research.md já sinalizou isso como desconhecido).
+  desta medição existir (research.md já sinalizou isso como desconhecido). **Medido em 2026-08-13**
+  (RTX 4060, torch 2.13.0+cu130): pico de VRAM **~7,9 GB** (7893–7895 MiB de 8188 MiB totais) para
+  um clipe de 15s; tempo de processamento (modelo já carregado) **~30s**. Números documentados em
+  `api/README.md`.
 - [x] T044 [P] Atualizar `docs/models/MODEL_LICENSES.md` com uma nota sobre o subconjunto
   vendorizado (`vendor/sonicmaster/`): arquivo(s), commit de origem, confirmação de que a licença
   Apache-2.0 e os avisos de atribuição foram preservados.
@@ -402,11 +413,49 @@ Task: "Implementar dsp.py"
 
 ## Notes
 
-- **Estado da implementação (2026-08-13):** 48/50 tarefas concluídas e testadas (335 testes da
-  suíte `astros_upscale_api`, zero regressões, incluindo T025 real de 48s). Restam só **T042**
-  (rodar `quickstart.md` contra um ambiente real com audio-worker/checkpoint/`HF_TOKEN`
-  configurados) e **T043** (medir VRAM/tempo reais) — ambas exigem hardware/GPU e configuração que
-  só o operador do projeto pode fazer, documentado em `api/README.md`.
+- **Estado da implementação (2026-08-13):** 50/50 tarefas concluídas e testadas (343 testes da
+  suíte `astros_upscale_api`, zero regressões). T042/T043 validados numa máquina real (RTX 4060,
+  8GB VRAM) pelo operador do projeto — ver entrada detalhada abaixo com os bugs reais encontrados
+  e corrigidos durante essa validação.
+- **Validação end-to-end real (2026-08-13) — bugs encontrados e corrigidos**: rodar a IA de verdade
+  (não só smoke tests) numa máquina real expôs 5 problemas que nenhum teste automatizado (sem
+  GPU/checkpoint neste ambiente de desenvolvimento) podia pegar:
+  1. **`torch.cuda.is_available()` sempre `False`** mesmo com GPU física presente e funcionando
+     (`nvidia-smi` OK) — o PyPI padrão instala a build CPU-only do torch; era preciso o índice
+     `https://download.pytorch.org/whl/cu130` explicitamente. Afetava tanto o `.venv` principal
+     (`detect_hardware()`, usado por `is_available()`) quanto o `.audio_worker_venv` (inferência
+     real). Corrigido reinstalando `torch`/`torchaudio`/`torchvision` com sufixo `+cu130` nos dois.
+  2. **`HF_TOKEN` nunca chegava ao audio-worker**, mesmo configurado corretamente no processo
+     principal: `_restricted_env()` (app/jobs.py) filtra deliberadamente o ambiente do subprocesso
+     isolado por segurança, e `HF_TOKEN` nunca esteve na lista — bug real de todas as sessões desde
+     que o audio-worker foi implementado, só nunca exercitado com IA de verdade antes. Corrigido de
+     duas formas complementares: (a) `_restricted_env` ganhou um parâmetro `extra_passthrough`, e só
+     o supervisor do audio-worker o usa para `HF_TOKEN`/`HUGGINGFACE_TOKEN`/`HUGGINGFACEHUB_API_TOKEN`;
+     (b) mais robusto ainda — `Settings.hf_token` (novo campo, alias `HF_TOKEN` sem o prefixo
+     `ASTROS_`) é lido uma vez pelo processo principal e passado **explicitamente** na mensagem IPC
+     de `restore` (mesmo padrão já usado para `ckpt`/`prompt`/`output_path`), eliminando de vez a
+     dependência de herança de variável de ambiente entre processos — que na prática se mostrou
+     frágil em sessões reais de terminal Windows.
+  3. **`torchaudio.load()` exige `torchcodec`** nas versões atuais de `torchaudio`, que por sua vez
+     exige bibliotecas *compartilhadas* do FFmpeg (DLLs) — indisponíveis com um build estático de
+     ffmpeg (o padrão de desenvolvimento deste projeto). Corrigido trocando o carregamento de áudio
+     em `infer.py` para `soundfile` (já uma dependência, sem FFmpeg externo).
+  4. **Avisos de depreciação real do `diffusers`** (`txt_ids`/`img_ids` como tensor 3D) — API mudou
+     entre a versão que o SonicMaster originalmente testou (0.30.0) e a atual (0.38.0). Corrigido em
+     `model.py`, removendo a dimensão de batch redundante na construção desses tensores.
+  5. **`accelerate` excluído por engano** da auditoria original como "só treino" — na verdade
+     `diffusers.from_pretrained()` o usa em tempo de inferência para carregamento mais eficiente de
+     checkpoint (`low_cpu_mem_usage`). Adicionado a `audio_worker_requirements.txt`.
+  Todos os 5 corrigidos e re-testados (343 testes, zero regressões); os itens 1/3/4/5 documentados
+  em `research.md`/`NOTICE.md`/`audio_worker_requirements.txt`.
+- **Funcionalidade adicionada após a validação (2026-08-13, fora do escopo original da spec)**:
+  liberação automática de VRAM por inatividade. FR-019 exige manter o modelo carregado *para
+  reutilização entre operações* — não que fique carregado para sempre — mas a medição real do T043
+  (~7,9GB de 8GB numa RTX 4060) mostrou que isso satura a GPU indefinidamente após um único job,
+  numa máquina com só uma GPU. `app/jobs.py` ganhou `_audio_worker_idle_watchdog_loop()` (novo loop
+  assíncrono, mesmo padrão do `_watchdog_loop()` já existente) que encerra o audio-worker depois de
+  5 minutos sem uso real (nunca interrompe um job em andamento), liberando a VRAM automaticamente.
+  4 novos testes reais (sem mock do timer, `asyncio.run()` dirigindo o loop de verdade).
 - **Desvios de design encontrados durante a implementação** (todos testados, nenhum contradiz a
   spec): (1) o mapeamento `ai_strength` → estratégia (T020a) acabou implementado em
   `ai_provider.py` (`_strength_profile`), não em `mastering.py` — é onde a profundidade de

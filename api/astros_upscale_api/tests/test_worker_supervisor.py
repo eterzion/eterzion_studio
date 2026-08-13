@@ -7,6 +7,7 @@ would prove nothing real. Slower than the rest of the suite (each spawn pays
 a real Python-interpreter-plus-torch-import cost) but honest."""
 from __future__ import annotations
 
+import asyncio
 import os
 import threading
 import time
@@ -51,6 +52,18 @@ class TestRestrictedEnv:
         monkeypatch.setenv('PATH', 'C:\\some\\real\\path')
         env = worker_supervisor._restricted_env('key')
         assert env.get('PATH') == 'C:\\some\\real\\path'
+
+    def test_extra_passthrough_names_are_included_when_present(self, monkeypatch):
+        monkeypatch.setenv('HF_TOKEN', 'hf_test_token')
+        env = worker_supervisor._restricted_env('key', extra_passthrough=('HF_TOKEN',))
+        assert env['HF_TOKEN'] == 'hf_test_token'
+
+    def test_extra_passthrough_names_are_not_leaked_without_opt_in(self, monkeypatch):
+        """The image/video worker's default call (no extra_passthrough) must
+        never see HF_TOKEN — only the audio-worker supervisor opts into it."""
+        monkeypatch.setenv('HF_TOKEN', 'hf_test_token')
+        env = worker_supervisor._restricted_env('key')
+        assert 'HF_TOKEN' not in env
 
 
 class TestRealWorkerLifecycle:
@@ -289,4 +302,91 @@ class TestGetAudioWorkerSupervisor:
         first = worker_supervisor.get_audio_worker_supervisor()
         second = worker_supervisor.get_audio_worker_supervisor()
         assert first is second
+
+
+class _FakeIdleSupervisor:
+    """Lightweight stand-in for WorkerSupervisor — the idle-watchdog loop
+    only touches is_alive()/terminate()/_last_used_at, so a real subprocess
+    (slow, and already covered by TestRealWorkerLifecycle) isn't needed to
+    test its timing/no-interference logic."""
+
+    def __init__(self, alive=True, last_used_at=None):
+        self._alive = alive
+        self._last_used_at = last_used_at
+        self.terminate_calls = 0
+
+    def is_alive(self):
+        return self._alive
+
+    def terminate(self):
+        self.terminate_calls += 1
+        self._alive = False
+
+
+class TestAudioWorkerIdleWatchdog:
+    """Product decision added after real operator testing on a single-GPU
+    (8GB) machine: SonicMaster's ~7.9GB VRAM footprint (measured, T043)
+    otherwise never releases after a single job — FR-019 only requires reuse
+    across operations, not that the model stay loaded forever.
+
+    No pytest-asyncio in this project — each test drives the loop itself
+    via asyncio.run(), cancelling it after one real check tick."""
+
+    def _run_one_tick(self, monkeypatch, supervisor, processing_job_id=None):
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', supervisor)
+        monkeypatch.setattr(worker_supervisor, '_processing_job_id', processing_job_id)
+
+        async def _drive():
+            task = asyncio.create_task(
+                worker_supervisor._audio_worker_idle_watchdog_loop(
+                    idle_timeout_seconds=0.05, check_interval_seconds=0.01,
+                )
+            )
+            await asyncio.sleep(0.08)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        asyncio.run(_drive())
+
+    def test_terminates_a_worker_idle_past_the_timeout(self, monkeypatch):
+        sup = _FakeIdleSupervisor(alive=True, last_used_at=time.monotonic() - 10.0)
+        self._run_one_tick(monkeypatch, sup)
+        assert sup.terminate_calls >= 1
+
+    def test_never_terminates_a_worker_mid_job(self, monkeypatch):
+        sup = _FakeIdleSupervisor(alive=True, last_used_at=time.monotonic() - 10.0)
+        self._run_one_tick(monkeypatch, sup, processing_job_id='job_123')
+        assert sup.terminate_calls == 0
+
+    def test_never_terminates_a_worker_never_actually_used(self, monkeypatch):
+        """_last_used_at is None until the first restore_audio() call —
+        a spawned-but-never-used worker (or one not spawned at all) isn't
+        "idle", there's simply nothing to release yet."""
+        sup = _FakeIdleSupervisor(alive=True, last_used_at=None)
+        self._run_one_tick(monkeypatch, sup)
+        assert sup.terminate_calls == 0
+
+    def test_does_nothing_when_no_audio_supervisor_exists(self, monkeypatch):
+        # just proving the loop never raises on the None case
+        self._run_one_tick(monkeypatch, None)
+
+    def test_opts_into_hf_token_passthrough_the_image_worker_never_gets(self, monkeypatch):
+        """Regression test: the audio-worker needs HF_TOKEN to authenticate
+        against the gated Stable Audio Open VAE repo (infer.py checks
+        HF_TOKEN/HUGGINGFACE_TOKEN/HUGGINGFACEHUB_API_TOKEN) — found missing
+        via a real end-to-end run that failed with a 401 GatedRepoError
+        because _restricted_env's default allowlist never included it."""
+        monkeypatch.setattr(settings, 'audio_worker_python', 'C:/fake/audio-venv/python.exe')
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+        monkeypatch.setattr(worker_supervisor, '_supervisor', None)
+        audio_sup = worker_supervisor.get_audio_worker_supervisor()
+        image_sup = worker_supervisor.get_supervisor()
+        assert 'HF_TOKEN' in audio_sup._extra_env_passthrough
+        assert 'HUGGINGFACE_TOKEN' in audio_sup._extra_env_passthrough
+        assert 'HUGGINGFACEHUB_API_TOKEN' in audio_sup._extra_env_passthrough
+        assert image_sup._extra_env_passthrough == ()
+        image_sup.terminate()
+        monkeypatch.setattr(worker_supervisor, '_supervisor', None)
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
         monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
