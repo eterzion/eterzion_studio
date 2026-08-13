@@ -61,7 +61,7 @@ jobs:
       # (e.g. test_content_type_audio.py) shell out to a real `ffmpeg` to
       # synthesize fixture audio/video, so without this they fail with
       # WinError 2 rather than being skipped.
-      - uses: FedericoCarboni/setup-ffmpeg@v3
+      - uses: FedericoCarboni/setup-ffmpeg@v3.1
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -105,7 +105,7 @@ jobs:
         working-directory: interface
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.0.10
         with:
           version: 11
       - uses: actions/setup-node@v7

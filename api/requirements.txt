@@ -1,10 +1,10 @@
-numpy>=1.26
-opencv-python>=4.9
+numpy>=2.5
+opencv-python>=5.0
 python-ffmpeg>=2.0
 spandrel>=0.4
-torch>=2.1
-torchaudio>=2.1
+torch>=2.13
+torchaudio>=2.11
 tqdm
-psutil>=5.9
-nvidia-ml-py>=12.0
-librosa>=0.10
+psutil>=7.2
+nvidia-ml-py>=13.0
+librosa>=1.0

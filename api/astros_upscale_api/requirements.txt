@@ -11,8 +11,8 @@ pillow
 # and slow down install on every CI run.
 opencv-python-headless
 cryptography
-psutil>=5.9
-nvidia-ml-py>=12.0
+psutil>=7.2
+nvidia-ml-py>=13.0
 # The astros_upscale core package (imported via sys.path by conftest.py, not
 # pip-installed as a package) needs its own real dependencies here too —
 # `realesrgan` (and its broken, unmaintained `basicsr` transitive dependency)
@@ -21,12 +21,12 @@ nvidia-ml-py>=12.0
 # dependência de BasicSR") and was breaking `pip install` in CI.
 spandrel>=0.4
 python-ffmpeg>=2.0
-numpy>=1.26
-librosa>=0.10
+numpy>=2.5
+librosa>=1.0
 tqdm
 # audio_engine's own DSP measurement (LUFS/True Peak, ITU-R BS.1770-4) — MIT,
 # already approved in docs/models/MODEL_LICENSES.md §4. Kept in the main
 # backend requirements (not audio_worker_requirements.txt): it's pure DSP,
 # no ML dependency, needed by app.audio_engine.analyzer/quality regardless
 # of whether the SonicMaster provider is configured.
-pyloudnorm>=0.1
+pyloudnorm>=0.2
