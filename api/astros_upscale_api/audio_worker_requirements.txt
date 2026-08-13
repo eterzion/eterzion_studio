@@ -16,7 +16,7 @@
 #
 # Excluídos dos pins originais (só treino/avaliação, não usados por model.py em inferência):
 # accelerate, datasets, wandb, laion_clap.
-torch==2.6.0
+torch==2.13.0
 torchaudio==2.6.0
 torchvision==0.21.0
 transformers==4.46.3
