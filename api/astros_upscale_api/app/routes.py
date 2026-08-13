@@ -204,6 +204,11 @@ def _build_job_params(media_request: MediaRequest, adjustments: Adjustments) -> 
         'adjustments': adjustments.model_dump(),
         'quality': media_request.quality,
         'output_target': media_request.output_target.model_dump() if media_request.output_target else None,
+        # specs/006-audio-engine-masterizacao — None/'enhance' (the default)
+        # means jobs._process_job takes the exact same path as before this
+        # feature existed; only audio_engine reads these two fields.
+        'audio_mode': media_request.audio_mode,
+        'ai_strength': media_request.ai_strength,
     }
 
 
@@ -540,9 +545,8 @@ class ActivateRequest(BaseModel):
 @license_router.get('/status', response_model=LicenseStatusResponse)
 def get_status() -> LicenseStatusResponse:
     result = licensing.check_gate()
-    state = result.state if result.state != 'not_configured' else 'not_activated'
     return LicenseStatusResponse(
-        state=state,
+        state=result.state,
         installations_used=result.installations_used or 0,
         installations_limit=result.installations_limit or 0,
         offline_days_remaining=result.offline_days_remaining,

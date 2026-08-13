@@ -147,11 +147,62 @@ class TestProcessDispatchesByEngineRef:
         with pytest.raises(MissingAudioDependency):
             process(input_path, 'super-voz', str(tmp_path / 'out.wav'))
 
-    def test_music_engine_raises_missing_dependency_when_sonicmaster_absent(self, tmp_path):
+    def test_music_engine_raises_missing_dependency_when_audio_worker_not_configured(
+            self, tmp_path, monkeypatch):
+        """specs/006-audio-engine-masterizacao T004 — _enhance_music no longer shells
+        out to `inference_fullsong.py` (which never accepted --input/--output/--prompt
+        and never worked); it now requires ASTROS_AUDIO_WORKER_PYTHON to be configured."""
+        from app.config import settings
+        monkeypatch.setattr(settings, 'audio_worker_python', '')
         input_path = str(tmp_path / 'in.wav')
         _build_noisy_quiet_speech_like_wav(input_path, duration=0.5)
-        import shutil
-        if shutil.which('inference_fullsong.py') or shutil.which('inference_fullsong'):
-            pytest.skip('SonicMaster is set up in this environment — nothing to assert here')
         with pytest.raises(MissingAudioDependency):
             process(input_path, 'sonicmaster', str(tmp_path / 'out.wav'))
+
+    def test_music_engine_raises_missing_dependency_when_checkpoint_absent(
+            self, tmp_path, monkeypatch):
+        from app.config import settings
+        monkeypatch.setattr(settings, 'audio_worker_python', 'python')  # configured, but...
+        monkeypatch.setattr(settings, 'audio_worker_checkpoint', str(tmp_path / 'no-such-file.safetensors'))
+        input_path = str(tmp_path / 'in.wav')
+        _build_noisy_quiet_speech_like_wav(input_path, duration=0.5)
+        with pytest.raises(MissingAudioDependency):
+            process(input_path, 'sonicmaster', str(tmp_path / 'out.wav'))
+
+    def test_music_engine_calls_the_vendored_infer_script_correctly(self, tmp_path, monkeypatch):
+        """Confirms _enhance_music invokes vendor/sonicmaster/infer.py (the real,
+        --input/--output/--prompt-accepting script) — not the old, broken
+        inference_fullsong.py reference — via subprocess.run, without needing real
+        torch/GPU/checkpoint (subprocess.run itself is stubbed)."""
+        import app.processing as processing_module
+        from app.config import settings
+
+        monkeypatch.setattr(settings, 'audio_worker_python', 'fake-python')
+        ckpt = tmp_path / 'model.safetensors'
+        ckpt.write_bytes(b'not-a-real-checkpoint')
+        monkeypatch.setattr(settings, 'audio_worker_checkpoint', str(ckpt))
+
+        captured = {}
+
+        def fake_run(cmd, **kwargs):
+            captured['cmd'] = cmd
+            out_wav = cmd[cmd.index('--output') + 1]
+            with open(out_wav, 'wb') as fh:
+                fh.write(b'RIFF....WAVEfmt ')  # just needs to exist
+            class _Result:
+                returncode = 0
+                stderr = ''
+            return _Result()
+
+        monkeypatch.setattr(processing_module.subprocess, 'run', fake_run)
+
+        input_path = str(tmp_path / 'in.wav')
+        _build_noisy_quiet_speech_like_wav(input_path, duration=0.5)
+        output_path = str(tmp_path / 'out.wav')
+        processing_module._enhance_music(input_path, output_path)
+
+        cmd = captured['cmd']
+        assert cmd[0] == 'fake-python'
+        assert cmd[1].endswith('vendor\\sonicmaster\\infer.py') or cmd[1].endswith('vendor/sonicmaster/infer.py')
+        assert '--ckpt' in cmd and str(ckpt) in cmd
+        assert '--prompt' in cmd

@@ -299,6 +299,24 @@ documentada, não um erro de auditoria.
 (CC-BY-SA-4.0 do código + treino em MUSDB18-HQ "educational purposes only" + MoisesDB CC-BY-NC-SA)
 e não foi escolhido.
 
+### Integração real — código vendorizado (specs/006-audio-engine-masterizacao, 2026-08-13)
+
+O repositório de origem (`github.com/AMAAI-Lab/SonicMaster`) não é instalável via `pip` — não tem
+`setup.py`/`pyproject.toml`, é uma coleção de scripts de pesquisa. Um subconjunto mínimo necessário
+só para inferência foi vendorizado em `api/astros_upscale_api/vendor/sonicmaster/`:
+
+| Arquivo | Origem (commit `c4c0869c14bada6c5cb7d3decbcdc00e6a3050f5`) |
+|---|---|
+| `model.py`, `utils.py`, `configs/tangoflux_config.yaml` | Cópia direta, sem alteração de lógica |
+| `infer.py` | Adaptado de `infer_single.py` (o único script do repo sem caminhos hardcoded) — mesma interface de CLI, mais uma função `run_single_inference()` reutilizável e um fix real (saída trimada de volta ao tamanho original — o upstream sempre preenchia o último chunk até `chunk_duration` e nunca cortava de volta) |
+| `LICENSE` | Apache License 2.0 original, preservado sem alteração |
+| `NOTICE.md` | Atribuição completa — ver o arquivo para o detalhamento arquivo a arquivo |
+
+Código de treinamento (`train_ptload_inference.py`, `preencode_latents_acce2.py`) **não** foi
+vendorizado — só estudado para entender a arquitetura (ver `research.md` da feature). Roda num
+ambiente Python isolado (`api/astros_upscale_api/audio_worker_requirements.txt`), nunca no
+ambiente principal do backend — ver `api/README.md`.
+
 ---
 
 ## 3-ter. Vídeo real — resolvido, sem ressalva de licença

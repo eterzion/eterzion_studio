@@ -271,3 +271,85 @@ class TestLicenseGate:
             lambda: license_gate.GateResult(allowed=False, state='not_activated', message='Não ativado.'))
         res = client.post(f'/jobs/{job_id}/process')
         assert res.status_code == 403
+
+
+def _real_music_wav(tmp_path, name='faixa.wav'):
+    """A real, decodable WAV — audio_mode jobs run real ffmpeg DSP
+    (app.audio_engine.dsp), unlike the fake-bytes real_input_file fixture
+    used for image tests."""
+    import numpy as np
+    import soundfile as sf
+
+    rate = 44100
+    t = np.linspace(0, 1.0, rate, endpoint=False)
+    tone = 0.2 * np.sin(2 * np.pi * 440 * t)
+    path = str(tmp_path / name)
+    sf.write(path, np.column_stack([tone, tone]), rate)
+    return path
+
+
+class TestAudioEngineIntegration:
+    """specs/006-audio-engine-masterizacao — the audio_mode extension.
+    T025 (below) is the single most important test in this feature: any
+    request that doesn't use audio_mode must produce an identical response
+    to before this feature existed."""
+
+    def _run_job(self, client, job_id):
+        from app import jobs as job_manager
+        import asyncio
+
+        job_manager.jobs[job_id]['status'] = 'queued'
+        asyncio.run(job_manager._process_job(job_id))
+        return client.get(f'/jobs/{job_id}').json()
+
+    @pytest.mark.slow  # spawns the real isolated worker subprocess (real torch import)
+    def test_audio_mode_absent_produces_the_same_response_shape_as_before(self, client, tmp_path, monkeypatch):
+        """T025 — regression gate. Without audio_mode, a music job must not
+        gain audio_analysis/quality_verdict fields, and must still go
+        through the original _ENGINE_ENHANCERS['sonicmaster'] path (which
+        raises MissingAudioDependency here, since no audio-worker is
+        configured in tests — the same honest failure it always had, not a
+        new behaviour)."""
+        input_path = _real_music_wav(tmp_path)
+        job_id = client.post('/jobs/local', json=_local_body(
+            input_path, media_type='audio', operation='enhance', content_type_override='music',
+        )).json()['id']
+        body = self._run_job(client, job_id)
+        assert 'audio_analysis' not in body
+        assert 'quality_verdict' not in body
+        # The original path was already broken before this feature (T003
+        # fixed the wrong-script bug, but a missing audio-worker still
+        # legitimately fails) — what matters here is which path ran.
+        assert body['status'] == 'error'
+        assert body.get('error_category') == 'model_failure'
+
+    def test_audio_mode_auto_master_runs_the_new_pipeline(self, client, tmp_path):
+        input_path = _real_music_wav(tmp_path)
+        job_id = client.post('/jobs/local', json=_local_body(
+            input_path, media_type='audio', operation='enhance', content_type_override='music',
+            audio_mode='auto_master', ai_strength=50,
+        )).json()['id']
+        body = self._run_job(client, job_id)
+        assert body['status'] == 'done', body.get('error')
+        assert 'audio_analysis' in body
+        assert -20 < body['audio_analysis']['integrated_lufs'] < -8
+        # A clean synthetic tone has no detectable problem -> AI never runs -> no verdict.
+        assert 'quality_verdict' not in body
+
+    def test_audio_mode_restore_does_not_master_to_a_loudness_target(self, client, tmp_path):
+        import numpy as np
+        import soundfile as sf
+
+        rate = 44100
+        t = np.linspace(0, 1.0, rate, endpoint=False)
+        quiet = 0.02 * np.sin(2 * np.pi * 440 * t)
+        input_path = str(tmp_path / 'quiet.wav')
+        sf.write(input_path, np.column_stack([quiet, quiet]), rate)
+
+        job_id = client.post('/jobs/local', json=_local_body(
+            input_path, media_type='audio', operation='enhance', content_type_override='music',
+            audio_mode='restore',
+        )).json()['id']
+        body = self._run_job(client, job_id)
+        assert body['status'] == 'done'
+        assert body['audio_analysis']['integrated_lufs'] < -20  # not pushed up to a master target

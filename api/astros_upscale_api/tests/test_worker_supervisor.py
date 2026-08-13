@@ -242,3 +242,51 @@ class TestGetSupervisor:
         assert first is second
         first.terminate()
         monkeypatch.setattr(worker_supervisor, '_supervisor', None)
+
+
+class TestConfigurableInterpreter:
+    """specs/006-audio-engine-masterizacao — WorkerSupervisor's constructor now
+    accepts an interpreter/spawn-args override. Not `slow`: only checks the
+    stored spawn configuration, no real subprocess."""
+
+    def test_defaults_match_the_original_hardcoded_behaviour(self):
+        import sys
+        sup = WorkerSupervisor()
+        assert sup._python_executable == sys.executable
+        assert sup._spawn_args == ['-m', 'app.jobs']
+
+    def test_accepts_a_custom_interpreter_and_spawn_args(self):
+        sup = WorkerSupervisor(python_executable='C:/fake/python.exe', spawn_args=['worker_main.py'])
+        assert sup._python_executable == 'C:/fake/python.exe'
+        assert sup._spawn_args == ['worker_main.py']
+
+
+class TestGetAudioWorkerSupervisor:
+    """FR-021/FR-023, research.md Decisão 3 (corrigida em /speckit.analyze): um
+    segundo supervisor, nunca a mesma instância de get_supervisor()."""
+
+    def test_returns_none_when_audio_worker_python_is_unset(self, monkeypatch):
+        monkeypatch.setattr(settings, 'audio_worker_python', '')
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+        assert worker_supervisor.get_audio_worker_supervisor() is None
+
+    def test_returns_a_distinct_instance_from_get_supervisor(self, monkeypatch):
+        monkeypatch.setattr(settings, 'audio_worker_python', 'C:/fake/audio-venv/python.exe')
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+        monkeypatch.setattr(worker_supervisor, '_supervisor', None)
+        image_sup = worker_supervisor.get_supervisor()
+        audio_sup = worker_supervisor.get_audio_worker_supervisor()
+        assert audio_sup is not None
+        assert audio_sup is not image_sup
+        assert image_sup._python_executable != audio_sup._python_executable
+        image_sup.terminate()
+        monkeypatch.setattr(worker_supervisor, '_supervisor', None)
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+
+    def test_returns_the_same_audio_instance_across_calls(self, monkeypatch):
+        monkeypatch.setattr(settings, 'audio_worker_python', 'C:/fake/audio-venv/python.exe')
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+        first = worker_supervisor.get_audio_worker_supervisor()
+        second = worker_supervisor.get_audio_worker_supervisor()
+        assert first is second
+        monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)

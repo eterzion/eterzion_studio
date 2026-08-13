@@ -76,13 +76,25 @@ def _restricted_env(authkey: str) -> dict[str, str]:
 
 
 class WorkerSupervisor:
-    def __init__(self) -> None:
+    """`python_executable`/`spawn_args` default to this process's own interpreter
+    running `-m app.jobs` (the image/video worker, unchanged behaviour). A second,
+    independent instance (see `get_audio_worker_supervisor()` below) passes a
+    different interpreter and a standalone entry script instead — the audio-worker
+    venv doesn't have `astros_upscale_api`'s own `app` package installed, so it
+    can't run `-m app.jobs` at all. Two distinct instances, never one instance
+    switching behaviour per call — a single persistent child process can't serve
+    two incompatible dependency sets (specs/006-audio-engine-masterizacao/
+    research.md Decisão 3, found during /speckit.analyze)."""
+
+    def __init__(self, python_executable: str | None = None, spawn_args: list[str] | None = None) -> None:
         self._lock = threading.Lock()
         self._listener: Listener | None = None
         self._conn = None
         self._process: subprocess.Popen | None = None
         self._runtime_dir: str | None = None
         self._authkey: str | None = None
+        self._python_executable = python_executable or sys.executable
+        self._spawn_args = spawn_args if spawn_args is not None else ['-m', 'app.jobs']
 
     # ---------------------------------------------------------------- lifecycle
     def _spawn(self) -> None:
@@ -92,7 +104,7 @@ class WorkerSupervisor:
         self._authkey = secrets.token_hex(32)
         self._listener = Listener(family='AF_PIPE', authkey=self._authkey.encode('utf-8'))
         self._process = subprocess.Popen(
-            [sys.executable, '-m', 'app.jobs', self._listener.address],
+            [self._python_executable, *self._spawn_args, self._listener.address],
             cwd=str(_API_ROOT),
             env=_restricted_env(self._authkey),
             shell=False,
@@ -257,8 +269,34 @@ class WorkerSupervisor:
             elif msg_type == 'error':
                 raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
 
+    # ------------------------------------------------------------ audio jobs
+    def restore_audio(self, *, timeout: float = 900.0, **payload: Any) -> str:
+        """Blocking call for the audio-worker's `restore` message type
+        (vendor/sonicmaster/worker_main.py) — the same connect/spawn/authkey
+        mechanism as `process()`, a distinct message type/protocol (no
+        progress callbacks yet; SonicMaster inference doesn't report
+        per-step progress the way image/video does). Only meaningful on an
+        instance returned by `get_audio_worker_supervisor()`. Returns the
+        output path. `timeout` bounds a single `conn.recv()` wait — real
+        inference over several chunks can legitimately take minutes."""
+        self.ensure_started()
+        assert self._conn is not None
+        self._conn.send({'type': 'restore', **payload})
+        if not self._conn.poll(timeout):
+            raise WorkerCrashed('O audio-worker não respondeu a tempo.')
+        try:
+            msg = self._conn.recv()
+        except (EOFError, OSError) as error:
+            raise WorkerCrashed('O audio-worker encerrou inesperadamente.') from error
+        if msg.get('type') == 'result':
+            return msg['output_path']
+        if msg.get('type') == 'error':
+            raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
+        raise WorkerFailure(f'Resposta inesperada do audio-worker: {msg!r}', 'UnexpectedMessage')
+
 
 _supervisor: WorkerSupervisor | None = None
+_audio_worker_supervisor: WorkerSupervisor | None = None
 
 
 def get_supervisor() -> WorkerSupervisor:
@@ -268,11 +306,32 @@ def get_supervisor() -> WorkerSupervisor:
     return _supervisor
 
 
+def get_audio_worker_supervisor() -> WorkerSupervisor | None:
+    """A second, independent WorkerSupervisor for AI music restoration
+    (SonicMaster) — never the same instance/process as get_supervisor()'s
+    image/video worker (see WorkerSupervisor's docstring). Returns None when
+    settings.audio_worker_python is unset — app.audio_engine.ai_provider
+    treats that as "provider unavailable" and falls back to DSP (FR-020)."""
+    global _audio_worker_supervisor
+    if not settings.audio_worker_python:
+        return None
+    if _audio_worker_supervisor is None:
+        worker_main = _API_ROOT / 'vendor' / 'sonicmaster' / 'worker_main.py'
+        _audio_worker_supervisor = WorkerSupervisor(
+            python_executable=settings.audio_worker_python,
+            spawn_args=[str(worker_main)],
+        )
+    return _audio_worker_supervisor
+
+
 def shutdown() -> None:
-    global _supervisor
+    global _supervisor, _audio_worker_supervisor
     if _supervisor is not None:
         _supervisor.terminate()
         _supervisor = None
+    if _audio_worker_supervisor is not None:
+        _audio_worker_supervisor.terminate()
+        _audio_worker_supervisor = None
 
 
 # ------------------------------- job store + queue (parent side) ------------------------------- #
@@ -593,6 +652,41 @@ async def _process_job(job_id: str) -> None:
     def blocking_run():
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
+
+        audio_mode = params.get('audio_mode')
+        if (job.get('media_type') == 'audio' and job.get('content_type_detected') == 'music'
+                and audio_mode not in (None, 'enhance')):
+            # specs/006-audio-engine-masterizacao — audio_mode opts a music job
+            # into app.audio_engine.mastering.MasteringEngine instead of the
+            # single-pass _ENGINE_ENHANCERS['sonicmaster'] path below. Runs in
+            # this same executor thread (not the primary isolated worker
+            # subprocess) — MasteringEngine's own AI step is isolated via its
+            # own audio-worker subprocess (get_audio_worker_supervisor()),
+            # which is the real isolation boundary here, not this thread.
+            from app.audio_engine.mastering import MasteringEngine
+
+            output_path = _audio_output_path(job_id, job['input_path'])
+            os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
+            if on_stage:
+                on_stage('Analisando e restaurando áudio')
+            result = MasteringEngine().run(
+                audio_mode, job['input_path'], output_path,
+                ai_strength=params.get('ai_strength') or 50,
+            )
+            job['audio_analysis'] = {
+                'integrated_lufs': result.audio_analysis.integrated_lufs,
+                'true_peak_db': result.audio_analysis.true_peak_db,
+                'dynamic_range_db': result.audio_analysis.dynamic_range_db,
+                'clipping_ratio': result.audio_analysis.clipping_ratio,
+            }
+            if result.quality_verdict is not None:
+                job['quality_verdict'] = {
+                    'outcome': result.quality_verdict.outcome,
+                    'reasons': result.quality_verdict.reasons,
+                }
+            if on_progress:
+                on_progress(100)
+            return {'source_size': (0, 0), 'output_size': (0, 0)}
 
         from app import licensing
 

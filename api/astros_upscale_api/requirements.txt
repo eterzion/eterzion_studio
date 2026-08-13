@@ -24,3 +24,9 @@ python-ffmpeg>=2.0
 numpy>=1.26
 librosa>=0.10
 tqdm
+# audio_engine's own DSP measurement (LUFS/True Peak, ITU-R BS.1770-4) — MIT,
+# already approved in docs/models/MODEL_LICENSES.md §4. Kept in the main
+# backend requirements (not audio_worker_requirements.txt): it's pure DSP,
+# no ML dependency, needed by app.audio_engine.analyzer/quality regardless
+# of whether the SonicMaster provider is configured.
+pyloudnorm>=0.1

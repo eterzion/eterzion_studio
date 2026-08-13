@@ -44,5 +44,18 @@ class Settings(BaseSettings):
     # a real licensing_service_url.
     dev_allow_unlicensed: bool = True
 
+    # Path to the audio-worker's own interpreter (a separate venv with
+    # audio_worker_requirements.txt installed — the SonicMaster pins are
+    # deliberately incompatible with this process's own torch, per
+    # specs/006-audio-engine-masterizacao/research.md Decisão 4). Empty =
+    # AI music restoration unavailable, ai_provider.is_available() returns
+    # False and app.audio_engine falls back to DSP-only (FR-020).
+    audio_worker_python: str = ''
+    # SonicMaster's model.safetensors (~3.29 GB), downloaded on demand — not
+    # committed, not fetched at build time. Default lives next to /models
+    # (the same true repo-root data directory image/video checkpoints use).
+    audio_worker_checkpoint: str = str(
+        (APP_DIR.parent.parent.parent / 'models' / 'sonicmaster' / 'model.safetensors').resolve())
+
 
 settings = Settings()

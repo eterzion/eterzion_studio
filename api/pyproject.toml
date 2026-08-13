@@ -39,8 +39,13 @@ audio = [
     # removed per docs/models/MODEL_LICENSES.md — replaced by DSP (afftdn/loudnorm)
     # in astros_upscale.processing plus the two commercially-clean model paths below.
     "audiosronnx",  # Apache-2.0 code and weights — speech bandwidth extension
-    "sonicmaster @ git+https://github.com/AMAAI-Lab/SonicMaster.git",  # music — approved_conditional, see MODEL_LICENSES.md §3-bis
     "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",
+    # SonicMaster (music restoration, approved_conditional — see MODEL_LICENSES.md §3-bis) is
+    # deliberately NOT listed here: its upstream repo (github.com/AMAAI-Lab/SonicMaster) has no
+    # setup.py/pyproject.toml, so `pip install git+...` never worked (T001, specs/
+    # 006-audio-engine-masterizacao). It runs from a vendored subset in
+    # astros_upscale_api/vendor/sonicmaster/, installed into its own isolated environment via
+    # astros_upscale_api/audio_worker_requirements.txt — never as part of this extra.
 ]
 
 [tool.setuptools.packages.find]

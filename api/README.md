@@ -84,6 +84,30 @@ relevantes para produção:
 | `ASTROS_LICENSING_SERVICE_PUBLIC_KEY_B64` | *(vazio)* | Chave pública do serviço de licenciamento, fixada em build de produção (senão é obtida via TOFU de `/public-key`, aceitável só em dev) |
 | `ASTROS_DEV_ALLOW_UNLICENSED` | `true` | **Deve ser `false` em qualquer build de produção** — `true` permite rodar sem licença válida (default pensado para dev/testes) |
 | `ASTROS_FFMPEG_DIR` | *(vazio)* | Diretório do ffmpeg empacotado. Lida diretamente do ambiente do processo (`os.environ`, em `astros_upscale/media.py`), não é um campo de `Settings` — **não pode ser setada via `.env`**, só como variável de ambiente real. Normalmente setada pelo processo principal do Electron (`apiProcess.ts`), nunca manualmente |
+| `ASTROS_AUDIO_WORKER_PYTHON` | *(vazio)* | Caminho do `python.exe` de um venv **separado**, isolado, com `audio_worker_requirements.txt` instalado — habilita a restauração/masterização de música por IA (SonicMaster). Vazio = os modos `auto_master`/`restore`/`restore_master` caem automaticamente para DSP puro (FR-020) |
+| `ASTROS_AUDIO_WORKER_CHECKPOINT` | `models/sonicmaster/model.safetensors` | Caminho do checkpoint do SonicMaster (~3,29 GB, baixado sob demanda, nunca commitado) |
+
+### Configurando o audio-worker (restauração de música por IA, opcional)
+
+Os modos de masterização/restauração assistida por IA (`specs/006-audio-engine-masterizacao`) usam
+o SonicMaster, vendorizado em `astros_upscale_api/vendor/sonicmaster/` (ver `NOTICE.md` lá dentro
+para atribuição). Ele roda num processo/venv completamente separado do backend principal — nunca
+instale `audio_worker_requirements.txt` no `.venv` raiz do projeto:
+
+```bash
+cd api/astros_upscale_api
+python -m venv .audio_worker_venv
+.audio_worker_venv/Scripts/pip install -r audio_worker_requirements.txt
+```
+
+Depois, aponte `ASTROS_AUDIO_WORKER_PYTHON` para
+`api/astros_upscale_api/.audio_worker_venv/Scripts/python.exe`. O checkpoint do modelo
+(`model.safetensors`, ~3,29 GB) é baixado sob demanda no caminho configurado em
+`ASTROS_AUDIO_WORKER_CHECKPOINT` (default: `models/sonicmaster/model.safetensors`), e o VAE que ele
+usa (`stabilityai/stable-audio-open-1.0`) exige uma conta Hugging Face com os termos aceitos e a
+variável `HF_TOKEN` configurada no ambiente do audio-worker — sem isso, o provedor fica
+indisponível e o app cai para DSP puro automaticamente, sem travar. Veja
+`specs/006-audio-engine-masterizacao/quickstart.md` para o passo a passo completo de validação.
 
 `ASTROS_WORKER_AUTHKEY` **não** é uma variável de configuração — é um
 token efêmero, gerado aleatoriamente a cada processo pelo próprio

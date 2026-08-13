@@ -495,22 +495,34 @@ def _enhance_speech(input_wav: str, output_wav: str) -> None:
     sf.write(output_wav, waveform, 48000)
 
 
+_VENDOR_SONICMASTER_INFER = str(APP_DIR.parent / 'vendor' / 'sonicmaster' / 'infer.py')
+
+
 def _enhance_music(input_wav: str, output_wav: str) -> None:
     """music content_type — SonicMaster (approved_conditional, see
     app.licensing's _CONTENT_TYPE_IMPLEMENTATIONS and
-    docs/models/MODEL_LICENSES.md §3-bis). SonicMaster ships as inference
-    scripts, not an importable module with a stable API — this calls its
-    real `inference_fullsong.py` entry point (confirmed against the
-    project's own repository), the closest thing to a documented interface
-    it has today."""
-    script = shutil.which('inference_fullsong.py') or shutil.which('inference_fullsong')
-    if not script:
+    docs/models/MODEL_LICENSES.md §3-bis). Fixed in specs/006-audio-engine-
+    masterizacao (T003): the previous version called `inference_fullsong.py`,
+    which does not accept `--input`/`--output`/`--prompt` at all (it is
+    dataset/JSONL-driven, confirmed against the real upstream source) — this
+    never actually worked. Calls the vendored, adapted single-clip script
+    (`vendor/sonicmaster/infer.py`, based on upstream's own `infer_single.py`,
+    the only script there with a generic CLI) in the isolated audio-worker
+    interpreter. This is the minimal, default-profile ('enhance') path —
+    app.audio_engine.ai_provider.SonicMasterProvider (US1+) is the richer
+    entry point used by the auto_master/restore/restore_master modes."""
+    if not settings.audio_worker_python:
         raise MissingAudioDependency(
-            'music (SonicMaster)', 'sonicmaster',
-            ImportError('inference_fullsong.py not found on PATH — SonicMaster checkpoint/config not set up'))
+            'music (SonicMaster)', 'audio-worker',
+            ImportError('ASTROS_AUDIO_WORKER_PYTHON não configurado — veja api/README.md'))
+    if not os.path.isfile(settings.audio_worker_checkpoint):
+        raise MissingAudioDependency(
+            'music (SonicMaster)', 'sonicmaster-checkpoint',
+            FileNotFoundError(f'Checkpoint não encontrado em {settings.audio_worker_checkpoint}'))
     result = subprocess.run(
-        ['python', script, '--input', input_wav, '--output', output_wav,
-         '--prompt', 'Restore and master this music recording', '--fs', '44100'],
+        [settings.audio_worker_python, _VENDOR_SONICMASTER_INFER,
+         '--ckpt', settings.audio_worker_checkpoint, '--input', input_wav, '--output', output_wav,
+         '--prompt', 'Perform general music restoration and mastering', '--fs', '44100'],
         capture_output=True, text=True, timeout=600, check=False,
     )
     if result.returncode != 0 or not os.path.isfile(output_wav):
@@ -746,7 +758,11 @@ def _pip_install_audio_extra(*extra_args: str) -> None:
             f'do astros_upscale ao lado ({_REPO_ROOT}). Instale manualmente com '
             '"pip install astros_upscale[audio]".')
 
-    free_bytes = shutil.disk_usage(os.path.expanduser('~')).free
+    # sys.executable's own drive is what actually receives the install (pip
+    # writes into that interpreter's site-packages) — not the user's home
+    # directory, which can be on a different, unrelated drive (e.g. a small
+    # system C: while the venv/repo live on a much larger D:).
+    free_bytes = shutil.disk_usage(os.path.dirname(sys.executable)).free
     if free_bytes < _MIN_FREE_BYTES_FOR_AUDIO_INSTALL:
         free_mb = free_bytes / (1024 * 1024)
         raise ComponentActionUnsupportedError(

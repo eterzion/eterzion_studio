@@ -1,6 +1,36 @@
 <!--
 SYNC IMPACT REPORT
 ==================
+Version change: 2.4.0 → 2.5.0 (2026-08-13)
+
+MINOR bump rationale: a new principle (XII. AI Audio Restoration Is Bounded, Provider-Isolated, and
+Never Auto-Trusted) was added. It adds rules that did not previously exist — it does not remove or
+weaken anything, so it is not a MAJOR change; it is more than a wording clarification, so it is not
+a PATCH.
+
+Added principles: XII. AI Audio Restoration Is Bounded, Provider-Isolated, and Never Auto-Trusted
+(deterministic DSP — LUFS/peak/EQ/dynamics/stereo/limiting/normalisation/dithering — is never
+replaced by AI, only supplemented when problem-detection identifies a real need; an AI provider's
+output is never the final master, it always passes back through corrective DSP and a Quality Guard
+that compares objective before/after metrics and can reject/reduce AI processing; AI models are
+reachable only through an isolated `AudioRestorationProvider`-style adapter, never called directly
+by orchestration code, with third-party inference code kept isolated behind it; lazy loading and
+automatic DSP-only fallback are mandatory for every AI audio provider; heavy AI inference runs
+isolated from the main API process, consistent with the existing isolated-worker architecture;
+heavy ML dependencies of an audio provider are isolated from the main backend's dependency set;
+restoration MUST preserve original musical intent — timbre, instrumentation, vocals, stereo
+placement, transients, artistic ambience — restoration is not remixing; licensing rigor for audio
+AI dependencies is identical to Principle IV, with conditional licences explicitly recorded as an
+accepted, monitored risk in `docs/models/MODEL_LICENSES.md`, never assumed permissive).
+Modified sections: Governance → Compliance review (added Principle XII to the mandatory review
+gate list).
+Removed sections: none.
+Templates requiring review: none — the addition is additive and does not contradict existing
+guidance in spec/plan/tasks template guidance.
+
+---
+Previous report
+---------------
 Version change: 2.3.0 → 2.4.0 (2026-08-12)
 
 MINOR bump rationale: Principle X (Interface Structure Is Adapted, Not Templated) was materially
@@ -523,6 +553,79 @@ The same instinct that kept `interface/` small and reuse-driven under Principle 
 API's internal module layout — prefer what the codebase's actual responsibility surface needs
 over what a generic layered-architecture habit says it should have.
 
+### XII. AI Audio Restoration Is Bounded, Provider-Isolated, and Never Auto-Trusted
+
+Generative/learned models MAY be used for music restoration and mastering, but only as a bounded,
+optional stage inside a deterministic DSP pipeline that owns the final result — never as a
+replacement for that pipeline, and never reachable directly by the rest of the application.
+
+- **Deterministic DSP is never replaced by AI.** Loudness measurement (LUFS, True Peak, RMS), peak
+  detection, DC offset correction, high-pass/notch/parametric/dynamic EQ, compression and
+  multiband compression, limiting, gain staging, stereo and phase analysis, normalisation and
+  dithering MUST remain traditional, deterministic DSP, independent of any AI provider. A learned
+  restoration model MAY be invoked only when a problem-detection stage identifies a class of
+  degradation traditional DSP does not adequately address (e.g. excessive reverb, severe clipping,
+  complex distortion, complex tonal imbalance, general restoration of a poor-quality recording) —
+  audio MUST NOT be sent to an AI provider by default or unconditionally; doing so is exactly the
+  hardware-cost/time-cost violation Principle VI (No AI Without Benefit) already forbids, applied
+  to the audio-mastering pipeline specifically.
+- **An AI provider's output is never the final master.** It MUST always pass back through this
+  project's own corrective DSP and a Quality Guard stage before becoming output. The Quality Guard
+  MUST compare objective before/after metrics (LUFS, Peak, True Peak, dynamic range, stereo
+  correlation, spectral balance, clipping, phase, distortion indicators) and MUST reject or reduce
+  the AI-provided processing when it introduces a measurable technical regression. An AI
+  restoration stage that cannot be independently verified is not permitted to ship as-is.
+- **AI restoration models are reachable only through an isolated provider interface.** The rest of
+  the application MUST depend on an abstract provider contract (e.g. `AudioRestorationProvider`)
+  and MUST NOT import or call a specific model's library directly from mastering/orchestration
+  code. Each model gets one concrete adapter (e.g. `SonicMasterProvider`) implementing that
+  contract; swapping or adding a model MUST NOT require changes to the orchestration engine that
+  calls it. Third-party model code (e.g. a cloned inference repository) MUST be kept isolated
+  behind its adapter — prefer a thin adapter over forking or modifying third-party source, and
+  reuse only what the adapter needs (inference path), not that project's training pipeline.
+- **Lazy loading and fallback are mandatory for every AI audio provider.** A model MUST NOT be
+  loaded at application startup; it loads only when an operation that actually needs it is
+  requested, and remains loaded for reuse across subsequent operations in the same session. When a
+  provider is unavailable for any reason (failed load, insufficient GPU/VRAM, missing runtime
+  dependency), the system MUST fall back to DSP-only restoration automatically — the absence or
+  failure of an AI provider MUST NOT make the product unusable, consistent with Principle VII
+  (Hardware Adaptive)'s existing "no arbitrary failure" rule extended to this pipeline.
+- **Heavy AI inference runs isolated from the main API process,** consistent with the process
+  isolation architecture already established for model inference (`docs/processing-protection-architecture.md`
+  Fase 1, and the isolated worker in `api/astros_upscale_api/app/jobs.py`). A crash or resource
+  exhaustion inside audio-restoration inference MUST NOT take down the primary API process.
+- **Heavy ML dependencies of an audio-restoration provider MUST be isolated from the main backend
+  environment** — installed into a separate environment/extra, not pulled automatically into
+  `astros_upscale_api`'s primary requirements — consistent with the project's existing preference
+  for a lean primary backend dependency set (see `api/README.md`).
+- **Restoration MUST preserve the original musical intent.** AI-assisted restoration MUST NOT
+  unnecessarily alter timbre, instrumentation, vocal characteristics, stereo placement, transients,
+  or the recording's artistic ambience. Restoration is not remixing; this is an acceptance
+  criterion for any AI audio feature, not merely product guidance, and MUST be checked as part of
+  that feature's validation.
+- **Licensing rigor for audio AI dependencies is identical to Principle IV, with explicit tracking
+  of conditional licences.** A model, weight, or supporting component (including a required
+  encoder/decoder such as a third-party VAE) used for AI audio restoration MUST clear the same
+  Commercial License Only verification Principle IV already requires. Where a dependency's licence
+  is conditional rather than unconditionally permissive (e.g. free only below a stated revenue
+  threshold), that condition MUST be recorded explicitly in `docs/models/MODEL_LICENSES.md` as an
+  accepted, monitored risk — never silently treated as equivalent to an unconditional permissive
+  licence.
+
+**Rationale:** the technical audit performed before this principle was written found a concrete
+case this principle exists to prevent: a capable, Apache-2.0-licensed restoration model
+(SonicMaster) whose only path to production use requires a VAE distributed under a licence that
+is free only below a revenue threshold, and whose reference inference code is a research
+repository, not an installable package, wired directly into whatever calls it. Without a provider
+boundary, that specific model's shape (its checkpoint format, its chunking strategy, its
+dependency pins) would leak into the mastering pipeline itself, exactly the coupling Principle II
+(Reuse First) and Principle X/XI's "adapted, not templated" instinct already reject elsewhere in
+this codebase. Music restoration also carries a failure mode none of the existing principles name
+directly: a generative model can produce audio that measures worse than the input it "restored,"
+or that no longer sounds like the same recording — Principle VIII (Tests Required) requires tests
+to exist, but does not by itself require the specific before/after technical comparison an AI
+mastering stage needs to avoid silently shipping a regression.
+
 ## Licensing and Distribution Constraints
 
 These constraints follow from Principle IV and from the product being closed-source and commercial.
@@ -592,13 +695,68 @@ weakens a principle MUST state explicitly what risk is being accepted and by who
 principles, and `/speckit.analyze` MUST verify compliance before implementation is authorised.
 Principles IV (Commercial License Only), III (Performance First), II (Reuse First),
 V (Models Are Internal), VIII (Tests Required), IX (Two-Layer Architecture),
-X (Interface Structure Is Adapted, Not Templated) and XI (API Structure Is Consolidated By Domain,
-Not By Class) are the mandatory review gates.
+X (Interface Structure Is Adapted, Not Templated), XI (API Structure Is Consolidated By Domain,
+Not By Class) and XII (AI Audio Restoration Is Bounded, Provider-Isolated, and Never Auto-Trusted)
+are the mandatory review gates.
 
 Complexity MUST be justified. A simpler implementation that satisfies the specification is
 preferred to a more capable one that exceeds it.
 
 ### Amendment log
+
+**v2.5.0 — 2026-08-13 — Principle XII added: AI Audio Restoration Is Bounded, Provider-Isolated,
+and Never Auto-Trusted**
+
+*What changed:* added a new principle governing how any AI/generative model MAY be used for music
+restoration and mastering: deterministic DSP (loudness/EQ/dynamics/stereo/limiting/normalisation/
+dithering) is never replaced by AI, only supplemented when a problem-detection stage finds a
+degradation class traditional DSP does not adequately address; an AI provider's output is never
+the final master — it always passes back through this project's own corrective DSP and a Quality
+Guard stage that compares objective before/after metrics (LUFS, Peak, True Peak, dynamic range,
+stereo correlation, spectral balance, clipping, phase, distortion indicators) and can reject or
+reduce AI processing that regresses them; AI models are reachable only through an isolated
+provider adapter (e.g. `AudioRestorationProvider` / `SonicMasterProvider`), never called directly
+by orchestration code, with third-party inference repositories kept isolated behind their adapter
+rather than forked or modified in place; lazy loading and automatic DSP-only fallback are
+mandatory for every AI audio provider; heavy AI inference runs isolated from the main API process,
+consistent with the isolated-worker architecture already established for model inference; heavy ML
+dependencies of an audio provider are kept out of the main backend's primary dependency set;
+restoration MUST preserve the original musical intent (timbre, instrumentation, vocals, stereo
+placement, transients, artistic ambience) as an acceptance criterion, not just guidance; and
+licensing rigor for audio AI dependencies is identical to Principle IV, with conditional licences
+(e.g. free only below a stated revenue threshold) explicitly recorded as an accepted, monitored
+risk in `docs/models/MODEL_LICENSES.md`, never silently treated as unconditionally permissive.
+Added Principle XII to the mandatory `/speckit.analyze` compliance review gates in Governance.
+
+*Why:* a technical audit of a candidate restoration model (SonicMaster, Apache-2.0 code/weights)
+performed immediately before this amendment found the exact case this principle exists to head
+off: a capable model whose only path to production requires a third-party VAE licensed free only
+below a revenue threshold, and whose reference inference code is a research repository (no
+`setup.py`/`pyproject.toml`, hardcoded absolute paths in its batch-inference scripts) — the kind of
+dependency that, without an explicit boundary, tends to get wired directly into orchestration code
+rather than isolated behind an adapter. That coupling is the same "structure for its own sake, or
+no structure at all" failure mode Principles IX/X/XI already corrected elsewhere in this codebase
+(three independently-grown backend surfaces, a literal frontend template, file-per-class API
+fragmentation) — this is that same instinct applied to how a new, still-experimental class of
+dependency (a generative audio model) is allowed to enter the product at all. Music restoration
+also introduces a failure mode none of the existing principles name directly: a generative model
+can produce audio that measures worse than its input, or that no longer sounds like the same
+recording. Principle VIII (Tests Required) requires tests to exist, but not the specific
+before/after objective-metric comparison an AI mastering stage needs to avoid silently shipping a
+regression — this principle's Quality Guard requirement closes that gap. Principle VI (No AI
+Without Benefit) already forbids using AI where traditional tooling does as well or better; this
+principle makes that concrete for the mastering pipeline specifically, by naming which operations
+stay deterministic DSP unconditionally.
+
+*Migration:* no existing code becomes non-compliant — the project has no AI audio restoration
+pipeline yet. This principle governs the design produced by the feature spec that follows it
+(`/speckit.specify` → `/speckit.plan` for the `audio-engine` module); it does not itself create,
+move, or delete any files.
+
+*Risk accepted:* none beyond what is explicitly named inside the principle itself — the Stable
+Audio Open VAE's revenue-threshold licence condition, which this amendment requires to be tracked
+in `docs/models/MODEL_LICENSES.md` as an accepted, monitored risk rather than resolved by this
+constitutional change.
 
 **v2.4.0 — 2026-08-12 — Principle X expanded: Atomic Design, Tailwind design tokens and a
 `services/` split MAY be adopted once duplication is confirmed**
@@ -746,4 +904,4 @@ itself move, merge, or delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 2.4.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-12
+**Version**: 2.5.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-13

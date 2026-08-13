@@ -1,0 +1,23 @@
+# Dependências do audio-worker isolado (SonicMaster) — NUNCA instalar no ambiente principal
+# do backend. Ver specs/006-audio-engine-masterizacao/research.md Decisão 4 e
+# api/README.md para o setup completo.
+#
+# Pins exatos de requirements_sonic.txt do SonicMaster (github.com/AMAAI-Lab/SonicMaster,
+# commit c4c0869c14bada6c5cb7d3decbcdc00e6a3050f5) — deliberadamente NÃO alinhados com o
+# torch/diffusers/transformers usados pelo resto do projeto (ver research.md: o isolamento
+# de ambiente elimina o risco de incompatibilidade em vez de tentar resolvê-lo).
+#
+# Excluídos dos pins originais (só treino/avaliação, não usados por model.py em inferência):
+# accelerate, datasets, wandb, laion_clap.
+torch==2.4.0
+torchaudio==2.4.0
+torchvision==0.19.0
+transformers==4.44.0
+diffusers==0.30.0
+torchlibrosa==0.1.0
+librosa==0.11.0
+soundfile
+safetensors
+huggingface_hub
+pyyaml
+tqdm

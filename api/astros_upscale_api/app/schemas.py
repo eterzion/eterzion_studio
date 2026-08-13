@@ -15,8 +15,16 @@ Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
 ContentType = Literal['photo', 'anime_image', 'real_video', 'anime_video', 'speech', 'music']
 InstallState = Literal['not_installed', 'installing', 'installed', 'update_available']
-LicenseState = Literal['active', 'offline_tolerance', 'offline_expiring', 'blocked', 'not_activated']
+LicenseState = Literal[
+    'active', 'offline_tolerance', 'offline_expiring', 'blocked', 'not_activated', 'not_configured'
+]
 LicenseStatusValue = Literal['approved', 'approved_conditional']
+# specs/006-audio-engine-masterizacao — audio_mode is additive: None/'enhance'
+# preserves today's single-pass music/speech pipeline exactly (contracts/README.md
+# Decisão 2). Only 'auto_master'/'restore'/'restore_master' route through
+# app.audio_engine.mastering.MasteringEngine.
+AudioMode = Literal['enhance', 'auto_master', 'restore', 'restore_master']
+QualityVerdictOutcome = Literal['accepted', 'reduced', 'rejected']
 
 
 class CustomSize(BaseModel):
@@ -61,6 +69,11 @@ class MediaRequest(BaseModel):
     device: str = 'auto'
     custom_size: CustomSize | None = None
     quality: int | None = Field(default=None, ge=0, le=100)  # compress/convert only (FR-027)
+    # audio_mode/ai_strength: music-only (content_type='music'), both optional —
+    # omitted or 'enhance' means "exactly today's behaviour", byte for byte
+    # (specs/006-audio-engine-masterizacao contracts/README.md).
+    audio_mode: AudioMode | None = None
+    ai_strength: int | None = Field(default=None, ge=0, le=100)
 
 
 class LocalJobRequest(BaseModel):
@@ -97,6 +110,22 @@ class CapacityCheck(BaseModel):
     limiting_resource: str | None = None
 
 
+class AudioAnalysisSummary(BaseModel):
+    """Resumo público de audio_engine.analyzer.AudioAnalysisReport
+    (contracts/README.md) — só os campos úteis para uma UI de métricas, não
+    o relatório interno completo (Princípio V — sem detalhe técnico por
+    padrão)."""
+    integrated_lufs: float
+    true_peak_db: float
+    dynamic_range_db: float
+    clipping_ratio: float
+
+
+class QualityVerdictSummary(BaseModel):
+    outcome: QualityVerdictOutcome
+    reasons: list[str] = []
+
+
 class JobStatus(BaseModel):
     id: str
     status: JobStatusValue
@@ -117,6 +146,11 @@ class JobStatus(BaseModel):
     processing_ended_at: str | None = None
     source_meta: SizeMeta | None = None
     output_meta: SizeMeta | None = None
+    # Present only when audio_mode != 'enhance' was used — absent (not null)
+    # for every image/video/speech job and for the default music pipeline,
+    # so their response payload is byte-for-byte unchanged (contracts/README.md).
+    audio_analysis: AudioAnalysisSummary | None = None
+    quality_verdict: QualityVerdictSummary | None = None
 
 
 class ModelInfo(BaseModel):
