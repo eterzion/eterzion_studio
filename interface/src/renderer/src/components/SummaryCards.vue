@@ -18,7 +18,6 @@ defineProps<{
           <div class="summary-label">Arquivos na fila</div>
         </div>
       </div>
-      <div class="summary-track"><span /></div>
     </article>
     <article class="summary-card tone-green">
       <div class="summary-card-top">
@@ -28,7 +27,6 @@ defineProps<{
           <div class="summary-label">Tamanho total</div>
         </div>
       </div>
-      <div class="summary-track"><span /></div>
     </article>
     <article class="summary-card tone-orange">
       <div class="summary-card-top">
@@ -38,7 +36,6 @@ defineProps<{
           <div class="summary-label">Status atual</div>
         </div>
       </div>
-      <div class="summary-track"><span /></div>
     </article>
     <article class="summary-card tone-purple">
       <div class="summary-card-top">
@@ -48,7 +45,6 @@ defineProps<{
           <div class="summary-label">Qualidade e detalhes</div>
         </div>
       </div>
-      <div class="summary-track"><span /></div>
     </article>
   </div>
 </template>
@@ -61,7 +57,6 @@ defineProps<{
 }
 .summary-card {
   --tone: #1688ff;
-  --tone-dark: #084686;
   display: flex;
   min-width: 0;
   min-height: 120px;
@@ -74,15 +69,12 @@ defineProps<{
 }
 .tone-green {
   --tone: #35dd31;
-  --tone-dark: #08732c;
 }
 .tone-orange {
   --tone: #ff7417;
-  --tone-dark: #b73c05;
 }
 .tone-purple {
   --tone: #bd30eb;
-  --tone-dark: #7211bf;
 }
 .summary-card-top {
   display: flex;
@@ -123,24 +115,6 @@ defineProps<{
   font-size: clamp(12px, 1.05vw, 15px);
   line-height: 1.15;
   white-space: nowrap;
-}
-.summary-track {
-  height: 5px;
-  overflow: hidden;
-  border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--tone-dark) 72%, #07121e);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-}
-.summary-track span {
-  display: block;
-  width: 92%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(
-    90deg,
-    var(--tone),
-    color-mix(in srgb, var(--tone) 72%, var(--tone-dark))
-  );
 }
 @media (max-width: 920px) {
   .summary-grid {

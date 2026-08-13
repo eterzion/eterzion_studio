@@ -40,13 +40,18 @@ def _configure(monkeypatch):
 
 
 class TestGetStatus:
-    def test_reports_not_activated_when_no_service_configured(self, client, monkeypatch):
+    def test_reports_not_configured_when_no_service_configured(self, client, monkeypatch):
+        # 'not_configured' (not 'not_activated') is the correct distinct state here:
+        # this is the dev/local default (empty licensing_service_url +
+        # ASTROS_DEV_ALLOW_UNLICENSED), where check_gate() already allows job
+        # creation — the frontend must not treat this the same as a real
+        # never-activated installation and hard-block the whole app shell.
         from app.config import settings
 
         monkeypatch.setattr(settings, 'licensing_service_url', '')
         res = client.get('/license/status')
         assert res.status_code == 200
-        assert res.json()['state'] == 'not_activated'
+        assert res.json()['state'] == 'not_configured'
 
     def test_reports_active_with_seat_counts(self, client, monkeypatch):
         _configure(monkeypatch)

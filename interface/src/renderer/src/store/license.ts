@@ -37,10 +37,19 @@ export const licenseState = reactive<LicenseStoreState>({
 })
 
 /** Media/processing screens are usable in these states — offline_tolerance
- *  and offline_expiring both still work (FR-056/FR-057), only blocked/
- *  not_activated require going through LicenseActivationView.vue (T039). */
+ *  and offline_expiring both still work (FR-056/FR-057), and so does
+ *  not_configured (no licensing service set up + ASTROS_DEV_ALLOW_UNLICENSED,
+ *  the default out-of-the-box dev/local config — app.licensing's check_gate()
+ *  already allows job creation in this state, the UI must not contradict it).
+ *  Only blocked/not_activated require going through LicenseActivationView.vue
+ *  (T039). */
 export function isUsableLicenseState(status: UiLicenseStatus): boolean {
-  return status === 'active' || status === 'offline_tolerance' || status === 'offline_expiring'
+  return (
+    status === 'active' ||
+    status === 'offline_tolerance' ||
+    status === 'offline_expiring' ||
+    status === 'not_configured'
+  )
 }
 
 /** Whether the app shell should be replaced entirely by

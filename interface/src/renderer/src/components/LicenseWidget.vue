@@ -24,6 +24,8 @@ const meta = computed(() => {
       return { icon: ShieldAlert, label: 'Licença bloqueada', tone: 'danger' }
     case 'not_activated':
       return { icon: KeyRound, label: 'Não ativada', tone: 'warning' }
+    case 'not_configured':
+      return { icon: KeyRound, label: 'Sem licenciamento', tone: 'neutral' }
     default:
       return { icon: ShieldQuestion, label: 'Licenciamento', tone: 'neutral' }
   }

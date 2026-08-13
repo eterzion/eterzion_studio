@@ -178,7 +178,12 @@ export async function deleteComponent(componentId: string): Promise<ComponentSum
 }
 
 export type LicenseState =
-  'active' | 'offline_tolerance' | 'offline_expiring' | 'blocked' | 'not_activated'
+  | 'active'
+  | 'offline_tolerance'
+  | 'offline_expiring'
+  | 'blocked'
+  | 'not_activated'
+  | 'not_configured'
 
 export interface LicenseStatusResponse {
   state: LicenseState
