@@ -54,26 +54,24 @@ ou adulterado é descartado automaticamente. A lista completa e sempre
 atualizada, com o que já está baixado e o tamanho de cada um, aparece na tela
 de **Modelos** do app.
 
+O registro (`api/astros_upscale/processing.py`, `MODELS`) hoje tem **um único
+modelo por `content_type`**, escolhido por um benchmark real de qualidade
+perceptual (LPIPS/PSNR/SSIM — ver
+[docs/models/BENCHMARK_RESULTS.md](docs/models/BENCHMARK_RESULTS.md)) entre
+os candidatos com licença comercial aprovada, em vez de várias opções
+concorrentes por categoria.
+
 **Fotos**
 
 | Modelo | Escala | Indicado para |
 |---|---|---|
-| `realesrgan-x4` *(padrão p/ imagens)* | 4x | Padrão para fotos reais, equilíbrio nitidez/naturalidade |
-| `realesrgan-x2` | 2x | Quando 4x é exagero; só dobra a resolução |
-| `realesr-general` | 4x | Leve e rápido, bom default geral |
-| `realesrnet-x4` | 4x | Resultado mais suave e com menos artefatos |
-| `ultrasharp` | 4x | Muito nítido; ótimo em JPEG comprimido |
-| `nomos-webphoto` | 4x | Fotos reais degradadas da web (ruído, blur, recompressão) |
-| `nomos2-dat2` | 4x | Transformer (DAT-2), o mais nítido — pesado, evite p/ vídeo/lote |
+| `nomos-webphoto` *(padrão p/ imagens)* | 4x | Fotos reais degradadas da web (ruído, blur, recompressão) — vencedor do benchmark de perfis |
 
 **Anime**
 
 | Modelo | Escala | Indicado para |
 |---|---|---|
-| `realesrgan-anime` | 4x | Modelo leve otimizado para anime/ilustração |
-| `animesharp` | 4x | Linhas limpas em ilustrações e texto |
-| `hfa2k-span` | 2x | Qualidade parecida ao realesrgan-anime, bem mais rápido (SPAN) |
-| `anime-video` *(padrão p/ vídeos)* | 4x | Vídeos de anime — leve e rápido |
+| `hfa2k-span` | 2x | Qualidade parecida ao antigo `realesrgan-anime`, bem mais rápido (SPAN) — vencedor do benchmark |
 
 **Vídeo/Anime** (leves, feitos para processar muitos frames)
 
@@ -87,14 +85,7 @@ de **Modelos** do app.
 
 | Modelo | Escala | Indicado para |
 |---|---|---|
-| `liveaction-span` | 2x | Vídeo real (h264/h265/VP9), sem denoise agressivo — preserva grão/detalhe |
-
-**Restauração**
-
-| Modelo | Escala | Indicado para |
-|---|---|---|
-| `nmkd-siax` | 4x | Universal p/ imagens limpas ou pouco comprimidas |
-| `nmkd-superscale` | 4x | Fotos reais com ruído e artefatos |
+| `realplksr-video-real` | 2x | Vídeo real (h264/h265/VP9), sem denoise agressivo — preserva grão/detalhe entre quadros |
 
 **Limpeza (1x — melhora sem aumentar)**
 
@@ -107,6 +98,20 @@ de **Modelos** do app.
 Os modelos 1x mantêm o tamanho original — o app os aplica como etapa de
 limpeza antes de um upscale, quando o filtro de denoise está habilitado.
 
+### Modelos removidos do registro
+
+Vários candidatos que já estiveram no app foram removidos do registro
+`MODELS`. Um job antigo (ou link salvo) que ainda referencie um desses nomes
+não trava com um erro genérico de "modelo desconhecido" — `resolve_model()`
+reconhece o nome em `REMOVED_MODEL_IDENTIFIERS` e explica o motivo da
+remoção, pedindo para reprocessar com um perfil atual:
+
+| Modelo removido | Motivo |
+|---|---|
+| `realesrgan-x4`, `realesrgan-x2`, `realesr-general`, `realesrnet-x4`, `realesrgan-anime`, `nomos2-dat2` | Perderam para o vencedor do benchmark de perfis (mesma licença, qualidade perceptual inferior no teste) |
+| `ultrasharp`, `animesharp`, `liveaction-span` | Licença não permite uso comercial (CC-BY-NC-SA-4.0) |
+| `nmkd-siax`, `nmkd-superscale` | Licença nunca confirmada por fonte oficial de primeira mão (categoria "Restauração" inteira foi removida por esse motivo) |
+
 ### Origem, autoria e licença de cada modelo
 
 Os modelos vêm de projetos e autores da comunidade — cada um com sua própria
@@ -115,18 +120,16 @@ continua sendo a do autor original.
 
 | Modelo(s) | Autor(es) | Licença | Fonte |
 |---|---|---|---|
-| `realesrgan-x4`, `realesrgan-x2`, `realesr-general`, `realesrnet-x4`, `realesrgan-anime`, `realesr-animevideo` | Xintao Wang e colaboradores (Real-ESRGAN) | BSD-3-Clause | [github.com/xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) |
-| `ultrasharp` | Kim2091 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [openmodeldb.info/models/4x-UltraSharp](https://openmodeldb.info/models/4x-UltraSharp) |
-| `animesharp` | Kim2091 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [openmodeldb.info/models/4x-AnimeSharp](https://openmodeldb.info/models/4x-AnimeSharp) |
-| `nmkd-siax`, `nmkd-superscale` | Nmkd | WTFPL (uso livre) | [openmodeldb.info](https://openmodeldb.info/models/4x-NMKD-Siax-CX) |
-| `denoise`, `dejpg`, `hfa2k-avc`, `deh264`, `hfa2k-span`, `nomosuni-span`, `nomos-webphoto`, `nomos2-dat2` | Philip Hofmann (Phhofm/Phips) | CC-BY-4.0 (uso livre, com atribuição) | [huggingface.co/Phips](https://huggingface.co/Phips) |
-| `liveaction-span` | jcj83429 | **CC-BY-NC-SA-4.0** (uso não comercial, com atribuição) | [github.com/jcj83429/upscaling](https://github.com/jcj83429/upscaling) |
+| `realesr-animevideo` | Xintao Wang e colaboradores (Real-ESRGAN) | BSD-3-Clause | [github.com/xinntao/Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) |
+| `nomos-webphoto`, `hfa2k-span`, `hfa2k-avc`, `nomosuni-span`, `denoise`, `dejpg`, `deh264` | Philip Hofmann (Phhofm/Phips) | CC-BY-4.0 (uso livre, com atribuição) | [huggingface.co/Phips](https://huggingface.co/Phips) |
+| `realplksr-video-real` | Philip Hofmann (Phhofm) | **Apache-2.0** (código e pesos) — dataset 100% domínio público | [github.com/Phhofm/models](https://github.com/Phhofm/models/releases/tag/2xPublic_realplksr_dysample_layernorm_real) |
 
-⚠️ `ultrasharp` e `animesharp` são **CC-BY-NC-SA 4.0**: não use os resultados
-gerados por eles comercialmente sem verificar os termos, e mantenha a
-atribuição ao Kim2091 se redistribuir. Essas informações vêm da API pública do
-[OpenModelDB](https://openmodeldb.info/) e da página de cada modelo no
-Hugging Face; confirme na fonte antes de qualquer uso comercial. Veja também
+Todos os modelos ativos hoje têm licença comercial explícita, sem ressalva de
+uso não comercial — os candidatos que só tinham licença CC-BY-NC-SA (não
+comercial) foram removidos do registro (ver tabela acima). Essas informações
+vêm da API pública do [OpenModelDB](https://openmodeldb.info/) e da página de
+cada modelo no Hugging Face/GitHub; confirme na fonte antes de qualquer uso
+comercial. Veja também
 [docs/models/MODEL_LICENSES.md](docs/models/MODEL_LICENSES.md) para o
 levantamento completo (código de terceiros, engines de áudio, ffmpeg).
 
@@ -181,8 +184,7 @@ completo em [LICENSE](LICENSE)). Em resumo:
 
 Essa licença cobre **apenas o código deste projeto**. Os modelos de IA
 baixados em tempo de execução (pasta `models/`) têm autoria e licenças
-próprias e independentes — várias delas têm suas próprias restrições
-(`ultrasharp` e `animesharp` são CC-BY-NC-SA-4.0, por exemplo). Veja a tabela
-completa em
-[Origem, autoria e licença de cada modelo](#origem-autoria-e-licença-de-cada-modelo)
-antes de usar qualquer resultado gerado por eles.
+próprias e independentes de terceiros — todos os modelos ativos hoje têm
+licença comercial explícita (ver
+[Origem, autoria e licença de cada modelo](#origem-autoria-e-licença-de-cada-modelo)),
+mas confirme na fonte antes de qualquer uso comercial dos resultados.

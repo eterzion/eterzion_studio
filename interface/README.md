@@ -21,12 +21,16 @@ módulo interno de `api/` diretamente.
 
 ## Rodar em desenvolvimento
 
-Requer [Node.js](https://nodejs.org/) 18+ e a API local (`api/astros_upscale_api`) rodando —
-veja o `Dockerfile` em `api/astros_upscale_api/` para como subi-la.
+Requer [Node.js](https://nodejs.org/) 20.19+ (Vite 7 não roda em versões
+anteriores; recomendado usar a 24, a mesma testada em CI — veja
+`.github/workflows/tests.yml`), [pnpm](https://pnpm.io/) (o gerenciador de
+pacotes do projeto — só existe `pnpm-lock.yaml`, não `package-lock.json`) e a
+API local (`api/astros_upscale_api`) rodando — veja o `Dockerfile` em
+`api/astros_upscale_api/` para como subi-la.
 
 ```bash
-npm install
-npm run build && npm run start   # builda tudo e abre a janela do Electron
+pnpm install
+pnpm run build && pnpm run start   # builda tudo e abre a janela do Electron
 ```
 
 Desenvolvimento com hot-reload (abre no navegador, não numa janela Electron —
@@ -34,7 +38,7 @@ mais rápido para iterar em componentes Vue; a API continua precisando estar
 rodando à parte):
 
 ```bash
-npm run dev
+pnpm run dev
 ```
 
 O processo principal do Electron (`src/main/apiProcess.ts`) resolve
@@ -100,11 +104,13 @@ pip install pyinstaller
 pyinstaller pyinstaller.spec        # gera dist/astros-upscale-api(.exe)
 
 cd ../../interface
-npm run build:win     # ou build:mac / build:linux — empacota tudo com electron-builder
+pnpm run build:win     # ou build:mac / build:linux — empacota tudo com electron-builder
 ```
 
 `build:win`/`build:linux` também baixam o ffmpeg empacotado automaticamente
-(`npm run fetch:ffmpeg:win`/`fetch:ffmpeg:linux`, ver
+(`pnpm run fetch:ffmpeg:win`/`fetch:ffmpeg:linux`, ver
 [docs/models/MODEL_LICENSES.md](../docs/models/MODEL_LICENSES.md)) — não é
-preciso rodar esse passo manualmente. Para um build sem instalador (só a
-pasta descompactada), use `npm run build:unpack`.
+preciso rodar esse passo manualmente. `build:mac` não empacota ffmpeg (não há
+build LGPL oficial para macOS ainda — ver a mesma seção); o instalador
+depende de um `ffmpeg` já presente no PATH do usuário nessa plataforma. Para
+um build sem instalador (só a pasta descompactada), use `pnpm run build:unpack`.

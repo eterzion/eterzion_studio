@@ -18,7 +18,9 @@ para o porquê dessa separação (proteção do processamento contra pirataria).
 
 ## Rodar cada serviço isoladamente
 
-Requer Python 3.11+ e um venv na raiz do repositório (`.venv/`).
+Requer Python 3.10+ (`pyproject.toml`'s `requires-python`; recomendado usar a
+3.13, a mesma versão testada em CI e usada nos `Dockerfile`s de cada serviço)
+e um venv na raiz do repositório (`.venv/`).
 
 ```bash
 cd api
@@ -64,8 +66,10 @@ Windows), `Licensing service (pytest)` e `Desktop app — lint + typecheck`
 
 ## Variáveis de ambiente
 
-Cada serviço lê seu próprio arquivo `.env` (não commitado) na raiz do seu
-respectivo `app/`, via `pydantic-settings`. As mais relevantes para produção:
+Cada serviço lê seu próprio arquivo `.env` (não commitado), via
+`pydantic-settings` — na raiz de onde o processo é iniciado (ex.:
+`api/astros_upscale_api/.env`, não dentro do pacote Python `app/`). As mais
+relevantes para produção:
 
 **`astros_upscale_api`** (prefixo `ASTROS_`, ver `app/config.py`):
 
@@ -79,8 +83,14 @@ respectivo `app/`, via `pydantic-settings`. As mais relevantes para produção:
 | `ASTROS_LICENSING_SERVICE_URL` | *(vazio)* | URL do `astros_licensing_service`; vazio desabilita o carregamento protegido |
 | `ASTROS_LICENSING_SERVICE_PUBLIC_KEY_B64` | *(vazio)* | Chave pública do serviço de licenciamento, fixada em build de produção (senão é obtida via TOFU de `/public-key`, aceitável só em dev) |
 | `ASTROS_DEV_ALLOW_UNLICENSED` | `true` | **Deve ser `false` em qualquer build de produção** — `true` permite rodar sem licença válida (default pensado para dev/testes) |
-| `ASTROS_FFMPEG_DIR` | *(vazio)* | Diretório do ffmpeg empacotado (setado pelo Electron quando há um bundle) |
-| `ASTROS_WORKER_AUTHKEY` | *(vazio)* | Token de autenticação do IPC do worker isolado |
+| `ASTROS_FFMPEG_DIR` | *(vazio)* | Diretório do ffmpeg empacotado. Lida diretamente do ambiente do processo (`os.environ`, em `astros_upscale/media.py`), não é um campo de `Settings` — **não pode ser setada via `.env`**, só como variável de ambiente real. Normalmente setada pelo processo principal do Electron (`apiProcess.ts`), nunca manualmente |
+
+`ASTROS_WORKER_AUTHKEY` **não** é uma variável de configuração — é um
+token efêmero, gerado aleatoriamente a cada processo pelo próprio
+`app/jobs.py` (`WorkerSupervisor`) e passado ao worker isolado só para
+autenticar o IPC entre os dois. Setá-la manualmente não tem efeito (é
+sobrescrita a cada execução); documentada aqui só para quem for ler os logs
+do worker e se deparar com ela no ambiente do subprocesso.
 
 **`astros_licensing_service`** (prefixo `ASTROS_LICENSING_`, ver `app/config.py`):
 
@@ -96,8 +106,10 @@ respectivo `app/`, via `pydantic-settings`. As mais relevantes para produção:
 
 ## Empacotamento (PyInstaller / Docker)
 
-Cada serviço tem seu próprio `pyinstaller.spec` e `Dockerfile` —
-`astros_upscale_api/pyinstaller.spec` e `astros_licensing_service/` (Docker).
-Veja [interface/README.md](../interface/README.md#empacotar-um-instalador)
-para o passo a passo completo de empacotar o instalador do app desktop, que
-inclui a API de processamento via PyInstaller.
+`astros_upscale_api` tem os dois: `pyinstaller.spec` (para embarcar no
+instalador do app desktop — ver
+[interface/README.md](../interface/README.md#empacotar-um-instalador)) e um
+`Dockerfile` próprio (`python:3.13-slim`, para rodar como serviço standalone,
+independente do desktop). `astros_licensing_service` só tem `Dockerfile` —
+esse serviço nunca é embarcado no app desktop, sempre roda como um processo
+remoto/standalone separado.

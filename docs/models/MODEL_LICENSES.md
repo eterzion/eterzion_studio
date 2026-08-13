@@ -548,8 +548,21 @@ fora do escopo desta verificação técnica.
 
 ## 6. Resumo executivo
 
+> **Nota (T023/T024, posterior a esta auditoria):** o registro `MODELS` em
+> `api/astros_upscale/processing.py` foi reduzido a um único modelo por
+> `content_type`, escolhido por benchmark real de qualidade perceptual (ver
+> [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md)) entre os candidatos já
+> aprovados aqui — não por motivo de licença. Das 7 variantes Real-ESRGAN
+> abaixo, só `realesr-animevideov3` continua no registro hoje; as demais
+> (`RealESRGAN_x2plus`, `RealESRGAN_x4plus`, `RealESRGAN_x4plus_anime_6B`,
+> `RealESRNet_x4plus`, `realesr-general-x4v3`, `realesr-general-wdn-x4v3`)
+> permanecem aprovadas por licença (não há revogação), mas não são mais
+> baixadas/usadas pelo app. Ver a lista completa de modelos ativos em
+> [README.md](../../README.md#modelos-disponíveis).
+
 ### Aprovados
-Real-ESRGAN (7 modelos, BSD-3) · Phhofm/Helaman (CC-BY-4.0, **com atribuição visível**) ·
+Real-ESRGAN (7 modelos, BSD-3 — só 1 ainda ativo no registro, ver nota acima) ·
+Phhofm/Helaman (CC-BY-4.0, **com atribuição visível**) ·
 audiosronnx (Apache-2.0) · RNNoise (BSD-3) · loudnorm/afftdn/anlmdn/firequalizer/acompressor
 (LGPL) · deesser (MIT) · pyloudnorm (MIT) · noisereduce (MIT) · SpeechBrain + modelos
 Apache-2.0 · SVT-AV1/rav1e · encoders de hardware
