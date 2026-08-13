@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import type { NavKey } from '../types'
 import AppButton from './atoms/AppButton.vue'
 import {
-  Atom,
   Home,
   Image,
   Film,
@@ -40,6 +39,10 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+// Official brand logo served by assets.ericinacio.com (see astros_assets'
+// own BrandMark.vue, which uses the same file as its main site logo).
+const brandLogoUrl = 'https://assets.ericinacio.com/branding/logo-256.webp'
 
 const items = computed<{ key: NavKey; label: string; icon: unknown }[]>(() => [
   { key: 'home', label: t('nav.home'), icon: Home },
@@ -98,7 +101,16 @@ function openExternal(url: string): void {
 <template>
   <aside class="sidebar" :class="{ collapsed }">
     <div class="brand">
-      <div class="brand-icon"><Atom :size="20" /></div>
+      <div class="brand-icon">
+        <img
+          :src="brandLogoUrl"
+          alt="Astros Upscale"
+          width="32"
+          height="32"
+          decoding="async"
+          class="brand-logo"
+        />
+      </div>
       <div v-if="!collapsed" class="brand-text">
         <span class="brand-name">Astros Upscale</span>
       </div>
@@ -241,12 +253,15 @@ function openExternal(url: string): void {
   width: 32px;
   height: 32px;
   flex-shrink: 0;
-  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--on-primary);
-  background: linear-gradient(135deg, #8b5cf6, var(--color-primary));
+}
+
+.brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .brand-text {
