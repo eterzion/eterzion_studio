@@ -1,4 +1,35 @@
 <!--
+Sync Impact Report — constitution amendment
+Version change: 2.5.0 → 2.6.0 (MINOR — principles added, guidance materially expanded)
+
+Added principles:
+  XIII. External Processes Are Invoked Structurally, Never Composed
+  XIV.  Interface Text Is Translatable By Default
+  XV.   Source Media Is Never Overwritten
+
+Modified principles (extended, not redefined):
+  VII. Hardware Adaptive — every media operation must declare explicit ceilings and refuse
+       oversized work before starting, naming the limiting factor.
+  X.   Interface Structure Is Adapted, Not Templated — component decomposition rule added;
+       explicitly non-retroactive (ImageEditorView.vue named as exempt).
+  XI.  API Structure Is Consolidated By Domain, Not By Class — the "does it read as coherent"
+       judgment is replaced by three testable conditions for justifying a new module.
+
+Renamed principles: none
+Removed sections: none
+
+Governance: review-gate list extended with XIII, XIV, XV.
+
+Deferred / follow-up TODOs: none. No placeholder tokens remain in this document.
+
+Non-governance intents deferred to later Spec Kit stages (NOT executed here):
+  - the video adjustments/effects/transform/trim/audio/export subsystem
+  - the FFmpeg-backed processing, job, thumbnail and preview services
+  - the custom video player component tree
+  These are specification and implementation work; see Next Actions in the command output.
+-->
+
+<!--
 SYNC IMPACT REPORT
 ==================
 Version change: 2.4.0 → 2.5.0 (2026-08-13)
@@ -360,6 +391,15 @@ explanation of the limitation — never a generic error.
 Hardware capability MUST be detected, never assumed. Hardcoded constants that pretend to be
 adaptive (a fixed tile size described as "automatic") violate this principle.
 
+**Every media operation MUST declare its own ceilings.** Adapting to the hardware present is not
+sufficient on its own: an operation that scales with input size (duration, resolution, frame
+count, frame rate, file size) MUST define explicit maximum values and MUST refuse work that
+exceeds them before starting it, with the limiting factor named. A refusal that arrives after
+minutes of processing, or an out-of-memory crash, is a violation of this principle even on
+hardware the operation was never going to fit. The existing capacity gate (`_capacity_check_for`
+in `routes.py`, rejecting with `hardware_insufficient` and a `limiting_resource`) is the
+established shape; new media operations extend it rather than inventing a parallel one.
+
 **Rationale:** the same installer runs on a laptop with integrated graphics and on a workstation
 with 24GB of VRAM. A single fixed configuration is wrong on both.
 
@@ -504,6 +544,20 @@ now permits Atomic Design tiers, Tailwind design tokens, and a `services/` split
 confirms the condition that was previously absent is now present. The bar does not move: structure
 is still earned by demonstrated duplication, never assumed from a template's shape.
 
+**A component MUST NOT grow past the point where its own parts stop being reusable.** A view or
+component that contains several independently meaningful controls — each with its own state,
+event handling, and visual contract — MUST decompose them into child components or composables
+once any one of them is needed in a second place, or once the file can no longer be read as one
+responsibility. This is the same "earned by demonstrated duplication" bar the rest of this
+principle uses, applied inside a file instead of across the folder tree: a large file is not a
+violation on its own, and MUST NOT be split to hit a line count.
+
+This rule governs new code and any file being substantially reworked. It is **not** retroactive:
+`ImageEditorView.vue` (~1800 lines) is not made non-compliant by this amendment, and MUST NOT be
+split as an isolated refactor. It becomes subject to the rule when a change would add another
+independently meaningful control to it, at which point the new control — and whatever it shares
+with an existing one — is extracted rather than appended.
+
 ### XI. API Structure Is Consolidated By Domain, Not By Class
 
 Generic layered conventions (one file per class, one directory per technical tier — `api/`,
@@ -529,6 +583,16 @@ result is fragmentation with no real navigational benefit.
   principle does not mandate merging past the point where the result stops being readable; a
   smaller number of files is a consequence of removing accidental fragmentation, not a target
   pursued for its own sake.
+- **The test for a new file is a consumer, not a category.** A new module inside a domain package
+  is justified when at least one of these is true, and the justification MUST be stated in the
+  plan that introduces it: (a) it has tests that exercise it directly, without going through its
+  sibling modules; (b) a module outside its own domain imports it; (c) it isolates a third-party
+  dependency, subprocess, or external contract that the rest of the domain MUST NOT reach past.
+  A module that satisfies none of these belongs inside the domain file it serves, however large
+  that domain is. Naming a file after a technical tier — `validation.py`, `models.py`,
+  `controllers.py`, `types.py`, `utils.py` — is by itself never a justification, because it names
+  a category rather than a consumer; the same code named after what it actually owns
+  (`video_effects.py`, `video_thumbnails.py`) may well qualify under (a), (b) or (c).
 - **No behaviour change from consolidation.** HTTP paths, methods, request/response schemas, status
   codes, WebSocket message contracts, and the processing/licensing/payment logic itself MUST be
   preserved exactly. Moving code between files is a file-organisation change, not a redesign, and
@@ -626,6 +690,89 @@ or that no longer sounds like the same recording — Principle VIII (Tests Requi
 to exist, but does not by itself require the specific before/after technical comparison an AI
 mastering stage needs to avoid silently shipping a regression.
 
+### XIII. External Processes Are Invoked Structurally, Never Composed
+
+Any invocation of an external binary — FFmpeg, FFprobe, a Python worker, any other subprocess —
+MUST be built from structured arguments, never by composing a string.
+
+Mandatory rules:
+
+- **No shell, no concatenation.** Subprocesses MUST be launched with an argument list and
+  `shell=False`. A value that originated outside the process — an HTTP request body, a filename, a
+  configuration file — MUST NOT be concatenated, interpolated, or formatted into a command line,
+  a filter graph string, or any other text that a binary will parse as instructions. Where a
+  library exists that builds the invocation structurally (`ffmpeg-python`, already used by
+  `run_ffmpeg` in `astros_upscale/media.py`), it MUST be used rather than hand-assembling
+  equivalent text.
+- **Closed vocabularies, validated server-side.** Every client-supplied value that selects
+  behaviour rather than magnitude — container, codec, encoder preset, pixel format, filter name,
+  aspect ratio — MUST be validated against an explicit allowlist in `api/` before use. Numeric
+  values MUST be range-checked. Validation performed in `interface/` is a usability affordance and
+  MUST NOT be the only place it happens; the API MUST behave correctly when called directly.
+- **Availability is verified, not assumed.** An allowlist entry means "permitted", not "present".
+  Before starting work that depends on a codec, encoder, or container, the API MUST confirm the
+  runtime actually provides it and MUST fail with a clear reason if it does not — never begin
+  processing that will die partway through.
+- **Files are addressed by internal identifier.** A client MUST NOT supply a filesystem path that
+  the API then reads or writes. Clients reference media by an identifier the API issued; the API
+  resolves that identifier to a path it owns. Filenames arriving from a client are treated as
+  display text and MUST be sanitised before being used to construct any path.
+- **Temporary artefacts are cleaned up on every exit path.** Intermediate files created during
+  processing MUST be removed on success, on failure, and on cancellation alike.
+
+**Rationale:** this codebase already does all of the above, and none of it is written down —
+`run_ffmpeg` builds graphs structurally, `WorkerSupervisor` spawns with `shell=False` and a
+`_restricted_env` allowlist, and the local API resolves job outputs to paths it chose. That makes
+the safety a property of who wrote each call site rather than a property of the project. A media
+editing surface multiplies the number of client-controlled values that reach a command builder
+from a handful to dozens; the practice has to be a rule before that happens, not after.
+
+### XIV. Interface Text Is Translatable By Default
+
+Text that a person reads in `interface/` MUST live in the locale files, not in a component.
+
+- **New user-facing strings MUST be added as i18n keys** and rendered through the translation
+  layer. This covers labels, descriptions, hints, placeholders, empty states, button text, status
+  vocabulary, and error messages shown to a person. It does not cover code comments, log output,
+  test fixtures, or developer-facing diagnostics.
+- **A string added in one locale MUST be added in all of them.** A key that exists only in
+  `pt-BR.json` is worse than an untranslated literal, because it fails at runtime for every other
+  locale instead of degrading visibly during development.
+- **This rule is not retroactive.** The roughly 32 Portuguese literals currently sitting in
+  templates (only `AppSidebar`, `HomeView` and `SettingsView` use `useI18n` today) do not become
+  non-compliant by this amendment. They MUST be extracted when the component containing them is
+  substantially reworked, and MUST NOT be extracted as an isolated sweep that touches every view at
+  once for no functional reason.
+
+**Rationale:** the project ships 12 locale files and 42 keys. Every screen built since then has put
+its text directly in the template, so the translation surface has been shrinking relative to the
+application for as long as the application has been growing. The cost of that is asymmetric:
+writing a key costs seconds while the component is being written, and extracting one later costs a
+pass over every locale plus a re-read of code nobody is otherwise touching.
+
+### XV. Source Media Is Never Overwritten
+
+An operation on a media file MUST produce a new file. The input MUST still exist, byte-identical,
+when the operation finishes.
+
+- **Output never lands on the input.** Where a result would collide with an existing file, the
+  default MUST be to write alongside it under a distinct name. Overwriting MUST require an
+  explicit, per-operation instruction from the person — never a default, never a fallback when a
+  destination is ambiguous.
+- **Previews are disposable and separate.** A preview — reduced resolution, a fragment, a lower
+  bitrate, a generated thumbnail — MUST be written to storage the API owns, MUST NOT be presented
+  as the result of the operation, and MUST NOT replace either the source or a previously produced
+  output.
+- **Derived artefacts are invalidated, not trusted.** Caches keyed to a source file (thumbnails,
+  timeline sprites, cached masters) MUST be invalidated when that file changes. A cache key MUST
+  include something that changes with the file's content, not its path alone.
+
+**Rationale:** the existing image pipeline already behaves this way — a lossless master is cached
+separately and re-encoded on export, and a name collision renames rather than overwrites. Editing
+introduces the first operations whose whole purpose is to alter how a file looks, which is exactly
+when "the output is the input" starts to feel natural to implement and starts destroying people's
+originals when it is wrong.
+
 ## Licensing and Distribution Constraints
 
 These constraints follow from Principle IV and from the product being closed-source and commercial.
@@ -696,13 +843,62 @@ principles, and `/speckit.analyze` MUST verify compliance before implementation 
 Principles IV (Commercial License Only), III (Performance First), II (Reuse First),
 V (Models Are Internal), VIII (Tests Required), IX (Two-Layer Architecture),
 X (Interface Structure Is Adapted, Not Templated), XI (API Structure Is Consolidated By Domain,
-Not By Class) and XII (AI Audio Restoration Is Bounded, Provider-Isolated, and Never Auto-Trusted)
-are the mandatory review gates.
+Not By Class), XII (AI Audio Restoration Is Bounded, Provider-Isolated, and Never Auto-Trusted),
+XIII (External Processes Are Invoked Structurally, Never Composed), XIV (Interface Text Is
+Translatable By Default) and XV (Source Media Is Never Overwritten) are the mandatory review
+gates.
 
 Complexity MUST be justified. A simpler implementation that satisfies the specification is
 preferred to a more capable one that exceeds it.
 
 ### Amendment log
+
+**v2.6.0 — 2026-08-14 — Principles XIII, XIV and XV added; VII, X and XI extended**
+
+*What changed:* added three principles and tightened three existing ones, all driven by the video
+media-editing feature spec that follows this amendment.
+
+- **XIII (External Processes Are Invoked Structurally, Never Composed)** — codifies what the
+  codebase already does (`run_ffmpeg` building graphs via `ffmpeg-python`, `WorkerSupervisor`
+  spawning with `shell=False` and a `_restricted_env` allowlist, job outputs resolved to
+  API-owned paths) as a rule rather than a habit, and adds the parts that had no precedent:
+  server-side allowlists for every client-supplied codec/container/preset, runtime verification
+  that an allowed codec is actually present before work starts, addressing files by
+  API-issued identifier rather than client-supplied path, and cleanup of temporary artefacts on
+  every exit path.
+- **XIV (Interface Text Is Translatable By Default)** — new. The project ships 12 locale files
+  with 42 keys, while only three components use `useI18n` and roughly 32 user-facing strings sit
+  directly in templates. Without a rule, a feature of this size decides the question by omission.
+- **XV (Source Media Is Never Overwritten)** — new. Generalises the image pipeline's existing
+  behaviour (cached lossless master, rename-on-collision) to a rule covering previews, derived
+  artefacts, and cache invalidation keyed to file content.
+- **VII extended** — hardware adaptation alone does not bound an operation. Every media operation
+  must now declare explicit ceilings (duration, resolution, frame rate, frame count, file size)
+  and refuse work that exceeds them before starting, naming the limiting factor.
+- **X extended** — adds a decomposition rule for components whose parts stop being reusable, using
+  the same "earned by demonstrated duplication" bar the principle already applies to folders.
+- **XI extended** — replaces the judgment call about when a new module is justified with three
+  testable conditions (directly tested / imported across domains / isolates an external contract),
+  and states that naming a file after a technical tier is never a justification by itself.
+
+*Rationale:* the incoming feature adds a subsystem large enough to break each of these open. It
+introduces dozens of client-controlled values that reach an FFmpeg command builder (XIII), a
+frontend surface explicitly specified as ~11 components and 6 composables against a codebase whose
+largest view is ~1800 lines (X), a backend surface that legitimately needs several modules inside
+one domain where Principle XI previously offered only "does it read as coherent" (XI), operations
+whose cost scales with duration and resolution rather than with a fixed model pass (VII), dozens
+of new labels in a project whose translation coverage has been shrinking (XIV), and the first
+operations whose purpose is to alter how a file looks (XV).
+
+*Migration:* no existing code becomes non-compliant. XIV and X's decomposition rule are explicitly
+non-retroactive and name the existing code they exempt (`ImageEditorView.vue`, the ~32 template
+literals), including a prohibition on sweeping refactors undertaken solely to comply. XIII
+describes existing practice at every current call site; VII's ceilings extend the capacity gate
+already in `routes.py` rather than replacing it.
+
+*Risk accepted:* none — every change adds constraints. XI's new criterion narrows when a new file
+is permitted rather than widening it, and X's decomposition rule cannot be used to justify
+splitting a file that has no second consumer.
 
 **v2.5.0 — 2026-08-13 — Principle XII added: AI Audio Restoration Is Bounded, Provider-Isolated,
 and Never Auto-Trusted**
@@ -904,4 +1100,4 @@ itself move, merge, or delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 2.5.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-13
+**Version**: 2.6.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-14
