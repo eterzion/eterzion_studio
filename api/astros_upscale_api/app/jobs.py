@@ -708,6 +708,33 @@ async def _process_job(job_id: str) -> None:
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
 
+        if job.get('media_type') == 'image' and params.get('scale') == '1x':
+            # Imagem screen's Original mode: keep or reduce the size, run the
+            # filters, never the model. No engine is resolved and the isolated
+            # worker is not involved — that subprocess exists to contain model
+            # inference, and there is none here (same reasoning as the
+            # compress/convert branch above). It still writes the job's master,
+            # so export/re-export downstream is unchanged.
+            from app.processing import Upscaler
+
+            adjustments = params.get('adjustments', {})
+            custom = params.get('custom_size')
+            return Upscaler.process_without_model(
+                job['input_path'],
+                _master_path(job_id),
+                settings.models_dir,
+                resize=(int(custom['width']), int(custom['height'])) if custom else None,
+                on_progress=on_progress,
+                on_stage=on_stage,
+                sharpen_strength=adjustments.get('deblur', 0),
+                face_recovery=adjustments.get('face_correction', False),
+                face_recovery_strength=adjustments.get('face_recovery_strength', 80),
+                denoise_filter_strength=(
+                    adjustments.get('denoise_filter_strength', 0)
+                    if adjustments.get('denoise_filter_enabled') else 0
+                ),
+            )
+
         audio_mode = params.get('audio_mode')
         if (job.get('media_type') == 'audio' and job.get('content_type_detected') == 'music'
                 and audio_mode not in (None, 'enhance')):

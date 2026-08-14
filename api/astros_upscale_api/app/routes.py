@@ -133,6 +133,11 @@ def _validate_resolvable(media_request: MediaRequest, content_type: str) -> None
     """FR-098: reject before the Job is even created when no approved
     implementation exists for this combination — never let it fail later,
     mid-queue, for a reason that was already knowable at request time."""
+    # scale '1x' is the Imagem screen's Original mode: no model is resolved for
+    # it at all (see jobs.blocking_run), so there is nothing here that could be
+    # unresolvable — asking the resolver would reject a request that is valid.
+    if media_request.scale == '1x':
+        return
     try:
         licensing.resolve(licensing.MediaRequest(
             media_type=media_request.media_type, operation=media_request.operation,
@@ -149,6 +154,11 @@ def _capacity_check_for(media_request: MediaRequest, input_path: str):
     tile_threshold/tile_size (T061) already uses. Returns None for those,
     meaning "no check needed", not "not computed"."""
     if media_request.operation != 'enhance':
+        return None
+    # Same reasoning for scale '1x' (the Imagem screen's Original mode): it runs
+    # the filters, never the model, so it has no model-sized memory footprint to
+    # check a machine against.
+    if media_request.scale == '1x':
         return None
     from astros_upscale.processing import detect_hardware
 

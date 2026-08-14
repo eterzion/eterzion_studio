@@ -58,7 +58,8 @@ export interface OutputTarget {
 export interface MediaRequest {
   media_type: MediaType
   operation: Operation
-  scale?: '2x' | '4x' | null
+  /** '1x' is the Imagem screen's Original mode: no model, filters only. */
+  scale?: '1x' | '2x' | '4x' | null
   profile?: Profile | null
   content_type_override?: ContentType | null
   input_path: string

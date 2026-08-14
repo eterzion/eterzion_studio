@@ -70,15 +70,24 @@ onMounted(() => {
         <AppButton variant="primary" size="lg" @click="checkApiStatus">Tentar novamente</AppButton>
       </div>
 
-      <HomeView v-else-if="active === 'home'" @navigate="navigate" />
-      <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
-      <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
-      <SettingsView v-else-if="active === 'configuracoes'" />
-      <VideoView v-else-if="active === 'video'" @back="active = 'home'" />
-      <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
-      <div v-else class="placeholder-view">
-        <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
-      </div>
+      <!-- Vídeo and Áudio keep their queues in component state, so switching
+           tabs used to destroy every job on them. The Imagem screen never had
+           the problem because its queue lives in store/jobs.ts — these two are
+           cached instead, which is the smaller change and also preserves the
+           panel each screen was showing. Everything else is deliberately NOT
+           cached: Histórico and Configurações load their data on mount and
+           would go stale. -->
+      <KeepAlive v-else :include="['VideoView', 'AudioView']">
+        <HomeView v-if="active === 'home'" @navigate="navigate" />
+        <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
+        <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
+        <SettingsView v-else-if="active === 'configuracoes'" />
+        <VideoView v-else-if="active === 'video'" @back="active = 'home'" />
+        <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
+        <div v-else class="placeholder-view">
+          <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
+        </div>
+      </KeepAlive>
     </template>
   </div>
 </template>

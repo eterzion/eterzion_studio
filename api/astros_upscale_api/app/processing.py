@@ -291,6 +291,75 @@ class Upscaler:
 
         return {'source_size': (w_input, h_input), 'output_size': (result.shape[1], result.shape[0])}
 
+    @classmethod
+    def process_without_model(
+        cls,
+        image_path: str,
+        master_path: str,
+        model_dir: str,
+        resize: tuple[int, int] | None = None,
+        on_progress: Callable[[int], None] | None = None,
+        on_stage: Callable[[str], None] | None = None,
+        sharpen_strength: int = 0,
+        face_recovery: bool = False,
+        face_recovery_strength: int = 80,
+        denoise_filter_strength: int = 0,
+    ) -> ProcessResult:
+        """Everything process() does except the model pass — the Imagem screen's
+        Original mode (scale '1x'). Running the model with outscale <= 1 would
+        upscale 4x internally only to throw the result away, which is slow enough
+        to look like the job hung; the filters below never needed it. `resize` may
+        only shrink, so this never enlarges by interpolation (the one thing the
+        model exists to avoid)."""
+        if on_stage:
+            on_stage('Lendo imagem')
+        if on_progress:
+            on_progress(10)
+
+        img = imread(image_path)
+        h_input, w_input = img.shape[0:2]
+        result = img
+
+        if resize is not None:
+            target_w, target_h = int(resize[0]), int(resize[1])
+            if (target_w, target_h) != (w_input, h_input):
+                if on_stage:
+                    on_stage('Redimensionando')
+                result = cv2.resize(result, (target_w, target_h), interpolation=cv2.INTER_AREA)
+        if on_progress:
+            on_progress(35)
+
+        if face_recovery and result.dtype == np.uint8 and result.ndim == 3 and result.shape[2] == 3:
+            if on_stage:
+                on_stage('Realçando rostos')
+            enhancer = _get_face_enhancer(model_dir)
+            result, _faces_found = enhancer.restore(result, strength=face_recovery_strength / 100)
+        if on_progress:
+            on_progress(60)
+
+        if denoise_filter_strength > 0:
+            if on_stage:
+                on_stage('Reduzindo ruído')
+            result = cls.denoise_filter(result, denoise_filter_strength)
+
+        if sharpen_strength > 0:
+            if on_stage:
+                on_stage('Aplicando nitidez')
+            result = cls._sharpen(result, sharpen_strength)
+
+        if on_stage:
+            on_stage('Salvando resultado')
+        if on_progress:
+            on_progress(92)
+
+        os.makedirs(os.path.dirname(os.path.abspath(master_path)) or '.', exist_ok=True)
+        imwrite(master_path, result)
+
+        if on_progress:
+            on_progress(100)
+
+        return {'source_size': (w_input, h_input), 'output_size': (result.shape[1], result.shape[0])}
+
     @staticmethod
     def export(master_path: str, output_path: str, quality: int | None) -> None:
         """Re-encodes the cached master to output_path's format — no model inference."""

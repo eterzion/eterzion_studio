@@ -149,3 +149,42 @@ def test_export_falls_back_to_the_result_when_a_job_has_no_master(tmp_path, monk
     exported = str(tmp_path / 'exported.png')
     job_manager.export_job(job_id, exported, quality=90)
     assert cv2.imread(exported) is not None
+
+
+def test_scale_1x_runs_the_filters_and_never_resolves_a_model(tmp_path, spy_on_ai_paths):
+    """The Imagem screen's Original mode. It writes the job's master like an
+    enhance job (so export still works), applies the post-processing filters,
+    and may shrink — but resolves no engine and loads no model, which is what
+    made it slow enough to look hung when it went through the model path."""
+    input_path = _write_test_image(tmp_path / 'in.jpg', size=200)
+    job_id = job_manager.create_job(
+        input_path, 'in.jpg',
+        {'scale': '1x', 'custom_size': {'width': 120, 'height': 90},
+         'adjustments': {'deblur': 40, 'denoise_filter_enabled': True,
+                         'denoise_filter_strength': 30}},
+        media_type='image', operation='enhance',
+    )
+    job_manager.jobs[job_id]['status'] = 'queued'
+    asyncio.run(job_manager._process_job(job_id))
+
+    job = job_manager.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    assert spy_on_ai_paths['resolve'] == 0
+    assert spy_on_ai_paths['load_model'] == 0
+    master = job_manager._master_path(job_id)
+    assert cv2.imread(master).shape[:2] == (90, 120)
+
+
+def test_scale_1x_without_a_custom_size_keeps_the_source_resolution(tmp_path, spy_on_ai_paths):
+    input_path = _write_test_image(tmp_path / 'in.jpg', size=160)
+    job_id = job_manager.create_job(
+        input_path, 'in.jpg', {'scale': '1x', 'adjustments': {}},
+        media_type='image', operation='enhance',
+    )
+    job_manager.jobs[job_id]['status'] = 'queued'
+    asyncio.run(job_manager._process_job(job_id))
+
+    job = job_manager.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    assert spy_on_ai_paths['load_model'] == 0
+    assert cv2.imread(job_manager._master_path(job_id)).shape[:2] == (160, 160)

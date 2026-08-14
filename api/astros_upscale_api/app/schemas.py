@@ -60,7 +60,10 @@ class MediaRequest(BaseModel):
 
     media_type: MediaType
     operation: Operation
-    scale: Literal['2x', '4x'] | None = None
+    # '1x' is the Imagem screen's Original mode: keep (or reduce) the size and
+    # skip the model entirely, while the post-processing filters below still
+    # apply. It is not a model factor — no engine is resolved for it.
+    scale: Literal['1x', '2x', '4x'] | None = None
     profile: Profile | None = None
     content_type_override: ContentType | None = None
     input_path: str

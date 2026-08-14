@@ -18,8 +18,14 @@ const scaleFactor = computed(() => {
   return Math.sqrt(newPixels / origPixels)
 })
 
-const percentIncrease = computed(() =>
+// Signed, and shown for reductions too: the Original mode resizes downward, so
+// this reports -10% as readily as +300%. A hardcoded "+" turned the first case
+// into "(+-10%)".
+const percentDelta = computed(() =>
   scaleFactor.value ? Math.round((scaleFactor.value - 1) * 100) : null
+)
+const percentLabel = computed(() =>
+  percentDelta.value == null ? null : `${percentDelta.value > 0 ? '+' : ''}${percentDelta.value}%`
 )
 
 function fmtBytes(bytes: number | null): string {
@@ -56,7 +62,12 @@ function fmtBytes(bytes: number | null): string {
         <span class="info-label">Escala</span>
         <span class="info-value info-value-lg">
           {{ scaleFactor ? scaleFactor.toFixed(2) + '×' : '—' }}
-          <span v-if="percentIncrease != null" class="info-delta">(+{{ percentIncrease }}%)</span>
+          <span
+            v-if="percentLabel"
+            class="info-delta"
+            :class="{ negative: (percentDelta ?? 0) < 0 }"
+            >({{ percentLabel }})</span
+          >
         </span>
       </div>
     </div>
@@ -137,5 +148,11 @@ function fmtBytes(bytes: number | null): string {
   font-size: var(--fs-caption);
   color: var(--color-success);
   font-weight: var(--fw-medium);
+}
+
+/* A reduction is not a failure, so this is the neutral text colour rather than
+   the danger one — it just should not read as the same "gain" green. */
+.info-delta.negative {
+  color: var(--text-secondary);
 }
 </style>

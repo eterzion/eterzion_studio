@@ -52,6 +52,7 @@ import {
   estimatedOutputSize,
   estimatedOutputBytes,
   ensureCustomSizeDefaults,
+  clampSizeToSource,
   syncCustomSizeToPreset,
   effectiveCustomScale,
   MAX_OUTPUT_DIMENSION,
@@ -204,6 +205,10 @@ onUnmounted(() => {
 function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original'): void {
   j.scaleConfig.mode = mode
   if (mode === 'custom') ensureCustomSizeDefaults(j)
+  // Coming from a 2x/4x preset, the custom target is still the enlarged one —
+  // invalid the moment Original is entered, and it is what the size and scale
+  // readouts are computed from, so it has to be brought back to the source.
+  if (mode === 'original') clampSizeToSource(j)
 }
 
 function setPresetFactor(j: Job, factor: 2 | 4): void {

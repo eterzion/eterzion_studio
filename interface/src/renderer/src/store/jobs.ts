@@ -496,7 +496,9 @@ export async function startProcessing(job: Job): Promise<void> {
       {
         media_type: 'image',
         operation: 'enhance',
-        scale: `${job.scaleConfig.presetFactor}x`,
+        // '1x' tells the backend to skip the model entirely and just run the
+        // filters (and any reduction) — see Upscaler.process_without_model.
+        scale: job.scaleConfig.mode === 'original' ? '1x' : `${job.scaleConfig.presetFactor}x`,
         profile: job.scaleConfig.profile,
         content_type_override: job.scaleConfig.contentType,
         input_path: job.sourcePath,
