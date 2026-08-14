@@ -35,4 +35,15 @@ const artwork = computed(() => artworkByVariant[props.variant])
   transform: scale(0.9);
   filter: saturate(1.04) contrast(1.04);
 }
+
+/* The artwork is bright, saturated strokes on transparency. `screen` is what
+   makes them glow against the dark theme's near-black card — but screening
+   toward a near-white card pushes every one of those strokes to white, which is
+   why the light theme rendered four empty rectangles. `multiply` is the mirror
+   image of that blend: it leaves the light ground alone and keeps the stroke's
+   own colour, so the same bitmap reads on both themes without a second asset. */
+:root[data-theme='light'] .category-bitmap-art {
+  mix-blend-mode: multiply;
+  filter: saturate(1.1) contrast(1.06) brightness(0.92);
+}
 </style>
