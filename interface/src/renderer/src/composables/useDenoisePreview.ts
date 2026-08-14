@@ -8,7 +8,7 @@ const DENOISE_PRESETS: { key: DenoisePresetKey; label: string; strength: number 
   { key: 'low', label: 'Baixo', strength: 20 },
   { key: 'medium', label: 'Médio', strength: 45 },
   { key: 'high', label: 'Alto', strength: 75 },
-  { key: 'custom', label: 'Personalizado', strength: null }
+  { key: 'custom', label: 'Custom', strength: null }
 ]
 
 interface DenoiseJob {
