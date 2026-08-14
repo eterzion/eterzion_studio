@@ -143,7 +143,10 @@ function openImage(id?: string): void {
 }
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  /* One column per card, so the row always ends where the panel does. The count
+     is tied to the number of categories — it was still 4 after Exportar was
+     removed, which is what left a card-sized hole on the right. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: clamp(8px, 0.9vw, 12px);
   margin-bottom: 16px;
 }
@@ -235,11 +238,13 @@ function openImage(id?: string): void {
 }
 .queue-header {
   display: flex;
-  min-height: 88px;
+  /* Trimmed along with the icon below: the cards now span the full row and are
+     correspondingly taller, so the queue's own chrome gives back the height. */
+  min-height: 64px;
   align-items: center;
   justify-content: space-between;
   gap: 11px;
-  padding: 10px 12px;
+  padding: 8px 12px;
 }
 .queue-heading {
   display: flex;
@@ -248,9 +253,9 @@ function openImage(id?: string): void {
   gap: 11px;
 }
 .queue-icon {
-  width: 50px;
-  height: 52px;
-  border-radius: 11px;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
 }
 .queue-title {
   margin: 0;
@@ -307,13 +312,11 @@ function openImage(id?: string): void {
   min-height: 0;
   flex-direction: column;
   gap: 6px;
-  padding: 0 15px 15px;
+  padding: 0 12px 12px;
   overflow-y: auto;
 }
 @media (max-width: 1000px) {
-  .category-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  /* Still three across — only the height gives way, so the row stays full. */
   .category-card {
     height: 245px;
   }
