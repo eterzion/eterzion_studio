@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ImageIcon, Expand, TrendingUp, HardDrive } from '@lucide/vue'
+import { ImageIcon, Expand, TrendingUp, TrendingDown, HardDrive } from '@lucide/vue'
 
 const props = defineProps<{
   originalWidth: number | null
@@ -27,6 +27,11 @@ const percentDelta = computed(() =>
 const percentLabel = computed(() =>
   percentDelta.value == null ? null : `${percentDelta.value > 0 ? '+' : ''}${percentDelta.value}%`
 )
+
+// The factor itself stays positive — it is a multiplier, and 0.51x IS the
+// reduction; a negative multiplier would mean something else entirely. What
+// carries the direction is the signed percentage and this icon.
+const scaleIcon = computed(() => ((percentDelta.value ?? 0) < 0 ? TrendingDown : TrendingUp))
 
 function fmtBytes(bytes: number | null): string {
   if (bytes == null) return '—'
@@ -57,7 +62,7 @@ function fmtBytes(bytes: number | null): string {
     </div>
 
     <div class="info-row highlight">
-      <div class="info-icon icon-chip primary"><TrendingUp :size="15" /></div>
+      <div class="info-icon icon-chip primary"><component :is="scaleIcon" :size="15" /></div>
       <div class="info-body">
         <span class="info-label">Escala</span>
         <span class="info-value info-value-lg">
