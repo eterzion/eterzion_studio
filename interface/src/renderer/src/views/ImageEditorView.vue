@@ -4,6 +4,7 @@ import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
+import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 import CompareSlider from '../components/CompareSlider.vue'
 import ComparisonStats from '../components/ComparisonStats.vue'
 import BatchExportModal from '../components/BatchExportModal.vue'
@@ -100,7 +101,6 @@ const {
 // content-type indicator is auto-detected on file add (store/jobs.ts addFiles())
 // but stays editable here — FR-096, and this editor only handles images, so the
 // only two valid content types are photo <-> anime_image.
-const devices = ref<string[]>(['auto', 'cpu', 'cuda'])
 const importError = ref<string | null>(null)
 
 const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
@@ -121,29 +121,7 @@ const contentTypeOptions = computed(() =>
 
 // The descriptions carry what the field hints used to say, so removing those
 // lines costs no information — they are read while choosing instead of after.
-const PROFILE_OPTIONS: { value: Profile; label: string; description: string }[] = [
-  { value: 'fast', label: 'Rápido', description: 'Menos detalhe, termina antes' },
-  {
-    value: 'balanced',
-    label: 'Equilibrado',
-    description: 'Meio-termo entre detalhe e tempo'
-  },
-  { value: 'quality', label: 'Qualidade', description: 'Mais detalhe, leva mais tempo' }
-]
-const profileOptions = computed(() =>
-  PROFILE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
-)
 
-const deviceOptions = computed(() =>
-  // The description travels with each option, like Tipo de conteúdo and Perfil:
-  // it is needed while choosing, which is exactly when a hint under the closed
-  // select cannot be read.
-  devices.value.map((d) => ({
-    value: d,
-    label: deviceLabels[d] ?? d,
-    description: deviceDescriptions[d]
-  }))
-)
 const exportFormatOptions = [
   { value: 'png', label: '.png' },
   { value: 'jpg', label: '.jpg' },
@@ -154,22 +132,6 @@ const conflictOptions = [
   { value: 'overwrite', label: 'Sobrescrever' },
   { value: 'ask', label: 'Perguntar' }
 ]
-
-const deviceLabels: Record<string, string> = {
-  auto: 'Automático',
-  cpu: 'CPU',
-  cuda: 'GPU (CUDA)',
-  mps: 'GPU (Apple/MPS)'
-}
-
-// One line each: in an open dropdown these are scanned side by side, so what
-// matters is the difference between them, not a full description of each.
-const deviceDescriptions: Record<string, string> = {
-  auto: 'GPU quando houver, CPU caso contrário.',
-  cpu: 'Mais lento, funciona em qualquer máquina.',
-  cuda: 'Mais rápido, exige driver NVIDIA.',
-  mps: 'Mais rápido em Macs com Apple Silicon.'
-}
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const {
@@ -663,7 +625,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <label class="field-label">Esforço do processamento</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
-                :options="profileOptions"
+                :options="PROFILE_OPTIONS"
                 @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
               />
             </div>
@@ -672,7 +634,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <label class="field-label">Onde processar</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
-                :options="deviceOptions"
+                :options="DEVICE_OPTIONS"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
             </div>

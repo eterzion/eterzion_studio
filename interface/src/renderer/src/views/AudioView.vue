@@ -16,11 +16,13 @@ import {
   getJob,
   cancelJob as apiCancelJob,
   defaultAdjustments,
-  type ContentType
+  type ContentType,
+  type Profile
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
+import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 
 defineEmits<{ back: [] }>()
 
@@ -38,6 +40,8 @@ interface AudioJob {
   backendJobId: string | null
   file: DescribedFile
   contentType: ContentType
+  profile: Profile
+  device: string
   status: LocalStatus
   progress: number
   stage: string | null
@@ -125,6 +129,8 @@ async function addFile(described: DescribedFile): Promise<void> {
     backendJobId: null,
     file: described,
     contentType: 'speech',
+    profile: 'fast',
+    device: 'auto',
     status: 'detecting',
     progress: 0,
     stage: null,
@@ -200,7 +206,9 @@ async function runJob(job: AudioJob): Promise<void> {
         media_type: 'audio',
         operation: 'enhance',
         input_path: job.file.path,
-        content_type_override: job.contentType
+        content_type_override: job.contentType,
+        profile: job.profile,
+        device: job.device
       },
       defaultAdjustments()
     )
@@ -330,15 +338,36 @@ function exportAll(): void {
 
             <div v-else-if="activeJob.status === 'configuring'" class="panel-section">
               <CollapsiblePanel
-                title="Tipo de conteúdo"
-                description="Detectado automaticamente — corrija se estiver errado"
+                title="Processamento"
+                description="Como o áudio é processado pelo modelo"
                 :icon="Cpu"
               >
-                <AppSelect
-                  :model-value="activeJob.contentType"
-                  :options="CONTENT_TYPE_OPTIONS"
-                  @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
-                />
+                <div class="field">
+                  <label class="field-label">Conteúdo detectado</label>
+                  <AppSelect
+                    :model-value="activeJob.contentType"
+                    :options="CONTENT_TYPE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Esforço do processamento</label>
+                  <AppSelect
+                    :model-value="activeJob.profile"
+                    :options="PROFILE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.profile = v as Profile)"
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Onde processar</label>
+                  <AppSelect
+                    :model-value="activeJob.device"
+                    :options="DEVICE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.device = String(v))"
+                  />
+                </div>
               </CollapsiblePanel>
 
               <AppButton variant="primary" size="lg" @click="runJob(activeJob)"

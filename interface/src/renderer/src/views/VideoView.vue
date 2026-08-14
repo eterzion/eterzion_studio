@@ -27,11 +27,13 @@ import {
   cancelJob as apiCancelJob,
   defaultAdjustments,
   type ContentType,
+  type Profile,
   type SecondaryElements
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
+import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 
 defineEmits<{ back: [] }>()
 
@@ -47,6 +49,8 @@ interface VideoJob {
   backendJobId: string | null
   file: DescribedFile
   contentType: ContentType
+  profile: Profile
+  device: string
   /** 'preset' multiplies the source; 'custom' targets an exact resolution. */
   scaleMode: 'preset' | 'custom'
   scale: '2x' | '4x'
@@ -152,6 +156,8 @@ async function addFile(described: DescribedFile): Promise<void> {
     backendJobId: null,
     file: described,
     contentType: 'real_video',
+    profile: 'fast',
+    device: 'auto',
     scaleMode: 'preset',
     scale: '2x',
     customWidth: null,
@@ -264,6 +270,8 @@ async function runJob(job: VideoJob): Promise<void> {
         operation: 'enhance',
         input_path: job.file.path,
         content_type_override: job.contentType,
+        profile: job.profile,
+        device: job.device,
         scale: job.scale,
         // The preset still travels: it is what decides how hard the model works,
         // while custom_size names the exact frame size to land on.
@@ -452,15 +460,36 @@ function exportAll(): void {
           <template v-if="activeJob">
             <div v-if="activeJob.status === 'configuring'" class="panel-section">
               <CollapsiblePanel
-                title="Tipo de conteúdo"
-                description="Detectado automaticamente — corrija se estiver errado"
+                title="Processamento"
+                description="Como o vídeo é processado pelo modelo"
                 :icon="Cpu"
               >
-                <AppSelect
-                  :model-value="activeJob.contentType"
-                  :options="CONTENT_TYPE_OPTIONS"
-                  @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
-                />
+                <div class="field">
+                  <label class="field-label">Conteúdo detectado</label>
+                  <AppSelect
+                    :model-value="activeJob.contentType"
+                    :options="CONTENT_TYPE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Esforço do processamento</label>
+                  <AppSelect
+                    :model-value="activeJob.profile"
+                    :options="PROFILE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.profile = v as Profile)"
+                  />
+                </div>
+
+                <div class="field">
+                  <label class="field-label">Onde processar</label>
+                  <AppSelect
+                    :model-value="activeJob.device"
+                    :options="DEVICE_OPTIONS"
+                    @update:model-value="(v) => (activeJob!.device = String(v))"
+                  />
+                </div>
               </CollapsiblePanel>
 
               <CollapsiblePanel
