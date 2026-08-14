@@ -55,6 +55,7 @@ import {
   syncCustomSizeToPreset,
   effectiveCustomScale,
   MAX_OUTPUT_DIMENSION,
+  MIN_DIMENSION,
   startProcessing,
   cancelProcessing,
   removeJob,
@@ -703,12 +704,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </button>
             </div>
 
-            <p v-if="job.scaleConfig.mode === 'original'" class="field-note">
-              A imagem sai no tamanho em que entrou, sem passar pelo modelo — só a exportação abaixo
-              decide formato, qualidade e destino.
-            </p>
-
-            <div v-else-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
+            <div v-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
               <button
                 v-for="s in [2, 4]"
                 :key="s"
@@ -723,7 +719,9 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
             <div v-else class="field">
               <div class="field-label-row">
-                <label class="field-label">Largura e altura</label>
+                <label class="field-label">{{
+                  job.scaleConfig.mode === 'original' ? 'Reduzir para' : 'Largura e altura'
+                }}</label>
                 <button
                   class="link-btn"
                   type="button"
@@ -743,15 +741,31 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 <ResolutionStepper
                   label="Largura"
                   :model-value="job.scaleConfig.customWidth ?? job.sourceMeta.width ?? 0"
-                  :min="job.sourceMeta.width ?? 1"
-                  :max="MAX_OUTPUT_DIMENSION"
+                  :min="
+                    job.scaleConfig.mode === 'original'
+                      ? MIN_DIMENSION
+                      : (job.sourceMeta.width ?? 1)
+                  "
+                  :max="
+                    job.scaleConfig.mode === 'original'
+                      ? (job.sourceMeta.width ?? MAX_OUTPUT_DIMENSION)
+                      : MAX_OUTPUT_DIMENSION
+                  "
                   @update:model-value="(v) => onCustomWidthInput(job!, String(v))"
                 />
                 <ResolutionStepper
                   label="Altura"
                   :model-value="job.scaleConfig.customHeight ?? job.sourceMeta.height ?? 0"
-                  :min="job.sourceMeta.height ?? 1"
-                  :max="MAX_OUTPUT_DIMENSION"
+                  :min="
+                    job.scaleConfig.mode === 'original'
+                      ? MIN_DIMENSION
+                      : (job.sourceMeta.height ?? 1)
+                  "
+                  :max="
+                    job.scaleConfig.mode === 'original'
+                      ? (job.sourceMeta.height ?? MAX_OUTPUT_DIMENSION)
+                      : MAX_OUTPUT_DIMENSION
+                  "
                   @update:model-value="(v) => onCustomHeightInput(job!, String(v))"
                 />
               </div>

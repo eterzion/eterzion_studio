@@ -127,33 +127,6 @@ def test_compress_job_resizes_to_the_exact_requested_dimensions(tmp_path):
     assert job['output_meta']['width'] == 120 and job['output_meta']['height'] == 90
 
 
-def test_compress_without_an_output_target_writes_to_the_outputs_dir(tmp_path, monkeypatch):
-    """The Imagem screen's "Original" scale mode sends no output_target: it
-    re-encodes without scaling and lets its own export panel choose where the
-    file really goes. Defaulting to the source's folder there would drop an
-    unrequested file next to the person's original."""
-    from app.config import settings
-
-    outputs = tmp_path / 'outputs'
-    outputs.mkdir()
-    monkeypatch.setattr(settings, 'outputs_dir', str(outputs))
-
-    source_dir = tmp_path / 'source'
-    source_dir.mkdir()
-    input_path = _write_test_image(source_dir / 'in.jpg')
-    job_id = job_manager.create_job(
-        input_path, 'in.jpg', {'quality': 80, 'adjustments': {}},
-        media_type='image', operation='compress',
-    )
-    job_manager.jobs[job_id]['status'] = 'queued'
-    asyncio.run(job_manager._process_job(job_id))
-
-    job = job_manager.get_job(job_id)
-    assert job['status'] == 'done', job.get('error')
-    assert os.path.dirname(job['output_path']) == str(outputs)
-    assert list(source_dir.iterdir()) == [source_dir / 'in.jpg']
-
-
 def test_export_falls_back_to_the_result_when_a_job_has_no_master(tmp_path, monkeypatch):
     """Only an enhance job caches a lossless master to re-encode from. A
     compress job's real result is the file optimize_file() already wrote, and

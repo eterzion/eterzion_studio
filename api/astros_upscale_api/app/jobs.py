@@ -459,17 +459,7 @@ def _compress_convert_output_path(job: dict, params: dict) -> str:
     input_path = job['input_path']
     output_target = params.get('output_target') or {}
     fmt = (output_target.get('format') or os.path.splitext(input_path)[1].lstrip('.')).lstrip('.').lower()
-    # No output_target at all means the caller never named a destination — the
-    # Imagem screen's "manter original" mode, which re-encodes without scaling
-    # and then lets its own export panel write where the person actually asked.
-    # Defaulting that to the source's folder would drop an unrequested file next
-    # to their original, so it goes to the app's outputs dir instead. A caller
-    # that DID send an output_target (the Exportar screen always does) keeps
-    # writing beside the source exactly as before.
-    if not output_target:
-        directory = settings.outputs_dir
-    else:
-        directory = output_target.get('directory') or os.path.dirname(input_path) or settings.outputs_dir
+    directory = output_target.get('directory') or os.path.dirname(input_path) or settings.outputs_dir
     stem = os.path.splitext(os.path.basename(input_path))[0]
     filename = output_target.get('filename') or f'{stem}.{fmt}'
     if not filename.lower().endswith(f'.{fmt}'):

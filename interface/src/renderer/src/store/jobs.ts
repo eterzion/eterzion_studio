@@ -7,7 +7,6 @@ import {
   cancelJob as apiCancelJob,
   exportJob as apiExportJob,
   getJob,
-  defaultAdjustments,
   type JobStatus as ApiJobStatus,
   type ErrorCategory,
   type ExportRequest,
@@ -278,6 +277,17 @@ export function ensureCustomSizeDefaults(job: Job): void {
   job.scaleConfig.customHeight = dims.height
 }
 
+/** Entering 'original' starts from the source's own size — the mode's whole
+ *  point is not enlarging, so a preset-derived 2x default would be invalid the
+ *  moment it appeared. Any target already smaller than the source is kept. */
+export function clampSizeToSource(job: Job): void {
+  const { width: srcW, height: srcH } = job.sourceMeta
+  if (!srcW || !srcH) return
+  const { customWidth, customHeight } = job.scaleConfig
+  job.scaleConfig.customWidth = customWidth && customWidth <= srcW ? customWidth : srcW
+  job.scaleConfig.customHeight = customHeight && customHeight <= srcH ? customHeight : srcH
+}
+
 /** Keeps the custom target in sync with whichever preset factor the user just
  *  picked — otherwise switching 4x -> 2x on the Predefinido tab and then back
  *  to Customizado kept showing the old 4x-derived dimensions/multiplier,
@@ -316,11 +326,6 @@ export function applyConfigToAll(sourceJob: Job): void {
  *  32000px per side" guards from 4.2. Returns a single human-readable reason so
  *  the UI can show it inline instead of just disabling the button silently. */
 export function validateScaleConfig(job: Job): { valid: boolean; reason?: string } {
-  // Original mode picks no model, so the content type it would select is
-  // irrelevant — requiring it here is what used to block the one path that
-  // does not need it.
-  if (job.scaleConfig.mode === 'original') return { valid: true }
-
   if (!job.scaleConfig.contentType)
     return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
 
@@ -344,6 +349,24 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   const w = job.scaleConfig.customWidth
   const h = job.scaleConfig.customHeight
   if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: 'Informe largura e altura.' }
+
+  // 'original' is the mirror of 'custom': it exists precisely to NOT enlarge, so
+  // its target may only shrink. Everything else about the job — filters, face
+  // recovery, denoise — runs exactly the same way in both modes.
+  if (job.scaleConfig.mode === 'original') {
+    if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
+      return { valid: false, reason: `Mínimo de ${MIN_DIMENSION}px por lado.` }
+    }
+    if (srcW && srcH && (w > srcW || h > srcH)) {
+      return {
+        valid: false,
+        reason:
+          'No modo Original o tamanho não pode passar do original — para ampliar, use Predefinido ou Customizado.'
+      }
+    }
+    return { valid: true }
+  }
+
   if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
     return { valid: false, reason: `Máximo de ${MAX_OUTPUT_DIMENSION}px por lado.` }
   }
@@ -359,7 +382,12 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 export function estimatedOutputSize(job: Job): { width: number; height: number } | null {
   const { width: srcW, height: srcH } = job.sourceMeta
   if (!srcW || !srcH) return null
-  if (job.scaleConfig.mode === 'original') return { width: srcW, height: srcH }
+  if (job.scaleConfig.mode === 'original') {
+    const { customWidth, customHeight } = job.scaleConfig
+    return customWidth && customHeight
+      ? { width: customWidth, height: customHeight }
+      : { width: srcW, height: srcH }
+  }
   if (job.scaleConfig.mode === 'preset') {
     return {
       width: srcW * job.scaleConfig.presetFactor,
@@ -455,44 +483,14 @@ export async function startProcessing(job: Job): Promise<void> {
   recordJob(job, job.status)
 
   try {
+    // Both 'custom' and 'original' express an exact target size; they differ
+    // only in which direction it is allowed to go (see validateScaleConfig).
     const customSize =
-      job.scaleConfig.mode === 'custom' &&
+      job.scaleConfig.mode !== 'preset' &&
       job.scaleConfig.customWidth &&
       job.scaleConfig.customHeight
         ? { width: job.scaleConfig.customWidth, height: job.scaleConfig.customHeight }
         : null
-
-    // Original mode is a re-encode, not an upscale: it goes down the backend's
-    // compress path (real transcoding, never a model — FR-029) with no
-    // output_target, so the result lands in the app's outputs dir and the
-    // export panel below stays the only thing that writes where the person
-    // asked. Everything else about the job — progress, cancel, history,
-    // export — is unchanged.
-    if (job.scaleConfig.mode === 'original') {
-      const backendJobId = await createLocalJob(
-        { media_type: 'image', operation: 'compress', input_path: job.sourcePath },
-        // The compress path never reads these (no model runs), but the contract
-        // requires the block — send the defaults rather than the job's tuning.
-        defaultAdjustments()
-      )
-      job.backendJobId = backendJobId
-      await apiProcessJob(backendJobId)
-      const unsubscribe = subscribeJobProgress(
-        backendJobId,
-        (status) => applyApiStatus(job, status),
-        () => {
-          getJob(backendJobId)
-            .then((status) => applyApiStatus(job, status))
-            .catch(() => {
-              job.status = 'error'
-              job.errorMessage = 'Falha na comunicação com o servidor durante o processamento.'
-              recordJob(job, job.status)
-            })
-        }
-      )
-      jobUnsubscribers.set(backendJobId, unsubscribe)
-      return
-    }
 
     const backendJobId = await createLocalJob(
       {
