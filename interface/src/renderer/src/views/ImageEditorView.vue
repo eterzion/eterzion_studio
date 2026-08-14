@@ -909,6 +909,29 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </p>
             </div>
           </CollapsiblePanel>
+
+          <AppButton
+            variant="secondary"
+            class="w-full"
+            :disabled="configuringJobs.length < 2"
+            @click="applyConfigToAll(job)"
+          >
+            Aplicar esta configuração a todos ({{ configuringJobs.length }})
+          </AppButton>
+
+          <AppButton
+            variant="primary"
+            size="lg"
+            class="w-full"
+            :disabled="!validity.valid"
+            @click="process(job)"
+          >
+            {{
+              job.status === 'error' || job.status === 'cancelled'
+                ? 'Tentar novamente'
+                : 'Processar'
+            }}
+          </AppButton>
         </template>
 
         <!-- ---------------------------- QUEUED / PROCESSING ---------------------------- -->
@@ -937,154 +960,110 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           >
             <ComparisonStats :job="job" />
           </CollapsiblePanel>
-        </template>
 
-        <!-- Outside the state branches on purpose: the destination and format are
-             worth deciding before processing starts, not only after. Only the
-             actions below need a finished job, and they say so. -->
-        <CollapsiblePanel title="Exportar" description="Formato, destino e nome" :icon="Download">
-          <div class="field">
-            <label class="field-label">Formato</label>
-            <AppSelect
-              :model-value="exportFormat"
-              :options="exportFormatOptions"
-              @update:model-value="(v) => (exportFormat = v as 'png' | 'jpg' | 'webp')"
-            />
-          </div>
-
-          <div v-if="exportFormat !== 'png'" class="field">
-            <div class="slider-head">
-              <label class="field-label">Qualidade</label>
-              <span class="slider-value">{{ exportQuality }}</span>
+          <CollapsiblePanel title="Exportar" description="Formato, destino e nome" :icon="Download">
+            <div class="field">
+              <label class="field-label">Formato</label>
+              <AppSelect
+                :model-value="exportFormat"
+                :options="exportFormatOptions"
+                @update:model-value="(v) => (exportFormat = v as 'png' | 'jpg' | 'webp')"
+              />
             </div>
-            <RangeSlider v-model="exportQuality" :default-value="90" :min="1" :max="100" />
-          </div>
 
-          <div class="field">
-            <label class="field-label">Pasta de destino</label>
-            <div class="folder-row">
+            <div v-if="exportFormat !== 'png'" class="field">
+              <div class="slider-head">
+                <label class="field-label">Qualidade</label>
+                <span class="slider-value">{{ exportQuality }}</span>
+              </div>
+              <RangeSlider v-model="exportQuality" :default-value="90" :min="1" :max="100" />
+            </div>
+
+            <div class="field">
+              <label class="field-label">Pasta de destino</label>
+              <div class="folder-row">
+                <input
+                  class="select folder-input"
+                  type="text"
+                  :value="exportDestFolder ?? 'Mesma pasta do original'"
+                  readonly
+                />
+                <AppButton variant="secondary" icon-only @click="pickExportFolder">
+                  <template #icon><FolderOpen :size="15" /></template>
+                </AppButton>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">Nome do arquivo</label>
               <input
-                class="select folder-input"
+                class="select"
                 type="text"
-                :value="exportDestFolder ?? 'Mesma pasta do original'"
-                readonly
+                :placeholder="`${job.fileName.replace(/\\.[^.]+$/, '')}_upscaled.${exportFormat}`"
+                :value="exportFilename ?? ''"
+                @input="exportFilename = ($event.target as HTMLInputElement).value || null"
               />
-              <AppButton variant="secondary" icon-only @click="pickExportFolder">
-                <template #icon><FolderOpen :size="15" /></template>
-              </AppButton>
             </div>
-          </div>
 
-          <div class="field">
-            <label class="field-label">Nome do arquivo</label>
-            <input
-              class="select"
-              type="text"
-              :placeholder="`${job.fileName.replace(/\\.[^.]+$/, '')}_upscaled.${exportFormat}`"
-              :value="exportFilename ?? ''"
-              @input="exportFilename = ($event.target as HTMLInputElement).value || null"
-            />
-          </div>
-
-          <div class="field">
-            <label class="field-label">Em caso de conflito</label>
-            <AppSelect
-              :model-value="exportConflict"
-              :options="conflictOptions"
-              @update:model-value="(v) => (exportConflict = v as 'overwrite' | 'rename' | 'ask')"
-            />
-          </div>
-
-          <div v-if="conflictPrompt && job.status === 'done'" class="conflict-prompt">
-            <p>Já existe um arquivo com esse nome. O que fazer?</p>
-            <div class="conflict-actions">
-              <AppButton
-                variant="outline"
-                size="sm"
-                class="flex-1"
-                @click="resolveConflict('rename')"
-                >Renomear</AppButton
-              >
-              <AppButton
-                variant="outline"
-                size="sm"
-                class="flex-1"
-                @click="resolveConflict('overwrite')"
-                >Sobrescrever</AppButton
-              >
-            </div>
-          </div>
-
-          <p
-            v-if="job.status === 'done' && job.exportState === 'error' && !conflictPrompt"
-            class="banner-error"
-          >
-            <AlertCircle :size="14" /> {{ job.exportError }}
-          </p>
-          <p v-if="job.status === 'done' && job.exportState === 'exported'" class="banner-info">
-            Exportado em: {{ job.lastExportPath }}
-          </p>
-
-          <!-- Settings only until there is something to export. Before that the
-               panel just says where the file will go; an action that cannot run
-               yet is noise, not an affordance. -->
-          <AppButton
-            v-if="job.status === 'done'"
-            variant="primary"
-            size="lg"
-            class="w-full"
-            :disabled="job.exportState === 'exporting'"
-            @click="runExport(job)"
-          >
-            <template #icon>
-              <component
-                :is="job.exportState === 'exporting' ? Loader2 : Download"
-                :size="16"
-                :class="{ 'animate-spin': job.exportState === 'exporting' }"
+            <div class="field">
+              <label class="field-label">Em caso de conflito</label>
+              <AppSelect
+                :model-value="exportConflict"
+                :options="conflictOptions"
+                @update:model-value="(v) => (exportConflict = v as 'overwrite' | 'rename' | 'ask')"
               />
-            </template>
-            {{ job.exportState === 'exporting' ? 'Exportando…' : 'Exportar' }}
-          </AppButton>
+            </div>
 
-          <AppButton
-            v-if="job.status === 'done'"
-            variant="ghost"
-            @click="job.status = 'configuring'"
-          >
-            <template #icon><RotateCcw :size="14" /></template>
-            Ajustar e reprocessar
-          </AppButton>
-        </CollapsiblePanel>
+            <div v-if="conflictPrompt" class="conflict-prompt">
+              <p>Já existe um arquivo com esse nome. O que fazer?</p>
+              <div class="conflict-actions">
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  class="flex-1"
+                  @click="resolveConflict('rename')"
+                  >Renomear</AppButton
+                >
+                <AppButton
+                  variant="outline"
+                  size="sm"
+                  class="flex-1"
+                  @click="resolveConflict('overwrite')"
+                  >Sobrescrever</AppButton
+                >
+              </div>
+            </div>
 
-        <!-- Both actions read after Exportar: the destination is part of what you
-             are about to commit to (or copy onto every other file), so they come
-             once the whole configuration is on screen. -->
-        <AppButton
-          v-if="
-            job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
-          "
-          variant="secondary"
-          class="w-full"
-          :disabled="configuringJobs.length < 2"
-          @click="applyConfigToAll(job)"
-        >
-          Aplicar esta configuração a todos ({{ configuringJobs.length }})
-        </AppButton>
+            <p v-if="job.exportState === 'error' && !conflictPrompt" class="banner-error">
+              <AlertCircle :size="14" /> {{ job.exportError }}
+            </p>
+            <p v-if="job.exportState === 'exported'" class="banner-info">
+              Exportado em: {{ job.lastExportPath }}
+            </p>
 
-        <AppButton
-          v-if="
-            job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
-          "
-          variant="primary"
-          size="lg"
-          class="w-full"
-          :disabled="!validity.valid"
-          @click="process(job)"
-        >
-          {{
-            job.status === 'error' || job.status === 'cancelled' ? 'Tentar novamente' : 'Processar'
-          }}
-        </AppButton>
+            <AppButton
+              variant="primary"
+              size="lg"
+              class="w-full"
+              :disabled="job.exportState === 'exporting'"
+              @click="runExport(job)"
+            >
+              <template #icon>
+                <component
+                  :is="job.exportState === 'exporting' ? Loader2 : Download"
+                  :size="16"
+                  :class="{ 'animate-spin': job.exportState === 'exporting' }"
+                />
+              </template>
+              {{ job.exportState === 'exporting' ? 'Exportando…' : 'Exportar' }}
+            </AppButton>
+
+            <AppButton variant="ghost" @click="job.status = 'configuring'">
+              <template #icon><RotateCcw :size="14" /></template>
+              Ajustar e reprocessar
+            </AppButton>
+          </CollapsiblePanel>
+        </template>
       </aside>
     </div>
 
