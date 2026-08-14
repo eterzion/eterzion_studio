@@ -45,7 +45,7 @@ const modelSummary = computed(() => {
   <div class="stats-grid">
     <div class="stat">
       <span class="stat-label">Resolução</span>
-      <span class="stat-value" :title="resolutionLabel">{{ resolutionLabel }}</span>
+      <span class="stat-value">{{ resolutionLabel }}</span>
     </div>
     <div class="stat">
       <span class="stat-label">Tamanho do arquivo</span>
@@ -61,7 +61,7 @@ const modelSummary = computed(() => {
     </div>
     <div class="stat stat-wide">
       <span class="stat-label">Modelo e parâmetros</span>
-      <span class="stat-value wrap">{{ modelSummary }}</span>
+      <span class="stat-value">{{ modelSummary }}</span>
     </div>
   </div>
 </template>
@@ -95,17 +95,15 @@ const modelSummary = computed(() => {
   color: var(--text-tertiary);
 }
 
+/* These wrap rather than truncate. In a two-column grid inside a 320px panel a
+   "before → after" pair never fits on one line, and an ellipsis cut off the
+   half that matters — the result. Breaking at the arrow reads fine. */
 .stat-value {
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
   font-family: var(--font-mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.stat-value.wrap {
+  min-width: 0;
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
