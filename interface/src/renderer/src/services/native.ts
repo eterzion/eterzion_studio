@@ -1,3 +1,6 @@
+/** Which media a screen can open. Mirrors MediaKind in preload/index.ts. */
+export type MediaKind = 'image' | 'video' | 'audio'
+
 export interface DescribedFile {
   path: string
   name: string
@@ -27,8 +30,8 @@ export const hasNativeApi = typeof window !== 'undefined' && !!window.api
  *  FastAPI server lifecycle. For talking to the API itself (models, jobs), see services/api.ts. */
 export const api = {
   ensureApi: (): Promise<ApiReadyResult> => window.api.ensureApi(),
-  selectFiles: (): Promise<PickResult> => window.api.selectFiles(),
-  selectFolder: (): Promise<PickResult> => window.api.selectFolder(),
+  selectFiles: (kinds?: MediaKind[]): Promise<PickResult> => window.api.selectFiles(kinds),
+  selectFolder: (kinds?: MediaKind[]): Promise<PickResult> => window.api.selectFolder(kinds),
   selectOutputFolder: (defaultPath?: string): Promise<string | null> =>
     window.api.selectOutputFolder(defaultPath),
   statPath: (path: string): Promise<DescribedFile | null> => window.api.statPath(path),

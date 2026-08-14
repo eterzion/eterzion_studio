@@ -291,7 +291,7 @@ const {
 // ------------------------------- import / queue ------------------------------- //
 async function importFiles(): Promise<void> {
   if (!hasNativeApi) return
-  const result = await api.selectFiles()
+  const result = await api.selectFiles(['image'])
   if (result.canceled) return
   importError.value = result.rejected.length
     ? `${result.rejected.length} arquivo(s) não puderam ser importados (formato não suportado ou ilegível).`
@@ -327,7 +327,7 @@ async function pickFiles(): Promise<void> {
   }
   uploading.value = true
   try {
-    const result = await api.selectFiles()
+    const result = await api.selectFiles(['image'])
     if (result.canceled) return
     reportImportResult(await addFiles(result.files))
   } catch (error) {
@@ -344,7 +344,7 @@ async function pickFolder(): Promise<void> {
   }
   uploading.value = true
   try {
-    const result = await api.selectFolder()
+    const result = await api.selectFolder(['image'])
     if (result.canceled) return
     if (result.files.length === 0) {
       importError.value = 'Nenhuma imagem compatível foi encontrada nessa pasta.'

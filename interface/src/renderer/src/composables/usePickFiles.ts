@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import { api, hasNativeApi, type DescribedFile } from '../services/native'
+import { api, hasNativeApi, type DescribedFile, type MediaKind } from '../services/native'
 
 // Consolidates the native "pick files → per-file callback" shell that was
 // byte-identical across VideoView/AudioView/ExportView
@@ -15,7 +15,11 @@ import { api, hasNativeApi, type DescribedFile } from '../services/native'
 // exact copy-paste this composable was created to remove.
 export function usePickFiles(
   addFile: (file: DescribedFile) => void | Promise<void>,
-  importError: Ref<string | null>
+  importError: Ref<string | null>,
+  /** What this screen can open. The native dialog offers only these formats,
+      and anything else is rejected on the way back — the dialog's filter is a
+      default the person can switch off, not a guarantee. */
+  kinds?: MediaKind[]
 ): {
   pickFiles: () => Promise<void>
   pickFolder: () => Promise<void>
@@ -31,7 +35,7 @@ export function usePickFiles(
     }
     uploading.value = true
     try {
-      const result = await api.selectFiles()
+      const result = await api.selectFiles(kinds)
       if (result.canceled) return
       importError.value = null
       for (const f of result.files) await addFile(f)
@@ -49,7 +53,7 @@ export function usePickFiles(
     }
     uploading.value = true
     try {
-      const result = await api.selectFolder()
+      const result = await api.selectFolder(kinds)
       if (result.canceled) return
       if (result.files.length === 0) {
         importError.value = 'Nenhum arquivo compatível foi encontrado nessa pasta.'

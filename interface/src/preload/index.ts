@@ -6,6 +6,10 @@ import { electronAPI } from '@electron-toolkit/preload'
 // Must match MEDIA_SCHEME in src/main/index.ts.
 const MEDIA_SCHEME = 'astros-media'
 
+/** Which media a screen can open. Mirrors MediaKind in
+ *  src/main/ipc/dialog.ipc.ts — preload cannot import from main. */
+export type MediaKind = 'image' | 'video' | 'audio'
+
 export interface DescribedFile {
   path: string
   name: string
@@ -30,8 +34,12 @@ export interface ApiReadyResult {
 // Custom APIs for renderer
 const api = {
   ensureApi: (): Promise<ApiReadyResult> => ipcRenderer.invoke('api:ensure'),
-  selectFiles: (): Promise<PickResult> => ipcRenderer.invoke('dialog:openFiles'),
-  selectFolder: (): Promise<PickResult> => ipcRenderer.invoke('dialog:openFolder'),
+  // `kinds` narrows the dialog to what the calling screen can actually open;
+  // omitting it keeps the previous behaviour (all supported media).
+  selectFiles: (kinds?: MediaKind[]): Promise<PickResult> =>
+    ipcRenderer.invoke('dialog:openFiles', kinds),
+  selectFolder: (kinds?: MediaKind[]): Promise<PickResult> =>
+    ipcRenderer.invoke('dialog:openFolder', kinds),
   selectOutputFolder: (defaultPath?: string): Promise<string | null> =>
     ipcRenderer.invoke('dialog:selectOutputFolder', defaultPath),
   statPath: (path: string): Promise<DescribedFile | null> =>

@@ -7,13 +7,23 @@ import AppButton from '../components/atoms/AppButton.vue'
 import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
-import { Upload, FolderOpen, AlertCircle, ShieldAlert, Download, Cpu, Expand } from '@lucide/vue'
+import {
+  Upload,
+  FolderOpen,
+  AlertCircle,
+  ShieldAlert,
+  Download,
+  Cpu,
+  Expand,
+  CircleX
+} from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   processJob as apiProcessJob,
   confirmSecondaryElements,
   getJob,
+  cancelJob as apiCancelJob,
   defaultAdjustments,
   type ContentType,
   type SecondaryElements
@@ -44,6 +54,8 @@ interface VideoJob {
   outputPath?: string
   secondaryElements?: SecondaryElements | null
   createdAt: number
+  /** Drops the progress socket — held so cancelling can stop it. */
+  unsubscribe?: () => void
 }
 
 // T066 — mirrors store/jobs.ts's recordJob() calls, so video jobs show up in
@@ -135,7 +147,11 @@ async function addFile(described: DescribedFile): Promise<void> {
   activeId.value = jobs.value[jobs.value.length - 1].id
 }
 
-const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
+  addFile,
+  importError,
+  ['video']
+)
 
 function removeJob(job: VideoJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -148,7 +164,7 @@ function removeById(id: string): void {
 }
 
 function watchJob(job: VideoJob, backendJobId: string): void {
-  subscribeJobProgress(
+  job.unsubscribe = subscribeJobProgress(
     backendJobId,
     (status) => {
       job.progress = status.progress
@@ -189,6 +205,33 @@ function watchJob(job: VideoJob, backendJobId: string): void {
         })
     }
   )
+}
+
+// Mirrors store/jobs.ts's cancelProcessing() for the Imagem screen: drop the
+// socket first so no late frame revives the job, tell the backend (best-effort —
+// a job that already finished server-side is not an error here), then put the
+// job back where it started so it can simply be run again.
+async function cancelJob(job: VideoJob): Promise<void> {
+  job.unsubscribe?.()
+  job.unsubscribe = undefined
+  if (job.backendJobId) {
+    try {
+      await apiCancelJob(job.backendJobId)
+    } catch {
+      // best-effort — reset the local state regardless
+    }
+    recordSimpleJob({
+      id: job.id,
+      sourcePath: job.file.path,
+      fileName: job.file.name,
+      status: 'cancelled',
+      mediaType: 'video',
+      createdAt: job.createdAt
+    })
+  }
+  job.status = 'configuring'
+  job.progress = 0
+  job.backendJobId = null
 }
 
 async function runJob(job: VideoJob): Promise<void> {
@@ -378,6 +421,15 @@ function exportAll(): void {
                     : `${activeJob.progress}%`
                 "
               />
+              <AppButton
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                variant="outline"
+                size="sm"
+                @click="cancelJob(activeJob)"
+              >
+                <template #icon><CircleX :size="14" /></template>
+                Cancelar
+              </AppButton>
               <div v-else-if="activeJob.status === 'done'" class="done-row">
                 <StatusBadge state="done" />
                 <AppButton

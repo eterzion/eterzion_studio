@@ -46,6 +46,14 @@ const menuStyle = ref<{ left: string; width: string; top?: string; bottom?: stri
   width: '0px'
 })
 
+// The menu is teleported to <body>, which puts it outside the [data-module]
+// subtree its trigger lives in — so --color-primary fell back to the neutral
+// accent and a Vídeo dropdown drew its selected row in cyan instead of purple.
+// Mirroring the attribute onto the teleported node re-applies theme.css's own
+// module rules (including the light-theme corrections) rather than copying the
+// three colour values out, which would have to be kept in sync by hand.
+const moduleAttr = ref<string | null>(null)
+
 const effectiveSearchable = computed(() => props.searchable || props.options.length > 8)
 
 const filteredOptions = computed(() => {
@@ -64,6 +72,7 @@ const triggerLabelTruncated = useTruncated(triggerLabelEl, selected)
 function openMenu(): void {
   if (props.disabled || props.loading) return
   open.value = true
+  moduleAttr.value = root.value?.closest<HTMLElement>('[data-module]')?.dataset.module ?? null
   query.value = ''
   activeIndex.value = filteredOptions.value.findIndex((o) => o.value === props.modelValue)
   nextTick(() => {
@@ -218,6 +227,7 @@ watch(filteredOptions, () => {
         ref="menu"
         class="menu"
         :class="{ upward: openUpward }"
+        :data-module="moduleAttr"
         :style="menuStyle"
         role="listbox"
         tabindex="-1"

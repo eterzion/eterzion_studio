@@ -15,13 +15,15 @@ import {
   Download,
   Repeat,
   SlidersHorizontal,
-  Expand
+  Expand,
+  CircleX
 } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   processJob as apiProcessJob,
   getJob,
+  cancelJob as apiCancelJob,
   defaultAdjustments,
   type MediaType
 } from '../services/api'
@@ -58,7 +60,13 @@ interface ExportJob {
   error?: string
   outputPath?: string
   outputSizeBytes?: number
+  /** What actually came out, as measured by the backend — the only honest
+      answer to "did the resize apply?". */
+  outputWidth?: number
+  outputHeight?: number
   createdAt: number
+  /** Drops the progress socket — held so cancelling can stop it. */
+  unsubscribe?: () => void
 }
 
 // T066 — mirrors store/jobs.ts's recordJob() calls, so compress/convert jobs
@@ -152,7 +160,12 @@ async function addFile(described: DescribedFile): Promise<void> {
   activeId.value = jobs.value[jobs.value.length - 1].id
 }
 
-const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
+// Exportar is the one screen that really does take all three.
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
+  addFile,
+  importError,
+  ['image', 'video', 'audio']
+)
 
 function removeJob(job: ExportJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -167,9 +180,43 @@ function onHeightInput(job: ExportJob, raw: string): void {
   job.height = raw ? Math.max(1, Number(raw)) : null
 }
 
+// The backend resizes to an exact (w, h) — there is no aspect-ratio inference
+// on either side, so half a size is not a resize. It used to be dropped in
+// silence by the `width && height` guard in runJob(); now the screen says so.
+const sizeIncomplete = computed(
+  () => !!activeJob.value && !activeJob.value.width !== !activeJob.value.height
+)
+
 function removeById(id: string): void {
   const target = jobs.value.find((j) => j.id === id)
   if (target) removeJob(target)
+}
+
+// Mirrors store/jobs.ts's cancelProcessing() for the Imagem screen: drop the
+// socket first so no late frame revives the job, tell the backend (best-effort —
+// a job that already finished server-side is not an error here), then put the
+// job back where it started so it can simply be run again.
+async function cancelJob(job: ExportJob): Promise<void> {
+  job.unsubscribe?.()
+  job.unsubscribe = undefined
+  if (job.backendJobId) {
+    try {
+      await apiCancelJob(job.backendJobId)
+    } catch {
+      // best-effort — reset the local state regardless
+    }
+    recordSimpleJob({
+      id: job.id,
+      sourcePath: job.file.path,
+      fileName: job.file.name,
+      status: 'cancelled',
+      mediaType: job.mediaType,
+      createdAt: job.createdAt
+    })
+  }
+  job.status = 'configuring'
+  job.progress = 0
+  job.backendJobId = null
 }
 
 async function runJob(job: ExportJob): Promise<void> {
@@ -197,7 +244,7 @@ async function runJob(job: ExportJob): Promise<void> {
     syncHistory(job)
     await apiProcessJob(backendJobId)
 
-    subscribeJobProgress(
+    job.unsubscribe = subscribeJobProgress(
       backendJobId,
       (status) => {
         job.progress = status.progress
@@ -205,6 +252,8 @@ async function runJob(job: ExportJob): Promise<void> {
           job.status = 'done'
           job.outputPath = status.output_path ?? undefined
           job.outputSizeBytes = status.output_meta?.size_bytes ?? undefined
+          job.outputWidth = status.output_meta?.width ?? undefined
+          job.outputHeight = status.output_meta?.height ?? undefined
         } else if (status.status === 'error') {
           job.status = 'error'
           job.error = status.error ?? 'Falha no processamento.'
@@ -383,9 +432,17 @@ function fmtBytes(bytes: number | undefined): string {
                     @input="onHeightInput(activeJob, ($event.target as HTMLInputElement).value)"
                   />
                 </div>
+                <p v-if="sizeIncomplete" class="field-note field-note-warning">
+                  Informe largura e altura — com apenas um dos dois o tamanho original é mantido.
+                </p>
               </CollapsiblePanel>
 
-              <AppButton variant="primary" size="lg" @click="runJob(activeJob)">
+              <AppButton
+                variant="primary"
+                size="lg"
+                :disabled="sizeIncomplete"
+                @click="runJob(activeJob)"
+              >
                 Exportar
               </AppButton>
             </div>
@@ -396,8 +453,24 @@ function fmtBytes(bytes: number | undefined): string {
                 :state="activeJob.status"
                 :detail="`${activeJob.progress}%`"
               />
+              <AppButton
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                variant="outline"
+                size="sm"
+                @click="cancelJob(activeJob)"
+              >
+                <template #icon><CircleX :size="14" /></template>
+                Cancelar
+              </AppButton>
               <div v-else-if="activeJob.status === 'done'" class="done-row">
-                <StatusBadge state="done" :detail="fmtBytes(activeJob.outputSizeBytes)" />
+                <StatusBadge
+                  state="done"
+                  :detail="
+                    activeJob.outputWidth && activeJob.outputHeight
+                      ? `${activeJob.outputWidth} × ${activeJob.outputHeight} · ${fmtBytes(activeJob.outputSizeBytes)}`
+                      : fmtBytes(activeJob.outputSizeBytes)
+                  "
+                />
                 <AppButton
                   v-if="hasNativeApi && activeJob.outputPath"
                   variant="outline"
@@ -494,6 +567,9 @@ function fmtBytes(bytes: number | undefined): string {
 .field-note {
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
+}
+.field-note-warning {
+  color: var(--color-warning);
 }
 .field {
   display: flex;

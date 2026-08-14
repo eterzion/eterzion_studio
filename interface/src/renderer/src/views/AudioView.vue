@@ -7,13 +7,14 @@ import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
-import { Upload, FolderOpen, AlertCircle, Download, Cpu } from '@lucide/vue'
+import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   detectContentType,
   processJob as apiProcessJob,
   getJob,
+  cancelJob as apiCancelJob,
   defaultAdjustments,
   type ContentType
 } from '../services/api'
@@ -43,6 +44,8 @@ interface AudioJob {
   error?: string
   outputPath?: string
   createdAt: number
+  /** Drops the progress socket — held so cancelling can stop it. */
+  unsubscribe?: () => void
 }
 
 // T066 — mirrors store/jobs.ts's recordJob() calls, so audio jobs show up in
@@ -136,7 +139,11 @@ async function addFile(described: DescribedFile): Promise<void> {
   }
 }
 
-const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
+  addFile,
+  importError,
+  ['audio']
+)
 
 function removeJob(job: AudioJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -146,6 +153,33 @@ function removeJob(job: AudioJob): void {
 function removeById(id: string): void {
   const target = jobs.value.find((j) => j.id === id)
   if (target) removeJob(target)
+}
+
+// Mirrors store/jobs.ts's cancelProcessing() for the Imagem screen: drop the
+// socket first so no late frame revives the job, tell the backend (best-effort —
+// a job that already finished server-side is not an error here), then put the
+// job back where it started so it can simply be run again.
+async function cancelJob(job: AudioJob): Promise<void> {
+  job.unsubscribe?.()
+  job.unsubscribe = undefined
+  if (job.backendJobId) {
+    try {
+      await apiCancelJob(job.backendJobId)
+    } catch {
+      // best-effort — reset the local state regardless
+    }
+    recordSimpleJob({
+      id: job.id,
+      sourcePath: job.file.path,
+      fileName: job.file.name,
+      status: 'cancelled',
+      mediaType: 'audio',
+      createdAt: job.createdAt
+    })
+  }
+  job.status = 'configuring'
+  job.progress = 0
+  job.backendJobId = null
 }
 
 async function runJob(job: AudioJob): Promise<void> {
@@ -166,7 +200,7 @@ async function runJob(job: AudioJob): Promise<void> {
     syncHistory(job)
     await apiProcessJob(backendJobId)
 
-    subscribeJobProgress(
+    job.unsubscribe = subscribeJobProgress(
       backendJobId,
       (status) => {
         job.progress = status.progress
@@ -310,6 +344,15 @@ function exportAll(): void {
                     : `${activeJob.progress}%`
                 "
               />
+              <AppButton
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                variant="outline"
+                size="sm"
+                @click="cancelJob(activeJob)"
+              >
+                <template #icon><CircleX :size="14" /></template>
+                Cancelar
+              </AppButton>
               <div v-else-if="activeJob.status === 'done'" class="done-row">
                 <StatusBadge state="done" />
                 <AppButton
