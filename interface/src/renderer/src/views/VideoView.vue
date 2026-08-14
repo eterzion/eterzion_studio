@@ -47,7 +47,11 @@ interface VideoJob {
   backendJobId: string | null
   file: DescribedFile
   contentType: ContentType
+  /** 'preset' multiplies the source; 'custom' targets an exact resolution. */
+  scaleMode: 'preset' | 'custom'
   scale: '2x' | '4x'
+  customWidth: number | null
+  customHeight: number | null
   /** Read off the preview element once its metadata loads — a video file, unlike
       an image, carries no dimensions the picker could have told us. */
   sourceWidth: number | null
@@ -148,7 +152,10 @@ async function addFile(described: DescribedFile): Promise<void> {
     backendJobId: null,
     file: described,
     contentType: 'real_video',
+    scaleMode: 'preset',
     scale: '2x',
+    customWidth: null,
+    customHeight: null,
     sourceWidth: null,
     sourceHeight: null,
     status: 'configuring',
@@ -257,7 +264,13 @@ async function runJob(job: VideoJob): Promise<void> {
         operation: 'enhance',
         input_path: job.file.path,
         content_type_override: job.contentType,
-        scale: job.scale
+        scale: job.scale,
+        // The preset still travels: it is what decides how hard the model works,
+        // while custom_size names the exact frame size to land on.
+        custom_size:
+          job.scaleMode === 'custom' && job.customWidth && job.customHeight
+            ? { width: job.customWidth, height: job.customHeight }
+            : null
       },
       defaultAdjustments()
     )
@@ -309,6 +322,34 @@ async function runAll(): Promise<void> {
 // The preview is the only place a video's real resolution shows up on this side
 // (the backend probes it, but not before the job exists), so the info panel
 // below is filled from it.
+// The resolutions people actually ask for, rather than a free-form pair of
+// numbers: every one of these is a real delivery target.
+const RESOLUTION_PRESETS: { label: string; note: string; width: number; height: number }[] = [
+  { label: '720p', note: 'HD · 1280 × 720', width: 1280, height: 720 },
+  { label: '1080p', note: 'Full HD · 1920 × 1080', width: 1920, height: 1080 },
+  { label: '1440p', note: '2K · 2560 × 1440', width: 2560, height: 1440 },
+  { label: '4K', note: 'UHD · 3840 × 2160', width: 3840, height: 2160 },
+  { label: '8K', note: 'UHD · 7680 × 4320', width: 7680, height: 4320 }
+]
+
+function setScaleMode(job: VideoJob, mode: 'preset' | 'custom'): void {
+  job.scaleMode = mode
+  // Entering Customizado with nothing chosen: start from the first preset that
+  // is actually an upscale for this file, so the default is never a reduction.
+  if (mode === 'custom' && !job.customWidth) {
+    const fallback =
+      RESOLUTION_PRESETS.find((r) => !job.sourceWidth || r.width > job.sourceWidth) ??
+      RESOLUTION_PRESETS[RESOLUTION_PRESETS.length - 1]
+    job.customWidth = fallback.width
+    job.customHeight = fallback.height
+  }
+}
+
+function setResolution(job: VideoJob, width: number, height: number): void {
+  job.customWidth = width
+  job.customHeight = height
+}
+
 function onPreviewMetadata(event: Event): void {
   const el = event.target as HTMLVideoElement
   const j = activeJob.value
@@ -319,7 +360,10 @@ function onPreviewMetadata(event: Event): void {
 
 const outputSize = computed(() => {
   const j = activeJob.value
-  if (!j?.sourceWidth || !j.sourceHeight) return null
+  if (!j) return null
+  if (j.scaleMode === 'custom')
+    return j.customWidth && j.customHeight ? { width: j.customWidth, height: j.customHeight } : null
+  if (!j.sourceWidth || !j.sourceHeight) return null
   const factor = Number(j.scale.replace('x', ''))
   return { width: j.sourceWidth * factor, height: j.sourceHeight * factor }
 })
@@ -424,9 +468,28 @@ function exportAll(): void {
                 description="Resolução final do vídeo"
                 :icon="Expand"
               >
+                <div class="scale-mode-tabs">
+                  <button
+                    class="mode-tab"
+                    :class="{ active: activeJob.scaleMode === 'preset' }"
+                    type="button"
+                    @click="setScaleMode(activeJob, 'preset')"
+                  >
+                    Predefinido
+                  </button>
+                  <button
+                    class="mode-tab"
+                    :class="{ active: activeJob.scaleMode === 'custom' }"
+                    type="button"
+                    @click="setScaleMode(activeJob, 'custom')"
+                  >
+                    Customizado
+                  </button>
+                </div>
+
                 <!-- The same two buttons the Imagem screen uses, rather than a
                      dropdown: with exactly two choices, both should be visible. -->
-                <div class="scale-buttons">
+                <div v-if="activeJob.scaleMode === 'preset'" class="scale-buttons">
                   <button
                     v-for="s in ['2x', '4x'] as const"
                     :key="s"
@@ -437,6 +500,30 @@ function exportAll(): void {
                   >
                     {{ s }}
                   </button>
+                </div>
+
+                <div v-else class="resolution-list">
+                  <button
+                    v-for="preset in RESOLUTION_PRESETS"
+                    :key="preset.label"
+                    class="resolution-btn"
+                    :class="{ active: activeJob.customWidth === preset.width }"
+                    type="button"
+                    @click="setResolution(activeJob!, preset.width, preset.height)"
+                  >
+                    <span class="resolution-label">{{ preset.label }}</span>
+                    <span class="resolution-note">{{ preset.note }}</span>
+                  </button>
+                  <p
+                    v-if="
+                      activeJob.sourceWidth &&
+                      activeJob.customWidth &&
+                      activeJob.customWidth < activeJob.sourceWidth
+                    "
+                    class="field-warning"
+                  >
+                    Esse alvo é menor que o vídeo original — a saída será reduzida, não ampliada.
+                  </p>
                 </div>
                 <!-- Same readout the Imagem screen gets. The component is named
                      for where it started, but nothing in it is image-specific. -->
@@ -518,6 +605,62 @@ function exportAll(): void {
 </template>
 
 <style scoped>
+.scale-mode-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-3);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+}
+.mode-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-medium);
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.mode-tab.active {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+.resolution-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.resolution-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 8px 10px;
+  text-align: left;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-3);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.resolution-btn.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.resolution-label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-semibold);
+}
+.resolution-note {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+}
+.field-warning {
+  font-size: 11px;
+  color: var(--color-warning);
+}
 .scale-buttons {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

@@ -424,10 +424,16 @@ class VideoUpscaler:
         on_progress: Callable[[int], None] | None = None,
         on_stage: Callable[[str], None] | None = None,
         stabilize: bool = False,
+        custom_size: tuple[int, int] | None = None,
     ) -> VideoProcessResult:
         """Writes the final (audio-muxed) video straight to `output_path` —
         `stabilize` (FR-102) is an opt-in extra pass, never mandatory, and
-        only actually runs when a real ffmpeg binary is available."""
+        only actually runs when a real ffmpeg binary is available.
+
+        `custom_size` names an exact output resolution (the Vídeo screen's
+        Customizado presets: 1080p, 1440p, 4K...). It replaces `scale`, which
+        then only decides how hard the model works — exactly how the image path
+        already treats the pair."""
         do_stabilize = stabilize and has_ffmpeg()
 
         if on_stage:
@@ -450,7 +456,13 @@ class VideoUpscaler:
         self._model.tile_size = grid.tile_size
         self._model.tile_pad = grid.tile_pad
 
-        out_width, out_height = even(int(reader.width * scale)), even(int(reader.height * scale))
+        if custom_size is not None:
+            # Even dimensions because H.264 requires them; the per-frame resize
+            # below then lands every frame exactly on the target.
+            out_width, out_height = even(int(custom_size[0])), even(int(custom_size[1]))
+            scale = max(out_width / reader.width, out_height / reader.height)
+        else:
+            out_width, out_height = even(int(reader.width * scale)), even(int(reader.height * scale))
         tmp_noaudio = output_path + '.noaudio.mp4'
         writer = VideoWriter(tmp_noaudio, fps=reader.fps, width=out_width, height=out_height)
 

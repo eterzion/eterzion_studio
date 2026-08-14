@@ -1119,11 +1119,13 @@ def _handle_video_enhance(msg: dict, send) -> None:
     upscaler = _get_video_upscaler(
         msg['model'], msg['models_dir'], msg.get('device'), denoise, half, msg.get('protected'),
         msg.get('tile_threshold'), msg.get('tile_size'))
+    custom = msg.get('custom_size')
     result = upscaler.process(
         msg['input_path'], msg.get('scale', 2), msg['master_path'],
         on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
         on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
         stabilize=msg.get('stabilize', False),
+        custom_size=(custom['width'], custom['height']) if custom else None,
     )
     send({'type': 'result', 'source_size': result['source_size'], 'output_size': result['output_size']})
 

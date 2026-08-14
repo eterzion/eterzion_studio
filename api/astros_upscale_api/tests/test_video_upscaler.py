@@ -120,3 +120,34 @@ def test_video_without_audio_produces_a_silent_but_valid_output(tmp_path):
     out_probe = ffprobe_json(output_path)
     assert _audio_stream(out_probe) is None
     assert result['output_size'] == (128, 96)
+
+
+class TestCustomSize:
+    """The Vídeo screen's Customizado presets (1080p, 1440p, 4K...) send an exact
+    output resolution instead of a multiplier. Runs the real model, like every
+    other test in this file — nothing here is mocked."""
+
+    @pytest.fixture(scope='class')
+    @classmethod
+    def sized_video(cls, tmp_path_factory):
+        tmp_path = tmp_path_factory.mktemp('video_custom_size')
+        input_path = str(tmp_path / 'input.mp4')
+        output_path = str(tmp_path / 'output.mp4')
+        _build_input_video(input_path)
+
+        upscaler = VideoUpscaler('realesr-animevideo', settings.models_dir, device='cpu', half=False)
+        # 64x48 source, deliberately not a whole multiple of either axis.
+        result = upscaler.process(
+            input_path, scale=2, output_path=output_path, custom_size=(200, 120)
+        )
+        return {'result': result, 'probe': ffprobe_json(output_path)}
+
+    def test_lands_on_the_exact_requested_resolution(self, sized_video):
+        stream = _video_stream(sized_video['probe'])
+        assert (stream['width'], stream['height']) == (200, 120)
+
+    def test_reports_the_custom_size_as_the_output_size(self, sized_video):
+        assert sized_video['result']['output_size'] == (200, 120)
+
+    def test_source_size_still_reports_the_real_input(self, sized_video):
+        assert sized_video['result']['source_size'] == (64, 48)
