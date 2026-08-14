@@ -188,3 +188,32 @@ def test_scale_1x_without_a_custom_size_keeps_the_source_resolution(tmp_path, sp
     assert job['status'] == 'done', job.get('error')
     assert spy_on_ai_paths['load_model'] == 0
     assert cv2.imread(job_manager._master_path(job_id)).shape[:2] == (160, 160)
+
+
+def test_scale_1x_actually_applies_the_denoise_filter_and_sharpen(tmp_path):
+    """The Ajustes panel stays available in Original mode, so its filters have to
+    reach the no-model path — not silently do nothing. Compares real pixels
+    against the same job with the adjustments off."""
+    input_path = _write_test_image(tmp_path / 'in.png', size=120)
+
+    def run(name, adjustments):
+        job_id = job_manager.create_job(
+            input_path, name, {'scale': '1x', 'adjustments': adjustments},
+            media_type='image', operation='enhance',
+        )
+        job_manager.jobs[job_id]['status'] = 'queued'
+        asyncio.run(job_manager._process_job(job_id))
+        job = job_manager.get_job(job_id)
+        assert job['status'] == 'done', job.get('error')
+        return cv2.imread(job_manager._master_path(job_id))
+
+    plain = run('plain.png', {})
+    denoised = run('denoised.png', {'denoise_filter_enabled': True, 'denoise_filter_strength': 80})
+    sharpened = run('sharpened.png', {'deblur': 80})
+
+    assert denoised.shape == plain.shape
+    assert not (denoised == plain).all(), 'denoise filter did not change any pixel'
+    assert not (sharpened == plain).all(), 'sharpen did not change any pixel'
+    # Denoising must reduce local variation; sharpening must raise it.
+    assert denoised.std() < plain.std()
+    assert sharpened.std() > plain.std()

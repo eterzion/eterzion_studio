@@ -326,7 +326,10 @@ export function applyConfigToAll(sourceJob: Job): void {
  *  32000px per side" guards from 4.2. Returns a single human-readable reason so
  *  the UI can show it inline instead of just disabling the button silently. */
 export function validateScaleConfig(job: Job): { valid: boolean; reason?: string } {
-  if (!job.scaleConfig.contentType)
+  // Original mode resolves no model (it travels as scale '1x'), so the content
+  // type — which exists only to pick one — cannot block it. Requiring it here is
+  // what left Processar disabled on the one mode that never needed it.
+  if (job.scaleConfig.mode !== 'original' && !job.scaleConfig.contentType)
     return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
 
   const { width: srcW, height: srcH } = job.sourceMeta

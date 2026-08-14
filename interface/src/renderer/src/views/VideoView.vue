@@ -105,11 +105,6 @@ const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: st
   }
 ]
 
-const SCALE_OPTIONS = [
-  { value: '2x', label: '2x' },
-  { value: '4x', label: '4x' }
-]
-
 const LOSS_LABELS: Record<string, string> = {
   extra_audio_tracks: 'Trilhas de áudio extras',
   subtitles: 'Legendas embutidas',
@@ -429,11 +424,20 @@ function exportAll(): void {
                 description="Resolução final do vídeo"
                 :icon="Expand"
               >
-                <AppSelect
-                  :model-value="activeJob.scale"
-                  :options="SCALE_OPTIONS"
-                  @update:model-value="(v) => (activeJob!.scale = v as '2x' | '4x')"
-                />
+                <!-- The same two buttons the Imagem screen uses, rather than a
+                     dropdown: with exactly two choices, both should be visible. -->
+                <div class="scale-buttons">
+                  <button
+                    v-for="s in ['2x', '4x'] as const"
+                    :key="s"
+                    class="scale-btn"
+                    :class="{ active: activeJob.scale === s }"
+                    type="button"
+                    @click="activeJob!.scale = s"
+                  >
+                    {{ s }}
+                  </button>
+                </div>
                 <!-- Same readout the Imagem screen gets. The component is named
                      for where it started, but nothing in it is image-specific. -->
                 <ImageInfoPanel
@@ -514,6 +518,25 @@ function exportAll(): void {
 </template>
 
 <style scoped>
+.scale-buttons {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-2);
+}
+.scale-btn {
+  padding: 8px 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-3);
+  color: var(--text-secondary);
+  font-weight: var(--fw-semibold);
+  cursor: pointer;
+}
+.scale-btn.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--on-primary);
+}
 .video-view {
   display: flex;
   flex-direction: column;
