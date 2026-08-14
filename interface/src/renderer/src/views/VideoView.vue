@@ -7,6 +7,7 @@ import AppButton from '../components/atoms/AppButton.vue'
 import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
+import ImageInfoPanel from '../components/ImageInfoPanel.vue'
 import {
   Upload,
   FolderOpen,
@@ -47,6 +48,10 @@ interface VideoJob {
   file: DescribedFile
   contentType: ContentType
   scale: '2x' | '4x'
+  /** Read off the preview element once its metadata loads — a video file, unlike
+      an image, carries no dimensions the picker could have told us. */
+  sourceWidth: number | null
+  sourceHeight: number | null
   status: LocalStatus
   progress: number
   stage: string | null
@@ -85,9 +90,19 @@ function syncHistory(job: VideoJob): void {
   })
 }
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string }[] = [
-  { value: 'real_video', label: 'Vídeo real (filmagem)' },
-  { value: 'anime_video', label: 'Vídeo de anime/animação' }
+// Described, like the Imagem screen's: the label alone does not tell you which
+// one a stylised music video or a rotoscoped short belongs to.
+const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
+  {
+    value: 'real_video',
+    label: 'Vídeo real (filmagem)',
+    description: 'Câmera, gravação de tela, qualquer imagem capturada do mundo'
+  },
+  {
+    value: 'anime_video',
+    label: 'Vídeo de anime/animação',
+    description: 'Anime, desenho, motion graphics — traços definidos e cores chapadas'
+  }
 ]
 
 const SCALE_OPTIONS = [
@@ -139,6 +154,8 @@ async function addFile(described: DescribedFile): Promise<void> {
     file: described,
     contentType: 'real_video',
     scale: '2x',
+    sourceWidth: null,
+    sourceHeight: null,
     status: 'configuring',
     progress: 0,
     stage: null,
@@ -294,6 +311,33 @@ async function runAll(): Promise<void> {
   }
 }
 
+// The preview is the only place a video's real resolution shows up on this side
+// (the backend probes it, but not before the job exists), so the info panel
+// below is filled from it.
+function onPreviewMetadata(event: Event): void {
+  const el = event.target as HTMLVideoElement
+  const j = activeJob.value
+  if (!j || !el.videoWidth || !el.videoHeight) return
+  j.sourceWidth = el.videoWidth
+  j.sourceHeight = el.videoHeight
+}
+
+const outputSize = computed(() => {
+  const j = activeJob.value
+  if (!j?.sourceWidth || !j.sourceHeight) return null
+  const factor = Number(j.scale.replace('x', ''))
+  return { width: j.sourceWidth * factor, height: j.sourceHeight * factor }
+})
+
+// Same rough heuristic the Imagem screen uses: source bytes scaled by the
+// pixel-count ratio. Good enough for a hint, and honestly labelled as one.
+const estimatedBytes = computed(() => {
+  const j = activeJob.value
+  const out = outputSize.value
+  if (!j?.sourceWidth || !j.sourceHeight || !out) return null
+  return Math.round((j.file.size * (out.width * out.height)) / (j.sourceWidth * j.sourceHeight))
+})
+
 function exportAll(): void {
   if (!hasNativeApi) return
   const done = jobs.value.find((j) => j.status === 'done' && j.outputPath)
@@ -303,7 +347,11 @@ function exportAll(): void {
 
 <template>
   <div class="video-view" data-module="video">
-    <TopBar :title="activeJob?.file.name ?? 'Vídeo'" show-back @back="$emit('back')">
+    <TopBar
+      :title="activeJob?.file.name ?? 'Nenhum vídeo selecionado'"
+      show-back
+      @back="$emit('back')"
+    >
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -357,6 +405,7 @@ function exportAll(): void {
             :src="api.toFileUrl(activeJob.file.path)"
             controls
             preload="metadata"
+            @loadedmetadata="onPreviewMetadata"
           />
         </template>
 
@@ -384,6 +433,15 @@ function exportAll(): void {
                   :model-value="activeJob.scale"
                   :options="SCALE_OPTIONS"
                   @update:model-value="(v) => (activeJob!.scale = v as '2x' | '4x')"
+                />
+                <!-- Same readout the Imagem screen gets. The component is named
+                     for where it started, but nothing in it is image-specific. -->
+                <ImageInfoPanel
+                  :original-width="activeJob.sourceWidth"
+                  :original-height="activeJob.sourceHeight"
+                  :new-width="outputSize?.width ?? null"
+                  :new-height="outputSize?.height ?? null"
+                  :estimated-bytes="estimatedBytes"
                 />
               </CollapsiblePanel>
               <AppButton variant="primary" size="lg" @click="runJob(activeJob)"

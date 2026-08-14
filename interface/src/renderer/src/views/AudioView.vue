@@ -75,9 +75,17 @@ function syncHistory(job: AudioJob): void {
   })
 }
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string }[] = [
-  { value: 'speech', label: 'Fala / voz' },
-  { value: 'music', label: 'Música' }
+const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
+  {
+    value: 'speech',
+    label: 'Fala / voz',
+    description: 'Locução, podcast, entrevista — uma voz em primeiro plano'
+  },
+  {
+    value: 'music',
+    label: 'Música',
+    description: 'Faixa musical completa, com instrumentos e mixagem'
+  }
 ]
 
 const jobs = ref<AudioJob[]>([])
@@ -256,7 +264,11 @@ function exportAll(): void {
 
 <template>
   <div class="audio-view" data-module="audio">
-    <TopBar :title="activeJob?.file.name ?? 'Áudio'" show-back @back="$emit('back')">
+    <TopBar
+      :title="activeJob?.file.name ?? 'Nenhum áudio selecionado'"
+      show-back
+      @back="$emit('back')"
+    >
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
