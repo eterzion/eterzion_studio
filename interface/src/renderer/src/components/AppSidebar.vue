@@ -42,12 +42,15 @@ const { t } = useI18n()
 // own BrandMark.vue, which uses the same file as its main site logo).
 const brandLogoUrl = 'https://assets.ericinacio.com/branding/logo-256.webp'
 
-const items = computed<{ key: NavKey; label: string; icon: unknown }[]>(() => [
+// `module` ties a nav entry to its accent (theme.css [data-module]), so the
+// active item is tinted with the same colour as the screen it opens. Entries
+// without one (Início, Histórico) keep the neutral accent.
+const items = computed<{ key: NavKey; label: string; icon: unknown; module?: string }[]>(() => [
   { key: 'home', label: t('nav.home'), icon: Home },
-  { key: 'imagem', label: t('nav.image'), icon: Image },
-  { key: 'video', label: t('nav.video'), icon: Film },
-  { key: 'audio', label: t('nav.audio'), icon: Headphones },
-  { key: 'exportar', label: t('nav.export'), icon: Repeat },
+  { key: 'imagem', label: t('nav.image'), icon: Image, module: 'image' },
+  { key: 'video', label: t('nav.video'), icon: Film, module: 'video' },
+  { key: 'audio', label: t('nav.audio'), icon: Headphones, module: 'audio' },
+  { key: 'exportar', label: t('nav.export'), icon: Repeat, module: 'export' },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
 
@@ -129,6 +132,7 @@ function openExternal(url: string): void {
         :key="item.key"
         class="nav-item"
         :class="{ active: active === item.key }"
+        :data-module="item.module"
         type="button"
         :title="item.label"
         @click="emit('navigate', item.key)"

@@ -400,7 +400,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 </script>
 
 <template>
-  <div class="editor-view">
+  <div class="editor-view" data-module="image">
     <TopBar :title="job?.fileName ?? 'Nenhuma imagem selecionada'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="importFiles">

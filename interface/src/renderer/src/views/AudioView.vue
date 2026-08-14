@@ -221,7 +221,7 @@ function exportAll(): void {
 </script>
 
 <template>
-  <div class="audio-view">
+  <div class="audio-view" data-module="audio">
     <TopBar :title="activeJob?.file.name ?? 'Áudio'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">

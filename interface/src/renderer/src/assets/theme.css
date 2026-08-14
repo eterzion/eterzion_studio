@@ -55,9 +55,26 @@
   --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
 }
 
-/* Cor de destaque — fixa em ciano (não é mais configurável pelo usuário;
-   --color-primary/-hover/-soft vêm só daqui, nunca dos blocos de tema acima,
-   para que a cor de destaque e claro/escuro continuem ortogonais). */
+/* ---------------------------- accent ---------------------------- */
+/*
+ * Each module owns a colour, and the Home cards already taught it: image is
+ * blue, video purple, audio cyan, export amber. Those were only ever card
+ * tints; now they are real tokens, so a screen can adopt its module's colour
+ * and everything inside it follows.
+ *
+ * The mechanism is deliberately boring: every component already styles itself
+ * from --color-primary/-hover/-soft, so a screen only has to re-declare those
+ * three under a [data-module] attribute and its buttons, sliders, focus rings,
+ * badges, icon chips and upload zone all shift together. No component needs to
+ * know which module it is rendering inside.
+ */
+:root {
+  --accent-image: #1688ff;
+  --accent-video: #bd24ff;
+  --accent-audio: #20dced;
+  --accent-export: #ff9d00;
+}
+
 :root[data-theme='dark'] {
   --color-primary: #22d3ee;
   --color-primary-hover: #06b6d4;
@@ -67,6 +84,58 @@
   --color-primary: #0891b2;
   --color-primary-hover: #0e7490;
   --color-primary-soft: rgba(8, 145, 178, 0.1);
+}
+
+/* Module scoping. `color-mix` derives the hover/soft variants from the one
+   accent value, so adding a module never means hand-picking three colours —
+   and the soft variant lands at the same opacity the neutral accent uses. */
+[data-module='image'] {
+  --color-primary: var(--accent-image);
+  --color-primary-hover: color-mix(in srgb, var(--accent-image) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-image) 14%, transparent);
+}
+[data-module='video'] {
+  --color-primary: var(--accent-video);
+  --color-primary-hover: color-mix(in srgb, var(--accent-video) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-video) 14%, transparent);
+}
+[data-module='audio'] {
+  --color-primary: var(--accent-audio);
+  --color-primary-hover: color-mix(in srgb, var(--accent-audio) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-audio) 14%, transparent);
+}
+[data-module='export'] {
+  --color-primary: var(--accent-export);
+  --color-primary-hover: color-mix(in srgb, var(--accent-export) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-export) 14%, transparent);
+}
+
+/* Tailwind's theme aliases (styles/tailwind.css `@theme`) are declared once on
+   :root as `--color-accent: var(--color-primary)`. A var() inside a custom
+   property is substituted where it is DECLARED, and the already-resolved value
+   is what inherits — so re-declaring --color-primary deeper never reached the
+   `bg-accent`/`border-accent` utilities. Re-resolving the aliases at the module
+   boundary is what actually makes utility-styled components (AppButton, badges)
+   follow their module. One rule, so a new module needs nothing extra here. */
+[data-module] {
+  --color-accent: var(--color-primary);
+  --color-accent-hover: var(--color-primary-hover);
+  --color-accent-soft: var(--color-primary-soft);
+}
+
+/* The accents were picked against the dark ground; on the light theme they need
+   darkening to stay legible as text/icon colour on a near-white surface. */
+:root[data-theme='light'] [data-module='image'] {
+  --color-primary: color-mix(in srgb, var(--accent-image) 78%, #000);
+}
+:root[data-theme='light'] [data-module='video'] {
+  --color-primary: color-mix(in srgb, var(--accent-video) 72%, #000);
+}
+:root[data-theme='light'] [data-module='audio'] {
+  --color-primary: color-mix(in srgb, var(--accent-audio) 62%, #000);
+}
+:root[data-theme='light'] [data-module='export'] {
+  --color-primary: color-mix(in srgb, var(--accent-export) 74%, #000);
 }
 
 :root {

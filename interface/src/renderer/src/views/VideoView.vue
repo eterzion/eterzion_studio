@@ -268,7 +268,7 @@ function exportAll(): void {
 </script>
 
 <template>
-  <div class="video-view">
+  <div class="video-view" data-module="video">
     <TopBar :title="activeJob?.file.name ?? 'Vídeo'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">

@@ -14,10 +14,12 @@ type CategoryVariant = 'imagem' | 'video' | 'audio' | 'exportar'
 const CATEGORIES = computed<
   { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
 >(() => [
-  { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: '#1688ff' },
-  { key: 'video', label: t('nav.video'), variant: 'video', tint: '#bd24ff' },
-  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: '#20dced' },
-  { key: 'exportar', label: t('nav.export'), variant: 'exportar', tint: '#ff9d00' }
+  // The same four accents the modules themselves use (theme.css --accent-*),
+  // so a card and the screen it opens are literally the same colour.
+  { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: 'var(--accent-image)' },
+  { key: 'video', label: t('nav.video'), variant: 'video', tint: 'var(--accent-video)' },
+  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' },
+  { key: 'exportar', label: t('nav.export'), variant: 'exportar', tint: 'var(--accent-export)' }
 ])
 const jobs = computed(() => queueState.jobs)
 const fileCount = computed(() => jobs.value.length)

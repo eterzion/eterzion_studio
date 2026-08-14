@@ -258,7 +258,7 @@ function fmtBytes(bytes: number | undefined): string {
 </script>
 
 <template>
-  <div class="optimize-view">
+  <div class="optimize-view" data-module="export">
     <TopBar :title="activeJob?.file.name ?? 'Exportar'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
