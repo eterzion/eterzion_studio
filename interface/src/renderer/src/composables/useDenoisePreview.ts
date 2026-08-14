@@ -1,4 +1,4 @@
-import { ref, type ComputedRef, type Ref } from 'vue'
+import { ref, watch, type ComputedRef, type Ref } from 'vue'
 import { hasNativeApi } from '../services/native'
 import { previewDenoise, type DenoisePreview } from '../services/api'
 
@@ -67,6 +67,24 @@ export function useDenoisePreview<T extends DenoiseJob>(
       }
     }, 350)
   }
+
+  // Switching to another file used to leave the previous one's before/after on
+  // screen: the preview was only ever cleared by the toggle, and nothing watched
+  // which job was active. Invalidating the in-flight request id too, so a reply
+  // for the old file cannot land on the new one.
+  watch(
+    // sourcePath, not a job id: it is the file the preview is OF, and it is the
+    // only identity this composable's minimal job contract carries.
+    () => job.value?.sourcePath,
+    () => {
+      clearTimeout(denoisePreviewTimer)
+      denoisePreviewRequestId++
+      denoisePreview.value = null
+      denoisePreviewError.value = null
+      denoisePreviewLoading.value = false
+      if (job.value?.scaleConfig.denoiseFilterEnabled) requestDenoisePreview()
+    }
+  )
 
   function setDenoisePreset(preset: { key: DenoisePresetKey; strength: number | null }): void {
     if (!job.value) return
