@@ -51,7 +51,9 @@ const adjustmentsSummary = computed(() => {
     used.push(`Ruído ${c.denoiseFilterStrength}`)
   if (c.sharpenEnabled && c.sharpen > 0) used.push(`Nitidez ${c.sharpen}`)
   if (c.faceRecovery) used.push(`Faces ${c.faceRecoveryStrength}`)
-  return used.length ? used.join(' · ') : 'Nenhum'
+  // null, not 'Nenhum': the row is dropped instead of stating an absence. A
+  // panel that reports the run should be short when little happened.
+  return used.length ? used.join(' · ') : null
 })
 
 const modelSummary = computed(() => {
@@ -60,9 +62,7 @@ const modelSummary = computed(() => {
     c.mode === 'preset'
       ? `${c.presetFactor}x`
       : `${c.customWidth ?? '—'}×${c.customHeight ?? '—'}px`
-  return usesModel.value
-    ? `${PROFILE_LABEL[c.profile] ?? c.profile} · ${scaleLabel}`
-    : `Sem modelo · ${scaleLabel}`
+  return `${PROFILE_LABEL[c.profile] ?? c.profile} · ${scaleLabel}`
 })
 </script>
 
@@ -86,12 +86,14 @@ const modelSummary = computed(() => {
       <span class="stat-label">Tempo de processamento</span>
       <span class="stat-value">{{ processingLabel }}</span>
     </div>
-    <div class="stat">
+    <div v-if="adjustmentsSummary" class="stat">
       <span class="stat-label">Ajustes aplicados</span>
       <span class="stat-value">{{ adjustmentsSummary }}</span>
     </div>
-    <div class="stat">
-      <span class="stat-label">{{ usesModel ? 'Modelo e parâmetros' : 'Processamento' }}</span>
+    <!-- Only when a model ran. "Sem modelo" said nothing the resolution and the
+         adjustments above had not already made plain. -->
+    <div v-if="usesModel" class="stat">
+      <span class="stat-label">Modelo e parâmetros</span>
       <span class="stat-value">{{ modelSummary }}</span>
     </div>
   </div>
