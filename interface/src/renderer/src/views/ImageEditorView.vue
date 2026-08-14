@@ -19,7 +19,6 @@ import {
   Plus,
   Maximize2,
   Cpu,
-  MonitorCog,
   Expand,
   ChartNoAxesColumn,
   Link,
@@ -632,55 +631,47 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <XCircle :size="14" /> Processamento cancelado.
           </p>
 
-          <!-- These three only ever choose or tune a model pass, and Original mode
-               resolves no model (it travels as scale '1x'), so they are hidden
-               there — offering control over work that never happens is the same
-               claim the RESULTADO panel used to make. Ajustes below is not
-               hidden: its filters run in both modes. -->
+          <!-- One panel, not three: each of these is a single select, and split
+               across three collapsibles they cost more header than content. They
+               also share a condition — all three only choose or tune a model
+               pass, and Original mode resolves no model (it travels as scale
+               '1x'), so none of them applies there. Ajustes below stays separate:
+               its filters run in both modes. -->
           <CollapsiblePanel
             v-if="job.scaleConfig.mode !== 'original'"
-            title="Tipo de conteúdo"
-            description="Detectado automaticamente — corrija se estiver errado"
+            title="Processamento"
+            description="Como a imagem é processada pelo modelo"
             :icon="Cpu"
           >
             <div class="field">
+              <label class="field-label">Tipo de conteúdo</label>
               <AppSelect
                 :model-value="job.scaleConfig.contentType"
                 :options="contentTypeOptions"
                 placeholder="Detectando…"
                 @update:model-value="(v) => (job!.scaleConfig.contentType = v as ContentType)"
               />
+              <p class="field-hint">Detectado automaticamente — corrija se estiver errado.</p>
             </div>
-          </CollapsiblePanel>
 
-          <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original'"
-            title="Perfil"
-            description="Rápido, Equilibrado ou Qualidade — nunca troca o que processa a imagem, só o quanto se esforça"
-            :icon="ChartNoAxesColumn"
-          >
             <div class="field">
+              <label class="field-label">Perfil</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
                 :options="profileOptions"
                 @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
               />
+              <p class="field-hint">Mais qualidade rende mais detalhe e leva mais tempo.</p>
             </div>
-          </CollapsiblePanel>
 
-          <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original'"
-            title="Dispositivo de processamento"
-            description="Onde o modelo roda — GPU acelera, CPU é o padrão de compatibilidade"
-            :icon="MonitorCog"
-          >
             <div class="field">
+              <label class="field-label">Dispositivo</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
                 :options="deviceOptions"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
-              <p class="device-hint">{{ selectedDeviceDescription }}</p>
+              <p class="field-hint">{{ selectedDeviceDescription }}</p>
             </div>
           </CollapsiblePanel>
 
