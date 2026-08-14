@@ -680,6 +680,14 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <div class="scale-mode-tabs">
               <button
                 class="mode-tab"
+                :class="{ active: job.scaleConfig.mode === 'original' }"
+                type="button"
+                @click="switchScaleMode(job, 'original')"
+              >
+                Original
+              </button>
+              <button
+                class="mode-tab"
                 :class="{ active: job.scaleConfig.mode === 'preset' }"
                 type="button"
                 @click="switchScaleMode(job, 'preset')"
@@ -693,14 +701,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 @click="switchScaleMode(job, 'custom')"
               >
                 Custom
-              </button>
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'original' }"
-                type="button"
-                @click="switchScaleMode(job, 'original')"
-              >
-                Original
               </button>
             </div>
 
