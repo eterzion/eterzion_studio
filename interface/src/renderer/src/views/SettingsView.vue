@@ -589,8 +589,10 @@ const outputFolderLabel = computed(
   gap: var(--space-3);
 }
 .credits-icon {
-  background: #14b8a622;
-  color: #14b8a6;
+  /* Follows the theme like every other icon chip — this was the one left on a
+     hardcoded teal, which ignored both the light theme and the accent system. */
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 .credits-header-text {
   flex: 1;
