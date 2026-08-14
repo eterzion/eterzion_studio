@@ -19,10 +19,11 @@ const processingSeconds = computed(() => {
   return Math.round((processingEndedAt - processingStartedAt) / 1000)
 })
 
-const resolutionLabel = computed(
-  () =>
-    `${fmtDim(props.job.sourceMeta.width)}×${fmtDim(props.job.sourceMeta.height)} → ` +
-    `${fmtDim(props.job.outputMeta?.width)}×${fmtDim(props.job.outputMeta?.height)}`
+const sourceResolution = computed(
+  () => `${fmtDim(props.job.sourceMeta.width)}×${fmtDim(props.job.sourceMeta.height)}`
+)
+const outputResolution = computed(
+  () => `${fmtDim(props.job.outputMeta?.width)}×${fmtDim(props.job.outputMeta?.height)}`
 )
 
 const PROFILE_LABEL: Record<string, string> = {
@@ -52,13 +53,17 @@ const modelSummary = computed(() => {
   <div class="stats-grid">
     <div class="stat">
       <span class="stat-label">Resolução</span>
-      <span class="stat-value">{{ resolutionLabel }}</span>
+      <span class="stat-value">
+        <span>{{ sourceResolution }}</span>
+        <span class="stat-after">→ {{ outputResolution }}</span>
+      </span>
     </div>
     <div class="stat">
       <span class="stat-label">Tamanho do arquivo</span>
-      <span class="stat-value"
-        >{{ fmtBytes(job.sourceMeta.sizeBytes) }} → {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span
-      >
+      <span class="stat-value">
+        <span>{{ fmtBytes(job.sourceMeta.sizeBytes) }}</span>
+        <span class="stat-after">→ {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span>
+      </span>
     </div>
     <div class="stat">
       <span class="stat-label">Tempo de processamento</span>
@@ -102,10 +107,13 @@ const modelSummary = computed(() => {
   color: var(--text-tertiary);
 }
 
-/* These wrap rather than truncate. In a two-column grid inside a 320px panel a
-   "before → after" pair never fits on one line, and an ellipsis cut off the
-   half that matters — the result. Breaking at the arrow reads fine. */
+/* A "before → after" pair never fits on one line in a two-column grid inside a
+   320px panel, and it used to be truncated — cutting off the half that matters,
+   the result. Each side gets its own line, with the arrow leading the second so
+   it never dangles at the end of the first. */
 .stat-value {
+  display: flex;
+  flex-direction: column;
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
@@ -114,5 +122,9 @@ const modelSummary = computed(() => {
   white-space: normal;
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+.stat-after {
+  color: var(--color-primary);
 }
 </style>
