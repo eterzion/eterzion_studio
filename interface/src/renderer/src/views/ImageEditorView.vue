@@ -1312,7 +1312,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
   padding: 5px 12px;
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -1801,13 +1801,15 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   gap: var(--space-2);
 }
 
+/* Rounded rectangle, not a pill: this row wraps to a second line, and a
+   full-radius container reads as a broken capsule the moment it does. */
 .denoise-preset-row {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
-  border-radius: var(--radius-full);
+  border-radius: var(--radius-md);
   padding: 4px;
 }
 
