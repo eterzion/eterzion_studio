@@ -1285,17 +1285,28 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .preset-btn {
-  flex: 1;
-  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-size: 11px;
   font-weight: var(--fw-medium);
-  padding: 5px 4px;
+  padding: 5px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
+}
+
+/* Only the denoise row divides a fixed width between four options. The zoom bar
+   shares this class but sits in a toolbar that can grow, and squeezing its
+   "Ajustar" button to a quarter of the row is what truncated it to "...". */
+.denoise-preset-row .preset-btn {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 4px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -1406,7 +1417,9 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .thumb-add {
   width: 92px;
   flex-shrink: 0;
-  height: 88px;
+  /* No fixed height: the tile stretches to whatever the file cards beside it
+     end up being, instead of guessing 88px and standing shorter than them. */
+  align-self: stretch;
   border: 1px dashed var(--surface-border);
   border-radius: var(--radius-sm);
   background: transparent;

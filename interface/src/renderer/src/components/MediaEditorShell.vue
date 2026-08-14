@@ -238,7 +238,9 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
 .thumb-add {
   width: 92px;
   flex-shrink: 0;
-  height: 88px;
+  /* No fixed height: the tile stretches to whatever the file cards beside it
+     end up being, instead of guessing 88px and standing shorter than them. */
+  align-self: stretch;
   border: 1px dashed var(--surface-border);
   border-radius: var(--radius-sm);
   background: transparent;
