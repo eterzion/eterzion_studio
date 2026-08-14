@@ -10,7 +10,7 @@ import type { NavKey } from '../types'
 
 const { t } = useI18n()
 const emit = defineEmits<{ navigate: [key: NavKey] }>()
-type CategoryVariant = 'imagem' | 'video' | 'audio' | 'exportar'
+type CategoryVariant = 'imagem' | 'video' | 'audio'
 const CATEGORIES = computed<
   { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
 >(() => [
@@ -18,8 +18,7 @@ const CATEGORIES = computed<
   // so a card and the screen it opens are literally the same colour.
   { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: 'var(--accent-image)' },
   { key: 'video', label: t('nav.video'), variant: 'video', tint: 'var(--accent-video)' },
-  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' },
-  { key: 'exportar', label: t('nav.export'), variant: 'exportar', tint: 'var(--accent-export)' }
+  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' }
 ])
 const jobs = computed(() => queueState.jobs)
 const fileCount = computed(() => jobs.value.length)

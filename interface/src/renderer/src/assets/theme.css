@@ -60,7 +60,7 @@
 /* ---------------------------- accent ---------------------------- */
 /*
  * Each module owns a colour, and the Home cards already taught it: image is
- * blue, video purple, audio cyan, export amber. Those were only ever card
+ * blue, video purple, audio cyan. Those were only ever card
  * tints; now they are real tokens, so a screen can adopt its module's colour
  * and everything inside it follows.
  *
@@ -74,7 +74,6 @@
   --accent-image: #1688ff;
   --accent-video: #bd24ff;
   --accent-audio: #20dced;
-  --accent-export: #ff9d00;
 }
 
 :root[data-theme='dark'] {
@@ -106,11 +105,6 @@
   --color-primary-hover: color-mix(in srgb, var(--accent-audio) 82%, #000);
   --color-primary-soft: color-mix(in srgb, var(--accent-audio) 14%, transparent);
 }
-[data-module='export'] {
-  --color-primary: var(--accent-export);
-  --color-primary-hover: color-mix(in srgb, var(--accent-export) 82%, #000);
-  --color-primary-soft: color-mix(in srgb, var(--accent-export) 14%, transparent);
-}
 
 /* Tailwind's theme aliases (styles/tailwind.css `@theme`) are declared once on
    :root as `--color-accent: var(--color-primary)`. A var() inside a custom
@@ -139,9 +133,6 @@
 }
 :root[data-theme='light'] [data-module='audio'] {
   --color-primary: color-mix(in srgb, var(--accent-audio) 54%, #000);
-}
-:root[data-theme='light'] [data-module='export'] {
-  --color-primary: color-mix(in srgb, var(--accent-export) 60%, #000);
 }
 
 :root {

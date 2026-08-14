@@ -8,7 +8,6 @@ import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
-import ExportView from './views/ExportView.vue'
 import VideoView from './views/VideoView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
@@ -75,7 +74,6 @@ onMounted(() => {
       <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
       <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
       <SettingsView v-else-if="active === 'configuracoes'" />
-      <ExportView v-else-if="active === 'exportar'" @back="active = 'home'" />
       <VideoView v-else-if="active === 'video'" @back="active = 'home'" />
       <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
       <div v-else class="placeholder-view">

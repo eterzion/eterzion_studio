@@ -1,2 +1,1 @@
-export type NavKey =
-  'home' | 'imagem' | 'video' | 'audio' | 'exportar' | 'historico' | 'configuracoes'
+export type NavKey = 'home' | 'imagem' | 'video' | 'audio' | 'historico' | 'configuracoes'

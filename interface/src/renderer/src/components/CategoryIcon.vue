@@ -3,18 +3,16 @@ import { computed } from 'vue'
 import imageArtwork from '../assets/home-image.webp'
 import videoArtwork from '../assets/home-video.webp'
 import audioArtwork from '../assets/home-audio.webp'
-import converterArtwork from '../assets/home-converter.webp'
 
 const props = defineProps<{
-  variant: 'imagem' | 'video' | 'audio' | 'exportar'
+  variant: 'imagem' | 'video' | 'audio'
   tint: string
 }>()
 
 const artworkByVariant = {
   imagem: imageArtwork,
   video: videoArtwork,
-  audio: audioArtwork,
-  exportar: converterArtwork
+  audio: audioArtwork
 } as const
 
 const artwork = computed(() => artworkByVariant[props.variant])
