@@ -31,7 +31,7 @@ function fmtBytes(bytes: number | null): string {
 <template>
   <div class="info-panel">
     <div class="info-row">
-      <div class="info-icon"><ImageIcon :size="15" /></div>
+      <div class="info-icon icon-chip"><ImageIcon :size="15" /></div>
       <div class="info-body">
         <span class="info-label">Resolução original</span>
         <span class="info-value">
@@ -41,7 +41,7 @@ function fmtBytes(bytes: number | null): string {
     </div>
 
     <div class="info-row highlight">
-      <div class="info-icon primary"><Expand :size="15" /></div>
+      <div class="info-icon icon-chip primary"><Expand :size="15" /></div>
       <div class="info-body">
         <span class="info-label">Nova resolução</span>
         <span class="info-value info-value-lg">
@@ -51,7 +51,7 @@ function fmtBytes(bytes: number | null): string {
     </div>
 
     <div class="info-row highlight">
-      <div class="info-icon primary"><TrendingUp :size="15" /></div>
+      <div class="info-icon icon-chip primary"><TrendingUp :size="15" /></div>
       <div class="info-body">
         <span class="info-label">Escala</span>
         <span class="info-value info-value-lg">
@@ -62,7 +62,7 @@ function fmtBytes(bytes: number | null): string {
     </div>
 
     <div class="info-row muted">
-      <div class="info-icon"><HardDrive :size="14" /></div>
+      <div class="info-icon icon-chip"><HardDrive :size="14" /></div>
       <div class="info-body">
         <span class="info-label">Tamanho estimado</span>
         <span class="info-value">{{ fmtBytes(estimatedBytes) }}</span>
@@ -95,20 +95,16 @@ function fmtBytes(bytes: number | null): string {
 }
 
 .info-icon {
-  flex-shrink: 0;
+  /* The neutral variant of the chip: same shape and glow, tuned down to the
+     tertiary text colour so a plain info row does not read as an accent. */
+  --chip-tone: var(--text-tertiary);
   width: 26px;
   height: 26px;
   border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-tertiary);
-  background: var(--surface-3);
 }
 
 .info-icon.primary {
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
+  --chip-tone: var(--color-primary);
 }
 
 .info-body {

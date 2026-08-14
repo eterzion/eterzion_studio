@@ -12,7 +12,7 @@ defineProps<{
   <div class="summary-grid">
     <article class="summary-card tone-blue">
       <div class="summary-card-top">
-        <div class="summary-icon"><Files :size="28" :stroke-width="1.75" /></div>
+        <div class="summary-icon icon-chip"><Files :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ fileCount }}</div>
           <div class="summary-label">Arquivos na fila</div>
@@ -21,7 +21,7 @@ defineProps<{
     </article>
     <article class="summary-card tone-green">
       <div class="summary-card-top">
-        <div class="summary-icon"><HardDrive :size="28" :stroke-width="1.75" /></div>
+        <div class="summary-icon icon-chip"><HardDrive :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ totalSizeLabel }}</div>
           <div class="summary-label">Tamanho total</div>
@@ -30,7 +30,7 @@ defineProps<{
     </article>
     <article class="summary-card tone-orange">
       <div class="summary-card-top">
-        <div class="summary-icon"><Clock3 :size="28" :stroke-width="1.75" /></div>
+        <div class="summary-icon icon-chip"><Clock3 :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ statusLabel }}</div>
           <div class="summary-label">Status atual</div>
@@ -39,7 +39,7 @@ defineProps<{
     </article>
     <article class="summary-card tone-purple">
       <div class="summary-card-top">
-        <div class="summary-icon"><Sparkles :size="29" :stroke-width="1.75" /></div>
+        <div class="summary-icon icon-chip"><Sparkles :size="29" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value quality-value">{{ qualityLabel }}</div>
           <div class="summary-label">Qualidade e detalhes</div>
@@ -82,16 +82,10 @@ defineProps<{
   gap: 14px;
 }
 .summary-icon {
-  display: flex;
+  --chip-tone: var(--tone);
   width: 51px;
   height: 54px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  color: var(--tone);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--tone) 19%, var(--surface-2));
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--tone) 22%, transparent));
 }
 .summary-copy {
   min-width: 0;

@@ -71,7 +71,7 @@ function openImage(id?: string): void {
       <section class="queue-section" aria-labelledby="queue-title">
         <header class="queue-header">
           <div class="queue-heading">
-            <div class="queue-icon"><FolderOpen :size="22" :stroke-width="1.8" /></div>
+            <div class="queue-icon icon-chip"><FolderOpen :size="22" :stroke-width="1.8" /></div>
             <div>
               <h2 id="queue-title" class="queue-title">Fila de processamento</h2>
               <p class="queue-subtitle">
@@ -249,16 +249,9 @@ function openImage(id?: string): void {
   gap: 11px;
 }
 .queue-icon {
-  display: flex;
   width: 50px;
   height: 52px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
   border-radius: 11px;
-  background: var(--color-primary-soft);
-  box-shadow: none;
 }
 .queue-title {
   margin: 0;

@@ -213,7 +213,7 @@ const outputFolderLabel = computed(
         <!-- ---------------------------- GERAL ---------------------------- -->
         <section class="settings-group">
           <div class="group-header">
-            <div class="group-icon"><Settings2 :size="18" /></div>
+            <div class="group-icon icon-chip"><Settings2 :size="18" /></div>
             <div>
               <h2 class="group-title">{{ t('settings.general.title') }}</h2>
               <p class="group-description">{{ t('settings.general.description') }}</p>
@@ -287,7 +287,7 @@ const outputFolderLabel = computed(
         <!-- ---------------------------- PROCESSAMENTO ---------------------------- -->
         <section class="settings-group">
           <div class="group-header">
-            <div class="group-icon"><Cpu :size="18" /></div>
+            <div class="group-icon icon-chip"><Cpu :size="18" /></div>
             <div>
               <h2 class="group-title">Processamento</h2>
               <p class="group-description">Padrões usados ao configurar uma nova imagem</p>
@@ -339,7 +339,7 @@ const outputFolderLabel = computed(
         <!-- ---------------------------- HISTÓRICO ---------------------------- -->
         <section class="settings-group">
           <div class="group-header">
-            <div class="group-icon"><HistoryIcon :size="18" /></div>
+            <div class="group-icon icon-chip"><HistoryIcon :size="18" /></div>
             <div>
               <h2 class="group-title">Histórico</h2>
               <p class="group-description">
@@ -413,7 +413,7 @@ const outputFolderLabel = computed(
         <!-- ---------------------------- INTERFACE ---------------------------- -->
         <section class="settings-group">
           <div class="group-header">
-            <div class="group-icon"><LayoutGrid :size="18" /></div>
+            <div class="group-icon icon-chip"><LayoutGrid :size="18" /></div>
             <div>
               <h2 class="group-title">Interface</h2>
               <p class="group-description">Personalize a exibição de informações e densidade</p>
@@ -464,7 +464,7 @@ const outputFolderLabel = computed(
         <!-- ---------------------------- AVANÇADO ---------------------------- -->
         <section class="settings-group">
           <div class="group-header">
-            <div class="group-icon"><Wrench :size="18" /></div>
+            <div class="group-icon icon-chip"><Wrench :size="18" /></div>
             <div>
               <h2 class="group-title">Avançado</h2>
               <p class="group-description">Diagnóstico e informações técnicas</p>
@@ -485,7 +485,7 @@ const outputFolderLabel = computed(
 
         <section class="settings-group">
           <div class="group-header credits-header">
-            <div class="group-icon credits-icon"><Award :size="18" /></div>
+            <div class="group-icon icon-chip"><Award :size="18" /></div>
             <div class="credits-header-text">
               <h2 class="group-title">Créditos</h2>
               <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
@@ -495,10 +495,7 @@ const outputFolderLabel = computed(
             <ul class="credits-list">
               <li v-for="credit in CREDITS" :key="credit.work">
                 <div class="credit-row">
-                  <div
-                    class="credit-icon"
-                    :style="{ background: credit.tint + '22', color: credit.tint }"
-                  >
+                  <div class="credit-icon icon-chip" :style="{ '--chip-tone': credit.tint }">
                     <component :is="credit.icon" :size="18" />
                   </div>
                   <div class="credit-main">
@@ -588,12 +585,6 @@ const outputFolderLabel = computed(
   justify-content: space-between;
   gap: var(--space-3);
 }
-.credits-icon {
-  /* Follows the theme like every other icon chip — this was the one left on a
-     hardcoded teal, which ignored both the light theme and the accent system. */
-  background: var(--color-primary-soft);
-  color: var(--color-primary);
-}
 .credits-header-text {
   flex: 1;
   min-width: 0;
@@ -625,13 +616,9 @@ const outputFolderLabel = computed(
   gap: var(--space-3);
 }
 .credit-icon {
-  flex-shrink: 0;
   width: 38px;
   height: 38px;
   border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .credit-main {
   flex: 1;
@@ -727,15 +714,9 @@ const outputFolderLabel = computed(
 }
 
 .group-icon {
-  flex-shrink: 0;
   width: 36px;
   height: 36px;
   border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
 }
 
 .group-title {

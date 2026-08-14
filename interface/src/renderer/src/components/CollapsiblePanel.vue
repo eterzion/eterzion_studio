@@ -18,7 +18,7 @@ const open = ref(props.defaultOpen)
 <template>
   <section class="panel">
     <button class="panel-header" type="button" :aria-expanded="open" @click="open = !open">
-      <div v-if="icon" class="panel-icon"><component :is="icon" :size="16" /></div>
+      <div v-if="icon" class="panel-icon icon-chip"><component :is="icon" :size="16" /></div>
       <div class="panel-heading">
         <span class="panel-title">{{ title }}</span>
         <span v-if="description" class="panel-description">{{ description }}</span>
@@ -63,15 +63,9 @@ const open = ref(props.defaultOpen)
 }
 
 .panel-icon {
-  flex-shrink: 0;
   width: 30px;
   height: 30px;
   border-radius: var(--radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-primary);
-  background: var(--color-primary-soft);
 }
 
 .panel-heading {

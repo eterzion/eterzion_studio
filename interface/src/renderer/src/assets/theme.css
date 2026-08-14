@@ -230,6 +230,22 @@ body {
   animation-iteration-count: 1 !important;
 }
 
+/* Icon chip — the small rounded square that carries a section's icon. The look
+   started on the Home summary cards (a ground tinted with the chip's own colour
+   plus a soft glow of it) and every other chip in the app was a flat
+   approximation of the same thing. It lives here, globally, because scoped
+   component styles cannot share a class: each chip still owns its size and
+   radius, and sets --chip-tone only when it is not the module accent. */
+.icon-chip {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  color: var(--chip-tone, var(--color-primary));
+  background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent));
+}
+
 * {
   box-sizing: border-box;
 }
