@@ -211,11 +211,17 @@ def classify_image(image: np.ndarray) -> ImageClassification:
 
     # LAB color-block ratio: quantize to 16 buckets per channel and measure how much of the
     # image falls into its single most common colour — flat-shaded art scores high here.
+    #
+    # Each channel quantizes to 0..15, so the three fit losslessly in one 12-bit
+    # code and the histogram is a plain bincount over 4096 buckets. The obvious
+    # `np.unique(pixels, axis=0, return_counts=True)` computes the identical
+    # counts but has to lexicographically sort every pixel row: ~11s for a 12 MP
+    # photo, which is most of what made content-type detection feel slow.
     lab = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
-    quantized = (lab // 16).astype(np.uint8)
-    flat_view = quantized.reshape(-1, 3)
-    _, counts = np.unique(flat_view, axis=0, return_counts=True)
-    dominant_block_ratio = float(counts.max()) / flat_view.shape[0]
+    quantized = (lab // 16).astype(np.uint32)
+    codes = (quantized[:, :, 0] << 8) | (quantized[:, :, 1] << 4) | quantized[:, :, 2]
+    counts = np.bincount(codes.ravel(), minlength=1 << 12)
+    dominant_block_ratio = float(counts.max()) / codes.size
 
     anime_score = (
         0.4 * min(mean_saturation / 0.55, 1.0)
@@ -248,6 +254,12 @@ def _get_vad_model():
     return _vad_model
 
 
+# How much audio classify_audio() actually looks at. 30s is far more than the
+# classifier needs to separate speech from music, and bounds the cost for a
+# full-length track.
+_CLASSIFY_WINDOW_SECONDS = 30
+
+
 def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification:
     """Speech has continuous voice-activity and a strongly harmonic-dominant spectrum from
     vowel sounds; music has more percussive/broadband energy on average and voice activity
@@ -261,6 +273,17 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
     if samples.ndim > 1:
         samples = samples.mean(axis=1)
     samples = samples.astype(np.float32)
+
+    # Analyse a bounded window rather than the whole file. Both halves of this
+    # classifier scale linearly with duration — the VAD runs one forward pass
+    # per 512-sample frame, and librosa's HPSS is an STFT plus median filtering
+    # over every frame — so a full song used to cost ~10s for an answer that a
+    # representative excerpt gives just as well. Taken from the middle: intros
+    # are often silence or a lone instrument and misrepresent the track.
+    if len(samples) > _CLASSIFY_WINDOW_SECONDS * sample_rate:
+        window = int(_CLASSIFY_WINDOW_SECONDS * sample_rate)
+        start = (len(samples) - window) // 2
+        samples = samples[start:start + window]
 
     target_sr = 16000
     if sample_rate != target_sr:
