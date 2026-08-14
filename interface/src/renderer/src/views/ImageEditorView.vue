@@ -119,14 +119,16 @@ const contentTypeOptions = computed(() =>
   CONTENT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
 )
 
+// The descriptions carry what the field hints used to say, so removing those
+// lines costs no information — they are read while choosing instead of after.
 const PROFILE_OPTIONS: { value: Profile; label: string; description: string }[] = [
-  { value: 'fast', label: 'Rápido', description: 'Prioriza velocidade' },
+  { value: 'fast', label: 'Rápido', description: 'Menos detalhe, termina antes' },
   {
     value: 'balanced',
     label: 'Equilibrado',
-    description: 'Equilíbrio entre velocidade e qualidade'
+    description: 'Meio-termo entre detalhe e tempo'
   },
-  { value: 'quality', label: 'Qualidade', description: 'Prioriza o melhor resultado' }
+  { value: 'quality', label: 'Qualidade', description: 'Mais detalhe, leva mais tempo' }
 ]
 const profileOptions = computed(() =>
   PROFILE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
@@ -646,28 +648,26 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             :icon="Cpu"
           >
             <div class="field">
-              <label class="field-label">Tipo de conteúdo</label>
+              <label class="field-label">Conteúdo detectado</label>
               <AppSelect
                 :model-value="job.scaleConfig.contentType"
                 :options="contentTypeOptions"
                 placeholder="Detectando…"
                 @update:model-value="(v) => (job!.scaleConfig.contentType = v as ContentType)"
               />
-              <p class="field-hint">Detectado automaticamente — corrija se estiver errado.</p>
             </div>
 
             <div class="field">
-              <label class="field-label">Perfil</label>
+              <label class="field-label">Esforço do processamento</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
                 :options="profileOptions"
                 @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
               />
-              <p class="field-hint">Mais qualidade rende mais detalhe e leva mais tempo.</p>
             </div>
 
             <div class="field">
-              <label class="field-label">Dispositivo</label>
+              <label class="field-label">Onde processar</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
                 :options="deviceOptions"
