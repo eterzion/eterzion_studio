@@ -41,6 +41,19 @@ const PROFILE_LABEL: Record<string, string> = {
 // nothing that ran. Naming it here claimed work the job never did.
 const usesModel = computed(() => props.job.scaleConfig.mode !== 'original')
 
+// What actually ran, not what the panel offers: each of these only lands in the
+// output when it was switched on, and Original mode makes them the entire
+// pipeline — so "nenhum" is a real, meaningful answer here.
+const adjustmentsSummary = computed(() => {
+  const c = props.job.scaleConfig
+  const used: string[] = []
+  if (c.denoiseFilterEnabled && c.denoiseFilterStrength > 0)
+    used.push(`Ruído ${c.denoiseFilterStrength}`)
+  if (c.sharpen > 0) used.push(`Nitidez ${c.sharpen}`)
+  if (c.faceRecovery) used.push(`Faces ${c.faceRecoveryStrength}`)
+  return used.length ? used.join(' · ') : 'Nenhum'
+})
+
 const modelSummary = computed(() => {
   const c = props.job.scaleConfig
   const scaleLabel =
@@ -72,6 +85,10 @@ const modelSummary = computed(() => {
     <div class="stat">
       <span class="stat-label">Tempo de processamento</span>
       <span class="stat-value">{{ processingLabel }}</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">Ajustes aplicados</span>
+      <span class="stat-value">{{ adjustmentsSummary }}</span>
     </div>
     <div class="stat">
       <span class="stat-label">{{ usesModel ? 'Modelo e parâmetros' : 'Processamento' }}</span>
