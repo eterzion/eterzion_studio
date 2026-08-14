@@ -108,13 +108,13 @@ const modelSummary = computed(() => {
   color: var(--text-tertiary);
 }
 
-/* A "before → after" pair never fits on one line in a two-column grid inside a
-   320px panel, and it used to be truncated — cutting off the half that matters,
-   the result. Each side gets its own line, with the arrow leading the second so
-   it never dangles at the end of the first. */
+/* One line now that each stat has the full panel width; the two halves are
+   still separate elements so the result can carry the accent colour, and so a
+   very long pair wraps at the arrow instead of mid-number. */
 .stat-value {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0 0.4em;
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   color: var(--text-primary);
