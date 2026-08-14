@@ -49,7 +49,7 @@ const adjustmentsSummary = computed(() => {
   const used: string[] = []
   if (c.denoiseFilterEnabled && c.denoiseFilterStrength > 0)
     used.push(`Ruído ${c.denoiseFilterStrength}`)
-  if (c.sharpen > 0) used.push(`Nitidez ${c.sharpen}`)
+  if (c.sharpenEnabled && c.sharpen > 0) used.push(`Nitidez ${c.sharpen}`)
   if (c.faceRecovery) used.push(`Faces ${c.faceRecoveryStrength}`)
   return used.length ? used.join(' · ') : 'Nenhum'
 })

@@ -866,12 +866,23 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </div>
             </div>
 
-            <div class="slider-field">
+            <div class="toggle-row">
+              <label class="field-label">Nitidez</label>
+              <button
+                class="switch"
+                :class="{ on: job.scaleConfig.sharpenEnabled }"
+                type="button"
+                @click="job.scaleConfig.sharpenEnabled = !job.scaleConfig.sharpenEnabled"
+              >
+                <span class="knob" />
+              </button>
+            </div>
+            <div v-if="job.scaleConfig.sharpenEnabled" class="slider-field">
               <div class="slider-head">
-                <label class="field-label">Nitidez</label>
+                <label class="field-label">Intensidade</label>
                 <span class="slider-value">{{ job.scaleConfig.sharpen }}</span>
               </div>
-              <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="0" />
+              <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="50" />
               <p class="field-hint">
                 Máscara de nitidez (unsharp mask), aplicada depois do redimensionamento — no modo
                 Original ela é o próprio processamento.

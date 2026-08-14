@@ -48,6 +48,8 @@ export interface ScaleConfig {
   profile: Profile
   device: string
   denoise: number
+  /** Off keeps the source's own sharpness — `sharpen` is only sent when on. */
+  sharpenEnabled: boolean
   sharpen: number
   faceRecovery: boolean
   faceRecoveryStrength: number
@@ -108,7 +110,8 @@ function defaultScaleConfig(): ScaleConfig {
     profile: 'fast', // FR-008: Rápido is the default when nothing is chosen
     device: 'auto',
     denoise: 50,
-    sharpen: 0,
+    sharpenEnabled: false,
+    sharpen: 50,
     faceRecovery: false,
     faceRecoveryStrength: 50,
     denoiseFilterEnabled: false,
@@ -510,8 +513,11 @@ export async function startProcessing(job: Job): Promise<void> {
       },
       {
         denoise: job.scaleConfig.denoise,
-        deblur: job.scaleConfig.sharpen,
-        detail_recovery: job.scaleConfig.sharpen,
+        // Same rule the denoise filter and face recovery follow: the strength
+        // only travels when its toggle is on, so a slider left at some value
+        // from an earlier job cannot leak into one where it was switched off.
+        deblur: job.scaleConfig.sharpenEnabled ? job.scaleConfig.sharpen : 0,
+        detail_recovery: job.scaleConfig.sharpenEnabled ? job.scaleConfig.sharpen : 0,
         face_correction: job.scaleConfig.faceRecovery,
         face_recovery_strength: job.scaleConfig.faceRecoveryStrength,
         denoise_filter_enabled: job.scaleConfig.denoiseFilterEnabled,
