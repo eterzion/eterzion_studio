@@ -1282,17 +1282,19 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .preset-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   color: var(--text-secondary);
-  font-size: var(--fs-caption);
+  font-size: 11px;
   font-weight: var(--fw-medium);
-  padding: 5px 12px;
+  padding: 5px 4px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .preset-btn.active {
@@ -1512,7 +1514,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .field-hint {
+  /* Pulled up against the control it explains: with the panel's own 16px gap it
+     floated equidistant between the two, belonging to neither. */
+  margin-top: calc(var(--space-2) * -1);
   font-size: 11px;
+  line-height: 1.35;
   color: var(--text-tertiary);
 }
 
@@ -1784,8 +1790,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
    full-radius container reads as a broken capsule the moment it does. */
 .denoise-preset-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  /* One line: four options that wrap stop reading as one control. They share
+     the width equally and the labels shrink instead of falling over. */
+  flex-wrap: nowrap;
+  gap: 2px;
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-md);

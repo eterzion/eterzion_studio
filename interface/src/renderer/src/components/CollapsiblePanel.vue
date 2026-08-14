@@ -107,7 +107,9 @@ const open = ref(props.defaultOpen)
   padding: 0 var(--space-3) var(--space-3);
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  /* 12px, not 16: with every field carrying its own hint the panel read as a
+     stack of separate cards rather than one grouped control. */
+  gap: var(--space-2-5);
   animation: panel-body-in 160ms ease;
 }
 
