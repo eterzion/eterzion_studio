@@ -162,11 +162,13 @@ const deviceLabels: Record<string, string> = {
   mps: 'GPU (Apple/MPS)'
 }
 
+// One line each: in an open dropdown these are scanned side by side, so what
+// matters is the difference between them, not a full description of each.
 const deviceDescriptions: Record<string, string> = {
-  auto: 'Usa a GPU quando disponível e volta para a CPU automaticamente caso contrário.',
-  cpu: 'Processa apenas no processador — mais lento, funciona em qualquer máquina.',
-  cuda: 'Força o uso da GPU NVIDIA (CUDA) — mais rápido, requer driver compatível.',
-  mps: 'Força o uso da GPU da Apple via Metal — mais rápido em Macs com chip Apple Silicon.'
+  auto: 'GPU quando houver, CPU caso contrário.',
+  cpu: 'Mais lento, funciona em qualquer máquina.',
+  cuda: 'Mais rápido, exige driver NVIDIA.',
+  mps: 'Mais rápido em Macs com Apple Silicon.'
 }
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
