@@ -17,8 +17,8 @@ import {
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
-import AppButton from '../components/atoms/AppButton.vue'
 import AppBadge from '../components/atoms/AppBadge.vue'
+import EmptyState from '../components/molecules/EmptyState.vue'
 import {
   historyState,
   removeHistoryEntry,
@@ -245,12 +245,15 @@ function applyLimit(): void {
     <TopBar title="Histórico" />
 
     <div class="history-content">
-      <div v-if="!queueState.jobs.length && !historyState.entries.length" class="empty-state">
-        <HistoryIcon :size="40" />
-        <h2>Nenhum processamento realizado</h2>
-        <p>As imagens processadas aparecerão aqui.</p>
-        <AppButton variant="primary" size="lg" @click="goProcess">Processar imagem</AppButton>
-      </div>
+      <EmptyState
+        v-if="!queueState.jobs.length && !historyState.entries.length"
+        title="Nenhum processamento realizado"
+        description="As imagens processadas aparecerão aqui."
+        action-label="Processar imagem"
+        @action="goProcess"
+      >
+        <template #icon><HistoryIcon :size="40" /></template>
+      </EmptyState>
 
       <template v-else>
         <div class="toolbar">
@@ -438,24 +441,6 @@ function applyLimit(): void {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-
-.empty-state {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  color: var(--text-tertiary);
-  text-align: center;
-  padding: var(--space-4);
-}
-
-.empty-state h2 {
-  font-size: var(--fs-page-title);
-  color: var(--text-primary);
-  margin-top: var(--space-2);
 }
 
 .toolbar {

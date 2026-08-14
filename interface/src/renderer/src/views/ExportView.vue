@@ -5,13 +5,12 @@ import AppSelect from '../components/AppSelect.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
-import AppSpinner from '../components/atoms/AppSpinner.vue'
+import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import {
   Upload,
   FolderOpen,
-  CheckCircle2,
   AlertCircle,
   Download,
   Repeat,
@@ -392,16 +391,13 @@ function fmtBytes(bytes: number | undefined): string {
             </div>
 
             <div v-else class="panel-section">
-              <div
+              <StatusBadge
                 v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
-                class="status-row"
-              >
-                <AppSpinner :size="16" />
-                <span>{{ activeJob.progress }}%</span>
-              </div>
-              <div v-else-if="activeJob.status === 'done'" class="status-row done">
-                <CheckCircle2 :size="16" />
-                <span>Concluído — {{ fmtBytes(activeJob.outputSizeBytes) }}</span>
+                :state="activeJob.status"
+                :detail="`${activeJob.progress}%`"
+              />
+              <div v-else-if="activeJob.status === 'done'" class="done-row">
+                <StatusBadge state="done" :detail="fmtBytes(activeJob.outputSizeBytes)" />
                 <AppButton
                   v-if="hasNativeApi && activeJob.outputPath"
                   variant="outline"
@@ -412,10 +408,11 @@ function fmtBytes(bytes: number | undefined): string {
                   Abrir pasta
                 </AppButton>
               </div>
-              <div v-else-if="activeJob.status === 'error'" class="status-row error">
-                <AlertCircle :size="16" />
-                <span>{{ activeJob.error }}</span>
-              </div>
+              <StatusBadge
+                v-else-if="activeJob.status === 'error'"
+                state="error"
+                :detail="activeJob.error"
+              />
             </div>
           </template>
         </template>
@@ -511,15 +508,10 @@ function fmtBytes(bytes: number | undefined): string {
   display: flex;
   justify-content: space-between;
 }
-.status-row {
+.done-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-.status-row.done {
-  color: var(--color-success, var(--text-primary));
-}
-.status-row.error {
-  color: var(--color-danger);
+  flex-wrap: wrap;
 }
 </style>

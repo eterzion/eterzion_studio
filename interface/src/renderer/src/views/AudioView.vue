@@ -3,11 +3,11 @@ import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
-import AppSpinner from '../components/atoms/AppSpinner.vue'
+import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
-import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download, Cpu } from '@lucide/vue'
+import { Upload, FolderOpen, AlertCircle, Download, Cpu } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -280,10 +280,7 @@ function exportAll(): void {
 
         <template #panel>
           <template v-if="activeJob">
-            <div v-if="activeJob.status === 'detecting'" class="status-row">
-              <AppSpinner :size="16" />
-              <span>Detectando tipo de conteúdo…</span>
-            </div>
+            <StatusBadge v-if="activeJob.status === 'detecting'" state="detecting" />
 
             <div v-else-if="activeJob.status === 'configuring'" class="panel-section">
               <CollapsiblePanel
@@ -304,16 +301,17 @@ function exportAll(): void {
             </div>
 
             <div v-else class="panel-section">
-              <div
+              <StatusBadge
                 v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
-                class="status-row"
-              >
-                <AppSpinner :size="16" />
-                <span>{{ activeJob.stage ?? 'Processando' }} — {{ activeJob.progress }}%</span>
-              </div>
-              <div v-else-if="activeJob.status === 'done'" class="status-row done">
-                <CheckCircle2 :size="16" />
-                <span>Concluído</span>
+                :state="activeJob.status"
+                :detail="
+                  activeJob.stage
+                    ? `${activeJob.stage} · ${activeJob.progress}%`
+                    : `${activeJob.progress}%`
+                "
+              />
+              <div v-else-if="activeJob.status === 'done'" class="done-row">
+                <StatusBadge state="done" />
                 <AppButton
                   v-if="hasNativeApi && activeJob.outputPath"
                   variant="outline"
@@ -324,10 +322,11 @@ function exportAll(): void {
                   Abrir pasta
                 </AppButton>
               </div>
-              <div v-else-if="activeJob.status === 'error'" class="status-row error">
-                <AlertCircle :size="16" />
-                <span>{{ activeJob.error }}</span>
-              </div>
+              <StatusBadge
+                v-else-if="activeJob.status === 'error'"
+                state="error"
+                :detail="activeJob.error"
+              />
             </div>
           </template>
         </template>
@@ -393,15 +392,10 @@ function exportAll(): void {
   font-size: var(--fs-label);
   color: var(--text-secondary);
 }
-.status-row {
+.done-row {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-.status-row.done {
-  color: var(--color-success, var(--text-primary));
-}
-.status-row.error {
-  color: var(--color-danger);
+  flex-wrap: wrap;
 }
 </style>

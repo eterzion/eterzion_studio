@@ -12,6 +12,7 @@ import TechnicalDetails from '../components/TechnicalDetails.vue'
 import ResolutionStepper from '../components/ResolutionStepper.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
 import AppButton from '../components/atoms/AppButton.vue'
+import ProgressBar from '../components/atoms/ProgressBar.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
 import {
   Minus,
@@ -897,12 +898,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <p v-else class="processing-label">Processando… {{ job.progress }}%</p>
             <p v-if="job.stage" class="processing-stage">{{ job.stage }}</p>
             <p v-if="elapsedLabel" class="processing-stage">Tempo decorrido: {{ elapsedLabel }}</p>
-            <div class="progress-track">
-              <div
-                class="progress-fill"
-                :style="{ width: (job.status === 'queued' ? 0 : job.progress) + '%' }"
-              />
-            </div>
+            <ProgressBar :value="job.status === 'queued' ? 0 : job.progress" />
             <AppButton variant="outline" class="mt-2 text-state-danger" @click="cancel(job)">
               Cancelar
             </AppButton>
@@ -1810,20 +1806,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .processing-stage {
   font-size: var(--fs-caption);
   color: var(--text-secondary);
-}
-
-.progress-track {
-  width: 100%;
-  height: 6px;
-  border-radius: var(--radius-full);
-  background: var(--surface-3);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--color-primary);
-  transition: width 200ms ease;
 }
 
 .conflict-prompt {

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Clock, Loader2, CheckCircle2, AlertCircle, CircleX, X, Image } from '@lucide/vue'
+import { X, Image } from '@lucide/vue'
 import type { Job } from '../store/jobs'
 import AppButton from './atoms/AppButton.vue'
+import StatusBadge from './atoms/StatusBadge.vue'
+import ProgressBar from './atoms/ProgressBar.vue'
 
 const props = defineProps<{
   job: Job
@@ -12,30 +14,18 @@ defineEmits<{
   remove: [id: string]
 }>()
 
-const statusMeta = computed(() => {
+// StatusBadge owns the label/icon/tone for each state — this only supplies what
+// is specific to THIS job (queue position, progress, failure reason).
+const statusDetail = computed(() => {
   switch (props.job.status) {
-    case 'configuring':
-      return { label: 'Configurando', icon: Clock, tone: 'neutral' }
     case 'queued':
-      return {
-        label: props.job.queuePosition ? `Na fila (posição ${props.job.queuePosition})` : 'Na fila',
-        icon: Clock,
-        tone: 'neutral'
-      }
+      return props.job.queuePosition ? `posição ${props.job.queuePosition}` : null
     case 'processing':
-      return { label: `Processando · ${props.job.progress}%`, icon: Loader2, tone: 'primary' }
-    case 'done':
-      return { label: 'Concluído', icon: CheckCircle2, tone: 'success' }
+      return `${props.job.progress}%`
     case 'error':
-      return {
-        label: props.job.errorMessage || 'Falha no processamento',
-        icon: AlertCircle,
-        tone: 'danger'
-      }
-    case 'cancelled':
-      return { label: 'Cancelado', icon: CircleX, tone: 'neutral' }
+      return props.job.errorMessage || 'falha no processamento'
     default:
-      return { label: '', icon: Clock, tone: 'neutral' }
+      return null
   }
 })
 
@@ -66,22 +56,13 @@ const sizeLabel = computed(
         <span>{{ sizeLabel }}</span>
       </div>
 
-      <div class="status-row" :class="'tone-' + statusMeta.tone">
-        <component
-          :is="statusMeta.icon"
-          :size="13"
-          :class="{ 'animate-spin': job.status === 'processing' }"
-        />
-        <span>{{ statusMeta.label }}</span>
-      </div>
+      <StatusBadge :state="job.status" :detail="statusDetail" />
 
-      <div v-if="job.status === 'processing' || job.status === 'queued'" class="progress-track">
-        <div
-          class="progress-fill"
-          :class="'tone-' + statusMeta.tone"
-          :style="{ width: (job.status === 'queued' ? 0 : job.progress) + '%' }"
-        />
-      </div>
+      <ProgressBar
+        v-if="job.status === 'processing' || job.status === 'queued'"
+        :value="job.status === 'queued' ? 0 : job.progress"
+        :tone="job.status === 'queued' ? 'neutral' : 'primary'"
+      />
     </div>
   </div>
 </template>
@@ -167,54 +148,5 @@ const sizeLabel = computed(
   gap: var(--space-2);
   font-size: var(--fs-caption);
   color: var(--text-tertiary);
-}
-
-.status-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-1-5);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-}
-
-.tone-neutral {
-  color: var(--text-secondary);
-}
-
-.tone-primary {
-  color: var(--color-primary);
-}
-
-.tone-success {
-  color: var(--color-success);
-}
-
-.tone-danger {
-  color: var(--color-danger);
-}
-
-.progress-track {
-  height: 5px;
-  border-radius: var(--radius-full);
-  background: var(--surface-3);
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  border-radius: var(--radius-full);
-  transition: width 200ms ease;
-}
-
-.progress-fill.tone-neutral {
-  background: var(--text-tertiary);
-}
-
-.progress-fill.tone-primary {
-  background: var(--color-primary);
-}
-
-.progress-fill.tone-danger {
-  background: var(--color-danger);
 }
 </style>

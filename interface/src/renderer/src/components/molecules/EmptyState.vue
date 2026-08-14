@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import AppButton from '../atoms/AppButton.vue'
 
-// research.md Audit (a): the 4 byte-identical empty states have no standalone icon above
-// the message — the icon lives inside the action button (e.g. an Upload icon), via the
-// `icon` slot below.
+// The one shape an empty screen takes across the app: an icon, a title saying
+// what is missing, an optional line saying what will appear here, and the single
+// action that fills it. Everything below the title is optional, so a bare
+// "nothing here yet" state costs one prop.
 defineProps<{
-  message: string
+  title: string
+  description?: string
   actionLabel?: string
 }>()
 
@@ -14,9 +16,17 @@ defineEmits<{ action: [] }>()
 
 <template>
   <div class="empty-state">
-    <p>{{ message }}</p>
-    <AppButton v-if="actionLabel" variant="primary" size="lg" @click="$emit('action')">
-      <template #icon><slot name="icon" /></template>
+    <div v-if="$slots.icon" class="empty-icon"><slot name="icon" /></div>
+    <h2>{{ title }}</h2>
+    <p v-if="description">{{ description }}</p>
+    <AppButton
+      v-if="actionLabel"
+      variant="primary"
+      size="lg"
+      class="empty-action"
+      @click="$emit('action')"
+    >
+      <template #icon><slot name="action-icon" /></template>
       {{ actionLabel }}
     </AppButton>
   </div>
@@ -24,12 +34,35 @@ defineEmits<{ action: [] }>()
 
 <style scoped>
 .empty-state {
+  flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-6);
-  color: var(--text-secondary);
+  gap: var(--space-2);
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.empty-icon {
+  display: flex;
+  color: var(--text-tertiary);
+}
+
+.empty-state h2 {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-page-title);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: var(--fs-label);
+}
+
+.empty-action {
+  margin-top: var(--space-2);
 }
 </style>

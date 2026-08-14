@@ -7,7 +7,7 @@ import {
   Home,
   Image,
   Film,
-  Headphones,
+  Music,
   Repeat,
   History,
   Settings,
@@ -49,7 +49,7 @@ const items = computed<{ key: NavKey; label: string; icon: unknown; module?: str
   { key: 'home', label: t('nav.home'), icon: Home },
   { key: 'imagem', label: t('nav.image'), icon: Image, module: 'image' },
   { key: 'video', label: t('nav.video'), icon: Film, module: 'video' },
-  { key: 'audio', label: t('nav.audio'), icon: Headphones, module: 'audio' },
+  { key: 'audio', label: t('nav.audio'), icon: Music, module: 'audio' },
   { key: 'exportar', label: t('nav.export'), icon: Repeat, module: 'export' },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
