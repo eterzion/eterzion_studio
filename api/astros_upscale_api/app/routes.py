@@ -52,6 +52,12 @@ def _detect_image_content_type(input_path: str) -> str:
     return classify_image(image).content_type
 
 
+# Bounds for the content-type probe: enough audio for the classifier to be
+# confident, decoded straight to the rate/layout it works in.
+_CLASSIFY_SECONDS = 30
+_CLASSIFY_SAMPLE_RATE = 16000
+
+
 def _detect_audio_content_type(input_path: str) -> str:
     """T056 — wires astros_upscale.processing's real VAD+harmonic/percussive
     classifier (T008) into the job-creation path, same shared function image
@@ -67,7 +73,14 @@ def _detect_audio_content_type(input_path: str) -> str:
 
     tmp_wav = tempfile.mktemp(suffix='.wav')
     try:
-        run_ffmpeg(lambda f: f.input(input_path).output(tmp_wav, {'vn': None, 'acodec': 'pcm_s16le'}))
+        # Decode only the excerpt classify_audio() will actually look at, and at
+        # the 16 kHz it resamples to anyway. Decoding a full-length track to a
+        # ~50 MB WAV just to analyse a slice of it was a large part of why this
+        # endpoint felt slow. Mono, since the classifier averages channels.
+        run_ffmpeg(lambda f: f.input(input_path).output(tmp_wav, {
+            'vn': None, 'acodec': 'pcm_s16le', 'ar': _CLASSIFY_SAMPLE_RATE, 'ac': 1,
+            't': _CLASSIFY_SECONDS,
+        }))
         samples, sample_rate = sf.read(tmp_wav)
     except Exception as error:  # noqa: BLE001 - any ffmpeg/soundfile failure means "can't detect"
         raise HTTPException(422, f'Não foi possível ler o áudio para detectar o tipo de conteúdo: {error}') from error
@@ -448,16 +461,6 @@ def install_component(component_id: str):
 def update_component(component_id: str):
     try:
         return _to_component(processing.update_component(component_id))
-    except processing.ComponentNotFoundError:
-        raise HTTPException(404, 'Componente não encontrado.')
-    except processing.ComponentActionUnsupportedError as error:
-        raise HTTPException(422, str(error))
-
-
-@components_router.delete('/{component_id}', response_model=Component)
-def delete_component(component_id: str):
-    try:
-        return _to_component(processing.delete_component(component_id))
     except processing.ComponentNotFoundError:
         raise HTTPException(404, 'Componente não encontrado.')
     except processing.ComponentActionUnsupportedError as error:

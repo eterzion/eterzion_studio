@@ -31,6 +31,20 @@ def isolated_identity_dir(tmp_path, monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def isolated_audio_worker_paths(monkeypatch, tmp_path):
+    """`audio_worker_checkpoint` defaults to a REAL path on the operator's
+    machine holding a ~3.3 GB download. Tests must never depend on — let alone
+    touch — that file, so point both audio-worker settings at a per-test temp
+    path. (Added after a test really did delete the operator's checkpoint, back
+    when the components screen still had an uninstall path.)"""
+    from app.config import settings
+
+    monkeypatch.setattr(settings, 'audio_worker_checkpoint', str(tmp_path / 'sonicmaster.safetensors'))
+    monkeypatch.setattr(settings, 'audio_worker_python', '')
+    yield
+
+
+@pytest.fixture(autouse=True)
 def isolated_job_store(monkeypatch, tmp_path):
     """app.jobs's `jobs` dict is plain module-level state shared across the
     whole process — without this, tests would see each other's jobs.

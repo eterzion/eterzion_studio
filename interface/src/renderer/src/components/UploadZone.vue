@@ -5,12 +5,25 @@ import AppButton from './atoms/AppButton.vue'
 import AppSpinner from './atoms/AppSpinner.vue'
 import AppBadge from './atoms/AppBadge.vue'
 
+// Copy/format chips are props (not hardcoded) so screens that accept more than
+// images — Otimizar, which takes image/video/audio alike — can reuse this exact
+// drop zone instead of falling back to a plain button-only empty state. The
+// defaults are the original image-only wording, so ImageEditorView needs no
+// changes.
 withDefaults(
   defineProps<{
     error?: string | null
     loading?: boolean
+    title?: string
+    subtitle?: string
+    formats?: string[]
   }>(),
-  { loading: false }
+  {
+    loading: false,
+    title: 'Arraste imagens aqui',
+    subtitle: 'ou use os botões abaixo — imagens são identificadas automaticamente',
+    formats: () => ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']
+  }
 )
 
 const emit = defineEmits<{
@@ -77,11 +90,9 @@ function onKeydown(e: KeyboardEvent): void {
     <template v-else>
       <div class="icon-circle" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
       <h3 class="upload-title">
-        {{ dragOver ? 'Solte para importar' : 'Arraste imagens aqui' }}
+        {{ dragOver ? 'Solte para importar' : title }}
       </h3>
-      <p class="upload-subtitle">
-        ou use os botões abaixo — imagens são identificadas automaticamente
-      </p>
+      <p class="upload-subtitle">{{ subtitle }}</p>
 
       <div class="upload-actions">
         <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
@@ -96,9 +107,7 @@ function onKeydown(e: KeyboardEvent): void {
 
       <div class="upload-meta">
         <div class="format-chips">
-          <AppBadge v-for="fmt in ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']" :key="fmt" tone="neutral">
-            {{ fmt }}
-          </AppBadge>
+          <AppBadge v-for="fmt in formats" :key="fmt" tone="neutral">{{ fmt }}</AppBadge>
         </div>
         <span class="upload-limit">até 500 MB por arquivo</span>
       </div>
@@ -116,6 +125,9 @@ function onKeydown(e: KeyboardEvent): void {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* Keeps the contents centered when a screen stretches this zone to fill its
+     whole area (Imagem/Otimizar); a no-op when the height is content-sized. */
+  justify-content: center;
   text-align: center;
   gap: var(--space-2);
   cursor: pointer;

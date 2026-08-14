@@ -10,7 +10,6 @@ import {
   Headphones,
   Rocket,
   Repeat,
-  Layers,
   History,
   Settings,
   Moon,
@@ -51,7 +50,6 @@ const items = computed<{ key: NavKey; label: string; icon: unknown }[]>(() => [
   { key: 'audio', label: t('nav.audio'), icon: Headphones },
   { key: 'otimizar', label: t('nav.optimize'), icon: Rocket },
   { key: 'converter', label: t('nav.converter'), icon: Repeat },
-  { key: 'modelos', label: t('nav.models'), icon: Layers },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
 

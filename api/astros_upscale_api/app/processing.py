@@ -703,6 +703,8 @@ def _audio_component(content_type: str, engine_ref: str) -> ComponentInfo:
         available = is_engine_available('super-voz')
         entry = AUDIO_ENGINES['super-voz']
         return ComponentInfo(
+            # size stays 0 ("not measurable"): this is a pip package spread across
+            # site-packages, not a single weight file this screen owns.
             id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=0,
             install_state='installed' if available else 'not_installed', update_available=False,
             technical_name=engine_ref, version='pacote pip (sem versão fixada)',
@@ -716,10 +718,15 @@ def _audio_component(content_type: str, engine_ref: str) -> ComponentInfo:
     # validity are runtime concerns (SonicMasterProvider.is_available()),
     # not "installed" — this screen answers "is the venv+checkpoint set up",
     # not "will an AI job succeed right now".
+    checkpoint_present = os.path.isfile(settings.audio_worker_checkpoint)
     checkpoint_ready = bool(settings.audio_worker_python) and os.path.isfile(settings.audio_worker_python) \
-        and os.path.isfile(settings.audio_worker_checkpoint)
+        and checkpoint_present
+    # Unlike speech, this one DOES own a single file on disk (the ~3.3 GB
+    # SonicMaster checkpoint), so its size is real and deleting it is a safe,
+    # useful way to reclaim that space.
+    size_mb = int(os.path.getsize(settings.audio_worker_checkpoint) / (1024 * 1024)) if checkpoint_present else 0
     return ComponentInfo(
-        id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=0,
+        id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=size_mb,
         install_state='installed' if checkpoint_ready else 'not_installed', update_available=False,
         technical_name=engine_ref, version='ambiente isolado (ver api/README.md)',
         provenance='https://github.com/AMAAI-Lab/SonicMaster', license='Apache-2.0 (condicional — ver MODEL_LICENSES.md §3-bis)',
@@ -827,24 +834,4 @@ def update_component(component_id: str) -> ComponentInfo:
     from astros_upscale.processing import update_model
 
     update_model(implementation.engine_ref, model_dir=_model_dir())
-    return _component_info(component_id)
-
-
-def delete_component(component_id: str) -> ComponentInfo:
-    """Real eviction — deletes the cached weight file(s) from models_dir.
-    Never touches the pip-installed audio packages (no clean, safe
-    "uninstall this one dependency" primitive this process should be
-    driving anyway)."""
-    if component_id in _AUDIO_CONTENT_TYPES:
-        raise ComponentActionUnsupportedError('Componentes de áudio não são removíveis por esta tela.')
-    implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
-    if implementation is None or implementation.engine_ref is None:
-        raise ComponentNotFoundError(component_id)
-    from astros_upscale.processing import MODELS
-
-    entry = MODELS[implementation.engine_ref]
-    for url in entry.get('urls', []):
-        path = os.path.join(_model_dir(), os.path.basename(urlparse(url).path))
-        if os.path.isfile(path):
-            os.remove(path)
     return _component_info(component_id)

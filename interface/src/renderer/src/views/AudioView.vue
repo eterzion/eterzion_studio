@@ -5,7 +5,7 @@ import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
 import JobCard from '../components/molecules/JobCard.vue'
-import EmptyState from '../components/molecules/EmptyState.vue'
+import UploadZone from '../components/UploadZone.vue'
 import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
@@ -19,6 +19,8 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
+
+defineEmits<{ back: [] }>()
 
 // T057/FR-081-086 don't apply to audio (no secondary streams to lose) — this
 // mirrors VideoView.vue's job-list shape without the confirmation step.
@@ -82,7 +84,7 @@ async function addFile(described: DescribedFile): Promise<void> {
     importError.value = `Formato não suportado: ${described.name}`
     return
   }
-  const job: AudioJob = {
+  jobs.value.push({
     id: crypto.randomUUID(),
     backendJobId: null,
     file: described,
@@ -91,8 +93,13 @@ async function addFile(described: DescribedFile): Promise<void> {
     progress: 0,
     stage: null,
     createdAt: Date.now()
-  }
-  jobs.value.push(job)
+  })
+  // Read the entry back out of `jobs.value` — that returns Vue's reactive
+  // proxy, not the raw object that was pushed. Mutating the raw object
+  // (which is what holding onto a `const job = {...}` before the push gives
+  // you) bypasses the proxy's setter, so the template never re-renders and
+  // the card stays stuck on "Detectando tipo de conteúdo…" forever.
+  const job = jobs.value[jobs.value.length - 1]
   try {
     job.contentType = await detectContentType(described.path, 'audio')
   } catch {
@@ -103,7 +110,7 @@ async function addFile(described: DescribedFile): Promise<void> {
   }
 }
 
-const { pickFiles } = usePickFiles(addFile, importError)
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
 
 function removeJob(job: AudioJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
@@ -183,7 +190,7 @@ function exportAll(): void {
 
 <template>
   <div class="audio-view">
-    <TopBar title="Áudio">
+    <TopBar title="Áudio" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -200,20 +207,24 @@ function exportAll(): void {
     </TopBar>
 
     <div class="audio-content">
-      <p class="hint">
-        Reduz ruído, normaliza o volume e melhora a clareza da voz ou restaura a música, conforme o
-        tipo de conteúdo detectado.
+      <!-- Only while the list has jobs: with an empty list the UploadZone below
+           already surfaces the same message in its own error state. -->
+      <p v-if="importError && jobs.length" class="banner-error">
+        <AlertCircle :size="14" /> {{ importError }}
       </p>
-      <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
-      <EmptyState
+      <UploadZone
         v-if="!jobs.length"
-        message="Nenhum áudio importado ainda."
-        action-label="Importar áudio"
-        @action="pickFiles"
-      >
-        <template #icon><Upload :size="15" /></template>
-      </EmptyState>
+        class="upload-fill"
+        :error="importError"
+        :loading="uploading"
+        title="Arraste áudios aqui"
+        subtitle="ou use os botões abaixo — voz e música são identificadas automaticamente"
+        :formats="['MP3', 'WAV', 'FLAC', 'M4A', 'OGG', 'OPUS']"
+        @pick-files="pickFiles"
+        @pick-folder="pickFolder"
+        @files-dropped="handleFilesDropped"
+      />
 
       <div v-else class="job-list">
         <JobCard
@@ -284,9 +295,12 @@ function exportAll(): void {
   flex-direction: column;
   gap: var(--space-3);
 }
-.hint {
-  color: var(--text-secondary);
-  font-size: var(--fs-body-sm);
+
+/* Empty state: the drop zone takes the whole remaining area rather than being
+   a short strip at the top of the screen (same treatment as the Imagem screen). */
+.upload-fill {
+  flex: 1;
+  min-height: 0;
 }
 .banner-error {
   display: flex;

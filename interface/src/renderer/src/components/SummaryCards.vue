@@ -59,10 +59,9 @@ defineProps<{
   --tone: #1688ff;
   display: flex;
   min-width: 0;
-  min-height: 120px;
   flex-direction: column;
-  justify-content: space-between;
-  padding: 16px 17px 18px;
+  justify-content: center;
+  padding: 16px 17px;
   border: 1px solid #10263c;
   border-radius: 10px;
   background: linear-gradient(145deg, rgba(4, 16, 29, 0.96), rgba(3, 13, 24, 0.9));

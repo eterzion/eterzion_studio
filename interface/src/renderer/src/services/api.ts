@@ -171,12 +171,6 @@ export async function updateComponent(componentId: string): Promise<ComponentSum
   return res.json()
 }
 
-export async function deleteComponent(componentId: string): Promise<ComponentSummary> {
-  const res = await fetch(`${BASE_URL}/components/${componentId}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(await extractError(res))
-  return res.json()
-}
-
 export type LicenseState =
   | 'active'
   | 'offline_tolerance'

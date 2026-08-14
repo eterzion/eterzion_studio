@@ -6,7 +6,6 @@ import AppButton from './components/atoms/AppButton.vue'
 import AppSpinner from './components/atoms/AppSpinner.vue'
 import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
-import ComponentsView from './views/ComponentsView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
 import CompressConvertView from './views/CompressConvertView.vue'
@@ -75,13 +74,12 @@ onMounted(() => {
 
       <HomeView v-else-if="active === 'home'" @navigate="navigate" />
       <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
-      <ComponentsView v-else-if="active === 'modelos'" />
       <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
       <SettingsView v-else-if="active === 'configuracoes'" />
-      <CompressConvertView v-else-if="active === 'otimizar'" />
-      <ConverterView v-else-if="active === 'converter'" />
-      <VideoView v-else-if="active === 'video'" />
-      <AudioView v-else-if="active === 'audio'" />
+      <CompressConvertView v-else-if="active === 'otimizar'" @back="active = 'home'" />
+      <ConverterView v-else-if="active === 'converter'" @back="active = 'home'" />
+      <VideoView v-else-if="active === 'video'" @back="active = 'home'" />
+      <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
       <div v-else class="placeholder-view">
         <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
       </div>

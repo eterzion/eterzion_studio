@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
-import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
-import JobCard from '../components/molecules/JobCard.vue'
-import EmptyState from '../components/molecules/EmptyState.vue'
+import UploadZone from '../components/UploadZone.vue'
+import MediaEditorShell from '../components/MediaEditorShell.vue'
 import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
@@ -20,6 +19,8 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
+
+defineEmits<{ back: [] }>()
 
 // This view never touches store/jobs.ts's queueState — that store's Job/ScaleConfig
 // model is enhance-specific (content_type/profile). Compress/convert never invokes
@@ -69,12 +70,6 @@ function syncHistory(job: OptimizeJob): void {
   })
 }
 
-const FORMATS_BY_MEDIA_TYPE: Record<MediaType, string[]> = {
-  image: ['jpg', 'png', 'webp', 'avif'],
-  video: ['mp4', 'mkv', 'mov', 'webm'],
-  audio: ['mp3', 'm4a', 'ogg', 'opus', 'flac']
-}
-
 const KIND_TO_MEDIA_TYPE: Record<string, MediaType> = {
   Imagem: 'image',
   Vídeo: 'video',
@@ -84,9 +79,28 @@ const KIND_TO_MEDIA_TYPE: Record<string, MediaType> = {
 const jobs = ref<OptimizeJob[]>([])
 const importError = ref<string | null>(null)
 
-function formatOptions(mediaType: MediaType): { value: string; label: string }[] {
-  return FORMATS_BY_MEDIA_TYPE[mediaType].map((f) => ({ value: f, label: `.${f}` }))
+// Which file the editor is showing. Mirrors ImageEditorView: the screen edits
+// one file at a time while the strip keeps the rest one click away.
+const activeId = ref<string | null>(null)
+const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
+
+const STATUS_LABEL: Record<LocalStatus, string> = {
+  configuring: 'Pronto para processar',
+  queued: 'Na fila',
+  processing: 'Processando',
+  done: 'Concluído',
+  error: 'Erro'
 }
+
+const editorItems = computed(() =>
+  jobs.value.map((j) => ({
+    id: j.id,
+    fileName: j.file.name,
+    sourcePath: j.file.path,
+    statusLabel: STATUS_LABEL[j.status],
+    kind: j.mediaType
+  }))
+)
 
 async function addFile(described: DescribedFile): Promise<void> {
   const mediaType = described.kind ? KIND_TO_MEDIA_TYPE[described.kind] : undefined
@@ -106,12 +120,19 @@ async function addFile(described: DescribedFile): Promise<void> {
     progress: 0,
     createdAt: Date.now()
   })
+  activeId.value = jobs.value[jobs.value.length - 1].id
 }
 
-const { pickFiles } = usePickFiles(addFile, importError)
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
 
 function removeJob(job: OptimizeJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
+  if (activeId.value === job.id) activeId.value = jobs.value[0]?.id ?? null
+}
+
+function removeById(id: string): void {
+  const target = jobs.value.find((j) => j.id === id)
+  if (target) removeJob(target)
 }
 
 async function runJob(job: OptimizeJob): Promise<void> {
@@ -197,7 +218,7 @@ function fmtBytes(bytes: number | undefined): string {
 
 <template>
   <div class="optimize-view">
-    <TopBar title="Otimizar">
+    <TopBar :title="activeJob?.file.name ?? 'Otimizar'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -214,93 +235,106 @@ function fmtBytes(bytes: number | undefined): string {
     </TopBar>
 
     <div class="optimize-content">
-      <p class="hint">
-        Comprima ou converta imagens, vídeos e áudios sem IA — mantém dimensões e duração originais,
-        só muda tamanho de arquivo ou formato (FR-025 a FR-030).
+      <!-- Only while the list has jobs: with an empty list the UploadZone below
+           already surfaces the same message in its own error state. -->
+      <p v-if="importError && jobs.length" class="banner-error">
+        <AlertCircle :size="14" /> {{ importError }}
       </p>
-      <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
-      <EmptyState
+      <UploadZone
         v-if="!jobs.length"
-        message="Nenhum arquivo importado ainda."
-        action-label="Importar arquivo"
-        @action="pickFiles"
+        class="upload-fill"
+        :error="importError"
+        :loading="uploading"
+        title="Arraste arquivos aqui"
+        subtitle="ou use os botões abaixo — imagem, vídeo e áudio são identificados automaticamente"
+        :formats="['JPG', 'PNG', 'WEBP', 'MP4', 'MKV', 'MP3', 'FLAC']"
+        @pick-files="pickFiles"
+        @pick-folder="pickFolder"
+        @files-dropped="handleFilesDropped"
+      />
+
+      <MediaEditorShell
+        v-else
+        class="editor-shell"
+        :items="editorItems"
+        :active-id="activeId"
+        add-label="Adicionar arquivo"
+        @select="activeId = $event"
+        @remove="removeById"
+        @add="pickFiles"
       >
-        <template #icon><Upload :size="15" /></template>
-      </EmptyState>
+        <template #preview>
+          <template v-if="activeJob && hasNativeApi">
+            <img
+              v-if="activeJob.mediaType === 'image'"
+              class="preview-media"
+              :src="api.toFileUrl(activeJob.file.path)"
+              alt=""
+            />
+            <video
+              v-else-if="activeJob.mediaType === 'video'"
+              :key="activeJob.id"
+              class="preview-media"
+              :src="api.toFileUrl(activeJob.file.path)"
+              controls
+              preload="metadata"
+            />
+            <audio
+              v-else
+              :key="activeJob.id"
+              class="preview-audio"
+              :src="api.toFileUrl(activeJob.file.path)"
+              controls
+            />
+          </template>
+        </template>
 
-      <div v-else class="job-list">
-        <JobCard
-          v-for="job in jobs"
-          :key="job.id"
-          :file-name="job.file.name"
-          @remove="removeJob(job)"
-        >
-          <div v-if="job.status === 'configuring'" class="job-config">
-            <div class="op-tabs">
-              <button
-                class="op-tab"
-                :class="{ active: job.operation === 'compress' }"
-                type="button"
-                @click="job.operation = 'compress'"
-              >
-                Comprimir
-              </button>
-              <button
-                class="op-tab"
-                :class="{ active: job.operation === 'convert' }"
-                type="button"
-                @click="job.operation = 'convert'"
-              >
-                Converter
-              </button>
-            </div>
-
-            <div v-if="job.operation === 'compress'" class="field">
-              <div class="slider-head">
-                <label class="field-label">Qualidade</label>
-                <span class="slider-value">{{ job.quality }}</span>
+        <template #panel>
+          <template v-if="activeJob">
+            <div v-if="activeJob.status === 'configuring'" class="panel-section">
+              <div class="field">
+                <div class="slider-head">
+                  <label class="field-label">Qualidade</label>
+                  <span class="slider-value">{{ activeJob.quality }}</span>
+                </div>
+                <RangeSlider v-model="activeJob.quality" :default-value="75" />
               </div>
-              <RangeSlider v-model="job.quality" :default-value="75" />
-            </div>
 
-            <div v-else class="field">
-              <label class="field-label">Formato de destino</label>
-              <AppSelect
-                :model-value="job.targetFormat"
-                :options="formatOptions(job.mediaType)"
-                @update:model-value="(v) => (job.targetFormat = String(v))"
-              />
-            </div>
-
-            <AppButton variant="primary" size="lg" @click="runJob(job)">Processar</AppButton>
-          </div>
-
-          <div v-else class="job-status">
-            <div v-if="job.status === 'queued' || job.status === 'processing'" class="status-row">
-              <AppSpinner :size="16" />
-              <span>{{ job.progress }}%</span>
-            </div>
-            <div v-else-if="job.status === 'done'" class="status-row done">
-              <CheckCircle2 :size="16" />
-              <span>Concluído — {{ fmtBytes(job.outputSizeBytes) }}</span>
-              <AppButton
-                v-if="hasNativeApi && job.outputPath"
-                variant="outline"
-                size="sm"
-                @click="api.showItemInFolder(job.outputPath!)"
-              >
-                <template #icon><FolderOpen :size="14" /></template>
-                Abrir pasta
+              <AppButton variant="primary" size="lg" @click="runJob(activeJob)">
+                Processar
               </AppButton>
             </div>
-            <div v-else-if="job.status === 'error'" class="status-row error">
-              <AlertCircle :size="16" />
-              <span>{{ job.error }}</span>
+
+            <div v-else class="panel-section">
+              <div
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                class="status-row"
+              >
+                <AppSpinner :size="16" />
+                <span>{{ activeJob.progress }}%</span>
+              </div>
+              <div v-else-if="activeJob.status === 'done'" class="status-row done">
+                <CheckCircle2 :size="16" />
+                <span>Concluído — {{ fmtBytes(activeJob.outputSizeBytes) }}</span>
+                <AppButton
+                  v-if="hasNativeApi && activeJob.outputPath"
+                  variant="outline"
+                  size="sm"
+                  @click="api.showItemInFolder(activeJob.outputPath!)"
+                >
+                  <template #icon><FolderOpen :size="14" /></template>
+                  Abrir pasta
+                </AppButton>
+              </div>
+              <div v-else-if="activeJob.status === 'error'" class="status-row error">
+                <AlertCircle :size="16" />
+                <span>{{ activeJob.error }}</span>
+              </div>
             </div>
-          </div>
-        </JobCard>
-      </div>
+          </template>
+        </template>
+      </MediaEditorShell>
     </div>
   </div>
 </template>
@@ -315,15 +349,24 @@ function fmtBytes(bytes: number | undefined): string {
 }
 .optimize-content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-.hint {
-  color: var(--text-secondary);
-  font-size: var(--fs-body-sm);
+
+/* The editor lays out its own preview/strip/panel — no outer padding fighting
+   it once files are loaded. */
+.optimize-content:has(.editor-shell) {
+  padding: 0;
+}
+
+/* Empty state: the drop zone takes the whole remaining area rather than being
+   a short strip at the top of the screen (same treatment as the Imagem screen). */
+.upload-fill {
+  flex: 1;
+  min-height: 0;
 }
 .banner-error {
   display: flex;
@@ -332,28 +375,21 @@ function fmtBytes(bytes: number | undefined): string {
   color: var(--color-danger);
   font-size: var(--fs-body-sm);
 }
-.job-list {
+.editor-shell {
+  flex: 1;
+  min-height: 0;
+}
+.preview-media {
+  max-width: 100%;
+  max-height: 100%;
+}
+.preview-audio {
+  width: min(100%, 420px);
+}
+.panel-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-}
-.op-tabs {
-  display: flex;
-  gap: var(--space-2);
-}
-.op-tab {
-  flex: 1;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border);
-  background: var(--surface-2);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.op-tab.active {
-  background: var(--color-primary);
-  color: var(--on-primary);
-  border-color: var(--color-primary);
 }
 .field {
   display: flex;

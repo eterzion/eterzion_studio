@@ -4,8 +4,8 @@ import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
-import JobCard from '../components/molecules/JobCard.vue'
-import EmptyState from '../components/molecules/EmptyState.vue'
+import UploadZone from '../components/UploadZone.vue'
+import MediaEditorShell from '../components/MediaEditorShell.vue'
 import { Upload, FolderOpen, CheckCircle2, AlertCircle, ShieldAlert, Download } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
@@ -20,6 +20,8 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
+
+defineEmits<{ back: [] }>()
 
 // T049/FR-081 to FR-086: video-enhance jobs of its own (never touches
 // store/jobs.ts's queueState, same reasoning as CompressConvertView.vue —
@@ -89,6 +91,30 @@ const LOSS_LABELS: Record<string, string> = {
 const jobs = ref<VideoJob[]>([])
 const importError = ref<string | null>(null)
 
+// Which file the editor is showing. Mirrors ImageEditorView: the screen edits
+// one file at a time while the strip keeps the rest one click away.
+const activeId = ref<string | null>(null)
+const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
+
+const STATUS_LABEL: Record<LocalStatus, string> = {
+  configuring: 'Pronto para processar',
+  queued: 'Na fila',
+  awaiting_confirmation: 'Aguardando confirmação',
+  processing: 'Processando',
+  done: 'Concluído',
+  error: 'Erro'
+}
+
+const editorItems = computed(() =>
+  jobs.value.map((j) => ({
+    id: j.id,
+    fileName: j.file.name,
+    sourcePath: j.file.path,
+    statusLabel: STATUS_LABEL[j.status],
+    kind: 'video' as const
+  }))
+)
+
 async function addFile(described: DescribedFile): Promise<void> {
   if (described.kind !== 'Vídeo') {
     importError.value = `Formato não suportado: ${described.name}`
@@ -105,12 +131,19 @@ async function addFile(described: DescribedFile): Promise<void> {
     stage: null,
     createdAt: Date.now()
   })
+  activeId.value = jobs.value[jobs.value.length - 1].id
 }
 
-const { pickFiles } = usePickFiles(addFile, importError)
+const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
 
 function removeJob(job: VideoJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
+  if (activeId.value === job.id) activeId.value = jobs.value[0]?.id ?? null
+}
+
+function removeById(id: string): void {
+  const target = jobs.value.find((j) => j.id === id)
+  if (target) removeJob(target)
 }
 
 function watchJob(job: VideoJob, backendJobId: string): void {
@@ -226,7 +259,7 @@ function exportAll(): void {
 
 <template>
   <div class="video-view">
-    <TopBar title="Vídeo">
+    <TopBar :title="activeJob?.file.name ?? 'Vídeo'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -243,90 +276,119 @@ function exportAll(): void {
     </TopBar>
 
     <div class="video-content">
-      <p class="hint">
-        Aumenta a resolução de vídeos quadro a quadro, preservando fps, duração e áudio originais.
+      <!-- Only while the list has jobs: with an empty list the UploadZone below
+           already surfaces the same message in its own error state. -->
+      <p v-if="importError && jobs.length" class="banner-error">
+        <AlertCircle :size="14" /> {{ importError }}
       </p>
-      <p v-if="importError" class="banner-error"><AlertCircle :size="14" /> {{ importError }}</p>
 
-      <EmptyState
+      <UploadZone
         v-if="!jobs.length"
-        message="Nenhum vídeo importado ainda."
-        action-label="Importar vídeo"
-        @action="pickFiles"
+        class="upload-fill"
+        :error="importError"
+        :loading="uploading"
+        title="Arraste vídeos aqui"
+        subtitle="ou use os botões abaixo — o áudio e a duração originais são mantidos"
+        :formats="['MP4', 'MKV', 'MOV', 'AVI', 'WEBM']"
+        @pick-files="pickFiles"
+        @pick-folder="pickFolder"
+        @files-dropped="handleFilesDropped"
+      />
+
+      <MediaEditorShell
+        v-else
+        class="editor-shell"
+        :items="editorItems"
+        :active-id="activeId"
+        add-label="Adicionar vídeo"
+        @select="activeId = $event"
+        @remove="removeById"
+        @add="pickFiles"
       >
-        <template #icon><Upload :size="15" /></template>
-      </EmptyState>
+        <template #preview>
+          <video
+            v-if="activeJob && hasNativeApi"
+            :key="activeJob.id"
+            class="preview-video"
+            :src="api.toFileUrl(activeJob.file.path)"
+            controls
+            preload="metadata"
+          />
+        </template>
 
-      <div v-else class="job-list">
-        <JobCard
-          v-for="job in jobs"
-          :key="job.id"
-          :file-name="job.file.name"
-          @remove="removeJob(job)"
-        >
-          <div v-if="job.status === 'configuring'" class="job-config">
-            <div class="field">
-              <label class="field-label">Tipo de conteúdo</label>
-              <AppSelect
-                :model-value="job.contentType"
-                :options="CONTENT_TYPE_OPTIONS"
-                @update:model-value="(v) => (job.contentType = v as ContentType)"
-              />
-            </div>
-            <div class="field">
-              <label class="field-label">Escala</label>
-              <AppSelect
-                :model-value="job.scale"
-                :options="SCALE_OPTIONS"
-                @update:model-value="(v) => (job.scale = v as '2x' | '4x')"
-              />
-            </div>
-            <AppButton variant="primary" size="lg" @click="runJob(job)">Processar</AppButton>
-          </div>
-
-          <div v-else-if="job.status === 'awaiting_confirmation'" class="job-confirm">
-            <div class="confirm-header">
-              <ShieldAlert :size="16" />
-              <span>Este vídeo tem elementos que serão perdidos ao processar:</span>
-            </div>
-            <ul class="loss-list">
-              <li v-for="loss in job.secondaryElements?.losses ?? []" :key="loss">
-                {{ LOSS_LABELS[loss] ?? loss }}
-              </li>
-            </ul>
-            <div class="confirm-actions">
-              <AppButton variant="outline" size="sm" @click="removeJob(job)">Cancelar</AppButton>
-              <AppButton variant="primary" size="sm" @click="confirmAndProcess(job)">
-                Continuar mesmo assim
-              </AppButton>
-            </div>
-          </div>
-
-          <div v-else class="job-status">
-            <div v-if="job.status === 'queued' || job.status === 'processing'" class="status-row">
-              <AppSpinner :size="16" />
-              <span>{{ job.stage ?? 'Processando' }} — {{ job.progress }}%</span>
-            </div>
-            <div v-else-if="job.status === 'done'" class="status-row done">
-              <CheckCircle2 :size="16" />
-              <span>Concluído</span>
-              <AppButton
-                v-if="hasNativeApi && job.outputPath"
-                variant="outline"
-                size="sm"
-                @click="api.showItemInFolder(job.outputPath!)"
+        <template #panel>
+          <template v-if="activeJob">
+            <div v-if="activeJob.status === 'configuring'" class="panel-section">
+              <div class="field">
+                <label class="field-label">Tipo de conteúdo</label>
+                <AppSelect
+                  :model-value="activeJob.contentType"
+                  :options="CONTENT_TYPE_OPTIONS"
+                  @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
+                />
+              </div>
+              <div class="field">
+                <label class="field-label">Escala</label>
+                <AppSelect
+                  :model-value="activeJob.scale"
+                  :options="SCALE_OPTIONS"
+                  @update:model-value="(v) => (activeJob!.scale = v as '2x' | '4x')"
+                />
+              </div>
+              <AppButton variant="primary" size="lg" @click="runJob(activeJob)"
+                >Processar</AppButton
               >
-                <template #icon><FolderOpen :size="14" /></template>
-                Abrir pasta
-              </AppButton>
             </div>
-            <div v-else-if="job.status === 'error'" class="status-row error">
-              <AlertCircle :size="16" />
-              <span>{{ job.error }}</span>
+
+            <div v-else-if="activeJob.status === 'awaiting_confirmation'" class="job-confirm">
+              <div class="confirm-header">
+                <ShieldAlert :size="16" />
+                <span>Este vídeo tem elementos que serão perdidos ao processar:</span>
+              </div>
+              <ul class="loss-list">
+                <li v-for="loss in activeJob.secondaryElements?.losses ?? []" :key="loss">
+                  {{ LOSS_LABELS[loss] ?? loss }}
+                </li>
+              </ul>
+              <div class="confirm-actions">
+                <AppButton variant="outline" size="sm" @click="removeJob(activeJob)">
+                  Cancelar
+                </AppButton>
+                <AppButton variant="primary" size="sm" @click="confirmAndProcess(activeJob)">
+                  Continuar mesmo assim
+                </AppButton>
+              </div>
             </div>
-          </div>
-        </JobCard>
-      </div>
+
+            <div v-else class="panel-section">
+              <div
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                class="status-row"
+              >
+                <AppSpinner :size="16" />
+                <span>{{ activeJob.stage ?? 'Processando' }} — {{ activeJob.progress }}%</span>
+              </div>
+              <div v-else-if="activeJob.status === 'done'" class="status-row done">
+                <CheckCircle2 :size="16" />
+                <span>Concluído</span>
+                <AppButton
+                  v-if="hasNativeApi && activeJob.outputPath"
+                  variant="outline"
+                  size="sm"
+                  @click="api.showItemInFolder(activeJob.outputPath!)"
+                >
+                  <template #icon><FolderOpen :size="14" /></template>
+                  Abrir pasta
+                </AppButton>
+              </div>
+              <div v-else-if="activeJob.status === 'error'" class="status-row error">
+                <AlertCircle :size="16" />
+                <span>{{ activeJob.error }}</span>
+              </div>
+            </div>
+          </template>
+        </template>
+      </MediaEditorShell>
     </div>
   </div>
 </template>
@@ -341,15 +403,24 @@ function exportAll(): void {
 }
 .video-content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
 }
-.hint {
-  color: var(--text-secondary);
-  font-size: var(--fs-body-sm);
+
+/* The editor lays out its own preview/strip/panel — no outer padding fighting
+   it once files are loaded. */
+.video-content:has(.editor-shell) {
+  padding: 0;
+}
+
+/* Empty state: the drop zone takes the whole remaining area rather than being
+   a short strip at the top of the screen (same treatment as the Imagem screen). */
+.upload-fill {
+  flex: 1;
+  min-height: 0;
 }
 .banner-error {
   display: flex;
@@ -358,7 +429,15 @@ function exportAll(): void {
   color: var(--color-danger);
   font-size: var(--fs-body-sm);
 }
-.job-list {
+.editor-shell {
+  flex: 1;
+  min-height: 0;
+}
+.preview-video {
+  max-width: 100%;
+  max-height: 100%;
+}
+.panel-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

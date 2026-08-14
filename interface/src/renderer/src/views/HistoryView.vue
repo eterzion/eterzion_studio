@@ -531,6 +531,13 @@ function applyLimit(): void {
 }
 
 .empty-filtered {
+  /* Fills the space left under the toolbar instead of being a short strip, so
+     the screen doesn't end in a band of dead space. */
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: var(--space-4);
   text-align: center;
   color: var(--text-tertiary);

@@ -12,12 +12,10 @@ import {
   RotateCcw,
   Check,
   Award,
-  ExternalLink,
   ChevronDown,
   ChevronRight,
   Info,
   ShieldCheck,
-  Scale,
   Image as ImageIcon,
   Palette,
   Film,
@@ -116,7 +114,7 @@ const CREDITS: {
     work: 'SonicMaster',
     author: 'AMAAI Lab',
     license: 'Apache-2.0',
-    note: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open, ver MODEL_LICENSES.md §3-bis)',
+    note: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open)',
     icon: Music2,
     tint: '#ec4899'
   },
@@ -153,17 +151,6 @@ function licenseTone(license: string): string {
 const expandedCredit = ref<string | null>(null)
 function toggleCredit(work: string): void {
   expandedCredit.value = expandedCredit.value === work ? null : work
-}
-
-async function openDocsFile(relativePath: string): Promise<void> {
-  if (!hasNativeApi) return
-  try {
-    const { repoRoot } = await api.getAppPaths()
-    await api.openPath(`${repoRoot}/${relativePath}`)
-  } catch {
-    // best-effort — no toast infra here, and a missing/unreachable doc file
-    // shouldn't block the rest of the page.
-  }
 }
 
 const clearConfirm = ref(false)
@@ -495,24 +482,7 @@ const outputFolderLabel = computed(
           <div class="credits-header-text">
             <h2 class="group-title">Créditos</h2>
             <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
-            <button
-              class="credits-doc-link"
-              type="button"
-              :disabled="!hasNativeApi"
-              @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
-            >
-              Saiba mais em docs/models/MODEL_LICENSES.md <ExternalLink :size="12" />
-            </button>
           </div>
-          <AppButton
-            variant="outline"
-            class="credits-doc-btn"
-            :disabled="!hasNativeApi"
-            @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
-          >
-            <template #icon><ExternalLink :size="14" /></template>
-            Ver documentação <ChevronRight :size="14" />
-          </AppButton>
         </div>
         <div class="group-body credits-body">
           <ul class="credits-list">
@@ -554,8 +524,7 @@ const outputFolderLabel = computed(
                 </button>
               </div>
               <p v-if="expandedCredit === credit.work" class="credit-detail">
-                Distribuído sob licença {{ credit.license }}. Consulte docs/models/MODEL_LICENSES.md
-                para o texto completo da licença e demais condições de uso.
+                Distribuído sob licença {{ credit.license }}.
               </p>
             </li>
           </ul>
@@ -564,16 +533,7 @@ const outputFolderLabel = computed(
           <ShieldCheck :size="18" class="credits-footer-icon" />
           <div class="credits-footer-text">
             <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
-            <p>Em caso de dúvidas, consulte a documentação completa.</p>
           </div>
-          <AppButton
-            variant="outline"
-            :disabled="!hasNativeApi"
-            @click="openDocsFile('docs/models/MODEL_LICENSES.md')"
-          >
-            <template #icon><Scale :size="14" /></template>
-            Sobre licenças <ExternalLink :size="12" />
-          </AppButton>
         </div>
       </section>
     </div>
@@ -623,30 +583,6 @@ const outputFolderLabel = computed(
   flex-direction: column;
   gap: 2px;
 }
-.credits-doc-link {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: none;
-  border: none;
-  padding: 0;
-  margin-top: 2px;
-  color: var(--color-primary);
-  font-size: var(--fs-caption);
-  cursor: pointer;
-}
-.credits-doc-link:hover:not(:disabled) {
-  text-decoration: underline;
-}
-.credits-doc-link:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-.credits-doc-btn {
-  flex-shrink: 0;
-}
-
 .credits-body {
   padding: var(--space-3);
 }

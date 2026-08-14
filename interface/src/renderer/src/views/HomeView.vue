@@ -121,7 +121,11 @@ function openImage(id?: string): void {
   background: #020910;
 }
 .home-panel {
-  min-height: calc(100vh - 12px);
+  /* A flex column so the queue can absorb the leftover height — otherwise the
+     content stacks at the top and the bottom third of the screen sits empty. */
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 12px);
   width: min(100%, 1440px);
   margin: 0 auto;
   padding: clamp(19px, 1.9vw, 24px);
@@ -219,6 +223,10 @@ function openImage(id?: string): void {
   transform: translateX(-50%) scale(1.04);
 }
 .queue-section {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   margin-bottom: 16px;
   overflow: hidden;
   border: 1px solid #10263b;
@@ -302,7 +310,8 @@ function openImage(id?: string): void {
 }
 .queue-list {
   display: flex;
-  max-height: 232px;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   gap: 6px;
   padding: 0 15px 15px;

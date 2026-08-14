@@ -1,14 +1,14 @@
 """T068 — real coverage of processing.py. list_components()/
 get_component_details() run against the real models/ directory (no mocking
-of file presence or license lookups) — the install/update/delete round trip
-uses a real, temporary models_dir so it can perform a genuine download +
-SHA-256 verify + delete without touching the shared models/ cache other
-tests rely on."""
+of file presence or license lookups) — the install round trip uses a real,
+temporary models_dir so it can perform a genuine download + SHA-256 verify
+without touching the shared models/ cache other tests rely on."""
 from __future__ import annotations
 
 import pytest
 
 from app import processing
+from app.config import settings
 from app.processing import (
     CAPABILITY_LABELS,
     ComponentActionUnsupportedError,
@@ -171,18 +171,13 @@ class TestAudioComponentsInstallViaRealPip:
         with pytest.raises(ComponentActionUnsupportedError, match='pip install astros_upscale'):
             processing.install_component('speech')
 
-    def test_delete_music_refuses(self):
-        with pytest.raises(ComponentActionUnsupportedError):
-            processing.delete_component('music')
-
-
 @pytest.mark.slow
-class TestInstallUpdateDeleteRoundTrip:
-    """Real network download + real SHA-256 verify + real file deletion,
-    isolated to a temp models_dir so the shared models/ cache other tests
-    depend on is never touched."""
+class TestInstallRoundTrip:
+    """Real network download + real SHA-256 verify, isolated to a temp
+    models_dir so the shared models/ cache other tests depend on is never
+    touched."""
 
-    def test_install_then_delete_a_real_small_model(self, tmp_path, monkeypatch):
+    def test_install_a_real_small_model(self, tmp_path, monkeypatch):
         from app.config import settings
 
         monkeypatch.setattr(settings, 'models_dir', str(tmp_path))
@@ -194,6 +189,3 @@ class TestInstallUpdateDeleteRoundTrip:
         installed = processing.install_component('anime_image')
         assert installed.install_state == 'installed'
         assert installed.size_mb > 0
-
-        deleted = processing.delete_component('anime_image')
-        assert deleted.install_state == 'not_installed'

@@ -56,6 +56,7 @@ import {
   MAX_OUTPUT_DIMENSION,
   startProcessing,
   cancelProcessing,
+  removeJob,
   type Job
 } from '../store/jobs'
 
@@ -419,6 +420,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
     <div v-if="!job" class="empty-state">
       <div class="empty-state-inner">
         <UploadZone
+          class="upload-fill"
           :error="importError"
           :loading="uploading"
           @pick-files="pickFiles"
@@ -545,20 +547,31 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
         </div>
 
         <div class="thumb-strip">
-          <button
+          <!-- A wrapper div, not a <button>: the remove control is itself a
+               button and nesting buttons is invalid HTML. -->
+          <div
             v-for="j in imageJobs"
             :key="j.id"
             class="thumb-card"
             :class="{ active: j.id === job.id }"
-            type="button"
-            @click="setActiveJob(j.id)"
           >
-            <img v-if="hasNativeApi" :src="api.toFileUrl(j.sourcePath)" alt="" />
-            <div class="thumb-meta">
-              <span class="thumb-name">{{ j.fileName }}</span>
-              <span class="thumb-dims">{{ j.status }}</span>
-            </div>
-          </button>
+            <button class="thumb-select" type="button" @click="setActiveJob(j.id)">
+              <img v-if="hasNativeApi" :src="api.toFileUrl(j.sourcePath)" alt="" />
+              <div class="thumb-meta">
+                <span class="thumb-name">{{ j.fileName }}</span>
+                <span class="thumb-dims">{{ j.status }}</span>
+              </div>
+            </button>
+            <button
+              class="thumb-remove"
+              type="button"
+              :title="`Remover ${j.fileName}`"
+              :aria-label="`Remover ${j.fileName}`"
+              @click="removeJob(j.id)"
+            >
+              <X :size="12" />
+            </button>
+          </div>
           <button class="thumb-add" type="button" @click="importFiles">
             <Plus :size="16" />
             <span>Adicionar imagem</span>
@@ -1029,11 +1042,14 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   min-width: 0;
 }
 
+/* The drop zone fills the whole editor area instead of sitting as a narrow
+   centered card — a bigger target is easier to drop onto, and it matches the
+   Otimizar screen. UploadZone centers its own contents vertically, so no
+   centering is needed here. */
 .empty-state {
   flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
   color: var(--text-tertiary);
   font-size: var(--fs-label);
   padding: var(--space-4);
@@ -1041,8 +1057,17 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .empty-state-inner {
-  width: 100%;
-  max-width: 640px;
+  flex: 1;
+  display: flex;
+  /* Column so the drop zone stretches to the full width (align-items defaults
+     to stretch); `.upload-fill` below then gives it the full height too. */
+  flex-direction: column;
+  min-height: 0;
+}
+
+.upload-fill {
+  flex: 1;
+  min-height: 0;
 }
 
 .editor-body {
@@ -1244,15 +1269,63 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .thumb-card {
+  position: relative;
   width: 92px;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
   border: 2px solid var(--surface-border);
   background: var(--surface-2);
+}
+
+/* Fills the card so the whole thumbnail stays one big click target for
+   selecting; the remove control sits on top of it in the corner. */
+.thumb-select {
+  display: block;
+  width: 100%;
   padding: 0;
+  border: none;
+  background: none;
   cursor: pointer;
   text-align: left;
+}
+
+.thumb-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
+}
+
+/* Revealed on hover/focus so the strip stays clean, but never hidden from
+   keyboard users (:focus-visible) or on touch, where hover never fires. */
+.thumb-card:hover .thumb-remove,
+.thumb-remove:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .thumb-remove {
+    opacity: 1;
+  }
+}
+
+.thumb-remove:hover {
+  background: var(--color-danger);
 }
 
 .thumb-card.active {
