@@ -116,8 +116,8 @@ function openImage(id?: string): void {
   height: 100vh;
   padding: 6px;
   overflow: auto;
-  color: #f7f8fc;
-  background: #020910;
+  color: var(--text-primary);
+  background: var(--surface-0);
 }
 .home-panel {
   /* A flex column so the queue can absorb the leftover height — otherwise the
@@ -134,7 +134,7 @@ function openImage(id?: string): void {
 }
 .home-title {
   margin: 0 0 clamp(15px, 1.6vw, 20px) 3px;
-  color: #f8f9fb;
+  color: var(--text-primary);
   font-size: clamp(24px, 2.15vw, 30px);
   font-weight: 700;
   line-height: 1.15;
@@ -147,14 +147,14 @@ function openImage(id?: string): void {
   margin-bottom: 16px;
 }
 .category-card {
-  --card-bg: color-mix(in srgb, var(--tint) 8%, #030d18);
+  --card-bg: color-mix(in srgb, var(--tint) 8%, var(--surface-1));
   position: relative;
   display: flex;
   min-width: 0;
   height: clamp(215px, 28vh, 270px);
   padding: 16px 17px;
   overflow: hidden;
-  color: #fff;
+  color: var(--text-primary);
   text-align: left;
   cursor: pointer;
   border: 1px solid color-mix(in srgb, var(--tint) 82%, transparent);
@@ -165,7 +165,7 @@ function openImage(id?: string): void {
       color-mix(in srgb, var(--tint) 13%, transparent),
       transparent 47%
     ),
-    linear-gradient(155deg, var(--card-bg), #030b15 76%);
+    linear-gradient(155deg, var(--card-bg), var(--surface-0) 76%);
   box-shadow: inset 0 0 35px color-mix(in srgb, var(--tint) 3%, transparent);
   transition:
     transform 180ms ease,
@@ -205,10 +205,10 @@ function openImage(id?: string): void {
   height: 44px;
   align-items: center;
   justify-content: center;
-  color: #fff;
+  color: var(--text-primary);
   border: 1.5px solid var(--tint);
   border-radius: 50%;
-  background: color-mix(in srgb, var(--tint) 8%, #04101b);
+  background: color-mix(in srgb, var(--tint) 8%, var(--surface-2));
   box-shadow:
     0 0 10px color-mix(in srgb, var(--tint) 55%, transparent),
     inset 0 0 9px color-mix(in srgb, var(--tint) 11%, transparent);
@@ -218,7 +218,7 @@ function openImage(id?: string): void {
     background 180ms ease;
 }
 .category-card:hover .category-arrow {
-  background: color-mix(in srgb, var(--tint) 22%, #04101b);
+  background: color-mix(in srgb, var(--tint) 22%, var(--surface-2));
   transform: translateX(-50%) scale(1.04);
 }
 .queue-section {
@@ -228,9 +228,9 @@ function openImage(id?: string): void {
   flex-direction: column;
   margin-bottom: 16px;
   overflow: hidden;
-  border: 1px solid #10263b;
+  border: 1px solid var(--surface-border);
   border-radius: 11px;
-  background: rgba(3, 15, 27, 0.72);
+  background: var(--surface-1);
 }
 .queue-header {
   display: flex;
@@ -253,14 +253,14 @@ function openImage(id?: string): void {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  color: #1789ff;
+  color: var(--color-primary);
   border-radius: 11px;
-  background: linear-gradient(145deg, #0a2b57, #071a3b);
-  box-shadow: inset 0 0 18px rgba(22, 136, 255, 0.08);
+  background: var(--color-primary-soft);
+  box-shadow: none;
 }
 .queue-title {
   margin: 0;
-  color: #f6f7fa;
+  color: var(--text-primary);
   font-size: clamp(16px, 1.35vw, 19px);
   font-weight: 650;
   line-height: 1.15;
@@ -270,7 +270,7 @@ function openImage(id?: string): void {
   align-items: center;
   gap: 6px;
   margin: 5px 0 0;
-  color: #d7dce5;
+  color: var(--text-secondary);
   font-size: 13px;
   line-height: 1;
 }
@@ -278,8 +278,8 @@ function openImage(id?: string): void {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #087bff;
-  box-shadow: 0 0 7px rgba(8, 123, 255, 0.45);
+  background: var(--color-primary);
+  box-shadow: none;
 }
 .clear-button {
   display: flex;
@@ -288,20 +288,20 @@ function openImage(id?: string): void {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  color: #f3f3f5;
+  color: var(--text-primary);
   font-size: 13px;
   font-weight: 450;
   cursor: pointer;
-  border: 1px solid #10243a;
+  border: 1px solid var(--surface-border);
   border-radius: 11px;
-  background: rgba(3, 13, 24, 0.35);
+  background: var(--surface-2);
   transition:
     border-color 160ms ease,
     background 160ms ease;
 }
 .clear-button:hover:not(:disabled) {
-  border-color: #28405c;
-  background: #071524;
+  border-color: var(--surface-border);
+  background: var(--surface-3);
 }
 .clear-button:disabled {
   cursor: default;

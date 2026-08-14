@@ -62,9 +62,9 @@ defineProps<{
   flex-direction: column;
   justify-content: center;
   padding: 16px 17px;
-  border: 1px solid #10263c;
+  border: 1px solid var(--surface-border);
   border-radius: 10px;
-  background: linear-gradient(145deg, rgba(4, 16, 29, 0.96), rgba(3, 13, 24, 0.9));
+  background: var(--surface-1);
 }
 .tone-green {
   --tone: #35dd31;
@@ -90,7 +90,7 @@ defineProps<{
   justify-content: center;
   color: var(--tone);
   border-radius: 9px;
-  background: color-mix(in srgb, var(--tone) 19%, #071221);
+  background: color-mix(in srgb, var(--tone) 19%, var(--surface-2));
   filter: drop-shadow(0 0 8px color-mix(in srgb, var(--tone) 22%, transparent));
 }
 .summary-copy {
@@ -98,7 +98,7 @@ defineProps<{
 }
 .summary-value {
   overflow: hidden;
-  color: #f8f8fa;
+  color: var(--text-primary);
   font-size: clamp(17px, 1.4vw, 20px);
   font-weight: 620;
   line-height: 1.2;
@@ -110,7 +110,7 @@ defineProps<{
 }
 .summary-label {
   margin-top: 7px;
-  color: #dce0e7;
+  color: var(--text-secondary);
   font-size: clamp(12px, 1.05vw, 15px);
   line-height: 1.15;
   white-space: nowrap;

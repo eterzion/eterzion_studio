@@ -1,15 +1,17 @@
 :root,
 :root[data-theme='dark'] {
-  /* Surfaces */
-  --surface-0: #0b0e14;
-  --surface-1: #10141d;
-  --surface-2: #161b26;
-  --surface-3: #1d2330;
-  --surface-border: #262d3d;
-  --surface-border-soft: #1c2230;
+  /* Surfaces — the deep navy the Home screen established, promoted from the
+     literals it used to hardcode so every screen shares one palette (and so
+     Home itself gets a light theme for free, which it never had). */
+  --surface-0: #020910;
+  --surface-1: #030d18;
+  --surface-2: #04101b;
+  --surface-3: #071524;
+  --surface-border: #10263b;
+  --surface-border-soft: #0a1a2b;
 
   /* Text */
-  --text-primary: #f4f6fb;
+  --text-primary: #f7f8fc;
   --text-secondary: #a3adc2;
   --text-tertiary: #6b7385;
 
@@ -26,18 +28,20 @@
 }
 
 :root[data-theme='light'] {
-  /* Surfaces */
-  --surface-0: #f4f6fb;
+  /* The counterpart of the navy dark theme above, not a neutral grey: the same
+     blue cast, inverted. Surfaces get progressively deeper (page -> card ->
+     raised), so elevation reads the same way in both themes. */
+  --surface-0: #eef2f9;
   --surface-1: #ffffff;
-  --surface-2: #f2f4f9;
-  --surface-3: #e7eaf2;
-  --surface-border: #dbe0ea;
-  --surface-border-soft: #e6e9f1;
+  --surface-2: #f5f8fd;
+  --surface-3: #e3eaf5;
+  --surface-border: #cbd8ea;
+  --surface-border-soft: #dfe7f3;
 
-  /* Text */
-  --text-primary: #12151f;
-  --text-secondary: #545b6c;
-  --text-tertiary: #848da0;
+  /* Text — a deep navy rather than black, mirroring the dark theme's ground. */
+  --text-primary: #0a1420;
+  --text-secondary: #4d5a6e;
+  --text-tertiary: #6b788c;
 
   /* Semantic (accent-independent) */
   --color-success: #15803d;
