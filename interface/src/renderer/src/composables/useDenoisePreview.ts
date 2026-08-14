@@ -38,7 +38,7 @@ export function useDenoisePreview<T extends DenoiseJob>(
 } {
   // A ref, not inferred from the numeric value — a custom value can legitimately
   // coincide with a preset's number, and that shouldn't silently reassign it back
-  // to that preset (or hide the "Personalizado" slider the user just opened).
+  // to that preset (or hide the "Custom" slider the user just opened).
   const denoiseActivePresetKey = ref<DenoisePresetKey>('medium')
   const denoisePreview = ref<DenoisePreview | null>(null)
   const denoisePreviewLoading = ref(false)

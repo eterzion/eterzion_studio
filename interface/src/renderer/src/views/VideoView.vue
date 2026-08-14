@@ -334,7 +334,7 @@ const RESOLUTION_PRESETS: { label: string; note: string; width: number; height: 
 
 function setScaleMode(job: VideoJob, mode: 'preset' | 'custom'): void {
   job.scaleMode = mode
-  // Entering Customizado with nothing chosen: start from the first preset that
+  // Entering Custom with nothing chosen: start from the first preset that
   // is actually an upscale for this file, so the default is never a reduction.
   if (mode === 'custom' && !job.customWidth) {
     const fallback =
@@ -483,7 +483,7 @@ function exportAll(): void {
                     type="button"
                     @click="setScaleMode(activeJob, 'custom')"
                   >
-                    Customizado
+                    Custom
                   </button>
                 </div>
 

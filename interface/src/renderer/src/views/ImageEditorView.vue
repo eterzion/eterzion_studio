@@ -700,7 +700,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 type="button"
                 @click="switchScaleMode(job, 'custom')"
               >
-                Customizado
+                Custom
               </button>
               <button
                 class="mode-tab"

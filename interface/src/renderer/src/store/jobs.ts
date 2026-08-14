@@ -290,7 +290,7 @@ export function clampSizeToSource(job: Job): void {
 
 /** Keeps the custom target in sync with whichever preset factor the user just
  *  picked — otherwise switching 4x -> 2x on the Predefinido tab and then back
- *  to Customizado kept showing the old 4x-derived dimensions/multiplier,
+ *  to Custom kept showing the old 4x-derived dimensions/multiplier,
  *  since ensureCustomSizeDefaults() no-ops once they're already set. Called
  *  whenever the preset buttons are clicked, not just on first custom-mode entry. */
 export function syncCustomSizeToPreset(job: Job): void {
@@ -364,7 +364,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
       return {
         valid: false,
         reason:
-          'No modo Original o tamanho não pode passar do original — para ampliar, use Predefinido ou Customizado.'
+          'No modo Original o tamanho não pode passar do original — para ampliar, use Predefinido ou Custom.'
       }
     }
     return { valid: true }
