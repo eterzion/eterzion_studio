@@ -909,15 +909,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </p>
             </div>
           </CollapsiblePanel>
-
-          <AppButton
-            variant="secondary"
-            class="w-full"
-            :disabled="configuringJobs.length < 2"
-            @click="applyConfigToAll(job)"
-          >
-            Aplicar esta configuração a todos ({{ configuringJobs.length }})
-          </AppButton>
         </template>
 
         <!-- ---------------------------- QUEUED / PROCESSING ---------------------------- -->
@@ -1065,8 +1056,21 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           </AppButton>
         </CollapsiblePanel>
 
-        <!-- Last, after Exportar: the destination is part of what you are about
-             to commit to, so the action that commits it reads after it. -->
+        <!-- Both actions read after Exportar: the destination is part of what you
+             are about to commit to (or copy onto every other file), so they come
+             once the whole configuration is on screen. -->
+        <AppButton
+          v-if="
+            job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
+          "
+          variant="secondary"
+          class="w-full"
+          :disabled="configuringJobs.length < 2"
+          @click="applyConfigToAll(job)"
+        >
+          Aplicar esta configuração a todos ({{ configuringJobs.length }})
+        </AppButton>
+
         <AppButton
           v-if="
             job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
