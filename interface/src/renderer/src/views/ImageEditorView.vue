@@ -836,8 +836,8 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 />
               </div>
               <p class="field-hint">
-                Suaviza granulação e artefatos de compressão preservando bordas (non-local means,
-                OpenCV) — independente do modelo escolhido.
+                Remove granulação e marcas de compressão sem borrar os contornos. Útil em fotos de
+                celular, com pouca luz, ou salvas em JPG muitas vezes.
               </p>
               <div v-if="!hasNativeApi" class="field-hint">
                 Prévia indisponível fora do app desktop.
@@ -884,8 +884,8 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </div>
               <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="50" />
               <p class="field-hint">
-                Máscara de nitidez (unsharp mask), aplicada depois do redimensionamento — no modo
-                Original ela é o próprio processamento.
+                Realça os contornos para dar impressão de foco. Em excesso, cria halos claros em
+                volta das bordas.
               </p>
             </div>
 
@@ -907,8 +907,8 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </div>
               <RangeSlider v-model="job.scaleConfig.faceRecoveryStrength" :default-value="80" />
               <p class="field-hint">
-                Restaura rostos detectados via GFPGAN (rede neural treinada especificamente para
-                isso). Sem rosto detectável na imagem, ela permanece inalterada.
+                Reconstrói rostos, que perdem detalhe antes do resto da imagem. Se nenhum rosto for
+                encontrado, a imagem sai inalterada.
               </p>
             </div>
           </CollapsiblePanel>
