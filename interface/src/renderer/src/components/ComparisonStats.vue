@@ -31,13 +31,20 @@ const PROFILE_LABEL: Record<string, string> = {
   quality: 'Qualidade'
 }
 
+// Original mode travels as scale '1x' and resolves no model at all, so the
+// profile — which only ever tunes how hard a model pass works — describes
+// nothing that ran. Naming it here claimed work the job never did.
+const usesModel = computed(() => props.job.scaleConfig.mode !== 'original')
+
 const modelSummary = computed(() => {
   const c = props.job.scaleConfig
   const scaleLabel =
     c.mode === 'preset'
       ? `${c.presetFactor}x`
       : `${c.customWidth ?? '—'}×${c.customHeight ?? '—'}px`
-  return `${PROFILE_LABEL[c.profile] ?? c.profile} · ${scaleLabel}`
+  return usesModel.value
+    ? `${PROFILE_LABEL[c.profile] ?? c.profile} · ${scaleLabel}`
+    : `Sem modelo · ${scaleLabel}`
 })
 </script>
 
@@ -60,7 +67,7 @@ const modelSummary = computed(() => {
       }}</span>
     </div>
     <div class="stat stat-wide">
-      <span class="stat-label">Modelo e parâmetros</span>
+      <span class="stat-label">{{ usesModel ? 'Modelo e parâmetros' : 'Processamento' }}</span>
       <span class="stat-value">{{ modelSummary }}</span>
     </div>
   </div>
