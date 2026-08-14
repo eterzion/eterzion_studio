@@ -918,20 +918,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           >
             Aplicar esta configuração a todos ({{ configuringJobs.length }})
           </AppButton>
-
-          <AppButton
-            variant="primary"
-            size="lg"
-            class="w-full"
-            :disabled="!validity.valid"
-            @click="process(job)"
-          >
-            {{
-              job.status === 'error' || job.status === 'cancelled'
-                ? 'Tentar novamente'
-                : 'Processar'
-            }}
-          </AppButton>
         </template>
 
         <!-- ---------------------------- QUEUED / PROCESSING ---------------------------- -->
@@ -965,15 +951,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
         <!-- Outside the state branches on purpose: the destination and format are
              worth deciding before processing starts, not only after. Only the
              actions below need a finished job, and they say so. -->
-        <CollapsiblePanel
-          title="Exportar"
-          :description="
-            job.status === 'done'
-              ? 'Formato, destino e nome do arquivo final'
-              : 'Formato, destino e nome — disponível para exportar assim que o processamento terminar'
-          "
-          :icon="Download"
-        >
+        <CollapsiblePanel title="Exportar" description="Formato, destino e nome" :icon="Download">
           <div class="field">
             <label class="field-label">Formato</label>
             <AppSelect
@@ -1086,6 +1064,23 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             Ajustar e reprocessar
           </AppButton>
         </CollapsiblePanel>
+
+        <!-- Last, after Exportar: the destination is part of what you are about
+             to commit to, so the action that commits it reads after it. -->
+        <AppButton
+          v-if="
+            job.status === 'configuring' || job.status === 'error' || job.status === 'cancelled'
+          "
+          variant="primary"
+          size="lg"
+          class="w-full"
+          :disabled="!validity.valid"
+          @click="process(job)"
+        >
+          {{
+            job.status === 'error' || job.status === 'cancelled' ? 'Tentar novamente' : 'Processar'
+          }}
+        </AppButton>
       </aside>
     </div>
 
