@@ -209,333 +209,341 @@ const outputFolderLabel = computed(
     <TopBar :title="t('settings.title')" />
 
     <div class="settings-content">
-      <!-- ---------------------------- GERAL ---------------------------- -->
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><Settings2 :size="18" /></div>
-          <div>
-            <h2 class="group-title">{{ t('settings.general.title') }}</h2>
-            <p class="group-description">{{ t('settings.general.description') }}</p>
-          </div>
-        </div>
-        <div class="group-body">
-          <SettingRow
-            :label="t('settings.general.language.label')"
-            :description="t('settings.general.language.description')"
-          >
-            <AppSelect
-              :model-value="settingsState.language"
-              :options="languageOptions"
-              @update:model-value="(v) => setLanguage(v as SupportedLocale | 'auto')"
-            />
-          </SettingRow>
-          <SettingRow
-            :label="t('settings.general.theme.label')"
-            :description="t('settings.general.theme.description')"
-          >
-            <SegmentedControl
-              :model-value="settingsState.theme"
-              :options="[
-                { value: 'light', label: t('settings.general.theme.light') },
-                { value: 'dark', label: t('settings.general.theme.dark') },
-                { value: 'auto', label: t('settings.general.theme.auto') }
-              ]"
-              @update:model-value="(v) => setTheme(v as 'dark' | 'light' | 'auto')"
-            />
-          </SettingRow>
-          <SettingRow
-            :label="t('settings.general.autoUpdate.label')"
-            :description="t('settings.general.autoUpdate.description')"
-          >
-            <SettingSwitch v-model="settingsState.autoCheckUpdates" disabled />
-          </SettingRow>
-          <SettingRow
-            :label="t('settings.general.outputFolder.label')"
-            :description="t('settings.general.outputFolder.description')"
-          >
-            <div class="folder-picker">
-              <span class="folder-picker-value" :title="outputFolderLabel">{{
-                outputFolderLabel
-              }}</span>
-              <AppButton
-                variant="secondary"
-                icon-only
-                :disabled="!hasNativeApi"
-                @click="pickDefaultOutputFolder"
-              >
-                <template #icon><FolderOpen :size="15" /></template>
-              </AppButton>
+      <div class="settings-column">
+        <!-- ---------------------------- GERAL ---------------------------- -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon"><Settings2 :size="18" /></div>
+            <div>
+              <h2 class="group-title">{{ t('settings.general.title') }}</h2>
+              <p class="group-description">{{ t('settings.general.description') }}</p>
             </div>
-          </SettingRow>
-          <SettingRow
-            :label="t('settings.general.exportFormat.label')"
-            :description="t('settings.general.exportFormat.description')"
-          >
-            <AppSelect
-              v-model="settingsState.defaultExportFormat"
-              :options="[
-                { value: 'png', label: '.png' },
-                { value: 'jpg', label: '.jpg' },
-                { value: 'webp', label: '.webp' }
-              ]"
-            />
-          </SettingRow>
-        </div>
-      </section>
-
-      <!-- ---------------------------- PROCESSAMENTO ---------------------------- -->
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><Cpu :size="18" /></div>
-          <div>
-            <h2 class="group-title">Processamento</h2>
-            <p class="group-description">Padrões usados ao configurar uma nova imagem</p>
           </div>
-        </div>
-        <div class="group-body">
-          <SettingRow label="Escala padrão" description="Fator pré-selecionado para novas imagens">
-            <SegmentedControl
-              :model-value="String(settingsState.defaultScalePreset)"
-              :options="[
-                { value: '2', label: '2x' },
-                { value: '4', label: '4x' }
-              ]"
-              @update:model-value="(v) => (settingsState.defaultScalePreset = Number(v) as 2 | 4)"
-            />
-          </SettingRow>
-          <SettingRow
-            label="Manter proporção automaticamente"
-            description="Trava largura/altura no modo customizado"
-          >
-            <SettingSwitch v-model="settingsState.defaultLockAspectRatio" />
-          </SettingRow>
-          <SettingRow
-            label="Qualidade da imagem"
-            description="Padrão para exportação em .jpg/.webp"
-          >
-            <div class="quality-control">
-              <RangeSlider
-                v-model="settingsState.defaultQuality"
-                :min="1"
-                :max="100"
-                :default-value="90"
+          <div class="group-body">
+            <SettingRow
+              :label="t('settings.general.language.label')"
+              :description="t('settings.general.language.description')"
+            >
+              <AppSelect
+                :model-value="settingsState.language"
+                :options="languageOptions"
+                @update:model-value="(v) => setLanguage(v as SupportedLocale | 'auto')"
               />
-              <span class="quality-value">{{ settingsState.defaultQuality }}</span>
-            </div>
-          </SettingRow>
-          <SettingRow
-            label="Tarefas simultâneas"
-            description="Fixo em 1 pela arquitetura atual do processamento (fila serial, um worker)"
-          >
-            <span class="fixed-value">1</span>
-          </SettingRow>
-        </div>
-      </section>
-
-      <!-- ---------------------------- HISTÓRICO ---------------------------- -->
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><HistoryIcon :size="18" /></div>
-          <div>
-            <h2 class="group-title">Histórico</h2>
-            <p class="group-description">
-              {{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente
-            </p>
-          </div>
-        </div>
-        <div class="group-body">
-          <SettingRow
-            label="Limite máximo de registros"
-            description="Os mais antigos são removidos ao ultrapassar"
-          >
-            <input
-              v-model.number="settingsState.historyLimit"
-              type="number"
-              min="1"
-              max="5000"
-              class="number-input"
-            />
-          </SettingRow>
-          <SettingRow
-            label="Limpeza automática"
-            description="Remove registros mais antigos que o período abaixo"
-          >
-            <SettingSwitch
-              :model-value="settingsState.historyAutoCleanupDays !== null"
-              @update:model-value="(v) => (settingsState.historyAutoCleanupDays = v ? 30 : null)"
-            />
-          </SettingRow>
-          <SettingRow
-            v-if="settingsState.historyAutoCleanupDays !== null"
-            label="Manter por"
-            description="Dias antes da remoção automática"
-          >
-            <AppSelect
-              :model-value="String(settingsState.historyAutoCleanupDays)"
-              :options="[
-                { value: '7', label: '7 dias' },
-                { value: '30', label: '30 dias' },
-                { value: '90', label: '90 dias' }
-              ]"
-              @update:model-value="(v) => (settingsState.historyAutoCleanupDays = Number(v))"
-            />
-          </SettingRow>
-          <SettingRow
-            label="Limpar histórico manualmente"
-            description="Remove todos os registros salvos — não afeta os arquivos exportados"
-          >
-            <AppButton variant="danger" :disabled="!historyCount" @click="confirmClearHistory">
-              <template #icon><Trash2 :size="14" /></template>
-              {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
-            </AppButton>
-          </SettingRow>
-          <SettingRow label="Limpar cache" description="Recarrega a lista de modelos direto da API">
-            <div class="cache-row">
-              <AppButton variant="secondary" @click="clearModelsCache">
-                <template #icon><RotateCcw :size="14" /></template>
-                Limpar cache
-              </AppButton>
-              <span v-if="cacheMessage" class="cache-message"
-                ><Check :size="12" /> {{ cacheMessage }}</span
-              >
-            </div>
-          </SettingRow>
-        </div>
-      </section>
-
-      <!-- ---------------------------- INTERFACE ---------------------------- -->
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><LayoutGrid :size="18" /></div>
-          <div>
-            <h2 class="group-title">Interface</h2>
-            <p class="group-description">Personalize a exibição de informações e densidade</p>
-          </div>
-        </div>
-        <div class="group-body">
-          <SettingRow
-            label="Mostrar descrições dos modelos"
-            description="Exibe a finalidade resumida nos cards da aba Modelos"
-          >
-            <SettingSwitch v-model="settingsState.showModelDescriptions" />
-          </SettingRow>
-          <SettingRow
-            label="Mostrar indicadores de uso comercial"
-            description="Badge de licença nos modelos"
-          >
-            <SettingSwitch v-model="settingsState.showCommercialBadges" />
-          </SettingRow>
-          <SettingRow label="Tamanho das miniaturas" description="Fila, editor e histórico">
-            <SegmentedControl
-              v-model="settingsState.thumbnailSize"
-              :options="[
-                { value: 'sm', label: 'Pequenas' },
-                { value: 'md', label: 'Médias' },
-                { value: 'lg', label: 'Grandes' }
-              ]"
-            />
-          </SettingRow>
-          <SettingRow
-            label="Ativar animações"
-            description="Transições e microanimações da interface"
-          >
-            <SettingSwitch v-model="settingsState.animationsEnabled" />
-          </SettingRow>
-          <SettingRow label="Densidade da interface" description="Espaçamento entre elementos">
-            <SegmentedControl
-              v-model="settingsState.density"
-              :options="[
-                { value: 'compact', label: 'Compacta' },
-                { value: 'standard', label: 'Padrão' },
-                { value: 'comfortable', label: 'Confortável' }
-              ]"
-            />
-          </SettingRow>
-        </div>
-      </section>
-
-      <!-- ---------------------------- AVANÇADO ---------------------------- -->
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon"><Wrench :size="18" /></div>
-          <div>
-            <h2 class="group-title">Avançado</h2>
-            <p class="group-description">Diagnóstico e informações técnicas</p>
-          </div>
-        </div>
-        <div class="group-body">
-          <SettingRow label="Versão do aplicativo">
-            <span class="fixed-value">{{ appVersion ?? '—' }}</span>
-          </SettingRow>
-          <SettingRow v-if="electronVersions" label="Versões do runtime">
-            <span class="fixed-value mono">
-              Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
-              Node {{ electronVersions.node }}
-            </span>
-          </SettingRow>
-        </div>
-      </section>
-
-      <section class="settings-group">
-        <div class="group-header credits-header">
-          <div class="group-icon credits-icon"><Award :size="18" /></div>
-          <div class="credits-header-text">
-            <h2 class="group-title">Créditos</h2>
-            <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
-          </div>
-        </div>
-        <div class="group-body credits-body">
-          <ul class="credits-list">
-            <li v-for="credit in CREDITS" :key="credit.work">
-              <div class="credit-row">
-                <div
-                  class="credit-icon"
-                  :style="{ background: credit.tint + '22', color: credit.tint }"
+            </SettingRow>
+            <SettingRow
+              :label="t('settings.general.theme.label')"
+              :description="t('settings.general.theme.description')"
+            >
+              <SegmentedControl
+                :model-value="settingsState.theme"
+                :options="[
+                  { value: 'light', label: t('settings.general.theme.light') },
+                  { value: 'dark', label: t('settings.general.theme.dark') },
+                  { value: 'auto', label: t('settings.general.theme.auto') }
+                ]"
+                @update:model-value="(v) => setTheme(v as 'dark' | 'light' | 'auto')"
+              />
+            </SettingRow>
+            <SettingRow
+              :label="t('settings.general.autoUpdate.label')"
+              :description="t('settings.general.autoUpdate.description')"
+            >
+              <SettingSwitch v-model="settingsState.autoCheckUpdates" disabled />
+            </SettingRow>
+            <SettingRow
+              :label="t('settings.general.outputFolder.label')"
+              :description="t('settings.general.outputFolder.description')"
+            >
+              <div class="folder-picker">
+                <span class="folder-picker-value" :title="outputFolderLabel">{{
+                  outputFolderLabel
+                }}</span>
+                <AppButton
+                  variant="secondary"
+                  icon-only
+                  :disabled="!hasNativeApi"
+                  @click="pickDefaultOutputFolder"
                 >
-                  <component :is="credit.icon" :size="18" />
-                </div>
-                <div class="credit-main">
-                  <div class="credit-title-row">
-                    <span class="credit-name">{{ credit.capability }}</span>
-                  </div>
-                  <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
-                  <p v-if="credit.note" class="credit-note">
-                    <Info :size="12" /> {{ credit.note }}
-                  </p>
-                </div>
-                <span
-                  class="credit-license-badge"
-                  :style="{
-                    background: licenseTone(credit.license) + '22',
-                    color: licenseTone(credit.license)
-                  }"
-                  >{{ credit.license }}</span
-                >
-                <button
-                  class="credit-expand-btn"
-                  type="button"
-                  :title="expandedCredit === credit.work ? 'Recolher' : 'Detalhes'"
-                  @click="toggleCredit(credit.work)"
-                >
-                  <component
-                    :is="expandedCredit === credit.work ? ChevronDown : ChevronRight"
-                    :size="16"
-                  />
-                </button>
+                  <template #icon><FolderOpen :size="15" /></template>
+                </AppButton>
               </div>
-              <p v-if="expandedCredit === credit.work" class="credit-detail">
-                Distribuído sob licença {{ credit.license }}.
-              </p>
-            </li>
-          </ul>
-        </div>
-        <div class="credits-footer">
-          <ShieldCheck :size="18" class="credits-footer-icon" />
-          <div class="credits-footer-text">
-            <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
+            </SettingRow>
+            <SettingRow
+              :label="t('settings.general.exportFormat.label')"
+              :description="t('settings.general.exportFormat.description')"
+            >
+              <AppSelect
+                v-model="settingsState.defaultExportFormat"
+                :options="[
+                  { value: 'png', label: '.png' },
+                  { value: 'jpg', label: '.jpg' },
+                  { value: 'webp', label: '.webp' }
+                ]"
+              />
+            </SettingRow>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <!-- ---------------------------- PROCESSAMENTO ---------------------------- -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon"><Cpu :size="18" /></div>
+            <div>
+              <h2 class="group-title">Processamento</h2>
+              <p class="group-description">Padrões usados ao configurar uma nova imagem</p>
+            </div>
+          </div>
+          <div class="group-body">
+            <SettingRow
+              label="Escala padrão"
+              description="Fator pré-selecionado para novas imagens"
+            >
+              <SegmentedControl
+                :model-value="String(settingsState.defaultScalePreset)"
+                :options="[
+                  { value: '2', label: '2x' },
+                  { value: '4', label: '4x' }
+                ]"
+                @update:model-value="(v) => (settingsState.defaultScalePreset = Number(v) as 2 | 4)"
+              />
+            </SettingRow>
+            <SettingRow
+              label="Manter proporção automaticamente"
+              description="Trava largura/altura no modo customizado"
+            >
+              <SettingSwitch v-model="settingsState.defaultLockAspectRatio" />
+            </SettingRow>
+            <SettingRow
+              label="Qualidade da imagem"
+              description="Padrão para exportação em .jpg/.webp"
+            >
+              <div class="quality-control">
+                <RangeSlider
+                  v-model="settingsState.defaultQuality"
+                  :min="1"
+                  :max="100"
+                  :default-value="90"
+                />
+                <span class="quality-value">{{ settingsState.defaultQuality }}</span>
+              </div>
+            </SettingRow>
+            <SettingRow
+              label="Tarefas simultâneas"
+              description="Fixo em 1 pela arquitetura atual do processamento (fila serial, um worker)"
+            >
+              <span class="fixed-value">1</span>
+            </SettingRow>
+          </div>
+        </section>
+
+        <!-- ---------------------------- HISTÓRICO ---------------------------- -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon"><HistoryIcon :size="18" /></div>
+            <div>
+              <h2 class="group-title">Histórico</h2>
+              <p class="group-description">
+                {{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente
+              </p>
+            </div>
+          </div>
+          <div class="group-body">
+            <SettingRow
+              label="Limite máximo de registros"
+              description="Os mais antigos são removidos ao ultrapassar"
+            >
+              <input
+                v-model.number="settingsState.historyLimit"
+                type="number"
+                min="1"
+                max="5000"
+                class="number-input"
+              />
+            </SettingRow>
+            <SettingRow
+              label="Limpeza automática"
+              description="Remove registros mais antigos que o período abaixo"
+            >
+              <SettingSwitch
+                :model-value="settingsState.historyAutoCleanupDays !== null"
+                @update:model-value="(v) => (settingsState.historyAutoCleanupDays = v ? 30 : null)"
+              />
+            </SettingRow>
+            <SettingRow
+              v-if="settingsState.historyAutoCleanupDays !== null"
+              label="Manter por"
+              description="Dias antes da remoção automática"
+            >
+              <AppSelect
+                :model-value="String(settingsState.historyAutoCleanupDays)"
+                :options="[
+                  { value: '7', label: '7 dias' },
+                  { value: '30', label: '30 dias' },
+                  { value: '90', label: '90 dias' }
+                ]"
+                @update:model-value="(v) => (settingsState.historyAutoCleanupDays = Number(v))"
+              />
+            </SettingRow>
+            <SettingRow
+              label="Limpar histórico manualmente"
+              description="Remove todos os registros salvos — não afeta os arquivos exportados"
+            >
+              <AppButton variant="danger" :disabled="!historyCount" @click="confirmClearHistory">
+                <template #icon><Trash2 :size="14" /></template>
+                {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
+              </AppButton>
+            </SettingRow>
+            <SettingRow
+              label="Limpar cache"
+              description="Recarrega a lista de modelos direto da API"
+            >
+              <div class="cache-row">
+                <AppButton variant="secondary" @click="clearModelsCache">
+                  <template #icon><RotateCcw :size="14" /></template>
+                  Limpar cache
+                </AppButton>
+                <span v-if="cacheMessage" class="cache-message"
+                  ><Check :size="12" /> {{ cacheMessage }}</span
+                >
+              </div>
+            </SettingRow>
+          </div>
+        </section>
+
+        <!-- ---------------------------- INTERFACE ---------------------------- -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon"><LayoutGrid :size="18" /></div>
+            <div>
+              <h2 class="group-title">Interface</h2>
+              <p class="group-description">Personalize a exibição de informações e densidade</p>
+            </div>
+          </div>
+          <div class="group-body">
+            <SettingRow
+              label="Mostrar descrições dos modelos"
+              description="Exibe a finalidade resumida nos cards da aba Modelos"
+            >
+              <SettingSwitch v-model="settingsState.showModelDescriptions" />
+            </SettingRow>
+            <SettingRow
+              label="Mostrar indicadores de uso comercial"
+              description="Badge de licença nos modelos"
+            >
+              <SettingSwitch v-model="settingsState.showCommercialBadges" />
+            </SettingRow>
+            <SettingRow label="Tamanho das miniaturas" description="Fila, editor e histórico">
+              <SegmentedControl
+                v-model="settingsState.thumbnailSize"
+                :options="[
+                  { value: 'sm', label: 'Pequenas' },
+                  { value: 'md', label: 'Médias' },
+                  { value: 'lg', label: 'Grandes' }
+                ]"
+              />
+            </SettingRow>
+            <SettingRow
+              label="Ativar animações"
+              description="Transições e microanimações da interface"
+            >
+              <SettingSwitch v-model="settingsState.animationsEnabled" />
+            </SettingRow>
+            <SettingRow label="Densidade da interface" description="Espaçamento entre elementos">
+              <SegmentedControl
+                v-model="settingsState.density"
+                :options="[
+                  { value: 'compact', label: 'Compacta' },
+                  { value: 'standard', label: 'Padrão' },
+                  { value: 'comfortable', label: 'Confortável' }
+                ]"
+              />
+            </SettingRow>
+          </div>
+        </section>
+
+        <!-- ---------------------------- AVANÇADO ---------------------------- -->
+        <section class="settings-group">
+          <div class="group-header">
+            <div class="group-icon"><Wrench :size="18" /></div>
+            <div>
+              <h2 class="group-title">Avançado</h2>
+              <p class="group-description">Diagnóstico e informações técnicas</p>
+            </div>
+          </div>
+          <div class="group-body">
+            <SettingRow label="Versão do aplicativo">
+              <span class="fixed-value">{{ appVersion ?? '—' }}</span>
+            </SettingRow>
+            <SettingRow v-if="electronVersions" label="Versões do runtime">
+              <span class="fixed-value mono">
+                Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
+                Node {{ electronVersions.node }}
+              </span>
+            </SettingRow>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="group-header credits-header">
+            <div class="group-icon credits-icon"><Award :size="18" /></div>
+            <div class="credits-header-text">
+              <h2 class="group-title">Créditos</h2>
+              <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
+            </div>
+          </div>
+          <div class="group-body credits-body">
+            <ul class="credits-list">
+              <li v-for="credit in CREDITS" :key="credit.work">
+                <div class="credit-row">
+                  <div
+                    class="credit-icon"
+                    :style="{ background: credit.tint + '22', color: credit.tint }"
+                  >
+                    <component :is="credit.icon" :size="18" />
+                  </div>
+                  <div class="credit-main">
+                    <div class="credit-title-row">
+                      <span class="credit-name">{{ credit.capability }}</span>
+                    </div>
+                    <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
+                    <p v-if="credit.note" class="credit-note">
+                      <Info :size="12" /> {{ credit.note }}
+                    </p>
+                  </div>
+                  <span
+                    class="credit-license-badge"
+                    :style="{
+                      background: licenseTone(credit.license) + '22',
+                      color: licenseTone(credit.license)
+                    }"
+                    >{{ credit.license }}</span
+                  >
+                  <button
+                    class="credit-expand-btn"
+                    type="button"
+                    :title="expandedCredit === credit.work ? 'Recolher' : 'Detalhes'"
+                    @click="toggleCredit(credit.work)"
+                  >
+                    <component
+                      :is="expandedCredit === credit.work ? ChevronDown : ChevronRight"
+                      :size="16"
+                    />
+                  </button>
+                </div>
+                <p v-if="expandedCredit === credit.work" class="credit-detail">
+                  Distribuído sob licença {{ credit.license }}.
+                </p>
+              </li>
+            </ul>
+          </div>
+          <div class="credits-footer">
+            <ShieldCheck :size="18" class="credits-footer-icon" />
+            <div class="credits-footer-text">
+              <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   </div>
 </template>
@@ -549,10 +557,18 @@ const outputFolderLabel = computed(
   min-width: 0;
 }
 
+/* The scroller is the full-width element and the 860px column lives inside
+   it, so the scrollbar sits at the window edge like every other scrollable
+   surface — with `max-width` on the scroller itself the bar was pulled into
+   the content column and ran flush against the header. */
 .settings-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: var(--space-4);
+}
+
+.settings-column {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
