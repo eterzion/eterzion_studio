@@ -135,7 +135,7 @@ function onPointerUp(): void {
   position: relative;
   width: 28px;
   height: 28px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   color: var(--surface-1);
   display: flex;

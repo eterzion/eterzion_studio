@@ -208,7 +208,7 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
   height: 18px;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   cursor: pointer;

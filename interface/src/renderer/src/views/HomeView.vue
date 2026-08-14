@@ -211,7 +211,7 @@ function openImage(id?: string): void {
   justify-content: center;
   color: var(--text-primary);
   border: 1.5px solid var(--tint);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--tint) 8%, var(--surface-2));
   box-shadow:
     0 0 10px color-mix(in srgb, var(--tint) 55%, transparent),
@@ -276,7 +276,7 @@ function openImage(id?: string): void {
 .queue-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: var(--color-primary);
   box-shadow: none;
 }

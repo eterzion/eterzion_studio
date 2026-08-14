@@ -156,7 +156,7 @@ function onInput(e: Event): void {
   box-sizing: border-box;
   width: var(--thumb);
   height: var(--thumb);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   border: 3px solid var(--color-primary);
   /* No offset needed: the runnable track is exactly --thumb tall too. */
@@ -169,7 +169,7 @@ function onInput(e: Event): void {
   box-sizing: border-box;
   width: var(--thumb);
   height: var(--thumb);
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   border: 3px solid var(--color-primary);
   /* No offset needed: the runnable track is exactly --thumb tall too. */

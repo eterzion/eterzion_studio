@@ -203,7 +203,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: radial-gradient(
     circle,
     var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%,
@@ -215,7 +215,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   content: '';
   position: absolute;
   inset: 12px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--color-warning-soft, rgba(245, 158, 11, 0.3));
 }
 
@@ -240,7 +240,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   position: absolute;
   width: 4px;
   height: 4px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: var(--color-warning, var(--text-tertiary));
   opacity: 0.5;
 }

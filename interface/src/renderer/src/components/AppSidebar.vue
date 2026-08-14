@@ -482,7 +482,7 @@ function openExternal(url: string): void {
   left: 2px;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   transition: transform var(--transition-fast);
 }

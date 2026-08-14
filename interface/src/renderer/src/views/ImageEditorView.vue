@@ -1360,7 +1360,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   height: 18px;
   padding: 0;
   border: none;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: rgba(0, 0, 0, 0.6);
   color: #fff;
   cursor: pointer;
@@ -1786,7 +1786,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   left: 2px;
   width: 16px;
   height: 16px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   transition: transform var(--transition-fast);
 }

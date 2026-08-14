@@ -148,7 +148,11 @@
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --radius-full: 999px;
+  /* Deliberately not a pill any more: the interface uses rounded rectangles
+     throughout, so the token that used to mean "fully round" now resolves to
+     the same corner as everything else. Kept as a token rather than removed,
+     because the places that used it still mean "the roundest we go". */
+  --radius-full: 10px;
 
   /* Text/icon on a colored (accent/primary) background — always white regardless of
      light/dark theme, since accent colors are chosen for contrast against white. */

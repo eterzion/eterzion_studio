@@ -56,7 +56,7 @@ const emit = defineEmits<{
   left: 2px;
   width: 17px;
   height: 17px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   background: #fff;
   transition: transform var(--transition-fast);
 }

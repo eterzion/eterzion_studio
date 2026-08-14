@@ -36,7 +36,7 @@ const toneClasses = computed<string>(() => {
 <template>
   <span
     class="inline-flex items-center gap-1 px-2 py-0.5 text-(length:--fs-caption) font-medium"
-    :class="[toneClasses, shape === 'pill' ? 'rounded-full' : 'rounded-(--radius-sm)']"
+    :class="[toneClasses, shape === 'pill' ? 'rounded-(--radius-md)' : 'rounded-(--radius-sm)']"
   >
     <slot />
   </span>

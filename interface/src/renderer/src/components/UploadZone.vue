@@ -76,11 +76,11 @@ function onKeydown(e: KeyboardEvent): void {
     <div class="drop-ring" aria-hidden="true" />
 
     <template v-if="loading">
-      <AppSpinner :size="26" class="icon-circle-spin" />
+      <AppSpinner :size="26" class="icon-tile-spin" />
       <h3 class="upload-title">Importando arquivos…</h3>
     </template>
     <template v-else-if="error">
-      <div class="icon-circle icon-error"><FileWarning :size="26" /></div>
+      <div class="icon-tile icon-error"><FileWarning :size="26" /></div>
       <h3 class="upload-title">Não foi possível importar os arquivos</h3>
       <p class="upload-subtitle">{{ error }}</p>
       <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
@@ -88,7 +88,7 @@ function onKeydown(e: KeyboardEvent): void {
       </AppButton>
     </template>
     <template v-else>
-      <div class="icon-circle" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
+      <div class="icon-tile" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
       <h3 class="upload-title">
         {{ dragOver ? 'Solte para importar' : title }}
       </h3>
@@ -191,10 +191,10 @@ function onKeydown(e: KeyboardEvent): void {
   }
 }
 
-.icon-circle {
+.icon-tile {
   width: 56px;
   height: 56px;
-  border-radius: 50%;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -204,16 +204,16 @@ function onKeydown(e: KeyboardEvent): void {
   transition: transform var(--transition-fast);
 }
 
-.icon-circle.active {
+.icon-tile.active {
   transform: scale(1.1);
 }
 
-.icon-circle.icon-error {
+.icon-tile.icon-error {
   color: var(--color-danger);
   background: var(--color-danger-soft);
 }
 
-.icon-circle-spin {
+.icon-tile-spin {
   color: var(--color-primary);
   margin-bottom: var(--space-1);
 }
