@@ -632,8 +632,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <XCircle :size="14" /> Processamento cancelado.
           </p>
 
-          <!-- Hidden in 'original' mode: no model runs, so none of these choose
-               anything (see ScaleConfig.mode in store/jobs.ts). -->
+          <!-- These three only ever choose or tune a model pass, and Original mode
+               resolves no model (it travels as scale '1x'), so they are hidden
+               there — offering control over work that never happens is the same
+               claim the RESULTADO panel used to make. Ajustes below is not
+               hidden: its filters run in both modes. -->
           <CollapsiblePanel
             v-if="job.scaleConfig.mode !== 'original'"
             title="Tipo de conteúdo"
@@ -797,8 +800,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <p v-if="!validity.valid" class="field-warning">{{ validity.reason }}</p>
           </CollapsiblePanel>
 
+          <!-- Shown in every mode, unlike the three above: these filters are real
+               OpenCV post-processing, and in Original mode they ARE the
+               processing. See Upscaler.process_without_model(). -->
           <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original'"
             title="Ajustes"
             description="Ajustes finos de qualidade"
             :icon="SlidersHorizontal"
@@ -875,7 +880,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 <span class="slider-value">{{ job.scaleConfig.sharpen }}</span>
               </div>
               <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="0" />
-              <p class="field-hint">Máscara de nitidez (unsharp mask) aplicada após o upscale</p>
+              <p class="field-hint">
+                Máscara de nitidez (unsharp mask), aplicada depois do redimensionamento — no modo
+                Original ela é o próprio processamento.
+              </p>
             </div>
 
             <div class="toggle-row">

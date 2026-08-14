@@ -13,10 +13,14 @@ function fmtDim(value: number | null | undefined): string {
   return value == null ? '—' : String(value)
 }
 
-const processingSeconds = computed(() => {
+// Original mode finishes in well under a second, where rounding to seconds
+// reported a flat "0s" — which reads as "nothing happened" rather than "it was
+// fast". Below a second the real milliseconds are shown instead.
+const processingLabel = computed(() => {
   const { processingStartedAt, processingEndedAt } = props.job
-  if (!processingStartedAt || !processingEndedAt) return null
-  return Math.round((processingEndedAt - processingStartedAt) / 1000)
+  if (!processingStartedAt || !processingEndedAt) return '—'
+  const ms = processingEndedAt - processingStartedAt
+  return ms < 1000 ? `${Math.max(1, Math.round(ms))}ms` : `${Math.round(ms / 1000)}s`
 })
 
 const sourceResolution = computed(
@@ -67,11 +71,9 @@ const modelSummary = computed(() => {
     </div>
     <div class="stat">
       <span class="stat-label">Tempo de processamento</span>
-      <span class="stat-value">{{
-        processingSeconds != null ? processingSeconds + 's' : '—'
-      }}</span>
+      <span class="stat-value">{{ processingLabel }}</span>
     </div>
-    <div class="stat stat-wide">
+    <div class="stat">
       <span class="stat-label">{{ usesModel ? 'Modelo e parâmetros' : 'Processamento' }}</span>
       <span class="stat-value">{{ modelSummary }}</span>
     </div>
@@ -79,9 +81,12 @@ const modelSummary = computed(() => {
 </template>
 
 <style scoped>
+/* One stat per row. Side by side, a "before → after" pair had to break across
+   two cramped lines in a 320px panel; full width lets each value keep its own
+   line without the card getting narrower than the number it holds. */
 .stats-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-2);
 }
 
@@ -94,10 +99,6 @@ const modelSummary = computed(() => {
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-sm);
   padding: var(--space-2);
-}
-
-.stat-wide {
-  grid-column: 1 / -1;
 }
 
 .stat-label {
