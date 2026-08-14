@@ -200,7 +200,7 @@ onUnmounted(() => {
 })
 
 // ------------------------------- scale config helpers ------------------------------- //
-function switchScaleMode(j: Job, mode: 'preset' | 'custom'): void {
+function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original'): void {
   j.scaleConfig.mode = mode
   if (mode === 'custom') ensureCustomSizeDefaults(j)
 }
@@ -626,7 +626,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <XCircle :size="14" /> Processamento cancelado.
           </p>
 
+          <!-- Hidden in 'original' mode: no model runs, so none of these choose
+               anything (see ScaleConfig.mode in store/jobs.ts). -->
           <CollapsiblePanel
+            v-if="job.scaleConfig.mode !== 'original'"
             title="Tipo de conteúdo"
             description="Detectado automaticamente — corrija se estiver errado"
             :icon="Cpu"
@@ -642,6 +645,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           </CollapsiblePanel>
 
           <CollapsiblePanel
+            v-if="job.scaleConfig.mode !== 'original'"
             title="Perfil"
             description="Rápido, Equilibrado ou Qualidade — nunca troca o que processa a imagem, só o quanto se esforça"
             :icon="ChartNoAxesColumn"
@@ -656,6 +660,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           </CollapsiblePanel>
 
           <CollapsiblePanel
+            v-if="job.scaleConfig.mode !== 'original'"
             title="Dispositivo de processamento"
             description="Onde o modelo roda — GPU acelera, CPU é o padrão de compatibilidade"
             :icon="MonitorCog"
@@ -688,9 +693,22 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               >
                 Customizado
               </button>
+              <button
+                class="mode-tab"
+                :class="{ active: job.scaleConfig.mode === 'original' }"
+                type="button"
+                @click="switchScaleMode(job, 'original')"
+              >
+                Original
+              </button>
             </div>
 
-            <div v-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
+            <p v-if="job.scaleConfig.mode === 'original'" class="field-note">
+              A imagem sai no tamanho em que entrou, sem passar pelo modelo — só a exportação abaixo
+              decide formato, qualidade e destino.
+            </p>
+
+            <div v-else-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
               <button
                 v-for="s in [2, 4]"
                 :key="s"
@@ -761,6 +779,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           </CollapsiblePanel>
 
           <CollapsiblePanel
+            v-if="job.scaleConfig.mode !== 'original'"
             title="Ajustes"
             description="Ajustes finos de qualidade"
             :icon="SlidersHorizontal"
@@ -1560,6 +1579,12 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .field-warning {
   font-size: 11px;
   color: var(--color-warning);
+}
+
+.field-note {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
 }
 
 .device-hint {

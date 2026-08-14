@@ -426,6 +426,32 @@ def _audio_output_path(job_id: str, input_path: str) -> str:
     return os.path.join(settings.outputs_dir, f'{job_id}{ext}')
 
 
+def _media_dimensions(path: str) -> tuple[int | None, int | None]:
+    """Real pixel dimensions of a compress/convert input or result. Purely
+    informational — the Exportar screen reports blanks rather than failing a
+    finished job, so anything unreadable here (AVIF, which OpenCV can't decode;
+    a codec ffprobe doesn't know; audio, which has no dimensions at all) comes
+    back as (None, None)."""
+    from astros_upscale.optimize import IMAGE_EXTENSIONS, VIDEO_EXTENSIONS
+
+    ext = os.path.splitext(path)[1].lower()
+    try:
+        if ext in IMAGE_EXTENSIONS:
+            from astros_upscale.media import imread
+
+            image = imread(path)
+            return int(image.shape[1]), int(image.shape[0])
+        if ext in VIDEO_EXTENSIONS:
+            from astros_upscale.media import ffprobe_json
+
+            for stream in ffprobe_json(path).get('streams', []):
+                if stream.get('codec_type') == 'video':
+                    return int(stream['width']), int(stream['height'])
+    except Exception:  # noqa: BLE001 — see docstring: never fail a done job over metadata
+        pass
+    return None, None
+
+
 def _compress_convert_output_path(job: dict, params: dict) -> str:
     """Where a compress/convert job's real (non-cached, final) output goes —
     unlike enhance, there's no lossless "master" to re-export later, so this
@@ -433,7 +459,17 @@ def _compress_convert_output_path(job: dict, params: dict) -> str:
     input_path = job['input_path']
     output_target = params.get('output_target') or {}
     fmt = (output_target.get('format') or os.path.splitext(input_path)[1].lstrip('.')).lstrip('.').lower()
-    directory = output_target.get('directory') or os.path.dirname(input_path) or settings.outputs_dir
+    # No output_target at all means the caller never named a destination — the
+    # Imagem screen's "manter original" mode, which re-encodes without scaling
+    # and then lets its own export panel write where the person actually asked.
+    # Defaulting that to the source's folder would drop an unrequested file next
+    # to their original, so it goes to the app's outputs dir instead. A caller
+    # that DID send an output_target (the Exportar screen always does) keeps
+    # writing beside the source exactly as before.
+    if not output_target:
+        directory = settings.outputs_dir
+    else:
+        directory = output_target.get('directory') or os.path.dirname(input_path) or settings.outputs_dir
     stem = os.path.splitext(os.path.basename(input_path))[0]
     filename = output_target.get('filename') or f'{stem}.{fmt}'
     if not filename.lower().endswith(f'.{fmt}'):
@@ -796,11 +832,15 @@ async def _process_job(job_id: str) -> None:
             # No lossless "master" here (unlike enhance) — optimize_file()
             # already wrote the real, final result.
             job['output_path'] = result_meta['output_path']
+            source_w, source_h = _media_dimensions(job['input_path'])
+            output_w, output_h = _media_dimensions(result_meta['output_path'])
             job['source_meta'] = {
-                'width': None, 'height': None,
+                'width': source_w, 'height': source_h,
                 'size_bytes': os.path.getsize(job['input_path']) if os.path.isfile(job['input_path']) else None,
             }
-            job['output_meta'] = {'width': None, 'height': None, 'size_bytes': result_meta['size_bytes']}
+            job['output_meta'] = {
+                'width': output_w, 'height': output_h, 'size_bytes': result_meta['size_bytes'],
+            }
         elif job.get('media_type') == 'video':
             # No separate "master" for video (unlike image) — VideoUpscaler
             # already wrote the real, final, audio-muxed file.
@@ -931,10 +971,14 @@ def export_job(job_id: str, output_path: str, quality: int | None) -> None:
         raise ValueError('Job não encontrado.')
     if job['status'] != 'done':
         raise ValueError('Job ainda não foi concluído.')
+    # An enhance job caches a lossless master to re-encode from. A compress or
+    # convert job has no master — optimize_file() already wrote the real result,
+    # and that file is what this re-encodes from instead.
     master_path = _master_path(job_id)
-    if not os.path.isfile(master_path):
+    source_path = master_path if os.path.isfile(master_path) else job.get('output_path')
+    if not source_path or not os.path.isfile(source_path):
         raise ValueError('Resultado do job não está mais disponível.')
-    Upscaler.export(master_path, output_path, quality)
+    Upscaler.export(source_path, output_path, quality)
     job['output_path'] = output_path
 
 

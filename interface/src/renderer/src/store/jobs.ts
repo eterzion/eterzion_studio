@@ -7,6 +7,7 @@ import {
   cancelJob as apiCancelJob,
   exportJob as apiExportJob,
   getJob,
+  defaultAdjustments,
   type JobStatus as ApiJobStatus,
   type ErrorCategory,
   type ExportRequest,
@@ -33,7 +34,10 @@ export const MAX_OUTPUT_DIMENSION = 32000
 export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024
 
 export interface ScaleConfig {
-  mode: 'preset' | 'custom'
+  /** 'original' keeps the source resolution and never runs the model — the job
+      becomes a plain re-encode, which is what the Exportar screen already does
+      for files that only need a different format or a smaller size. */
+  mode: 'preset' | 'custom' | 'original'
   presetFactor: 2 | 4
   customWidth: number | null
   customHeight: number | null
@@ -312,6 +316,11 @@ export function applyConfigToAll(sourceJob: Job): void {
  *  32000px per side" guards from 4.2. Returns a single human-readable reason so
  *  the UI can show it inline instead of just disabling the button silently. */
 export function validateScaleConfig(job: Job): { valid: boolean; reason?: string } {
+  // Original mode picks no model, so the content type it would select is
+  // irrelevant — requiring it here is what used to block the one path that
+  // does not need it.
+  if (job.scaleConfig.mode === 'original') return { valid: true }
+
   if (!job.scaleConfig.contentType)
     return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
 
@@ -350,6 +359,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 export function estimatedOutputSize(job: Job): { width: number; height: number } | null {
   const { width: srcW, height: srcH } = job.sourceMeta
   if (!srcW || !srcH) return null
+  if (job.scaleConfig.mode === 'original') return { width: srcW, height: srcH }
   if (job.scaleConfig.mode === 'preset') {
     return {
       width: srcW * job.scaleConfig.presetFactor,
@@ -451,6 +461,38 @@ export async function startProcessing(job: Job): Promise<void> {
       job.scaleConfig.customHeight
         ? { width: job.scaleConfig.customWidth, height: job.scaleConfig.customHeight }
         : null
+
+    // Original mode is a re-encode, not an upscale: it goes down the backend's
+    // compress path (real transcoding, never a model — FR-029) with no
+    // output_target, so the result lands in the app's outputs dir and the
+    // export panel below stays the only thing that writes where the person
+    // asked. Everything else about the job — progress, cancel, history,
+    // export — is unchanged.
+    if (job.scaleConfig.mode === 'original') {
+      const backendJobId = await createLocalJob(
+        { media_type: 'image', operation: 'compress', input_path: job.sourcePath },
+        // The compress path never reads these (no model runs), but the contract
+        // requires the block — send the defaults rather than the job's tuning.
+        defaultAdjustments()
+      )
+      job.backendJobId = backendJobId
+      await apiProcessJob(backendJobId)
+      const unsubscribe = subscribeJobProgress(
+        backendJobId,
+        (status) => applyApiStatus(job, status),
+        () => {
+          getJob(backendJobId)
+            .then((status) => applyApiStatus(job, status))
+            .catch(() => {
+              job.status = 'error'
+              job.errorMessage = 'Falha na comunicação com o servidor durante o processamento.'
+              recordJob(job, job.status)
+            })
+        }
+      )
+      jobUnsubscribers.set(backendJobId, unsubscribe)
+      return
+    }
 
     const backendJobId = await createLocalJob(
       {

@@ -8,6 +8,7 @@ Independent Test criterion for User Story 2)."""
 from __future__ import annotations
 
 import asyncio
+import os
 
 import cv2
 import numpy as np
@@ -100,3 +101,78 @@ def test_compress_quality_levels_produce_measurably_different_file_sizes(tmp_pat
     assert low['status'] == 'done', low.get('error')
     assert high['status'] == 'done', high.get('error')
     assert low['output_meta']['size_bytes'] < high['output_meta']['size_bytes']
+
+
+def test_compress_job_resizes_to_the_exact_requested_dimensions(tmp_path):
+    """The Exportar screen's Dimensões field travels as `custom_size` in the
+    job params — this walks the same path the UI uses (create_job -> params ->
+    _run_compress_convert -> optimize_file) and asserts the pixels actually
+    changed, so a break anywhere in that chain fails here."""
+    input_path = _write_test_image(tmp_path / 'in.jpg', size=200)
+    job_id = job_manager.create_job(
+        input_path, 'in.jpg',
+        {'output_target': {'format': 'jpg', 'directory': str(tmp_path), 'filename': 'resized.jpg'},
+         'quality': 80, 'custom_size': {'width': 120, 'height': 90}, 'adjustments': {}},
+        media_type='image', operation='compress',
+    )
+    job_manager.jobs[job_id]['status'] = 'queued'
+    asyncio.run(job_manager._process_job(job_id))
+
+    job = job_manager.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    assert cv2.imread(job['output_path']).shape[:2] == (90, 120)
+    # The Exportar screen reads these back to show what actually came out —
+    # they used to be hardcoded None, so a resize was invisible in the UI.
+    assert job['source_meta']['width'] == 200 and job['source_meta']['height'] == 200
+    assert job['output_meta']['width'] == 120 and job['output_meta']['height'] == 90
+
+
+def test_compress_without_an_output_target_writes_to_the_outputs_dir(tmp_path, monkeypatch):
+    """The Imagem screen's "Original" scale mode sends no output_target: it
+    re-encodes without scaling and lets its own export panel choose where the
+    file really goes. Defaulting to the source's folder there would drop an
+    unrequested file next to the person's original."""
+    from app.config import settings
+
+    outputs = tmp_path / 'outputs'
+    outputs.mkdir()
+    monkeypatch.setattr(settings, 'outputs_dir', str(outputs))
+
+    source_dir = tmp_path / 'source'
+    source_dir.mkdir()
+    input_path = _write_test_image(source_dir / 'in.jpg')
+    job_id = job_manager.create_job(
+        input_path, 'in.jpg', {'quality': 80, 'adjustments': {}},
+        media_type='image', operation='compress',
+    )
+    job_manager.jobs[job_id]['status'] = 'queued'
+    asyncio.run(job_manager._process_job(job_id))
+
+    job = job_manager.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    assert os.path.dirname(job['output_path']) == str(outputs)
+    assert list(source_dir.iterdir()) == [source_dir / 'in.jpg']
+
+
+def test_export_falls_back_to_the_result_when_a_job_has_no_master(tmp_path, monkeypatch):
+    """Only an enhance job caches a lossless master to re-encode from. A
+    compress job's real result is the file optimize_file() already wrote, and
+    the export panel has to be able to re-encode from that instead."""
+    from app.config import settings
+
+    outputs = tmp_path / 'outputs'
+    outputs.mkdir()
+    monkeypatch.setattr(settings, 'outputs_dir', str(outputs))
+
+    input_path = _write_test_image(tmp_path / 'in.jpg')
+    job_id = job_manager.create_job(
+        input_path, 'in.jpg', {'quality': 80, 'adjustments': {}},
+        media_type='image', operation='compress',
+    )
+    job_manager.jobs[job_id]['status'] = 'queued'
+    asyncio.run(job_manager._process_job(job_id))
+    assert not os.path.isfile(job_manager._master_path(job_id))
+
+    exported = str(tmp_path / 'exported.png')
+    job_manager.export_job(job_id, exported, quality=90)
+    assert cv2.imread(exported) is not None
