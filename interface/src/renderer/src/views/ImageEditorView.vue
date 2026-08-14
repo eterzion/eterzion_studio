@@ -133,7 +133,14 @@ const profileOptions = computed(() =>
 )
 
 const deviceOptions = computed(() =>
-  devices.value.map((d) => ({ value: d, label: deviceLabels[d] ?? d }))
+  // The description travels with each option, like Tipo de conteúdo and Perfil:
+  // it is needed while choosing, which is exactly when a hint under the closed
+  // select cannot be read.
+  devices.value.map((d) => ({
+    value: d,
+    label: deviceLabels[d] ?? d,
+    description: deviceDescriptions[d]
+  }))
 )
 const exportFormatOptions = [
   { value: 'png', label: '.png' },
@@ -159,11 +166,6 @@ const deviceDescriptions: Record<string, string> = {
   cuda: 'Força o uso da GPU NVIDIA (CUDA) — mais rápido, requer driver compatível.',
   mps: 'Força o uso da GPU da Apple via Metal — mais rápido em Macs com chip Apple Silicon.'
 }
-
-const selectedDeviceDescription = computed(() => {
-  const device = job.value?.scaleConfig.device ?? 'auto'
-  return deviceDescriptions[device] ?? deviceDescriptions.auto
-})
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const {
@@ -671,7 +673,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 :options="deviceOptions"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
-              <p class="field-hint">{{ selectedDeviceDescription }}</p>
             </div>
           </CollapsiblePanel>
 
