@@ -1,20 +1,30 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
+import AppSelect from '../components/AppSelect.vue'
+import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
-import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download } from '@lucide/vue'
+import {
+  Upload,
+  FolderOpen,
+  CheckCircle2,
+  AlertCircle,
+  Download,
+  Repeat,
+  SlidersHorizontal,
+  Expand
+} from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
   processJob as apiProcessJob,
   getJob,
   defaultAdjustments,
-  type MediaType,
-  type Operation
+  type MediaType
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
@@ -22,20 +32,28 @@ import { usePickFiles } from '../composables/usePickFiles'
 
 defineEmits<{ back: [] }>()
 
-// This view never touches store/jobs.ts's queueState — that store's Job/ScaleConfig
-// model is enhance-specific (content_type/profile). Compress/convert never invokes
-// an AI model (FR-029), so it gets its own small, self-contained job list here
-// instead of stretching the enhance data model to cover an unrelated operation.
+// The single non-AI export screen: change format, trade quality for file size,
+// and/or resize — previously split across Otimizar (quality only) and Converter
+// (format only), which meant two visits to do both to one file.
+//
+// Never touches store/jobs.ts's queueState — that store's Job/ScaleConfig model
+// is enhance-specific (content_type/profile). This path never invokes a model
+// (FR-029), so it keeps its own small job list rather than stretching the
+// enhance data model to cover an unrelated operation.
 type LocalStatus = 'configuring' | 'queued' | 'processing' | 'done' | 'error'
 
-interface OptimizeJob {
+interface ExportJob {
   id: string
   backendJobId: string | null
   file: DescribedFile
   mediaType: MediaType
-  operation: Operation
+  /** The file's own extension until the person picks another one. */
   targetFormat: string
+  sourceFormat: string
   quality: number
+  /** null = keep the source dimensions. Images/video only. */
+  width: number | null
+  height: number | null
   status: LocalStatus
   progress: number
   error?: string
@@ -54,7 +72,7 @@ const HISTORY_STATUS: Record<LocalStatus, 'queued' | 'processing' | 'done' | 'er
   error: 'error'
 }
 
-function syncHistory(job: OptimizeJob): void {
+function syncHistory(job: ExportJob): void {
   const historyStatus = HISTORY_STATUS[job.status]
   if (!historyStatus) return
   recordSimpleJob({
@@ -70,13 +88,23 @@ function syncHistory(job: OptimizeJob): void {
   })
 }
 
+const FORMATS_BY_MEDIA_TYPE: Record<MediaType, string[]> = {
+  image: ['jpg', 'png', 'webp', 'avif'],
+  video: ['mp4', 'mkv', 'mov', 'webm'],
+  audio: ['mp3', 'm4a', 'ogg', 'opus', 'flac']
+}
+
+function formatOptions(mediaType: MediaType): { value: string; label: string }[] {
+  return FORMATS_BY_MEDIA_TYPE[mediaType].map((f) => ({ value: f, label: `.${f}` }))
+}
+
 const KIND_TO_MEDIA_TYPE: Record<string, MediaType> = {
   Imagem: 'image',
   Vídeo: 'video',
   Áudio: 'audio'
 }
 
-const jobs = ref<OptimizeJob[]>([])
+const jobs = ref<ExportJob[]>([])
 const importError = ref<string | null>(null)
 
 // Which file the editor is showing. Mirrors ImageEditorView: the screen edits
@@ -113,9 +141,11 @@ async function addFile(described: DescribedFile): Promise<void> {
     backendJobId: null,
     file: described,
     mediaType,
-    operation: 'compress',
     targetFormat: described.ext.replace('.', '').toLowerCase(),
+    sourceFormat: described.ext.replace('.', '').toLowerCase(),
     quality: 75,
+    width: null,
+    height: null,
     status: 'configuring',
     progress: 0,
     createdAt: Date.now()
@@ -125,9 +155,17 @@ async function addFile(described: DescribedFile): Promise<void> {
 
 const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(addFile, importError)
 
-function removeJob(job: OptimizeJob): void {
+function removeJob(job: ExportJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
   if (activeId.value === job.id) activeId.value = jobs.value[0]?.id ?? null
+}
+
+function onWidthInput(job: ExportJob, raw: string): void {
+  job.width = raw ? Math.max(1, Number(raw)) : null
+}
+
+function onHeightInput(job: ExportJob, raw: string): void {
+  job.height = raw ? Math.max(1, Number(raw)) : null
 }
 
 function removeById(id: string): void {
@@ -135,7 +173,7 @@ function removeById(id: string): void {
   if (target) removeJob(target)
 }
 
-async function runJob(job: OptimizeJob): Promise<void> {
+async function runJob(job: ExportJob): Promise<void> {
   job.status = 'queued'
   job.progress = 0
   job.error = undefined
@@ -143,9 +181,12 @@ async function runJob(job: OptimizeJob): Promise<void> {
     const backendJobId = await createLocalJob(
       {
         media_type: job.mediaType,
-        operation: job.operation,
+        // Same backend contract as before: 'convert' when the container
+        // changes, 'compress' when only quality/size do.
+        operation: job.targetFormat === job.sourceFormat ? 'compress' : 'convert',
         input_path: job.file.path,
-        quality: job.operation === 'compress' ? job.quality : null,
+        quality: job.quality,
+        custom_size: job.width && job.height ? { width: job.width, height: job.height } : null,
         output_target: {
           format: job.targetFormat,
           conflict: 'rename'
@@ -218,7 +259,7 @@ function fmtBytes(bytes: number | undefined): string {
 
 <template>
   <div class="optimize-view">
-    <TopBar :title="activeJob?.file.name ?? 'Otimizar'" show-back @back="$emit('back')">
+    <TopBar :title="activeJob?.file.name ?? 'Exportar'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -293,16 +334,60 @@ function fmtBytes(bytes: number | undefined): string {
         <template #panel>
           <template v-if="activeJob">
             <div v-if="activeJob.status === 'configuring'" class="panel-section">
-              <div class="field">
+              <CollapsiblePanel
+                title="Formato"
+                description="Mantém o original ou converte para outro container"
+                :icon="Repeat"
+              >
+                <AppSelect
+                  :model-value="activeJob.targetFormat"
+                  :options="formatOptions(activeJob.mediaType)"
+                  @update:model-value="(v) => (activeJob!.targetFormat = String(v))"
+                />
+              </CollapsiblePanel>
+
+              <CollapsiblePanel
+                title="Qualidade"
+                description="Menor qualidade, menor arquivo — nada é reprocessado por IA"
+                :icon="SlidersHorizontal"
+              >
                 <div class="slider-head">
-                  <label class="field-label">Qualidade</label>
+                  <span class="field-label">Qualidade</span>
                   <span class="slider-value">{{ activeJob.quality }}</span>
                 </div>
                 <RangeSlider v-model="activeJob.quality" :default-value="75" />
-              </div>
+              </CollapsiblePanel>
+
+              <!-- Audio has no dimensions to resize. -->
+              <CollapsiblePanel
+                v-if="activeJob.mediaType !== 'audio'"
+                title="Dimensões"
+                description="Deixe em branco para manter o tamanho original"
+                :icon="Expand"
+              >
+                <div class="size-row">
+                  <input
+                    class="size-input"
+                    type="number"
+                    min="1"
+                    placeholder="Largura"
+                    :value="activeJob.width ?? ''"
+                    @input="onWidthInput(activeJob, ($event.target as HTMLInputElement).value)"
+                  />
+                  <span class="size-x">×</span>
+                  <input
+                    class="size-input"
+                    type="number"
+                    min="1"
+                    placeholder="Altura"
+                    :value="activeJob.height ?? ''"
+                    @input="onHeightInput(activeJob, ($event.target as HTMLInputElement).value)"
+                  />
+                </div>
+              </CollapsiblePanel>
 
               <AppButton variant="primary" size="lg" @click="runJob(activeJob)">
-                Processar
+                Exportar
               </AppButton>
             </div>
 
@@ -390,6 +475,28 @@ function fmtBytes(bytes: number | undefined): string {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+.size-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.size-input {
+  min-width: 0;
+  flex: 1;
+  padding: var(--space-2);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--fs-value);
+}
+.size-x {
+  color: var(--text-tertiary);
+}
+.field-note {
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
 }
 .field {
   display: flex;

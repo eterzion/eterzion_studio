@@ -462,7 +462,12 @@ def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dic
     os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
     if on_stage:
         on_stage('Comprimindo' if job.get('operation') == 'compress' else 'Convertendo')
-    optimize_file(job['input_path'], output_path, quality=params.get('quality') or 80)
+    # Resize is optional and plain resampling — this path never runs a model
+    # (FR-029), so a larger target here just interpolates, it does not upscale
+    # in the AI sense the Imagem/Vídeo screens mean.
+    custom_size = params.get('custom_size')
+    resize = (int(custom_size['width']), int(custom_size['height'])) if custom_size else None
+    optimize_file(job['input_path'], output_path, quality=params.get('quality') or 80, resize=resize)
     if on_progress:
         on_progress(100)
     return {

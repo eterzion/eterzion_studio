@@ -8,7 +8,6 @@ import {
   Image,
   Film,
   Headphones,
-  Rocket,
   Repeat,
   History,
   Settings,
@@ -48,8 +47,7 @@ const items = computed<{ key: NavKey; label: string; icon: unknown }[]>(() => [
   { key: 'imagem', label: t('nav.image'), icon: Image },
   { key: 'video', label: t('nav.video'), icon: Film },
   { key: 'audio', label: t('nav.audio'), icon: Headphones },
-  { key: 'otimizar', label: t('nav.optimize'), icon: Rocket },
-  { key: 'converter', label: t('nav.converter'), icon: Repeat },
+  { key: 'exportar', label: t('nav.export'), icon: Repeat },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
 

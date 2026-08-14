@@ -2,11 +2,21 @@
 import { computed, ref } from 'vue'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
+import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
-import { Upload, FolderOpen, CheckCircle2, AlertCircle, ShieldAlert, Download } from '@lucide/vue'
+import {
+  Upload,
+  FolderOpen,
+  CheckCircle2,
+  AlertCircle,
+  ShieldAlert,
+  Download,
+  Cpu,
+  Expand
+} from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -319,22 +329,29 @@ function exportAll(): void {
         <template #panel>
           <template v-if="activeJob">
             <div v-if="activeJob.status === 'configuring'" class="panel-section">
-              <div class="field">
-                <label class="field-label">Tipo de conteúdo</label>
+              <CollapsiblePanel
+                title="Tipo de conteúdo"
+                description="Detectado automaticamente — corrija se estiver errado"
+                :icon="Cpu"
+              >
                 <AppSelect
                   :model-value="activeJob.contentType"
                   :options="CONTENT_TYPE_OPTIONS"
                   @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
                 />
-              </div>
-              <div class="field">
-                <label class="field-label">Escala</label>
+              </CollapsiblePanel>
+
+              <CollapsiblePanel
+                title="Escala"
+                description="Resolução final do vídeo"
+                :icon="Expand"
+              >
                 <AppSelect
                   :model-value="activeJob.scale"
                   :options="SCALE_OPTIONS"
                   @update:model-value="(v) => (activeJob!.scale = v as '2x' | '4x')"
                 />
-              </div>
+              </CollapsiblePanel>
               <AppButton variant="primary" size="lg" @click="runJob(activeJob)"
                 >Processar</AppButton
               >

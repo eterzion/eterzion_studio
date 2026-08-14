@@ -4,8 +4,7 @@
     "image": "Bild",
     "video": "Video",
     "audio": "Audio",
-    "optimize": "Optimieren",
-    "converter": "Konvertieren",
+    "export": "Exportieren",
     "history": "Verlauf",
     "settings": "Einstellungen"
   },

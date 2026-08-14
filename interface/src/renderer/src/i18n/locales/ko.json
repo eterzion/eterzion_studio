@@ -4,8 +4,7 @@
     "image": "이미지",
     "video": "동영상",
     "audio": "오디오",
-    "optimize": "최적화",
-    "converter": "변환",
+    "export": "내보내기",
     "history": "기록",
     "settings": "설정"
   },

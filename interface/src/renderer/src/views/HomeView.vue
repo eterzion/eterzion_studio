@@ -10,15 +10,14 @@ import type { NavKey } from '../types'
 
 const { t } = useI18n()
 const emit = defineEmits<{ navigate: [key: NavKey] }>()
-type CategoryVariant = 'imagem' | 'video' | 'audio' | 'otimizar' | 'converter'
+type CategoryVariant = 'imagem' | 'video' | 'audio' | 'exportar'
 const CATEGORIES = computed<
   { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
 >(() => [
   { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: '#1688ff' },
   { key: 'video', label: t('nav.video'), variant: 'video', tint: '#bd24ff' },
   { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: '#20dced' },
-  { key: 'otimizar', label: t('nav.optimize'), variant: 'otimizar', tint: '#59ef23' },
-  { key: 'converter', label: t('nav.converter'), variant: 'converter', tint: '#ff9d00' }
+  { key: 'exportar', label: t('nav.export'), variant: 'exportar', tint: '#ff9d00' }
 ])
 const jobs = computed(() => queueState.jobs)
 const fileCount = computed(() => jobs.value.length)
@@ -143,7 +142,7 @@ function openImage(id?: string): void {
 }
 .category-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: clamp(8px, 0.9vw, 12px);
   margin-bottom: 16px;
 }

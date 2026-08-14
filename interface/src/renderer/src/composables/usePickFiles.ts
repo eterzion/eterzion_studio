@@ -2,7 +2,7 @@ import { ref, type Ref } from 'vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 
 // Consolidates the native "pick files → per-file callback" shell that was
-// byte-identical across VideoView/AudioView/CompressConvertView/ConverterView
+// byte-identical across VideoView/AudioView/ExportView
 // (confirmed via diff, see specs/003-interface-restructure/research.md) — each
 // view still owns its own per-file validation/job shape via `addFile`.
 // ImageEditorView.vue is NOT a consumer: its intake flow batches through

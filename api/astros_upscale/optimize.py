@@ -14,7 +14,7 @@ import os
 
 import cv2
 
-from .media import ImageOpenError, has_ffmpeg, imread, run_ffmpeg
+from .media import ImageOpenError, even, has_ffmpeg, imread, run_ffmpeg
 
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp', '.avif')
 _CV2_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')  # what OpenCV itself can decode/encode
@@ -32,7 +32,8 @@ def _quality_to_avif_crf(quality: int) -> int:
     return round(15 + (100 - quality) * 0.35)  # 100 -> crf 15 (quase sem perda), 0 -> crf 50
 
 
-def _convert_image_via_ffmpeg(input_path: str, output_path: str, quality: int) -> None:
+def _convert_image_via_ffmpeg(input_path: str, output_path: str, quality: int,
+                              resize: tuple[int, int] | None = None) -> None:
     """AVIF isn't a format OpenCV's stock build can decode or encode — real
     transcoding via ffmpeg's AV1 still-picture encoder (libaom-av1, LGPL-safe
     per media.GPL_ENCODERS) covers both directions."""
@@ -43,21 +44,32 @@ def _convert_image_via_ffmpeg(input_path: str, output_path: str, quality: int) -
     params = {}
     if out_ext == '.avif':
         params = {'c:v': 'libaom-av1', 'crf': _quality_to_avif_crf(quality), 'still-picture': '1'}
+    if resize is not None:
+        params['vf'] = f'scale={resize[0]}:{resize[1]}'
     run_ffmpeg(lambda f: f.input(input_path).output(output_path, params))
 
 
-def optimize_image(input_path: str, output_path: str, quality: int = 82) -> None:
+def optimize_image(input_path: str, output_path: str, quality: int = 82,
+                   resize: tuple[int, int] | None = None) -> None:
     """Recompresses or converts an image: jpg/webp use ``quality`` (lossy); png is
     always max lossless compression; avif (either side) goes through ffmpeg since
-    OpenCV can't read/write it."""
+    OpenCV can't read/write it. ``resize`` scales the output to exactly (w, h) —
+    a plain resample, never the upscaling model."""
     ext = os.path.splitext(output_path)[1].lower()
     if ext not in IMAGE_EXTENSIONS:
         raise UnsupportedFormatError(f'Otimização de imagem não suporta {ext!r}; use jpg, png, webp ou avif.')
     in_ext = os.path.splitext(input_path)[1].lower()
     if ext == '.avif' or in_ext not in _CV2_IMAGE_EXTENSIONS:
-        _convert_image_via_ffmpeg(input_path, output_path, quality)
+        _convert_image_via_ffmpeg(input_path, output_path, quality, resize=resize)
         return
     img = imread(input_path)
+    if resize is not None:
+        # INTER_AREA is the right filter for shrinking (the common case here);
+        # it degenerates badly when enlarging, so switch for that direction.
+        target_w, target_h = resize
+        shrinking = target_w * target_h < img.shape[1] * img.shape[0]
+        img = cv2.resize(img, (target_w, target_h),
+                         interpolation=cv2.INTER_AREA if shrinking else cv2.INTER_CUBIC)
     if ext in ('.jpg', '.jpeg'):
         params = [cv2.IMWRITE_JPEG_QUALITY, int(quality)]
     elif ext == '.webp':
@@ -76,13 +88,21 @@ def _quality_to_crf(quality: int) -> int:
     return round(18 + (100 - quality) * 0.22)  # 100 -> crf 18 (quase sem perda), 0 -> crf 40 (bem compacto)
 
 
-def optimize_video(input_path: str, output_path: str, quality: int = 75, codec: str = 'libx264') -> None:
-    """Re-encode a video with a smaller bitrate target (CRF), keeping resolution/fps; audio is copied as-is."""
+def optimize_video(input_path: str, output_path: str, quality: int = 75, codec: str = 'libx264',
+                   resize: tuple[int, int] | None = None) -> None:
+    """Re-encode a video with a smaller bitrate target (CRF), keeping fps; audio is
+    copied as-is. ``resize`` scales the frames to exactly (w, h) — ffmpeg's own
+    scaler, never the upscaling model."""
     if not has_ffmpeg():
         raise RuntimeError('ffmpeg não encontrado no sistema; instale-o para otimizar vídeos.')
     crf = _quality_to_crf(quality)
-    run_ffmpeg(lambda f: f.input(input_path).output(
-        output_path, {'c:v': codec, 'crf': crf, 'preset': 'medium', 'c:a': 'copy'}))
+    options = {'c:v': codec, 'crf': crf, 'preset': 'medium', 'c:a': 'copy'}
+    if resize is not None:
+        # Encoders reject odd dimensions for common yuv420p pixel formats, so
+        # round to even rather than failing deep inside ffmpeg.
+        target_w, target_h = (even(resize[0]), even(resize[1]))
+        options['vf'] = f'scale={target_w}:{target_h}'
+    run_ffmpeg(lambda f: f.input(input_path).output(output_path, options))
 
 
 def _quality_to_audio_bitrate_kbps(quality: int) -> int:
@@ -115,7 +135,8 @@ def _media_category(ext: str) -> str | None:
     return None
 
 
-def optimize_file(input_path: str, output_path: str, quality: int = 80, codec: str = 'libx264') -> None:
+def optimize_file(input_path: str, output_path: str, quality: int = 80, codec: str = 'libx264',
+                  resize: tuple[int, int] | None = None) -> None:
     """Dispatches to the right optimizer/converter based on the input/output
     extensions. Same extension -> compress (FR-025 to FR-027); different
     extension within the same media type -> convert (FR-028); different media
@@ -135,8 +156,10 @@ def optimize_file(input_path: str, output_path: str, quality: int = 80, codec: s
             'a conversão só é permitida dentro do mesmo tipo de mídia (FR-030).')
 
     if in_category == 'imagem':
-        optimize_image(input_path, output_path, quality=quality)
+        optimize_image(input_path, output_path, quality=quality, resize=resize)
     elif in_category == 'vídeo':
-        optimize_video(input_path, output_path, quality=quality, codec=codec)
+        optimize_video(input_path, output_path, quality=quality, codec=codec, resize=resize)
     else:
+        # Audio has no spatial dimensions — `resize` is meaningless here, and
+        # silently accepting it would suggest otherwise.
         optimize_audio(input_path, output_path, quality=quality)

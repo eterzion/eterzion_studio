@@ -83,6 +83,38 @@ def test_optimize_image_converts_from_avif_via_ffmpeg(tmp_path):
     assert os.path.getsize(out) > 0
 
 
+def test_optimize_image_resizes_to_the_requested_dimensions(tmp_path):
+    """Resize on the compress/convert path is a plain resample — it must
+    actually change the written file's dimensions, not just be accepted."""
+    from astros_upscale.media import imread
+
+    src = _write_toy_image(tmp_path / 'in.png', width=64, height=48)
+    out = str(tmp_path / 'out.png')
+    optimize_image(src, out, resize=(32, 24))
+    written = imread(out)
+    assert (written.shape[1], written.shape[0]) == (32, 24)
+
+
+def test_optimize_image_without_resize_keeps_original_dimensions(tmp_path):
+    from astros_upscale.media import imread
+
+    src = _write_toy_image(tmp_path / 'in.png', width=64, height=48)
+    out = str(tmp_path / 'out.png')
+    optimize_image(src, out)
+    written = imread(out)
+    assert (written.shape[1], written.shape[0]) == (64, 48)
+
+
+def test_optimize_file_passes_resize_through_for_images(tmp_path):
+    from astros_upscale.media import imread
+
+    src = _write_toy_image(tmp_path / 'in.png', width=64, height=48)
+    out = str(tmp_path / 'out.jpg')
+    optimize_file(src, out, quality=80, resize=(16, 12))
+    written = imread(out)
+    assert (written.shape[1], written.shape[0]) == (16, 12)
+
+
 def test_quality_to_crf_bounds():
     assert _quality_to_crf(100) == 18
     assert _quality_to_crf(0) == 40

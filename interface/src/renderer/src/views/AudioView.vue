@@ -4,9 +4,10 @@ import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import AppSpinner from '../components/atoms/AppSpinner.vue'
-import JobCard from '../components/molecules/JobCard.vue'
 import UploadZone from '../components/UploadZone.vue'
-import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download } from '@lucide/vue'
+import MediaEditorShell from '../components/MediaEditorShell.vue'
+import CollapsiblePanel from '../components/CollapsiblePanel.vue'
+import { Upload, FolderOpen, CheckCircle2, AlertCircle, Download, Cpu } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -79,6 +80,30 @@ const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string }[] = [
 const jobs = ref<AudioJob[]>([])
 const importError = ref<string | null>(null)
 
+// Which file the editor is showing. Mirrors ImageEditorView: the screen edits
+// one file at a time while the strip keeps the rest one click away.
+const activeId = ref<string | null>(null)
+const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
+
+const STATUS_LABEL: Record<LocalStatus, string> = {
+  detecting: 'Detectando…',
+  configuring: 'Pronto para processar',
+  queued: 'Na fila',
+  processing: 'Processando',
+  done: 'Concluído',
+  error: 'Erro'
+}
+
+const editorItems = computed(() =>
+  jobs.value.map((j) => ({
+    id: j.id,
+    fileName: j.file.name,
+    sourcePath: j.file.path,
+    statusLabel: STATUS_LABEL[j.status],
+    kind: 'audio' as const
+  }))
+)
+
 async function addFile(described: DescribedFile): Promise<void> {
   if (described.kind !== 'Áudio') {
     importError.value = `Formato não suportado: ${described.name}`
@@ -100,6 +125,7 @@ async function addFile(described: DescribedFile): Promise<void> {
   // you) bypasses the proxy's setter, so the template never re-renders and
   // the card stays stuck on "Detectando tipo de conteúdo…" forever.
   const job = jobs.value[jobs.value.length - 1]
+  activeId.value = job.id
   try {
     job.contentType = await detectContentType(described.path, 'audio')
   } catch {
@@ -114,6 +140,12 @@ const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(ad
 
 function removeJob(job: AudioJob): void {
   jobs.value = jobs.value.filter((j) => j.id !== job.id)
+  if (activeId.value === job.id) activeId.value = jobs.value[0]?.id ?? null
+}
+
+function removeById(id: string): void {
+  const target = jobs.value.find((j) => j.id === id)
+  if (target) removeJob(target)
 }
 
 async function runJob(job: AudioJob): Promise<void> {
@@ -190,7 +222,7 @@ function exportAll(): void {
 
 <template>
   <div class="audio-view">
-    <TopBar title="Áudio" show-back @back="$emit('back')">
+    <TopBar :title="activeJob?.file.name ?? 'Áudio'" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
@@ -226,55 +258,80 @@ function exportAll(): void {
         @files-dropped="handleFilesDropped"
       />
 
-      <div v-else class="job-list">
-        <JobCard
-          v-for="job in jobs"
-          :key="job.id"
-          :file-name="job.file.name"
-          @remove="removeJob(job)"
-        >
-          <div v-if="job.status === 'detecting'" class="status-row">
-            <AppSpinner :size="16" />
-            <span>Detectando tipo de conteúdo…</span>
-          </div>
+      <MediaEditorShell
+        v-else
+        class="editor-shell"
+        :items="editorItems"
+        :active-id="activeId"
+        add-label="Adicionar áudio"
+        @select="activeId = $event"
+        @remove="removeById"
+        @add="pickFiles"
+      >
+        <template #preview>
+          <audio
+            v-if="activeJob && hasNativeApi"
+            :key="activeJob.id"
+            class="preview-audio"
+            :src="api.toFileUrl(activeJob.file.path)"
+            controls
+          />
+        </template>
 
-          <div v-else-if="job.status === 'configuring'" class="job-config">
-            <div class="field">
-              <label class="field-label">Tipo de conteúdo</label>
-              <AppSelect
-                :model-value="job.contentType"
-                :options="CONTENT_TYPE_OPTIONS"
-                @update:model-value="(v) => (job.contentType = v as ContentType)"
-              />
-            </div>
-            <AppButton variant="primary" size="lg" @click="runJob(job)">Processar</AppButton>
-          </div>
-
-          <div v-else class="job-status">
-            <div v-if="job.status === 'queued' || job.status === 'processing'" class="status-row">
+        <template #panel>
+          <template v-if="activeJob">
+            <div v-if="activeJob.status === 'detecting'" class="status-row">
               <AppSpinner :size="16" />
-              <span>{{ job.stage ?? 'Processando' }} — {{ job.progress }}%</span>
+              <span>Detectando tipo de conteúdo…</span>
             </div>
-            <div v-else-if="job.status === 'done'" class="status-row done">
-              <CheckCircle2 :size="16" />
-              <span>Concluído</span>
-              <AppButton
-                v-if="hasNativeApi && job.outputPath"
-                variant="outline"
-                size="sm"
-                @click="api.showItemInFolder(job.outputPath!)"
+
+            <div v-else-if="activeJob.status === 'configuring'" class="panel-section">
+              <CollapsiblePanel
+                title="Tipo de conteúdo"
+                description="Detectado automaticamente — corrija se estiver errado"
+                :icon="Cpu"
               >
-                <template #icon><FolderOpen :size="14" /></template>
-                Abrir pasta
-              </AppButton>
+                <AppSelect
+                  :model-value="activeJob.contentType"
+                  :options="CONTENT_TYPE_OPTIONS"
+                  @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
+                />
+              </CollapsiblePanel>
+
+              <AppButton variant="primary" size="lg" @click="runJob(activeJob)"
+                >Processar</AppButton
+              >
             </div>
-            <div v-else-if="job.status === 'error'" class="status-row error">
-              <AlertCircle :size="16" />
-              <span>{{ job.error }}</span>
+
+            <div v-else class="panel-section">
+              <div
+                v-if="activeJob.status === 'queued' || activeJob.status === 'processing'"
+                class="status-row"
+              >
+                <AppSpinner :size="16" />
+                <span>{{ activeJob.stage ?? 'Processando' }} — {{ activeJob.progress }}%</span>
+              </div>
+              <div v-else-if="activeJob.status === 'done'" class="status-row done">
+                <CheckCircle2 :size="16" />
+                <span>Concluído</span>
+                <AppButton
+                  v-if="hasNativeApi && activeJob.outputPath"
+                  variant="outline"
+                  size="sm"
+                  @click="api.showItemInFolder(activeJob.outputPath!)"
+                >
+                  <template #icon><FolderOpen :size="14" /></template>
+                  Abrir pasta
+                </AppButton>
+              </div>
+              <div v-else-if="activeJob.status === 'error'" class="status-row error">
+                <AlertCircle :size="16" />
+                <span>{{ activeJob.error }}</span>
+              </div>
             </div>
-          </div>
-        </JobCard>
-      </div>
+          </template>
+        </template>
+      </MediaEditorShell>
     </div>
   </div>
 </template>
@@ -289,11 +346,17 @@ function exportAll(): void {
 }
 .audio-content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+}
+
+/* The editor lays out its own preview/strip/panel — no outer padding fighting
+   it once files are loaded. */
+.audio-content:has(.editor-shell) {
+  padding: 0;
 }
 
 /* Empty state: the drop zone takes the whole remaining area rather than being
@@ -309,7 +372,14 @@ function exportAll(): void {
   color: var(--color-danger);
   font-size: var(--fs-body-sm);
 }
-.job-list {
+.editor-shell {
+  flex: 1;
+  min-height: 0;
+}
+.preview-audio {
+  width: min(100%, 420px);
+}
+.panel-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);

@@ -126,7 +126,7 @@ export function recordJob(job: Job, status: JobStatus): void {
 
 /** T066 — the video/audio/compress-convert screens each keep their own
  *  self-contained job list (see VideoView.vue/AudioView.vue/
- *  CompressConvertView.vue's own comments on why: ScaleConfig is an
+ *  ExportView.vue's own comments on why: ScaleConfig is an
  *  image-only shape) instead of store/jobs.ts's queueState. This is the
  *  media-agnostic equivalent of recordJob() for those — same "create on
  *  first call, update in place after" behavior, without requiring a full
