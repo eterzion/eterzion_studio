@@ -19,7 +19,7 @@ const artwork = computed(() => artworkByVariant[props.variant])
 </script>
 
 <template>
-  <img class="category-bitmap-art" :src="artwork" alt="" />
+  <img class="category-bitmap-art" :class="`art-${variant}`" :src="artwork" alt="" />
 </template>
 
 <style scoped>
@@ -34,6 +34,15 @@ const artwork = computed(() => artworkByVariant[props.variant])
   filter: saturate(1.04) contrast(1.04);
 }
 
+/* The audio bitmap was drawn cyan, back when that was the module's colour, and
+   it is the one card whose art no longer matches its own border and glow.
+   Rotating it the ~37 degrees from cyan to the new green is an approximation of
+   redrawing the asset, not a replacement for it — the hue lands right, the
+   per-stroke shading does not shift the way an artist would shift it. */
+.art-audio {
+  filter: saturate(1.04) contrast(1.04) hue-rotate(-37deg);
+}
+
 /* The artwork is bright, saturated strokes on transparency. `screen` is what
    makes them glow against the dark theme's near-black card — but screening
    toward a near-white card pushes every one of those strokes to white, which is
@@ -43,5 +52,9 @@ const artwork = computed(() => artworkByVariant[props.variant])
 :root[data-theme='light'] .category-bitmap-art {
   mix-blend-mode: multiply;
   filter: saturate(1.1) contrast(1.06) brightness(0.92);
+}
+
+:root[data-theme='light'] .art-audio {
+  filter: saturate(1.1) contrast(1.06) brightness(0.92) hue-rotate(-37deg);
 }
 </style>

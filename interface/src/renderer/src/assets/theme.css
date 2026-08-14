@@ -60,7 +60,7 @@
 /* ---------------------------- accent ---------------------------- */
 /*
  * Each module owns a colour, and the Home cards already taught it: image is
- * blue, video purple, audio cyan. Those were only ever card
+ * blue, video purple, audio green. Those were only ever card
  * tints; now they are real tokens, so a screen can adopt its module's colour
  * and everything inside it follows.
  *
@@ -73,7 +73,7 @@
 :root {
   --accent-image: #1688ff;
   --accent-video: #bd24ff;
-  --accent-audio: #20dced;
+  --accent-audio: #1ee07a;
 }
 
 :root[data-theme='dark'] {
@@ -122,9 +122,9 @@
 /* The accents were picked against the dark ground; on the light theme they need
    darkening to stay legible as text/icon colour on a near-white surface. Each
    percentage below is the one that puts the resulting colour at >=4.6:1 against
-   --surface-0 (WCAG AA for body text, measured, not eyeballed) — cyan and amber
-   needed the most correction, since both are near their lightest at full
-   saturation and were sitting at 3.8:1 and 3.3:1. */
+   --surface-0 (WCAG AA for body text, measured, not eyeballed). Green needs the
+   most correction of the three, since it is the lightest of them at full
+   saturation. */
 :root[data-theme='light'] [data-module='image'] {
   --color-primary: color-mix(in srgb, var(--accent-image) 79%, #000);
 }
@@ -132,7 +132,7 @@
   --color-primary: color-mix(in srgb, var(--accent-video) 80%, #000);
 }
 :root[data-theme='light'] [data-module='audio'] {
-  --color-primary: color-mix(in srgb, var(--accent-audio) 54%, #000);
+  --color-primary: color-mix(in srgb, var(--accent-audio) 56%, #000);
 }
 
 :root {
