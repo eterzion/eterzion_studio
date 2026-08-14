@@ -1,6 +1,8 @@
 import { protocol } from 'electron'
 import { extname } from 'path'
-import { readFile } from 'node:fs/promises'
+import { createReadStream } from 'node:fs'
+import { stat } from 'node:fs/promises'
+import { Readable } from 'node:stream'
 import { fileURLToPath } from 'node:url'
 
 // Local media (thumbnails, before/after preview) is served through this custom
@@ -34,7 +36,23 @@ const MIME_TYPES: Record<string, string> = {
   '.bmp': 'image/bmp',
   '.tif': 'image/tiff',
   '.tiff': 'image/tiff',
-  '.gif': 'image/gif'
+  '.gif': 'image/gif',
+  // Video/audio preview. Without a real media MIME type the <video>/<audio>
+  // element gets application/octet-stream and refuses to decode it, which is
+  // what left the Vídeo and Áudio screens showing a 0:00 player.
+  '.mp4': 'video/mp4',
+  '.m4v': 'video/mp4',
+  '.mov': 'video/quicktime',
+  '.mkv': 'video/x-matroska',
+  '.webm': 'video/webm',
+  '.avi': 'video/x-msvideo',
+  '.mp3': 'audio/mpeg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.ogg': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.flac': 'audio/flac',
+  '.wav': 'audio/wav'
 }
 
 /** Registers the `astros-media://` request handler — call once inside
@@ -56,9 +74,45 @@ export function registerMediaProtocolHandler(): void {
       : withoutQuery.slice(`${MEDIA_SCHEME}://`.length).replace(/^\/+/, '')
     try {
       const filePath = fileURLToPath(`file:///${suffix}`)
-      const data = await readFile(filePath)
+      const size = (await stat(filePath)).size
       const contentType = MIME_TYPES[extname(filePath).toLowerCase()] ?? 'application/octet-stream'
-      return new Response(new Uint8Array(data), { headers: { 'Content-Type': contentType } })
+
+      // Media is streamed, and range-served when asked for. An image could be
+      // answered with the whole buffer, but <video>/<audio> cannot: Chromium
+      // seeks by asking for byte ranges, and a handler that only ever answers
+      // 200 with the full body makes the timeline unseekable and pulls an
+      // entire multi-GB file into memory to show a preview.
+      const range = /^bytes=(\d*)-(\d*)$/.exec(request.headers.get('Range') ?? '')
+      if (range && size > 0) {
+        const start = range[1] ? Number(range[1]) : 0
+        const end = range[2] ? Math.min(Number(range[2]), size - 1) : size - 1
+        if (start >= size || start > end) {
+          return new Response(null, {
+            status: 416,
+            headers: { 'Content-Range': `bytes */${size}` }
+          })
+        }
+        return new Response(
+          Readable.toWeb(createReadStream(filePath, { start, end })) as ReadableStream,
+          {
+            status: 206,
+            headers: {
+              'Content-Type': contentType,
+              'Content-Length': String(end - start + 1),
+              'Content-Range': `bytes ${start}-${end}/${size}`,
+              'Accept-Ranges': 'bytes'
+            }
+          }
+        )
+      }
+
+      return new Response(Readable.toWeb(createReadStream(filePath)) as ReadableStream, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Length': String(size),
+          'Accept-Ranges': 'bytes'
+        }
+      })
     } catch {
       return new Response(null, { status: 404 })
     }
