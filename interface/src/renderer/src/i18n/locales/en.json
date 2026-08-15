@@ -64,5 +64,11 @@
         "description": "Pre-selected when opening the export panel"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

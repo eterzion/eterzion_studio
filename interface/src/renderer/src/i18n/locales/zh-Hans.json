@@ -64,5 +64,11 @@
         "description": "打开导出面板时预先选择"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

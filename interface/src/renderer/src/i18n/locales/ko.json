@@ -64,5 +64,11 @@
         "description": "내보내기 패널을 열 때 미리 선택됩니다"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

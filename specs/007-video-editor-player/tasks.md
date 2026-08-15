@@ -36,11 +36,12 @@ sozinha.
 
 **Purpose**: o que precisa existir antes de qualquer código de feature.
 
-- [ ] T001 [P] Declarar os tetos por operação (duração, resolução, FPS, número de quadros, tamanho) como configuração em `api/astros_upscale_api/app/config.py`, com os valores da tabela de research.md Decisão 6
-- [ ] T002 [P] Declarar a allowlist container → encoders → áudio em `api/astros_upscale_api/app/config.py`, conforme data-model.md *Vocabulário permitido* — sem `libx264` nem `libx265`
-- [ ] T003 [P] Criar o namespace `videoEditor.*` vazio nos 11 arquivos de `interface/src/renderer/src/i18n/locales/`
-- [ ] T004 [P] Escrever o teste de paridade de chaves entre os 11 locales em `interface/src/renderer/src/i18n/__tests__/localeParity.spec.ts` — falha quando um locale tem chave que outro não tem
-- [ ] T005 [P] Preparar os arquivos de teste (`curto.mp4`, `vfr.mp4`, `sem_audio.mp4`, `longo.mp4`) descritos em quickstart.md, gerados por script em `api/astros_upscale_api/tests/fixtures/make_video_fixtures.py`
+- [X] T000 Adicionar um runner de testes ao renderer — `vitest`, `@vue/test-utils`, `happy-dom`, `interface/vitest.config.ts` e os scripts `test`/`test:watch`. **Não estava no plano**: o renderer não tinha runner algum, e T004/T021/T022/T040 e o `pnpm test` do quickstart o pressupunham. Descoberto ao executar, não na análise
+- [X] T001 [P] Declarar os tetos por operação (duração, resolução, FPS, número de quadros, tamanho) como configuração em `api/astros_upscale_api/app/config.py`, com os valores da tabela de research.md Decisão 6
+- [X] T002 [P] Declarar a allowlist container → encoders → áudio em `api/astros_upscale_api/app/config.py`, conforme data-model.md *Vocabulário permitido* — sem `libx264` nem `libx265`
+- [X] T003 [P] Criar o namespace `videoEditor.*` vazio nos 11 arquivos de `interface/src/renderer/src/i18n/locales/`
+- [X] T004 [P] Escrever o teste de paridade de chaves entre os 11 locales em `interface/src/renderer/src/i18n/__tests__/localeParity.spec.ts` — falha quando um locale tem chave que outro não tem
+- [X] T005 [P] Preparar os arquivos de teste (`curto.mp4`, `vfr.mp4`, `sem_audio.mp4`, `longo.mp4`) descritos em quickstart.md, gerados por script em `api/astros_upscale_api/tests/fixtures/make_video_fixtures.py`
 
 ---
 

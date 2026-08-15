@@ -64,5 +64,11 @@
         "description": "Preselezionato all'apertura del pannello di esportazione"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

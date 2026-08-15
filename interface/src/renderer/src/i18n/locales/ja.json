@@ -64,5 +64,11 @@
         "description": "エクスポートパネルを開いたときに事前選択されます"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

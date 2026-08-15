@@ -64,5 +64,11 @@
         "description": "Beim Öffnen des Exportbereichs vorausgewählt"
       }
     }
+  },
+  "videoEditor": {
+    "player": {},
+    "edits": {},
+    "export": {},
+    "limits": {}
   }
 }

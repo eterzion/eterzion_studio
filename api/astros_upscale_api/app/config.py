@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import NamedTuple
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -68,3 +69,87 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+# ------------------------------- video editing ------------------------------- #
+#
+# T001/T002 (specs/007-video-editor-player). Two tables, deliberately separate
+# because they answer different questions and are wrong in different ways.
+
+
+class VideoCeilings(NamedTuple):
+    """Constitution Princípio VII: an operation whose cost scales with input size
+    MUST declare explicit maximums and refuse work above them BEFORE starting,
+    naming the limiting factor.
+
+    These do NOT replace processing.check_capacity(), and MUST NOT be read as
+    doing so. check_capacity() asks "can this machine cope", adaptively, from
+    detected hardware — that is Princípio VII's other half (FR-035: never a
+    fixed ceiling independent of what the hardware reports). These ask "is this
+    job reasonable at all". A video has to pass both; neither answers the
+    other's question.
+    """
+    max_duration_seconds: float
+    max_width: int
+    max_height: int
+    max_frame_rate: float
+    max_frame_count: int
+    max_size_bytes: int
+
+
+# Re-encoding every frame through a filter graph. Cost scales with pixels × frames.
+VIDEO_EDIT_CEILINGS = VideoCeilings(
+    max_duration_seconds=2 * 60 * 60,
+    max_width=3840,
+    max_height=2160,
+    max_frame_rate=120.0,
+    max_frame_count=500_000,
+    max_size_bytes=32 * 1024 ** 3,
+)
+
+# Trim/remux without re-encoding: frames are copied, not filtered, so the same
+# machine tolerates roughly twice as much before the operation stops being
+# reasonable. Looser is correct here, not generous.
+VIDEO_REMUX_CEILINGS = VideoCeilings(
+    max_duration_seconds=4 * 60 * 60,
+    max_width=7680,
+    max_height=4320,
+    max_frame_rate=240.0,
+    max_frame_count=1_000_000,
+    max_size_bytes=64 * 1024 ** 3,
+)
+
+
+class ContainerSpec(NamedTuple):
+    """Video encoders in preference order, plus the audio encoders permitted
+    alongside them. Order is the fallback chain when the preferred one is not
+    present at runtime — 'permitted' is not 'present' (Princípio XIII)."""
+    video_encoders: tuple[str, ...]
+    audio_encoders: tuple[str, ...]
+
+
+# Constitution, Licensing and Distribution Constraints: libx264 and libx265 are
+# GPL and MUST NOT be bundled. Their absence from this table is the whole point
+# of the table, not an omission — H.264/H.265 output comes from hardware
+# encoders only. Combined with the API accepting `container` + `profile` and no
+# codec field at all (contracts/api.md), there is no request shape that can ask
+# for a GPL encoder.
+VIDEO_CONTAINER_ALLOWLIST: dict[str, ContainerSpec] = {
+    'mp4': ContainerSpec(
+        video_encoders=('h264_nvenc', 'h264_qsv', 'h264_amf'),
+        audio_encoders=('aac',),
+    ),
+    'mov': ContainerSpec(
+        video_encoders=('h264_nvenc', 'h264_qsv', 'h264_amf'),
+        audio_encoders=('aac',),
+    ),
+    'mkv': ContainerSpec(
+        video_encoders=('h264_nvenc', 'h264_qsv', 'h264_amf', 'libvpx-vp9'),
+        audio_encoders=('libopus', 'flac'),
+    ),
+    'webm': ContainerSpec(
+        video_encoders=('libvpx-vp9', 'libaom-av1'),
+        audio_encoders=('libopus',),
+    ),
+}
+
