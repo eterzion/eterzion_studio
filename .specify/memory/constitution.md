@@ -1,5 +1,32 @@
 <!--
 Sync Impact Report — constitution amendment
+Version change: 2.6.0 → 3.0.0 (MAJOR — a principle now permits what it previously forbade)
+
+MAJOR bump rationale: Principle XIII previously forbade, without exception, a client supplying a
+filesystem path the API reads. It now permits exactly that, for exactly one registration route,
+under four cumulative conditions. This document's own versioning policy states that redefining a
+principle so it permits what it previously forbade is MAJOR — the same reasoning that made the
+v2.0.0 bounded exception to Principle V a MAJOR change.
+
+Modified principles:
+  XIII. External Processes Are Invoked Structurally, Never Composed — bounded exception added to
+        the "Files are addressed by internal identifier" clause, for a single registration route
+        whose path comes from the operating system's own file dialog.
+  XIV.  Interface Text Is Translatable By Default — factual correction only: the project ships 11
+        locale files, not 12. Corrected in the principle's rationale and in the v2.6.0 amendment
+        log entry. No normative change.
+
+Added principles: none
+Renamed principles: none
+Removed sections: none
+
+Governance: review-gate list unchanged.
+
+Deferred / follow-up TODOs: none. No placeholder tokens remain in this document.
+
+---
+Previous report
+---------------
 Version change: 2.5.0 → 2.6.0 (MINOR — principles added, guidance materially expanded)
 
 Added principles:
@@ -717,6 +744,28 @@ Mandatory rules:
   the API then reads or writes. Clients reference media by an identifier the API issued; the API
   resolves that identifier to a path it owns. Filenames arriving from a client are treated as
   display text and MUST be sanitised before being used to construct any path.
+
+  **Bounded exception — registration by the desktop shell.** Exactly one route MAY accept a
+  filesystem path: the one whose only purpose is to register a file and return the identifier every
+  other route then uses. That exception is conditional on all of the following, and is void if any
+  fails:
+
+  - The path MUST originate from the operating system's own file dialog, invoked by the Electron
+    main process. A path typed, pasted, or otherwise composed by the renderer, or arriving from any
+    source outside that dialog, MUST NOT be accepted.
+  - The registration route MUST validate the path before anything else — that it exists, that it is
+    a file, that it is media the product can read — and MUST NOT return the path in any response.
+  - No other route MAY accept a path. Where a second one appears to need it, the answer is another
+    identifier, not a second exception.
+  - The identifier MUST NOT be a reversible encoding of the path.
+
+  **Rationale for the exception:** the product is a desktop application whose entire purpose is
+  operating on files the person already has. Something has to name the first file, and on a desktop
+  that something is the native dialog. Forbidding it outright does not remove the path from the
+  system — it pushes it into an undocumented side channel, which is worse than one audited route.
+  The risk Principle XIII actually targets is a path chosen by untrusted input reaching a command
+  builder; requiring the path to come from the OS dialog and stopping at one route addresses that
+  risk directly, while every subsequent operation still speaks only in identifiers.
 - **Temporary artefacts are cleaned up on every exit path.** Intermediate files created during
   processing MUST be removed on success, on failure, and on cancellation alike.
 
@@ -744,7 +793,7 @@ Text that a person reads in `interface/` MUST live in the locale files, not in a
   substantially reworked, and MUST NOT be extracted as an isolated sweep that touches every view at
   once for no functional reason.
 
-**Rationale:** the project ships 12 locale files and 42 keys. Every screen built since then has put
+**Rationale:** the project ships 11 locale files and 42 keys. Every screen built since then has put
 its text directly in the template, so the translation surface has been shrinking relative to the
 application for as long as the application has been growing. The cost of that is asymmetric:
 writing a key costs seconds while the component is being written, and extracting one later costs a
@@ -853,6 +902,41 @@ preferred to a more capable one that exceeds it.
 
 ### Amendment log
 
+**v3.0.0 — 2026-08-14 — Principle XIII: bounded exception for file registration by the desktop shell**
+
+*What changed:* Principle XIII's "Files are addressed by internal identifier" clause previously
+forbade, without exception, a client supplying a filesystem path that the API reads or writes. It
+now permits exactly one route to do so — the route whose sole purpose is to register a file and
+return the identifier every other route uses — under four cumulative conditions: the path comes
+from the operating system's own file dialog invoked by the Electron main process; the route
+validates before doing anything else and never returns the path; no second route may accept a path;
+and the identifier is not a reversible encoding of the path.
+
+Also corrected, without normative effect: Principle XIV's rationale and the v2.6.0 amendment log
+said the project ships **12** locale files. It ships **11** (`interface/src/renderer/src/i18n/locales/`,
+and `SUPPORTED_LOCALES` in `i18n/index.ts`). Both occurrences fixed.
+
+*Why:* `/speckit.analyze` on feature `007-video-editor-player` found the contradiction. That
+feature builds the identifier registry Principle XIII asks for, and the registry's own entry point
+violated the principle it exists to satisfy: something has to name the first file, and on a desktop
+product that something is the native file dialog. The options were to forbid it (which does not
+remove the path from the system — it pushes it into an undocumented side channel), to leave the
+violation standing, or to name the exception and fence it. The risk the principle actually targets
+is a path chosen by untrusted input reaching a command builder. Requiring the path to originate
+from the OS dialog and confining it to one audited route addresses that risk directly, while every
+subsequent operation still speaks only in identifiers.
+
+*Migration:* no existing compliant code becomes non-compliant. `POST /jobs/local`, which accepts a
+local path today, is **not** blessed by this exception — it is not a registration route and it does
+not return an identifier. It remains outside the exception and should migrate to identifiers in
+work of its own; this amendment does not authorise a second path-accepting route.
+
+*Risk accepted:* one route reads a filesystem path supplied over HTTP. The exposure is bounded by
+the four conditions, and by the fact that the local API binds to loopback. What is explicitly not
+accepted: a renderer-composed path, a path echoed back in a response, a second exception, or an
+identifier from which the path can be recovered. Accepted on the reasoning above by the project
+owner, at the recommendation of the analysis that found the conflict.
+
 **v2.6.0 — 2026-08-14 — Principles XIII, XIV and XV added; VII, X and XI extended**
 
 *What changed:* added three principles and tightened three existing ones, all driven by the video
@@ -866,7 +950,7 @@ media-editing feature spec that follows this amendment.
   that an allowed codec is actually present before work starts, addressing files by
   API-issued identifier rather than client-supplied path, and cleanup of temporary artefacts on
   every exit path.
-- **XIV (Interface Text Is Translatable By Default)** — new. The project ships 12 locale files
+- **XIV (Interface Text Is Translatable By Default)** — new. The project ships 11 locale files
   with 42 keys, while only three components use `useI18n` and roughly 32 user-facing strings sit
   directly in templates. Without a rule, a feature of this size decides the question by omission.
 - **XV (Source Media Is Never Overwritten)** — new. Generalises the image pipeline's existing
@@ -1100,4 +1184,4 @@ itself move, merge, or delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 2.6.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-14
+**Version**: 3.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-14
