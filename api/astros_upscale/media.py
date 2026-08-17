@@ -5,6 +5,7 @@ what were `media_engine/{probe,temporal,transcode}.py` and
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import json
 import logging
@@ -12,7 +13,7 @@ import math
 import os
 import shutil
 import subprocess
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -87,6 +88,62 @@ def is_lgpl_build() -> bool | None:
     return '--enable-gpl' not in config_line and '--enable-nonfree' not in config_line
 
 
+@functools.lru_cache(maxsize=1)
+def available_encoders() -> frozenset[str]:
+    """The encoder names this ffmpeg binary actually exposes, from
+    `ffmpeg -hide_banner -encoders`.
+
+    Constitution Princípio XIII: "An allowlist entry means 'permitted', not
+    'present'. Before starting work that depends on a codec, encoder, or
+    container, the API MUST confirm the runtime actually provides it and MUST
+    fail with a clear reason if it does not — never begin processing that will
+    die partway through."
+
+    Cached for the process: the answer cannot change without the binary
+    changing, and the alternative is a subprocess on every export request.
+
+    Returns an empty set when no binary is found, which callers MUST treat as
+    "nothing is available" — never as "unknown, proceed and hope".
+    """
+    ffmpeg_bin = ffmpeg_path()
+    if not ffmpeg_bin:
+        return frozenset()
+    try:
+        result = subprocess.run(
+            [ffmpeg_bin, '-hide_banner', '-encoders'],
+            capture_output=True, text=True, timeout=15, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return frozenset()
+    if result.returncode != 0:
+        return frozenset()
+
+    # Lines look like " V....D h264_nvenc           NVIDIA NVENC H.264 encoder".
+    # The flag column is fixed-width and always precedes the name; splitting on
+    # whitespace and taking the second field is what the format guarantees.
+    names = set()
+    for line in result.stdout.splitlines():
+        if not line.startswith(' ') or line.startswith(' -'):
+            continue
+        parts = line.split()
+        if len(parts) >= 2 and parts[0] and not parts[0].startswith('-'):
+            names.add(parts[1])
+    return frozenset(names)
+
+
+def first_available_encoder(candidates: 'Sequence[str]') -> str | None:
+    """First candidate this runtime provides, in the caller's preference order.
+
+    Rejects GPL encoders unconditionally, even when present and even when a
+    caller asks for one: the developer machine's ffmpeg may well have libx264,
+    and a shipped build must never depend on it (Constitution, Licensing and
+    Distribution Constraints). Making that a property of this function rather
+    than of each call site is the point — a caller cannot forget it.
+    """
+    present = available_encoders()
+    return next((c for c in candidates if c in present and c not in GPL_ENCODERS), None)
+
+
 def _warn_once_if_gpl_build() -> None:
     global _warned_this_process
     if _warned_this_process:
@@ -159,13 +216,59 @@ def probe_streams(path: str) -> dict:
     audio_streams = [s for s in streams if s.get('codec_type') == 'audio']
     subtitle_streams = [s for s in streams if s.get('codec_type') == 'subtitle']
     chapters = data.get('chapters', [])
+    # T007 (specs/007-video-editor-player): dimensions and frame rate added for
+    # the editor's timeline. The keys above are unchanged — the
+    # secondary-elements confirmation flow (FR-081) already reads them and must
+    # keep working byte for byte.
+    first_video = video_streams[0] if video_streams else {}
+    nominal = _parse_rational(first_video.get('r_frame_rate'))
+    average = _parse_rational(first_video.get('avg_frame_rate'))
+
     return {
         'video_stream_count': len(video_streams),
         'audio_stream_count': len(audio_streams),
         'subtitle_stream_count': len(subtitle_streams),
         'has_chapters': len(chapters) > 0,
         'duration_seconds': float(data.get('format', {}).get('duration', 0.0) or 0.0),
+        'width': int(first_video['width']) if first_video.get('width') else None,
+        'height': int(first_video['height']) if first_video.get('height') else None,
+        'frame_rate': average or nominal,
+        'frame_rate_is_variable': _is_variable_frame_rate(nominal, average),
     }
+
+
+def _parse_rational(value: object) -> float | None:
+    """ffprobe reports frame rates as 'num/den' ('30000/1001', and '0/0' for a
+    stream that has none)."""
+    if not isinstance(value, str) or '/' not in value:
+        return None
+    numerator, _, denominator = value.partition('/')
+    try:
+        num, den = float(numerator), float(denominator)
+    except ValueError:
+        return None
+    return num / den if den else None
+
+
+# 1% apart is comfortably outside rounding noise (29.97 vs 30000/1001 differ by
+# far less) and comfortably inside what real VFR produces — the project's own
+# vfr fixture lands around 17 fps average against a 30 fps nominal rate.
+_VFR_RELATIVE_TOLERANCE = 0.01
+
+
+def _is_variable_frame_rate(nominal: float | None, average: float | None) -> bool:
+    """True when the container's nominal rate and the measured average disagree
+    enough that "frame number = time × fps" stops being true.
+
+    FR-012 depends on this: when it returns True the editor MUST NOT present a
+    frame number as exact. A false negative here is the expensive direction —
+    it makes the player display a confident number that does not match the
+    picture — so a stream missing either rate is treated as untrustworthy
+    rather than assumed constant.
+    """
+    if not nominal or not average:
+        return True
+    return abs(nominal - average) / max(nominal, average) > _VFR_RELATIVE_TOLERANCE
 
 
 # T047, FR-081 to FR-086: the video-enhance pipeline (VideoReader/VideoWriter below)
@@ -263,6 +366,40 @@ def sha256_of_file(path: str, chunk_size: int = 1 << 20) -> str:
     with open(path, 'rb') as f:
         while chunk := f.read(chunk_size):
             digest.update(chunk)
+    return digest.hexdigest()
+
+
+# Head and tail sampled for the content key below. Large enough that two
+# different videos practically never collide (container headers, moov atoms and
+# trailing indexes all live in these regions), small enough to stay constant-cost
+# on a 30 GB file.
+_CONTENT_KEY_SAMPLE_BYTES = 1 << 20
+
+
+def content_key(path: str) -> str:
+    """A cache key that changes when the file's CONTENT changes, not only its
+    path (Constitution Princípio XV: "A cache key MUST include something that
+    changes with the file's content, not its path alone").
+
+    Combines size, mtime and a hash of the first and last megabyte. Deliberately
+    NOT a full hash: this runs every time a file is opened in the editor, and
+    reading 30 GB to draw a thumbnail strip would violate Princípio III for a
+    guarantee nothing here needs. Deliberately not size+mtime alone either — a
+    copy that preserved mtime would masquerade as the same file.
+
+    This is a cache key, not a security digest. It answers "is this the same
+    bytes as when I derived that thumbnail", not "has anyone tampered with
+    this file".
+    """
+    stat = os.stat(path)
+    digest = hashlib.sha256()
+    digest.update(str(stat.st_size).encode())
+    digest.update(str(stat.st_mtime_ns).encode())
+    with open(path, 'rb') as f:
+        digest.update(f.read(_CONTENT_KEY_SAMPLE_BYTES))
+        if stat.st_size > _CONTENT_KEY_SAMPLE_BYTES * 2:
+            f.seek(-_CONTENT_KEY_SAMPLE_BYTES, os.SEEK_END)
+            digest.update(f.read(_CONTENT_KEY_SAMPLE_BYTES))
     return digest.hexdigest()
 
 

@@ -57,15 +57,15 @@ independência que a organização por história existe para garantir.
 
 ### Identificação de arquivos e metadados
 
-- [ ] T006 [P] Implementar a chave de conteúdo (tamanho + mtime + hash parcial) em `api/astros_upscale/media.py`, ao lado do uso de `hashlib` que já existe — research.md Decisão 4
-- [ ] T007 [P] Estender `probe_streams()` em `api/astros_upscale/media.py` para devolver também taxa de quadros, se é VFR, e dimensões — preservando as chaves atuais, que o fluxo de elementos secundários já consome
-- [ ] T008 Escrever `api/astros_upscale_api/tests/test_media_handles.py` cobrindo emissão de identificador, resolução para caminho, higienização de nome e detecção de origem alterada
-- [ ] T009 Implementar `api/astros_upscale_api/app/media_handles.py` — registro identificador → caminho, com os metadados de `MediaHandle` (data-model.md). O caminho nunca sai em resposta
+- [X] T006 [P] Implementar a chave de conteúdo (tamanho + mtime + hash parcial) em `api/astros_upscale/media.py`, ao lado do uso de `hashlib` que já existe — research.md Decisão 4
+- [X] T007 [P] Estender `probe_streams()` em `api/astros_upscale/media.py` para devolver também taxa de quadros, se é VFR, e dimensões — preservando as chaves atuais, que o fluxo de elementos secundários já consome
+- [X] T008 Escrever `api/astros_upscale_api/tests/test_media_handles.py` cobrindo emissão de identificador, resolução para caminho, higienização de nome e detecção de origem alterada
+- [X] T009 Implementar `api/astros_upscale_api/app/media_handles.py` — registro identificador → caminho, com os metadados de `MediaHandle` (data-model.md). O caminho nunca sai em resposta
 
 ### Disponibilidade real de encoders
 
-- [ ] T010 [P] Implementar a consulta aos encoders que o binário FFmpeg realmente expõe em `api/astros_upscale/media.py`, ao lado de `is_lgpl_build()` — research.md Decisão 5
-- [ ] T011 [P] Escrever `api/astros_upscale_api/tests/test_encoder_availability.py` — allowlist ≠ disponibilidade; um encoder permitido e ausente precisa ser reportado como ausente
+- [X] T010 [P] Implementar a consulta aos encoders que o binário FFmpeg realmente expõe em `api/astros_upscale/media.py`, ao lado de `is_lgpl_build()` — research.md Decisão 5
+- [X] T011 [P] Escrever `api/astros_upscale_api/tests/test_encoder_availability.py` — allowlist ≠ disponibilidade; um encoder permitido e ausente precisa ser reportado como ausente
 
 ### Grafo de filtros, allowlist e tetos
 
