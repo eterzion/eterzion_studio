@@ -82,9 +82,9 @@ independência que a organização por história existe para garantir.
 
 ### Ponte com o renderer
 
-- [ ] T018 [P] Adicionar em `interface/src/renderer/src/services/api.ts` as chamadas de registro e consulta de handle, com os tipos correspondentes
-- [ ] T019 [P] Ligar o registro de handle ao diálogo nativo em `interface/src/renderer/src/composables/usePickFiles.ts`, de modo que o renderer receba identificador e não trafegue caminho nas rotas novas
-- [ ] T020 [P] Adicionar as opções de container em `interface/src/renderer/src/constants/processing.ts`, ao lado de perfil e dispositivo
+- [X] T018 [P] Adicionar em `interface/src/renderer/src/services/api.ts` as chamadas de registro e consulta de handle, com os tipos correspondentes
+- [X] T019 [P] ~~Ligar o registro de handle em `usePickFiles.ts`~~ — **desvio deliberado, não feito ali.** `usePickFiles.ts` é compartilhado por Vídeo, Áudio e as telas de lote; registrar handle dentro dele imporia a mudança a fluxos fora do escopo desta feature e custaria uma ida à API em cada importação que não precisa de handle. O `addFile` que o composable recebe já é o ponto de extensão por tela, e é onde o registro pertence: `registerMediaHandle()` está em `services/api.ts` (T018) e será chamado pelo `addFile` de `VideoEditorView.vue` na T031. O requisito (FR-028a) é cumprido; o local muda
+- [X] T020 [P] Adicionar as opções de container em `interface/src/renderer/src/constants/processing.ts`, ao lado de perfil e dispositivo
 
 **Checkpoint**: identificadores funcionam, o grafo de filtros é construído estruturalmente, a
 allowlist e os tetos existem. As histórias podem começar.

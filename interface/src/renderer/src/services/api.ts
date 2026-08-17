@@ -336,3 +336,80 @@ export const ERROR_CATEGORY_COPY: Record<ErrorCategory, { message: string; actio
     action: 'Verifique o status da sua licença nas Configurações.'
   }
 }
+
+// --- Video editing (specs/007-video-editor-player) ---
+//
+// Media is referenced by handle_id, never by path — Constitution Princípio
+// XIII. `registerMediaHandle` is the single exception, and exists so that no
+// other call needs a path: it is the bounded exception added to the principle
+// in constitution v3.0.0, and its path must come from the OS file dialog.
+
+export type VideoContainer = 'mp4' | 'mov' | 'mkv' | 'webm'
+
+export interface MediaHandle {
+  handle_id: string
+  display_name: string
+  duration_seconds: number
+  width: number | null
+  height: number | null
+  frame_rate: number | null
+  /** When true, FR-012 forbids presenting a frame number as exact. */
+  frame_rate_is_variable: boolean
+  has_audio: boolean
+  size_bytes: number
+  /** Changes when the file's content changes — compare against a cached value
+      to know that derived thumbnails are stale (FR-017). */
+  content_key: string
+}
+
+export interface ContainerAvailability {
+  value: VideoContainer
+  available: boolean
+  /** A key, not a sentence — the interface translates it. Never an encoder
+      name (Princípio V). */
+  unavailable_reason: 'no_encoder_available' | null
+}
+
+export interface VideoExportOptions {
+  containers: ContainerAvailability[]
+  profiles: Profile[]
+  ceilings: {
+    max_duration_seconds: number
+    max_width: number
+    max_height: number
+    max_frame_rate: number
+    max_frame_count: number
+    max_size_bytes: number
+  }
+}
+
+/** Register a file chosen through the native dialog and receive the identifier
+ *  every other video-editing call uses. The path passed here MUST have come
+ *  from the OS file dialog — that is the first condition of the constitutional
+ *  exception this call relies on, and the only one the renderer can honour. */
+export async function registerMediaHandle(path: string): Promise<MediaHandle> {
+  const res = await fetch(`${BASE_URL}/media/handles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  })
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+/** Re-read a handle's metadata. Used to detect that the source file changed
+ *  underneath us, which invalidates thumbnails and previews (FR-017). */
+export async function getMediaHandle(handleId: string): Promise<MediaHandle> {
+  const res = await fetch(`${BASE_URL}/media/handles/${handleId}`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+/** What this machine can actually produce. Drives FR-027: a container with no
+ *  working encoder is disabled before the person picks it, not after an export
+ *  fails. */
+export async function getVideoExportOptions(): Promise<VideoExportOptions> {
+  const res = await fetch(`${BASE_URL}/video/export-options`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
