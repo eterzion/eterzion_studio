@@ -18,7 +18,7 @@ from fastapi import APIRouter, Form, HTTPException, UploadFile, WebSocket, WebSo
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from app import jobs, licensing, media_handles, processing, security, video_edits
+from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
@@ -704,3 +704,41 @@ def get_video_export_options() -> VideoExportOptionsResponse:
         profiles=['fast', 'balanced', 'quality'],
         ceilings=VideoCeilingsResponse(**VIDEO_EDIT_CEILINGS._asdict()),
     )
+
+
+@media_router.get('/handles/{handle_id}/thumbnails')
+def get_media_thumbnails(handle_id: str):
+    """Timeline thumbnail sprite (FR-007a).
+
+    The grid is described in headers rather than a JSON envelope so the image
+    can be consumed directly by an <img> — wrapping it in base64 would inflate
+    it by a third for no gain the caller can use.
+    """
+    metadata = None
+    try:
+        metadata = media_handles.refresh(handle_id)
+        path = media_handles.resolve(handle_id)
+        sprite = video_thumbnails.build(
+            path, handle_id, metadata['content_key'],
+            duration_seconds=metadata['duration_seconds'],
+            source_width=metadata['width'], source_height=metadata['height'],
+        )
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+
+    # FR-017: sprites for older content of the same handle are removed, not just
+    # bypassed — otherwise the cache grows every time someone re-exports over
+    # their source.
+    video_thumbnails.discard_stale(handle_id, metadata['content_key'])
+
+    return FileResponse(sprite.path, media_type='image/jpeg', headers={
+        'X-Astros-Thumb-Count': str(sprite.count),
+        'X-Astros-Thumb-Interval': f'{sprite.interval_seconds:.6f}',
+        'X-Astros-Thumb-Width': str(sprite.thumbnail_width),
+        'X-Astros-Thumb-Height': str(sprite.thumbnail_height),
+        # Without this the browser cannot read the headers above: the renderer
+        # is a different origin from the API.
+        'Access-Control-Expose-Headers':
+            'X-Astros-Thumb-Count, X-Astros-Thumb-Interval, X-Astros-Thumb-Width, X-Astros-Thumb-Height',
+    })

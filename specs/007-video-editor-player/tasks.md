@@ -125,11 +125,11 @@ sem que ajuste ou exportação existam.
 > Completam o player. Podem ser adiadas sem quebrar o teste independente da US1 — o corte natural se
 > o objetivo for o MVP mais enxuto.
 
-- [ ] T035 [US1] Escrever `api/astros_upscale_api/tests/test_video_thumbnails.py` — geração do sprite e descarte quando a chave de conteúdo muda (cenário 12 do quickstart)
-- [ ] T036 [US1] Implementar `api/astros_upscale_api/app/video_thumbnails.py` — sprites em armazenamento da API, cache com chave de conteúdo (FR-016, FR-017)
-- [ ] T037 [US1] Implementar `GET /media/handles/{handle_id}/thumbnails` em `api/astros_upscale_api/app/routes.py`
-- [ ] T038 [P] [US1] Implementar `interface/src/renderer/src/composables/useTimelineThumbnails.ts`
-- [ ] T039 [US1] Implementar `interface/src/renderer/src/components/video/VideoTimelineThumbnails.vue`
+- [X] T035 [US1] Escrever `api/astros_upscale_api/tests/test_video_thumbnails.py` — geração do sprite e descarte quando a chave de conteúdo muda (cenário 12 do quickstart)
+- [X] T036 [US1] Implementar `api/astros_upscale_api/app/video_thumbnails.py` — sprites em armazenamento da API, cache com chave de conteúdo (FR-016, FR-017)
+- [X] T037 [US1] Implementar `GET /media/handles/{handle_id}/thumbnails` em `api/astros_upscale_api/app/routes.py`
+- [X] T038 [P] [US1] Implementar `interface/src/renderer/src/composables/useTimelineThumbnails.ts`
+- [X] T039 [US1] Implementar `interface/src/renderer/src/components/video/VideoTimelineThumbnails.vue`
 
 **Checkpoint**: US1 funciona sozinha. Já substitui o ir-e-voltar para um player externo.
 

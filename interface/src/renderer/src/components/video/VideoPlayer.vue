@@ -5,8 +5,10 @@ import VideoTransportControls from './VideoTransportControls.vue'
 import VideoTimeline from './VideoTimeline.vue'
 import VideoTimeDisplay from './VideoTimeDisplay.vue'
 import VideoVolumeControl from './VideoVolumeControl.vue'
+import VideoTimelineThumbnails from './VideoTimelineThumbnails.vue'
 import { useVideoPlayback } from '../../composables/useVideoPlayback'
 import { useVideoTimeline } from '../../composables/useVideoTimeline'
+import { useTimelineThumbnails } from '../../composables/useTimelineThumbnails'
 import type { MediaHandle } from '../../services/api'
 
 // T030 (specs/007-video-editor-player) — the root of the player component tree
@@ -23,6 +25,7 @@ const element = ref<HTMLVideoElement | null>(null)
 const handleRef = computed(() => props.handle)
 
 const timeline = useVideoTimeline(handleRef)
+const thumbnails = useTimelineThumbnails(handleRef)
 const playback = useVideoPlayback(element) as ReturnType<typeof useVideoPlayback> & {
   attach: () => void
 }
@@ -68,6 +71,12 @@ const disabled = computed(() => !props.handle)
         @seek="playback.seek(timeline.timeAtProgress($event))"
       >
         <template #track-background>
+          <VideoTimelineThumbnails
+            :sprite-url="thumbnails.spriteUrl.value"
+            :count="thumbnails.count.value"
+            :thumb-width="thumbnails.thumbWidth.value"
+            :thumb-height="thumbnails.thumbHeight.value"
+          />
           <slot name="timeline-overlay" />
         </template>
       </VideoTimeline>
