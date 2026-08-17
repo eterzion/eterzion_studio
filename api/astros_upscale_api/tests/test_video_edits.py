@@ -238,3 +238,84 @@ def test_export_produces_a_file_and_leaves_the_source_untouched(tmp_path):
 
     assert output.is_file() and output.stat().st_size > 0
     assert working.read_bytes() == before, 'o arquivo de origem foi modificado'
+
+
+# ------------------------- preview/export parity (T042) ------------------------- #
+#
+# The renderer previews with a WebGL shader; FFmpeg produces the export. FR-015
+# forbids the two differing silently, so the agreement has to be measured rather
+# than asserted in a comment.
+#
+# Comparing two copies of the same formula would prove nothing — both could be
+# wrong together. So this runs FFmpeg's real `eq` filter over a known colour and
+# checks the resulting pixel against the formula the shader implements
+# (interface/src/renderer/src/composables/useVideoPreviewPipeline.ts, eqLuma).
+# If FFmpeg's behaviour ever diverges from that formula, this fails and the
+# shader is the thing that must change.
+
+
+def _eq_luma(value: float, brightness: float = 0.0, contrast: float = 1.0, gamma: float = 1.0) -> float:
+    """libavfilter/vf_eq.c's luma path — the same arithmetic eqLuma() implements
+    in the renderer, transcribed here so the two can be compared against FFmpeg
+    rather than against each other.
+
+    `value` is full-range luma in 0..1. The limited-range hop matters: eq
+    operates on the STORED plane, which video carries in 16..235, so applying it
+    to full-range luma makes brightness land 255/219 too weak. The first version
+    of this test omitted it and failed against real FFmpeg by exactly that
+    factor — the shader was corrected, not the tolerance."""
+    stored = (16.0 + 219.0 * value) / 255.0
+    v = contrast * (stored - 0.5) + 0.5 + brightness
+    v = min(1.0, max(0.0, v))
+    v = v ** (1.0 / max(0.1, gamma))
+    return (v * 255.0 - 16.0) / 219.0
+
+
+def _render_gray_through_eq(tmp_path, level: float, **eq_params) -> float:
+    """Render one solid grey frame through `eq` and read back its luma."""
+    import subprocess
+
+    from astros_upscale.media import ffmpeg_path
+
+    value = int(round(level * 255))
+    graph = 'eq=' + ':'.join(f'{k}={v}' for k, v in eq_params.items())
+    output = tmp_path / 'out.png'
+    subprocess.run(
+        [ffmpeg_path() or 'ffmpeg', '-y', '-v', 'error',
+         '-f', 'lavfi', '-i', f'color=c=0x{value:02x}{value:02x}{value:02x}:size=32x32:duration=0.1:rate=1',
+         '-vf', graph, '-frames:v', '1', str(output)],
+        capture_output=True, check=True,
+    )
+    import cv2
+
+    image = cv2.imread(str(output))
+    # Grey in, grey out — any channel carries the luma.
+    return float(image[16, 16, 0]) / 255.0
+
+
+@needs_ffmpeg
+@pytest.mark.parametrize(
+    'level, params',
+    [
+        (0.5, {'brightness': 0.0, 'contrast': 1.0}),
+        (0.5, {'brightness': 0.2, 'contrast': 1.0}),
+        (0.25, {'brightness': 0.0, 'contrast': 1.5}),
+        (0.75, {'brightness': -0.1, 'contrast': 1.0}),
+    ],
+)
+def test_ffmpeg_eq_matches_the_formula_the_shader_implements(tmp_path, level, params):
+    measured = _render_gray_through_eq(tmp_path, level, **params)
+    expected = _eq_luma(level, **params)
+    # Tolerance covers 8-bit quantisation and the RGB/YUV round trip FFmpeg does
+    # around the filter — not a licence for the formulas to disagree.
+    assert measured == pytest.approx(expected, abs=0.02), (
+        f'FFmpeg produziu {measured:.4f}, a fórmula do shader prevê {expected:.4f}'
+    )
+
+
+@needs_ffmpeg
+def test_brightness_is_additive_in_ffmpeg_too(tmp_path):
+    """The single fact that ruled CSS filters out (research.md Decisão 1).
+    Multiplicative brightness would leave black at black; additive lifts it."""
+    lifted = _render_gray_through_eq(tmp_path, 0.0, brightness=0.25, contrast=1.0)
+    assert lifted > 0.15, 'brilho não somou — a premissa da Decisão 1 mudou'

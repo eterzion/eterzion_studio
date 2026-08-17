@@ -60,18 +60,31 @@ const mat3 YUV_TO_RGB = mat3(
   1.5748, -0.468124, 0.0
 );
 
+// eq operates on the STORED luma plane, which video carries in limited ("TV")
+// range: 16..235 rather than 0..255. Applying it to full-range luma makes
+// brightness land 255/219 times too weak, which a measured parity test against
+// real FFmpeg caught — see test_video_edits.py's
+// test_ffmpeg_eq_matches_the_formula_the_shader_implements. The browser hands us
+// full-range RGB, so the conversion has to go through limited range explicitly.
+float toStoredLuma(float yFull) { return (16.0 + 219.0 * yFull) / 255.0; }
+float fromStoredLuma(float yStored) { return (yStored * 255.0 - 16.0) / 219.0; }
+
 void main() {
   vec3 rgb = texture(u_frame, v_uv).rgb;
   vec3 yuv = RGB_TO_YUV * rgb;
 
   // Luma: contrast about the midpoint, then additive brightness, then gamma —
   // the order vf_eq.c uses. Reordering these is not equivalent.
-  float y = u_contrast * (yuv.x - 0.5) + 0.5 + u_brightness;
+  float y = toStoredLuma(yuv.x);
+  y = u_contrast * (y - 0.5) + 0.5 + u_brightness;
   y = clamp(y, 0.0, 1.0);
   y = pow(y, 1.0 / u_gamma);
+  y = fromStoredLuma(y);
 
   // Chroma is centred on zero here (it is centred on 128 in 8-bit YUV), so
-  // saturation scales directly rather than about an offset.
+  // saturation scales directly rather than about an offset. The range question
+  // above does not arise: scaling a centred value is the same operation in
+  // either range.
   vec2 uv = yuv.yz * u_saturation;
   uv = vec2(uv.x * u_hueCos - uv.y * u_hueSin, uv.x * u_hueSin + uv.y * u_hueCos);
 
@@ -213,12 +226,23 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
   return { supported, start, stop, apply }
 }
 
-/** The CPU-side twin of the shader's luma path, exported so a test can pin it
- *  against what video_edits.py builds. Parity is an assertion, not a comment. */
+/** The CPU-side twin of the shader's luma path, exported so parity with FFmpeg
+ *  is an assertion rather than a comment.
+ *
+ *  `value` is full-range luma in 0..1, as the browser hands it over. The
+ *  limited-range hop in the middle is not decoration: eq operates on the stored
+ *  plane, which video carries in 16..235, and skipping it makes brightness land
+ *  255/219 too weak. A measured test against real FFmpeg is what established
+ *  that — the first version of this function did skip it. */
 export function eqLuma(
   value: number,
   a: Pick<VideoAdjustments, 'brightness' | 'contrast' | 'gamma'>
 ): number {
-  const contrasted = a.contrast * (value - 0.5) + 0.5 + a.brightness
-  return Math.pow(Math.min(1, Math.max(0, contrasted)), 1 / Math.max(0.1, a.gamma))
+  const stored = (16 + 219 * value) / 255
+  const contrasted = a.contrast * (stored - 0.5) + 0.5 + a.brightness
+  const gammaed = Math.pow(Math.min(1, Math.max(0, contrasted)), 1 / Math.max(0.1, a.gamma))
+  // Clamped on the way out as well as on the way in: a stored luma of 16 maps
+  // back to full-range 0, and anything below it to a negative number that is
+  // not a colour. The shader clamps at the same point.
+  return Math.min(1, Math.max(0, (gammaed * 255 - 16) / 219))
 }

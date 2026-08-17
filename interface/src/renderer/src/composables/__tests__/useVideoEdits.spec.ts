@@ -109,37 +109,73 @@ describe('useVideoEdits', () => {
 })
 
 describe('eq parity with FFmpeg', () => {
-  // The renderer half of the contract test_video_edits.py pins on the FFmpeg
-  // side. Both implement libavfilter/vf_eq.c's luma path:
-  //   v = contrast * (v - 0.5) + 0.5 + brightness;  v = pow(v, 1/gamma)
+  // The renderer half of the parity test_video_edits.py measures against real
+  // FFmpeg. Both implement libavfilter/vf_eq.c's luma path -- crucially, on the
+  // STORED plane, which video carries in limited range (16..235):
+  //   stored = (16 + 219*v)/255
+  //   stored' = contrast*(stored - 0.5) + 0.5 + brightness
+  //   stored'' = pow(stored', 1/gamma)
+  //   v' = (stored''*255 - 16)/219
+  //
+  // The first version of this omitted the range hop and disagreed with FFmpeg
+  // by exactly 255/219. The shader was corrected, not the tolerance.
+
+  const RANGE = 255 / 219
 
   it('is the identity at neutral values', () => {
+    // The range hop must round-trip exactly, or every untouched frame would
+    // shift slightly the moment the shader is switched on.
     for (const v of [0, 0.25, 0.5, 0.75, 1]) {
       expect(eqLuma(v, { brightness: 0, contrast: 1, gamma: 1 })).toBeCloseTo(v, 6)
     }
   })
 
   it('treats brightness as additive, not multiplicative', () => {
-    // The single fact that ruled out CSS filters. Multiplicative brightness
-    // would leave 0 at 0; additive lifts it.
-    expect(eqLuma(0, { brightness: 0.2, contrast: 1, gamma: 1 })).toBeCloseTo(0.2, 6)
-    expect(eqLuma(0.5, { brightness: 0.2, contrast: 1, gamma: 1 })).toBeCloseTo(0.7, 6)
+    // The fact that ruled CSS filters out: multiplicative brightness leaves
+    // black at black, additive lifts it.
+    expect(eqLuma(0, { brightness: 0.2, contrast: 1, gamma: 1 })).toBeGreaterThan(0.2)
+    // And it lands where limited range says it should, not where a naive
+    // full-range reading would put it.
+    expect(eqLuma(0, { brightness: 0.2, contrast: 1, gamma: 1 })).toBeCloseTo(0.2 * RANGE, 4)
   })
 
-  it('pivots contrast about the midpoint', () => {
-    expect(eqLuma(0.5, { brightness: 0, contrast: 2, gamma: 1 })).toBeCloseTo(0.5, 6)
-    expect(eqLuma(0.75, { brightness: 0, contrast: 2, gamma: 1 })).toBeCloseTo(1, 6)
+  it('scales a brightness step by the range factor', () => {
+    const step = 0.1
+    const a = eqLuma(0.5, { brightness: 0, contrast: 1, gamma: 1 })
+    const b = eqLuma(0.5, { brightness: step, contrast: 1, gamma: 1 })
+    expect(b - a).toBeCloseTo(step * RANGE, 4)
   })
 
-  it('applies gamma as an inverse power', () => {
-    expect(eqLuma(0.25, { brightness: 0, contrast: 1, gamma: 2 })).toBeCloseTo(Math.sqrt(0.25), 6)
+  it('pivots contrast about the stored midpoint', () => {
+    // Stored 0.5 is full-range 0.5137, not 0.5 -- the pivot lives in the plane
+    // the filter operates on, not in the one the display shows.
+    const pivot = (0.5 * 255 - 16) / 219
+    expect(eqLuma(pivot, { brightness: 0, contrast: 2, gamma: 1 })).toBeCloseTo(pivot, 4)
+  })
+
+  it('applies gamma as an inverse power in stored space', () => {
+    const stored = (16 + 219 * 0.5) / 255
+    const expected = (Math.pow(stored, 1 / 2) * 255 - 16) / 219
+    expect(eqLuma(0.5, { brightness: 0, contrast: 1, gamma: 2 })).toBeCloseTo(expected, 6)
   })
 
   it('clamps before the gamma pass, as vf_eq.c does', () => {
-    // pow() of a negative number is NaN. Order matters, and getting it wrong
-    // renders black pixels rather than an obvious error.
-    expect(eqLuma(0, { brightness: -0.5, contrast: 1, gamma: 2 })).toBe(0)
-    expect(Number.isNaN(eqLuma(0, { brightness: -0.5, contrast: 1, gamma: 2 }))).toBe(false)
+    // pow() of a negative is NaN, and a NaN pixel renders as garbage rather
+    // than as an obvious error.
+    const result = eqLuma(0, { brightness: -0.5, contrast: 1, gamma: 2 })
+    expect(Number.isNaN(result)).toBe(false)
+    expect(result).toBe(0)
+  })
+
+  it('never returns a value outside 0..1', () => {
+    // Stored 16 maps back to full-range 0; anything below it is not a colour.
+    for (const brightness of [-1, -0.5, 0, 0.5, 1]) {
+      for (const v of [0, 0.5, 1]) {
+        const result = eqLuma(v, { brightness, contrast: 1, gamma: 1 })
+        expect(result).toBeGreaterThanOrEqual(0)
+        expect(result).toBeLessThanOrEqual(1)
+      }
+    }
   })
 
   it('never divides by zero on gamma', () => {
