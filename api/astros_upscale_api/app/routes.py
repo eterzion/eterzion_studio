@@ -18,11 +18,13 @@ from fastapi import APIRouter, Form, HTTPException, UploadFile, WebSocket, WebSo
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from app import jobs, licensing, processing, security
-from app.config import settings
+from app import jobs, licensing, media_handles, processing, security, video_edits
+from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
-from app.schemas import (Adjustments, Component, ComponentDetails, DetectContentTypeRequest, ExportRequest,
-                         LicenseStatusResponse, LocalJobRequest, MediaRequest)
+from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
+                         DetectContentTypeRequest, ExportRequest, LicenseStatusResponse,
+                         LocalJobRequest, MediaHandleRequest, MediaHandleResponse, MediaRequest,
+                         VideoCeilingsResponse, VideoExportOptionsResponse)
 
 # ------------------------------- /jobs ------------------------------- #
 
@@ -630,3 +632,75 @@ def _ws_job_view(job: dict) -> dict:
     view = {k: v for k, v in job.items() if k not in ('input_path', 'queue_order')}
     view.setdefault('queue_position', jobs.queue_position(job['id']))
     return view
+
+
+# ------------------------------- /media, /video ------------------------------- #
+#
+# specs/007-video-editor-player. Two properties hold across every route below,
+# and test_video_contract_surface.py is what keeps them true:
+#
+#   1. Media is referenced by handle_id. The single exception is
+#      POST /media/handles, which exists precisely so no other route needs a
+#      path — the bounded exception added to Princípio XIII in constitution
+#      v3.0.0.
+#   2. No route accepts a codec, encoder, preset, CRF or pixel format. The
+#      client sends container and profile; the backend resolves the rest
+#      (Princípio V).
+
+media_router = APIRouter()
+video_router = APIRouter()
+
+
+def _handle_error_status(reason: str) -> int:
+    return {
+        'not_found': 404,
+        'unsupported_media': 415,
+        'unreadable': 415,
+        'source_changed': 409,
+    }.get(reason, 422)
+
+
+@media_router.post('/handles', response_model=MediaHandleResponse, status_code=201)
+def register_media_handle(payload: MediaHandleRequest) -> MediaHandleResponse:
+    """The one route permitted to accept a filesystem path.
+
+    Conditions of the v3.0.0 exception enforced here: the path is validated
+    before anything else is done with it (inside media_handles.register), and
+    the response carries no path — MediaHandleResponse has no such field, so
+    it cannot leak by accident.
+    """
+    try:
+        handle_id = media_handles.register(payload.path)
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return MediaHandleResponse(handle_id=handle_id, **media_handles.describe(handle_id))
+
+
+@media_router.get('/handles/{handle_id}', response_model=MediaHandleResponse)
+def get_media_handle(handle_id: str) -> MediaHandleResponse:
+    """Re-probe and return current metadata. A client compares the returned
+    content_key against the one it cached to discover that its thumbnails
+    belong to content that no longer exists (FR-017)."""
+    try:
+        metadata = media_handles.refresh(handle_id)
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return MediaHandleResponse(handle_id=handle_id, **metadata)
+
+
+@video_router.get('/export-options', response_model=VideoExportOptionsResponse)
+def get_video_export_options() -> VideoExportOptionsResponse:
+    """What this environment can actually produce.
+
+    This is what makes FR-027 happen BEFORE a person chooses, rather than after
+    an export fails. `available` comes from a functional probe — one real frame
+    encoded — not from what ffmpeg lists as compiled in; on the development
+    machine those two answers differ for all three H.264 encoders.
+    """
+    return VideoExportOptionsResponse(
+        containers=[ContainerAvailability(**entry) for entry in video_edits.available_containers()],
+        profiles=['fast', 'balanced', 'quality'],
+        ceilings=VideoCeilingsResponse(**VIDEO_EDIT_CEILINGS._asdict()),
+    )

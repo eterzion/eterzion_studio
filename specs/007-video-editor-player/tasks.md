@@ -76,9 +76,9 @@ independência que a organização por história existe para garantir.
 
 ### Contratos e schemas
 
-- [ ] T015 Adicionar em `api/astros_upscale_api/app/schemas.py` os schemas de `MediaHandle`, `VideoEditSet` (ajustes, efeitos, transformação, corte, áudio), `ExportRequest` e as respostas — todos com `extra='forbid'`, faixas de data-model.md
-- [ ] T016 Escrever `api/astros_upscale_api/tests/test_video_contract_surface.py` — um `codec`, `preset`, `crf` ou `input_path` no corpo é 422, não campo ignorado (SC-007, cenário 8 do quickstart)
-- [ ] T017 Implementar `POST /media/handles` e `GET /media/handles/{handle_id}` em `api/astros_upscale_api/app/routes.py`, conforme contracts/api.md
+- [X] T015 Adicionar em `api/astros_upscale_api/app/schemas.py` os schemas de `MediaHandle`, `VideoEditSet` (ajustes, efeitos, transformação, corte, áudio), `ExportRequest` e as respostas — todos com `extra='forbid'`, faixas de data-model.md
+- [X] T016 Escrever `api/astros_upscale_api/tests/test_video_contract_surface.py` — um `codec`, `preset`, `crf` ou `input_path` no corpo é 422, não campo ignorado (SC-007, cenário 8 do quickstart)
+- [X] T017 Implementar `POST /media/handles` e `GET /media/handles/{handle_id}` em `api/astros_upscale_api/app/routes.py`, conforme contracts/api.md
 
 ### Ponte com o renderer
 

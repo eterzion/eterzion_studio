@@ -194,3 +194,173 @@ class LicenseStatusResponse(BaseModel):
     installations_used: int
     installations_limit: int
     offline_days_remaining: int | None = None
+
+
+# --- Video editing (specs/007-video-editor-player) ---
+#
+# Every model below sets extra='forbid'. That is what makes contracts/api.md's
+# two guarantees real rather than aspirational: a `codec`, `preset`, `crf` or
+# `input_path` in a request body is a 422, never a silently-ignored key. The
+# same reasoning MediaRequest already documents for `model`/`engine`.
+
+VideoContainer = Literal['mp4', 'mov', 'mkv', 'webm']
+AudioEditMode = Literal['keep', 'mute', 'remove']
+RotationDegrees = Literal[0, 90, 180, 270]
+
+
+class VideoAdjustments(BaseModel):
+    """FR-013a. Ranges mirror FFmpeg's `eq` filter, which is the source of truth
+    the renderer's preview shader reproduces (research.md Decisão 1). Changing a
+    bound here without changing the shader makes the preview lie."""
+    model_config = ConfigDict(extra='forbid')
+
+    brightness: float = Field(default=0.0, ge=-1.0, le=1.0)  # additive, not multiplicative
+    contrast: float = Field(default=1.0, ge=0.0, le=4.0)
+    saturation: float = Field(default=1.0, ge=0.0, le=3.0)
+    gamma: float = Field(default=1.0, ge=0.1, le=10.0)
+    hue_degrees: float = Field(default=0.0, ge=-180.0, le=180.0)
+    sharpness: float = Field(default=0.0, ge=0.0, le=2.0)
+
+
+class VideoEffects(BaseModel):
+    """FR-013b. These are the operations the preview shader does NOT reproduce,
+    which is why FR-015's disclosure exists."""
+    model_config = ConfigDict(extra='forbid')
+
+    denoise_enabled: bool = False
+    denoise_strength: int = Field(default=45, ge=0, le=100)
+    blur_enabled: bool = False
+    blur_strength: int = Field(default=0, ge=0, le=100)
+    grain_enabled: bool = False
+    grain_strength: int = Field(default=0, ge=0, le=100)
+
+
+class VideoCrop(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    x: int = Field(ge=0)
+    y: int = Field(ge=0)
+    width: int = Field(ge=16)
+    height: int = Field(ge=16)
+
+
+class VideoTransform(BaseModel):
+    """FR-013c. Application order is normative — crop, rotate, flip, scale — and
+    is pinned by test_video_edits.py, because a different order is a different
+    picture, not another route to the same one."""
+    model_config = ConfigDict(extra='forbid')
+
+    crop: VideoCrop | None = None
+    rotation_degrees: RotationDegrees = 0
+    flip_horizontal: bool = False
+    flip_vertical: bool = False
+    output_width: int | None = Field(default=None, ge=16)
+    output_height: int | None = Field(default=None, ge=16)
+
+
+class VideoTrim(BaseModel):
+    """FR-013d. The resulting duration -- not the source file's -- is what the
+    ceilings are checked against (video_edits.OperationSize)."""
+    model_config = ConfigDict(extra='forbid')
+
+    start_seconds: float = Field(ge=0.0)
+    end_seconds: float = Field(gt=0.0)
+
+
+class VideoAudioEdit(BaseModel):
+    """FR-013e. Track manipulation only — mastering and restoration are
+    specs/006-audio-engine-masterizacao, not this feature."""
+    model_config = ConfigDict(extra='forbid')
+
+    mode: AudioEditMode = 'keep'
+    volume: float = Field(default=1.0, ge=0.0, le=2.0)
+
+
+class VideoEditSet(BaseModel):
+    """Five fields for the six families of FR-013, and that is not an error: the
+    sixth — export — is the operation that consumes this set, not a state inside
+    it (data-model.md)."""
+    model_config = ConfigDict(extra='forbid')
+
+    adjustments: VideoAdjustments = Field(default_factory=VideoAdjustments)
+    effects: VideoEffects = Field(default_factory=VideoEffects)
+    transform: VideoTransform = Field(default_factory=VideoTransform)
+    trim: VideoTrim | None = None
+    audio: VideoAudioEdit = Field(default_factory=VideoAudioEdit)
+
+
+class MediaHandleRequest(BaseModel):
+    """The ONE route permitted to accept a filesystem path, under the bounded
+    exception added to Princípio XIII in constitution v3.0.0. The path must come
+    from the operating system's file dialog invoked by the Electron main
+    process; it is validated before anything else and never returned."""
+    model_config = ConfigDict(extra='forbid')
+
+    path: str
+
+
+class MediaHandleResponse(BaseModel):
+    """Note what is absent: there is no path field, and there never may be."""
+    model_config = ConfigDict(extra='forbid')
+
+    handle_id: str
+    display_name: str
+    duration_seconds: float
+    width: int | None = None
+    height: int | None = None
+    frame_rate: float | None = None
+    frame_rate_is_variable: bool = False
+    has_audio: bool = False
+    size_bytes: int = 0
+    content_key: str
+
+
+class VideoExportRequest(BaseModel):
+    """Intent only. No codec, encoder, preset, CRF, pixel format or path —
+    Princípio V (the API accepts intent, never implementation) and Princípio
+    XIII (media by identifier) enforced by the shape of the type itself."""
+    model_config = ConfigDict(extra='forbid')
+
+    handle_id: str
+    edits: VideoEditSet = Field(default_factory=VideoEditSet)
+    container: VideoContainer = 'mp4'
+    profile: Profile = 'balanced'
+    output_directory: str | None = None
+    output_filename: str | None = None
+    conflict: Literal['rename', 'overwrite'] = 'rename'
+
+
+class VideoPreviewFrameRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    time_seconds: float = Field(ge=0.0)
+    edits: VideoEditSet = Field(default_factory=VideoEditSet)
+
+
+class ContainerAvailability(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    value: VideoContainer
+    available: bool
+    # A key, not a sentence: the interface translates it (Princípio XIV). Never
+    # an encoder name (Princípio V).
+    unavailable_reason: Literal['no_encoder_available'] | None = None
+
+
+class VideoCeilingsResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    max_duration_seconds: float
+    max_width: int
+    max_height: int
+    max_frame_rate: float
+    max_frame_count: int
+    max_size_bytes: int
+
+
+class VideoExportOptionsResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    containers: list[ContainerAvailability]
+    profiles: list[Profile]
+    ceilings: VideoCeilingsResponse
