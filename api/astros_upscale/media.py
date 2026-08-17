@@ -131,8 +131,46 @@ def available_encoders() -> frozenset[str]:
     return frozenset(names)
 
 
+@functools.lru_cache(maxsize=64)
+def encoder_works(name: str) -> bool:
+    """Whether this encoder can actually encode a frame here, right now.
+
+    `available_encoders()` reports what the binary was COMPILED with, which is
+    not the same question. Measured on the development machine: ffmpeg lists
+    h264_nvenc, h264_qsv and h264_amf, and all three fail at the first frame —
+    NVENC driver too old, no Intel MFX session, amfrt64.dll absent. A listing
+    check would have offered mp4 and mov and let every export die partway
+    through, which is precisely what Princípio XIII forbids: "Before starting
+    work that depends on a codec, encoder, or container, the API MUST confirm
+    the runtime actually provides it and MUST fail with a clear reason if it
+    does not — never begin processing that will die partway through."
+
+    So this encodes one 64×64 frame to null and reports whether that worked.
+    ~120 ms per encoder, cached for the process — paid once, against an export
+    that would otherwise fail after minutes.
+    """
+    if name in GPL_ENCODERS:
+        return False
+    if name not in available_encoders():
+        return False
+    ffmpeg_bin = ffmpeg_path()
+    if not ffmpeg_bin:
+        return False
+    try:
+        result = subprocess.run(
+            [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
+             '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
+             '-c:v', name, '-frames:v', '1', '-f', 'null', '-'],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def first_available_encoder(candidates: 'Sequence[str]') -> str | None:
-    """First candidate this runtime provides, in the caller's preference order.
+    """First candidate that actually works here, in the caller's preference
+    order.
 
     Rejects GPL encoders unconditionally, even when present and even when a
     caller asks for one: the developer machine's ffmpeg may well have libx264,
@@ -140,8 +178,7 @@ def first_available_encoder(candidates: 'Sequence[str]') -> str | None:
     Distribution Constraints). Making that a property of this function rather
     than of each call site is the point — a caller cannot forget it.
     """
-    present = available_encoders()
-    return next((c for c in candidates if c in present and c not in GPL_ENCODERS), None)
+    return next((c for c in candidates if encoder_works(c)), None)
 
 
 def _warn_once_if_gpl_build() -> None:

@@ -69,10 +69,10 @@ independência que a organização por história existe para garantir.
 
 ### Grafo de filtros, allowlist e tetos
 
-- [ ] T011a **Medir** encoder e preset candidatos por perfil (`fast`/`balanced`/`quality`) em vídeo real, registrando tempo de codificação e tamanho de saída em `docs/benchmarks/video-encoder-profiles.md`, **antes** de fixar o mapeamento da T013. A constituição exige que benchmarks precedam a escolha do que respalda cada perfil, e o Princípio III proíbe registrar afirmação de desempenho sem medição — reputação e intuição não bastam
-- [ ] T012 Escrever `api/astros_upscale_api/tests/test_video_edits.py` — construção do grafo via `ffmpeg-python` (nunca string), ordem `crop → rotation → flip → scale`, arredondamento para dimensão par, rejeição de valor fora de faixa, rejeição de container fora da allowlist
-- [ ] T013 Implementar `api/astros_upscale_api/app/video_edits.py`: construção do grafo com `run_ffmpeg`, resolução perfil → encoder → preset **conforme medido em T011a**, e verificação de tetos que **nomeia o fator limitante**
-- [ ] T014 [P] Escrever teste em `api/astros_upscale_api/tests/test_video_edits.py` provando que a verificação de tetos usa a duração **do trecho cortado**, não a do arquivo
+- [X] T011a **Medir** encoder e preset candidatos por perfil (`fast`/`balanced`/`quality`) em vídeo real, registrando tempo de codificação e tamanho de saída em `docs/benchmarks/video-encoder-profiles.md`, **antes** de fixar o mapeamento da T013. A constituição exige que benchmarks precedam a escolha do que respalda cada perfil, e o Princípio III proíbe registrar afirmação de desempenho sem medição — reputação e intuição não bastam
+- [X] T012 Escrever `api/astros_upscale_api/tests/test_video_edits.py` — construção do grafo via `ffmpeg-python` (nunca string), ordem `crop → rotation → flip → scale`, arredondamento para dimensão par, rejeição de valor fora de faixa, rejeição de container fora da allowlist
+- [X] T013 Implementar `api/astros_upscale_api/app/video_edits.py`: construção do grafo com `run_ffmpeg`, resolução perfil → encoder → preset **conforme medido em T011a**, e verificação de tetos que **nomeia o fator limitante**
+- [X] T014 [P] Escrever teste em `api/astros_upscale_api/tests/test_video_edits.py` provando que a verificação de tetos usa a duração **do trecho cortado**, não a do arquivo
 
 ### Contratos e schemas
 

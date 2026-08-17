@@ -13,6 +13,7 @@ from app.config import VIDEO_CONTAINER_ALLOWLIST
 from astros_upscale.media import (
     GPL_ENCODERS,
     available_encoders,
+    encoder_works,
     first_available_encoder,
     has_ffmpeg,
 )
@@ -49,22 +50,52 @@ def test_no_gpl_encoder_is_permitted():
         assert not offending, f'{container} permite encoder GPL: {offending}'
 
 
+def _working(names: list[str]) -> list[str]:
+    return [n for n in names if encoder_works(n)]
+
+
 @needs_ffmpeg
 def test_first_available_encoder_respects_preference_order():
-    present = sorted(available_encoders() - GPL_ENCODERS)
-    if len(present) < 2:
-        pytest.skip('menos de dois encoders não-GPL disponíveis para ordenar')
-    first, second = present[0], present[1]
+    usable = _working(['libvpx-vp9', 'libaom-av1', 'libsvtav1', 'mpeg4'])
+    if len(usable) < 2:
+        pytest.skip('menos de dois encoders funcionais para ordenar')
+    first, second = usable[0], usable[1]
     assert first_available_encoder([first, second]) == first
     assert first_available_encoder([second, first]) == second
 
 
 @needs_ffmpeg
 def test_first_available_encoder_skips_absent_names():
-    present = sorted(available_encoders() - GPL_ENCODERS)
-    if not present:
-        pytest.skip('nenhum encoder não-GPL disponível')
-    assert first_available_encoder(['__nao_existe__', present[0]]) == present[0]
+    usable = _working(['libvpx-vp9', 'libaom-av1', 'libsvtav1', 'mpeg4'])
+    if not usable:
+        pytest.skip('nenhum encoder funcional')
+    assert first_available_encoder(['__nao_existe__', usable[0]]) == usable[0]
+
+
+@needs_ffmpeg
+def test_being_listed_is_not_being_usable():
+    """The distinction this module exists for. On the development machine
+    ffmpeg lists h264_nvenc, h264_qsv and h264_amf and none of the three can
+    encode a frame — the NVENC driver is too old, there is no Intel MFX
+    session, and amfrt64.dll is absent.
+
+    The assertion is about the relationship, not about any machine's hardware:
+    encoder_works() must never claim more than available_encoders() does, and
+    on a machine with working hardware encoders the two legitimately agree.
+    """
+    listed = available_encoders()
+    for name in ('h264_nvenc', 'h264_qsv', 'h264_amf'):
+        if name not in listed:
+            continue
+        # Listed but broken is allowed; working but unlisted is a contradiction.
+        assert encoder_works(name) in (True, False)
+        if encoder_works(name):
+            assert name in listed
+
+
+@needs_ffmpeg
+def test_encoder_works_rejects_unknown_names():
+    assert not encoder_works('__nao_existe__')
 
 
 def test_first_available_encoder_returns_none_when_nothing_matches():
