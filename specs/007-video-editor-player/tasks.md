@@ -102,23 +102,23 @@ sem que ajuste ou exportação existam.
 
 ### Tests for User Story 1
 
-- [ ] T021 [P] [US1] Escrever `interface/src/renderer/src/composables/__tests__/useVideoPlayback.spec.ts` — reproduzir/pausar, passo por quadro, e a regra de que avançar e voltar retorna ao mesmo quadro
-- [ ] T022 [P] [US1] Escrever `interface/src/renderer/src/composables/__tests__/useVideoTimeline.spec.ts` — conversões tempo ↔ quadro ↔ pixel, o caso VFR em que o número do quadro não é exibido como exato (FR-012), e os extremos de duração: vídeo de poucos quadros e vídeo de horas continuam posicionáveis
+- [X] T021 [P] [US1] Escrever `interface/src/renderer/src/composables/__tests__/useVideoPlayback.spec.ts` — reproduzir/pausar, passo por quadro, e a regra de que avançar e voltar retorna ao mesmo quadro
+- [X] T022 [P] [US1] Escrever `interface/src/renderer/src/composables/__tests__/useVideoTimeline.spec.ts` — conversões tempo ↔ quadro ↔ pixel, o caso VFR em que o número do quadro não é exibido como exato (FR-012), e os extremos de duração: vídeo de poucos quadros e vídeo de horas continuam posicionáveis
 
 ### Implementation for User Story 1
 
-- [ ] T023 [P] [US1] Implementar `interface/src/renderer/src/composables/useVideoPlayback.ts` — estado de reprodução e passo por quadro via `requestVideoFrameCallback` (research.md Decisão 3)
-- [ ] T024 [P] [US1] Implementar `interface/src/renderer/src/composables/useVideoTimeline.ts` — conversões e a supressão do número de quadro em VFR
-- [ ] T025 [US1] Implementar `interface/src/renderer/src/components/video/VideoPlayerSurface.vue` — o `<video>` servido por `astros-media://` (Decisão 8), sem alteração no handler do processo principal
-- [ ] T026 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTransportControls.vue` — reproduzir, pausar, quadro a quadro, operável por teclado com rótulo acessível (FR-010)
-- [ ] T027 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTimeline.vue` — barra, cursor, clique e arrasto
-- [ ] T028 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTimeDisplay.vue` — posição, duração e número do quadro
-- [ ] T029 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoVolumeControl.vue` — volume e silenciar, ausente quando `has_audio` é falso (FR-009)
-- [ ] T030 [US1] Implementar `interface/src/renderer/src/components/video/VideoPlayer.vue` — compõe superfície, transporte, linha de tempo, tempo e volume
-- [ ] T031 [US1] Implementar `interface/src/renderer/src/views/VideoEditorView.vue` usando `MediaEditorShell.vue` pelos seus dois slots, com importar/alternar/remover vídeos (FR-002, FR-005)
-- [ ] T032 [US1] Adicionar o ponto de entrada para a área de edição em `interface/src/renderer/src/views/VideoView.vue`, sem remover o fluxo em lote (FR-032)
-- [ ] T033 [US1] Tratar o caso de vídeo não previsualizável com aviso explícito em `VideoPlayerSurface.vue` (FR-011)
-- [ ] T034 [P] [US1] Escrever as chaves `videoEditor.player.*` nos 11 locales de `interface/src/renderer/src/i18n/locales/`
+- [X] T023 [P] [US1] Implementar `interface/src/renderer/src/composables/useVideoPlayback.ts` — estado de reprodução e passo por quadro via `requestVideoFrameCallback` (research.md Decisão 3)
+- [X] T024 [P] [US1] Implementar `interface/src/renderer/src/composables/useVideoTimeline.ts` — conversões e a supressão do número de quadro em VFR
+- [X] T025 [US1] Implementar `interface/src/renderer/src/components/video/VideoPlayerSurface.vue` — o `<video>` servido por `astros-media://` (Decisão 8), sem alteração no handler do processo principal
+- [X] T026 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTransportControls.vue` — reproduzir, pausar, quadro a quadro, operável por teclado com rótulo acessível (FR-010)
+- [X] T027 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTimeline.vue` — barra, cursor, clique e arrasto
+- [X] T028 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoTimeDisplay.vue` — posição, duração e número do quadro
+- [X] T029 [P] [US1] Implementar `interface/src/renderer/src/components/video/VideoVolumeControl.vue` — volume e silenciar, ausente quando `has_audio` é falso (FR-009)
+- [X] T030 [US1] Implementar `interface/src/renderer/src/components/video/VideoPlayer.vue` — compõe superfície, transporte, linha de tempo, tempo e volume
+- [X] T031 [US1] Implementar `interface/src/renderer/src/views/VideoEditorView.vue` usando `MediaEditorShell.vue` pelos seus dois slots, com importar/alternar/remover vídeos (FR-002, FR-005)
+- [X] T032 [US1] Adicionar o ponto de entrada para a área de edição em `interface/src/renderer/src/views/VideoView.vue`, sem remover o fluxo em lote (FR-032)
+- [X] T033 [US1] Tratar o caso de vídeo não previsualizável com aviso explícito em `VideoPlayerSurface.vue` (FR-011)
+- [X] T034 [P] [US1] Escrever as chaves `videoEditor.player.*` nos 11 locales de `interface/src/renderer/src/i18n/locales/`
 
 ### Miniaturas da linha de tempo (FR-007a)
 

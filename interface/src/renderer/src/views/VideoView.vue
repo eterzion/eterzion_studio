@@ -16,7 +16,8 @@ import {
   Download,
   Cpu,
   Expand,
-  CircleX
+  CircleX,
+  Clapperboard
 } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
@@ -35,7 +36,7 @@ import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
 import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 
-defineEmits<{ back: [] }>()
+defineEmits<{ back: []; openEditor: [] }>()
 
 // T049/FR-081 to FR-086: video-enhance jobs of its own (never touches
 // store/jobs.ts's queueState, same reasoning as CompressConvertView.vue —
@@ -400,6 +401,12 @@ function exportAll(): void {
       @back="$emit('back')"
     >
       <template #actions>
+        <!-- FR-032: the editing area is an additional mode. Nothing here was
+             removed for it — the batch flow below is untouched. -->
+        <AppButton variant="outline" @click="$emit('openEditor')">
+          <template #icon><Clapperboard :size="15" /></template>
+          Editor
+        </AppButton>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
           Importar

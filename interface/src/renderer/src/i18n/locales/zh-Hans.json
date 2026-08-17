@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "帧",
+      "frameUnavailable": "帧号不精确（可变帧率）",
+      "mute": "静音",
+      "noAudio": "无音频轨道",
+      "notPreviewable": "无法在此显示该视频。",
+      "pause": "暂停",
+      "play": "播放",
+      "stepBack": "上一帧",
+      "stepForward": "下一帧",
+      "timeline": "时间轴",
+      "unmute": "取消静音",
+      "volume": "音量"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "添加视频",
+      "importFailed": "无法导入该视频。",
+      "open": "打开视频编辑器",
+      "panelPending": "编辑控件将在后续步骤中加入。",
+      "ready": "可以编辑",
+      "title": "视频编辑器",
+      "uploadSubtitle": "也可以使用下方按钮选择文件",
+      "uploadTitle": "将视频拖放到这里"
+    }
   }
 }

@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "Bild",
+      "frameUnavailable": "Bild nicht exakt (variable Bildrate)",
+      "mute": "Stummschalten",
+      "noAudio": "Keine Tonspur",
+      "notPreviewable": "Dieses Video kann hier nicht angezeigt werden.",
+      "pause": "Pause",
+      "play": "Abspielen",
+      "stepBack": "Vorheriges Bild",
+      "stepForward": "Nächstes Bild",
+      "timeline": "Zeitleiste",
+      "unmute": "Ton einschalten",
+      "volume": "Lautstärke"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "Videos hinzufügen",
+      "importFailed": "Video konnte nicht importiert werden.",
+      "open": "Video-Editor öffnen",
+      "panelPending": "Die Bearbeitungsregler folgen in den nächsten Schritten.",
+      "ready": "Bereit zum Bearbeiten",
+      "title": "Video-Editor",
+      "uploadSubtitle": "oder wählen Sie die Dateien über die Schaltflächen unten",
+      "uploadTitle": "Videos hier ablegen"
+    }
   }
 }

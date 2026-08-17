@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "Frame",
+      "frameUnavailable": "Frame not exact (variable rate)",
+      "mute": "Mute",
+      "noAudio": "No audio track",
+      "notPreviewable": "This video cannot be shown here.",
+      "pause": "Pause",
+      "play": "Play",
+      "stepBack": "Previous frame",
+      "stepForward": "Next frame",
+      "timeline": "Timeline",
+      "unmute": "Unmute",
+      "volume": "Volume"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "Add videos",
+      "importFailed": "Could not import the video.",
+      "open": "Open video editor",
+      "panelPending": "Editing controls arrive in the next steps.",
+      "ready": "Ready to edit",
+      "title": "Video editor",
+      "uploadSubtitle": "or use the buttons below to choose files",
+      "uploadTitle": "Drop videos here"
+    }
   }
 }

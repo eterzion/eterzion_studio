@@ -1,0 +1,101 @@
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import VideoPlayerSurface from './VideoPlayerSurface.vue'
+import VideoTransportControls from './VideoTransportControls.vue'
+import VideoTimeline from './VideoTimeline.vue'
+import VideoTimeDisplay from './VideoTimeDisplay.vue'
+import VideoVolumeControl from './VideoVolumeControl.vue'
+import { useVideoPlayback } from '../../composables/useVideoPlayback'
+import { useVideoTimeline } from '../../composables/useVideoTimeline'
+import type { MediaHandle } from '../../services/api'
+
+// T030 (specs/007-video-editor-player) — the root of the player component tree
+// the original request specified (constitution.md:29).
+//
+// This composes; it does not implement. Playback state lives in
+// useVideoPlayback, arithmetic in useVideoTimeline, and each control owns its
+// own presentation. What is left here is wiring — which is the shape
+// Princípio X asks for once a part becomes independently meaningful.
+
+const props = defineProps<{ handle: MediaHandle | null; sourcePath: string | null }>()
+
+const element = ref<HTMLVideoElement | null>(null)
+const handleRef = computed(() => props.handle)
+
+const timeline = useVideoTimeline(handleRef)
+const playback = useVideoPlayback(element) as ReturnType<typeof useVideoPlayback> & {
+  attach: () => void
+}
+
+function onReady(video: HTMLVideoElement): void {
+  element.value = video
+  playback.attach()
+}
+
+// Switching files must not leave the previous one's position on the new one.
+watch(
+  () => props.handle?.handle_id,
+  () => {
+    if (element.value) playback.seek(0)
+  }
+)
+
+watch(playback.volume, (value) => {
+  if (element.value) element.value.volume = value
+})
+watch(playback.muted, (value) => {
+  if (element.value) element.value.muted = value
+})
+
+const duration = computed(() => props.handle?.duration_seconds ?? 0)
+const frame = computed(() => timeline.frameAt(playback.presentedTime.value))
+const disabled = computed(() => !props.handle)
+</script>
+
+<template>
+  <div class="flex h-full flex-col">
+    <div class="min-h-0 flex-1">
+      <VideoPlayerSurface :handle="handle" :source-path="sourcePath" @ready="onReady" />
+    </div>
+
+    <div class="flex flex-col gap-1 border-t border-surface-border bg-surface-2 px-3 py-2">
+      <VideoTimeline
+        :progress="timeline.progressAt(playback.currentTime.value)"
+        :duration="duration"
+        :current-time="playback.currentTime.value"
+        :format-time="timeline.formatTime"
+        :disabled="disabled"
+        @seek="playback.seek(timeline.timeAtProgress($event))"
+      >
+        <template #track-background>
+          <slot name="timeline-overlay" />
+        </template>
+      </VideoTimeline>
+
+      <div class="flex items-center justify-between gap-3">
+        <VideoTransportControls
+          :is-playing="playback.isPlaying.value"
+          :disabled="disabled"
+          @toggle="playback.toggle()"
+          @step-back="playback.step(-1, timeline.frameDuration.value)"
+          @step-forward="playback.step(1, timeline.frameDuration.value)"
+        />
+
+        <VideoTimeDisplay
+          :current-time="playback.currentTime.value"
+          :duration="duration"
+          :frame="frame"
+          :total-frames="timeline.totalFrames.value"
+          :frame-is-reliable="timeline.frameNumberIsReliable.value"
+          :format-time="timeline.formatTime"
+        />
+
+        <VideoVolumeControl
+          v-model:volume="playback.volume.value"
+          v-model:muted="playback.muted.value"
+          :has-audio="handle?.has_audio ?? false"
+        />
+      </div>
+    </div>
+  </div>
+</template>

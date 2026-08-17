@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "Fotogramma",
+      "frameUnavailable": "Fotogramma non esatto (frequenza variabile)",
+      "mute": "Disattiva audio",
+      "noAudio": "Nessuna traccia audio",
+      "notPreviewable": "Impossibile mostrare questo video qui.",
+      "pause": "Pausa",
+      "play": "Riproduci",
+      "stepBack": "Fotogramma precedente",
+      "stepForward": "Fotogramma successivo",
+      "timeline": "Linea temporale",
+      "unmute": "Attiva audio",
+      "volume": "Volume"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "Aggiungi video",
+      "importFailed": "Impossibile importare il video.",
+      "open": "Apri l’editor video",
+      "panelPending": "I controlli di modifica arrivano nei passaggi successivi.",
+      "ready": "Pronto per la modifica",
+      "title": "Editor video",
+      "uploadSubtitle": "oppure usa i pulsanti qui sotto per scegliere i file",
+      "uploadTitle": "Trascina qui i video"
+    }
   }
 }

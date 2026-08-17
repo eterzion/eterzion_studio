@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "프레임",
+      "frameUnavailable": "프레임이 정확하지 않음 (가변 프레임 레이트)",
+      "mute": "음소거",
+      "noAudio": "오디오 트랙 없음",
+      "notPreviewable": "이 동영상은 여기에서 표시할 수 없습니다.",
+      "pause": "일시정지",
+      "play": "재생",
+      "stepBack": "이전 프레임",
+      "stepForward": "다음 프레임",
+      "timeline": "타임라인",
+      "unmute": "음소거 해제",
+      "volume": "볼륨"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "비디오 추가",
+      "importFailed": "비디오를 가져오지 못했습니다.",
+      "open": "비디오 편집기 열기",
+      "panelPending": "편집 컨트롤은 다음 단계에서 추가됩니다.",
+      "ready": "편집 준비 완료",
+      "title": "비디오 편집기",
+      "uploadSubtitle": "아래 버튼으로 파일을 선택할 수도 있습니다",
+      "uploadTitle": "여기에 비디오를 놓으세요"
+    }
   }
 }

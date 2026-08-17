@@ -66,9 +66,32 @@
     }
   },
   "videoEditor": {
-    "player": {},
+    "player": {
+      "frame": "フレーム",
+      "frameUnavailable": "フレーム番号は正確ではありません（可変フレームレート）",
+      "mute": "ミュート",
+      "noAudio": "音声トラックなし",
+      "notPreviewable": "この動画はここで表示できません。",
+      "pause": "一時停止",
+      "play": "再生",
+      "stepBack": "前のフレーム",
+      "stepForward": "次のフレーム",
+      "timeline": "タイムライン",
+      "unmute": "ミュート解除",
+      "volume": "音量"
+    },
     "edits": {},
     "export": {},
-    "limits": {}
+    "limits": {},
+    "editor": {
+      "addMore": "動画を追加",
+      "importFailed": "動画を読み込めませんでした。",
+      "open": "動画エディターを開く",
+      "panelPending": "編集コントロールは次の段階で追加されます。",
+      "ready": "編集の準備完了",
+      "title": "動画エディター",
+      "uploadSubtitle": "下のボタンからファイルを選ぶこともできます",
+      "uploadTitle": "ここに動画をドロップ"
+    }
   }
 }
