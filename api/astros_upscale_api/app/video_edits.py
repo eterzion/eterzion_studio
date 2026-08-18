@@ -382,3 +382,39 @@ def export(
 
     os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
     run_ffmpeg(lambda f: f.input(input_path, input_options).output(output_path, output_options))
+
+
+# Preview frames are decoded at reduced size: the point is to judge whether an
+# effect looks right, not to inspect the master. Matches the image pipeline's
+# existing preview, which caps at 480 on the long edge.
+_PREVIEW_MAX_DIM = 640
+
+
+def render_frame(input_path: str, output_path: str, time_seconds: float,
+                 edits: dict[str, Any], *, source_width: int, source_height: int) -> None:
+    """Render one frame with the edits applied, for the on-demand preview tier
+    (research.md Decisão 2).
+
+    Uses the SAME chain builder the export uses. That is the whole point: a
+    preview built by a second, simpler code path would drift from the export
+    exactly where it matters most — on the effects the shader could not
+    reproduce, which is why this tier exists at all.
+    """
+    chain = build_filter_chain(edits, source_width, source_height)
+
+    # Downscale last, after the edits, so the person sees what the filters do at
+    # the size they are being applied — scaling first would soften a sharpen and
+    # hide a denoise.
+    scale = min(1.0, _PREVIEW_MAX_DIM / max(source_width or 1, source_height or 1))
+    if scale < 1.0:
+        chain = [*chain, f'scale={_num(_even(int(source_width * scale)))}:'
+                         f'{_num(_even(int(source_height * scale)))}']
+
+    output_options: dict[str, Any] = {'frames:v': '1'}
+    if chain:
+        output_options['vf'] = ','.join(chain)
+
+    # -ss before -i seeks without decoding everything up to the point, which is
+    # what keeps this interactive on a long file.
+    run_ffmpeg(lambda f: f.input(input_path, {'ss': _num(max(0.0, time_seconds))})
+               .output(output_path, output_options))

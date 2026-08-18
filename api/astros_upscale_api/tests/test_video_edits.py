@@ -319,3 +319,59 @@ def test_brightness_is_additive_in_ffmpeg_too(tmp_path):
     Multiplicative brightness would leave black at black; additive lifts it."""
     lifted = _render_gray_through_eq(tmp_path, 0.0, brightness=0.25, contrast=1.0)
     assert lifted > 0.15, 'brilho não somou — a premissa da Decisão 1 mudou'
+
+
+# ---------------------------- on-demand preview (T050) ---------------------------- #
+
+
+@needs_ffmpeg
+def test_render_frame_produces_an_image(tmp_path):
+    source = FIXTURES / 'curto.mp4'
+    if not source.exists():
+        pytest.skip('fixtures ausentes — rode tests/fixtures/make_video_fixtures.py')
+    output = tmp_path / 'frame.png'
+    video_edits.render_frame(str(source), str(output), 2.0, {},
+                             source_width=1920, source_height=1080)
+    assert output.is_file() and output.stat().st_size > 0
+
+
+@needs_ffmpeg
+def test_render_frame_applies_the_edits(tmp_path):
+    """The preview must differ from the source, or the tier is decorative."""
+    import cv2
+
+    source = FIXTURES / 'curto.mp4'
+    if not source.exists():
+        pytest.skip('fixtures ausentes')
+    plain, edited = tmp_path / 'a.png', tmp_path / 'b.png'
+    video_edits.render_frame(str(source), str(plain), 2.0, {}, source_width=1920, source_height=1080)
+    video_edits.render_frame(str(source), str(edited), 2.0,
+                             {'adjustments': {'brightness': 0.3}},
+                             source_width=1920, source_height=1080)
+    assert cv2.imread(str(plain)).mean() < cv2.imread(str(edited)).mean()
+
+
+@needs_ffmpeg
+def test_render_frame_downscales_after_the_edits_not_before(tmp_path):
+    """Scaling first would soften a sharpen and hide a denoise — the person
+    would be judging the effect at a size it is not being applied at."""
+    source = FIXTURES / 'curto.mp4'
+    if not source.exists():
+        pytest.skip('fixtures ausentes')
+    chain = video_edits.build_filter_chain({'effects': {'denoise_enabled': True, 'denoise_strength': 50}},
+                                           1920, 1080)
+    # The production chain has no scale; render_frame appends it last.
+    assert not any(c.startswith('scale') for c in chain)
+
+
+@needs_ffmpeg
+def test_render_frame_leaves_the_source_untouched(tmp_path):
+    source = FIXTURES / 'curto.mp4'
+    if not source.exists():
+        pytest.skip('fixtures ausentes')
+    working = tmp_path / 'origem.mp4'
+    working.write_bytes(source.read_bytes())
+    before = working.read_bytes()
+    video_edits.render_frame(str(working), str(tmp_path / 'f.png'), 1.0, {},
+                             source_width=1920, source_height=1080)
+    assert working.read_bytes() == before

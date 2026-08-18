@@ -11,6 +11,8 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
+import shutil
+import tempfile
 import urllib.error
 
 import cv2
@@ -24,7 +26,8 @@ from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
                          DetectContentTypeRequest, ExportRequest, LicenseStatusResponse,
                          LocalJobRequest, MediaHandleRequest, MediaHandleResponse, MediaRequest,
-                         VideoCeilingsResponse, VideoExportOptionsResponse)
+                         VideoCeilingsResponse, VideoExportOptionsResponse,
+                         VideoPreviewFrameRequest)
 
 # ------------------------------- /jobs ------------------------------- #
 
@@ -742,3 +745,56 @@ def get_media_thumbnails(handle_id: str):
         'Access-Control-Expose-Headers':
             'X-Astros-Thumb-Count, X-Astros-Thumb-Interval, X-Astros-Thumb-Width, X-Astros-Thumb-Height',
     })
+
+
+@media_router.post('/handles/{handle_id}/preview-frame')
+def preview_video_frame(handle_id: str, payload: VideoPreviewFrameRequest):
+    """One frame at a position, rendered through the real filter graph (FR-015,
+    research.md Decisão 2).
+
+    This is the second preview tier: the renderer's shader reproduces eq and hue
+    exactly, but not denoise, blur, grain or unsharp. Rather than approximate
+    those on the GPU — which would produce a convincing and wrong picture — the
+    frame is rendered here by the same FFmpeg that will perform the export, and
+    returned as a before/after pair.
+
+    Reduced in resolution and written to a temporary file that is removed on
+    every exit path, success or failure alike (FR-016, FR-022). It is never the
+    result of an operation.
+    """
+    path = media_handles.resolve(handle_id)
+    if path is None:
+        raise HTTPException(404, {'reason': 'not_found', 'message': 'Identificador desconhecido.'})
+    if media_handles.has_content_changed(handle_id):
+        raise HTTPException(409, {'reason': 'source_changed',
+                                  'message': 'O arquivo de origem mudou desde o registro.'})
+
+    metadata = media_handles.describe(handle_id)
+    edits = payload.edits.model_dump()
+    temp_dir = tempfile.mkdtemp(prefix='astros_preview_')
+    try:
+        before = os.path.join(temp_dir, 'before.png')
+        after = os.path.join(temp_dir, 'after.png')
+
+        video_edits.render_frame(path, before, payload.time_seconds, {},
+                                 source_width=metadata['width'], source_height=metadata['height'])
+        video_edits.render_frame(path, after, payload.time_seconds, edits,
+                                 source_width=metadata['width'], source_height=metadata['height'])
+
+        with open(before, 'rb') as f:
+            before_bytes = f.read()
+        with open(after, 'rb') as f:
+            after_bytes = f.read()
+    except video_edits.EditError as error:
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error)}) from error
+    except (OSError, RuntimeError) as error:
+        raise HTTPException(422, {'reason': 'preview_failed', 'message': str(error)}) from error
+    finally:
+        # Every exit path, not only the happy one (FR-022). A preview that
+        # leaves files behind would accumulate one pair per slider movement.
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+    return {
+        'before': base64.b64encode(before_bytes).decode('ascii'),
+        'after': base64.b64encode(after_bytes).decode('ascii'),
+    }
