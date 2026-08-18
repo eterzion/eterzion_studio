@@ -155,12 +155,12 @@ restaura a imagem, e que o arquivo de origem segue intacto — sem que a exporta
 - [X] T044 [US2] Implementar `interface/src/renderer/src/composables/useVideoPreviewPipeline.ts` — shader WebGL2 com a fórmula do `eq` (research.md Decisão 1); **não usar filtro CSS**, pelo motivo registrado ali
 - [X] T045 [US2] Ligar o canvas do shader ao `<video>` em `interface/src/renderer/src/components/video/VideoPlayerSurface.vue`
 - [X] T046 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoAdjustmentsPanel.vue` — ajustes e efeitos, com faixas de data-model.md
-- [ ] T047 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTransformPanel.vue` — recorte, rotação, espelho, tamanho de saída
-- [ ] T048 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTrimHandles.vue` — pontos de entrada e saída, com o trecho selecionado distinguível (FR-007b)
+- [X] T047 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTransformPanel.vue` — recorte, rotação, espelho, tamanho de saída
+- [X] T048 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTrimHandles.vue` — pontos de entrada e saída, com o trecho selecionado distinguível (FR-007b)
 - [X] T049 [US2] Integrar os controles de áudio (manter/silenciar/remover, volume) ao painel de ajustes (FR-013e)
-- [ ] T050 [US2] Implementar `POST /media/handles/{handle_id}/preview-frame` em `api/astros_upscale_api/app/routes.py`, reaproveitando a forma da rota de preview de imagem
-- [ ] T051 [US2] Implementar o preview sob demanda no renderer, espelhando debounce, guarda de corrida e invalidação ao trocar de arquivo de `useDenoisePreview.ts` (research.md Decisão 2)
-- [ ] T052 [US2] Exibir o aviso do FR-015 quando um efeito ativo não estiver no preview em movimento
+- [X] T050 [US2] Implementar `POST /media/handles/{handle_id}/preview-frame` em `api/astros_upscale_api/app/routes.py`, reaproveitando a forma da rota de preview de imagem
+- [X] T051 [US2] Implementar o preview sob demanda no renderer, espelhando debounce, guarda de corrida e invalidação ao trocar de arquivo de `useDenoisePreview.ts` (research.md Decisão 2)
+- [X] T052 [US2] Exibir o aviso do FR-015 quando um efeito ativo não estiver no preview em movimento
 - [X] T052a [US2] Exibir o indicador de recálculo enquanto o preview está sendo atualizado, em `VideoPlayerSurface.vue` — cláusula do FR-014 que faltava tarefa
 - [X] T052b [US2] Implementar o descarte de **todas as cinco famílias** no reset de `useVideoEdits.ts`, não apenas dos ajustes de imagem (FR-004, desambiguado)
 - [X] T053 [P] [US2] Escrever as chaves `videoEditor.edits.*` nos 11 locales
@@ -179,21 +179,21 @@ temporário.
 
 ### Tests for User Story 3
 
-- [ ] T054 [P] [US3] Escrever `api/astros_upscale_api/tests/test_video_edit_export.py` — ponta a ponta com FFmpeg real: arquivo novo criado, edições aplicadas, origem byte-idêntica (SC-003)
-- [ ] T055 [P] [US3] Escrever teste de cancelamento e de falha no mesmo arquivo — nenhum arquivo parcial no destino, nenhum temporário remanescente (FR-022, FR-023, SC-004)
-- [ ] T056 [P] [US3] Escrever teste de colisão de nome — grava sob nome distinto por padrão; `overwrite` só com instrução explícita (FR-020)
+- [X] T054 [P] [US3] Escrever `api/astros_upscale_api/tests/test_video_edit_export.py` — ponta a ponta com FFmpeg real: arquivo novo criado, edições aplicadas, origem byte-idêntica (SC-003)
+- [X] T055 [P] [US3] Escrever teste de cancelamento e de falha no mesmo arquivo — nenhum arquivo parcial no destino, nenhum temporário remanescente (FR-022, FR-023, SC-004)
+- [X] T056 [P] [US3] Escrever teste de colisão de nome — grava sob nome distinto por padrão; `overwrite` só com instrução explícita (FR-020)
 
 ### Implementation for User Story 3
 
-- [ ] T057 [US3] Implementar o tipo de job de exportação de vídeo editado em `api/astros_upscale_api/app/jobs.py`, reaproveitando progresso, cancelamento e WebSocket existentes (FR-021)
+- [X] T057 [US3] Implementar o tipo de job de exportação de vídeo editado em `api/astros_upscale_api/app/jobs.py`, reaproveitando progresso, cancelamento e WebSocket existentes (FR-021)
 - [ ] T058 [US3] Implementar a orquestração da exportação em `api/astros_upscale_api/app/processing.py`, chamando `video_edits.py` para o grafo
-- [ ] T059 [US3] Implementar a limpeza de temporários como **ponto único de saída** do job, cobrindo sucesso, falha e cancelamento (FR-022) — não espalhada por ramo de erro
-- [ ] T060 [US3] Implementar a resolução de colisão com renomeação por padrão em `api/astros_upscale_api/app/processing.py` (FR-020)
-- [ ] T061 [US3] Implementar `POST /video/edit-jobs` em `api/astros_upscale_api/app/routes.py`, com as quatro razões de recusa de contracts/api.md
-- [ ] T062 [US3] Implementar `GET /video/export-options` em `api/astros_upscale_api/app/routes.py` — disponibilidade real por container, tetos, e **nenhum nome de encoder na resposta** (Princípio V)
-- [ ] T063 [P] [US3] Implementar `interface/src/renderer/src/composables/useVideoExport.ts` — criação do job, progresso por WebSocket, cancelamento
-- [ ] T064 [US3] Implementar `interface/src/renderer/src/components/video/VideoExportPanel.vue` — container, perfil, destino, progresso e cancelar
-- [ ] T065 [P] [US3] Adicionar as chamadas de exportação e de opções em `interface/src/renderer/src/services/api.ts`
+- [X] T059 [US3] Implementar a limpeza de temporários como **ponto único de saída** do job, cobrindo sucesso, falha e cancelamento (FR-022) — não espalhada por ramo de erro
+- [X] T060 [US3] Implementar a resolução de colisão com renomeação por padrão em `api/astros_upscale_api/app/processing.py` (FR-020)
+- [X] T061 [US3] Implementar `POST /video/edit-jobs` em `api/astros_upscale_api/app/routes.py`, com as quatro razões de recusa de contracts/api.md
+- [X] T062 [US3] Implementar `GET /video/export-options` em `api/astros_upscale_api/app/routes.py` — disponibilidade real por container, tetos, e **nenhum nome de encoder na resposta** (Princípio V)
+- [X] T063 [P] [US3] Implementar `interface/src/renderer/src/composables/useVideoExport.ts` — criação do job, progresso por WebSocket, cancelamento
+- [X] T064 [US3] Implementar `interface/src/renderer/src/components/video/VideoExportPanel.vue` — container, perfil, destino, progresso e cancelar
+- [X] T065 [P] [US3] Adicionar as chamadas de exportação e de opções em `interface/src/renderer/src/services/api.ts`
 - [ ] T066 [US3] Registrar as exportações no histórico em `interface/src/renderer/src/store/history.ts`, no mesmo nível das operações de vídeo existentes (FR-031)
 - [ ] T066a [US3] Garantir em `useVideoExport.ts` que trocar de vídeo ou fechar a área de edição **não** interrompe exportação em curso (FR-023a, primeira metade) — com teste
 - [ ] T066b [US3] Implementar o cancelamento das exportações em andamento no encerramento da aplicação, em `interface/src/main/`, com a mesma limpeza de qualquer cancelamento (FR-023a, segunda metade)
@@ -220,7 +220,7 @@ antes de qualquer processamento e nomeia o limite.
 
 - [ ] T070 [US4] Ligar a verificação de tetos ao caminho de criação do job em `api/astros_upscale_api/app/routes.py`, **antes** do `check_capacity` existente, que continua inalterado (plan.md, *Complexity Tracking*)
 - [ ] T071 [US4] Implementar a queda para a próxima opção permitida do mesmo container quando o encoder preferido está ausente, em `api/astros_upscale_api/app/video_edits.py`
-- [ ] T072 [US4] Exibir os tetos e a indisponibilidade na interface a partir de `GET /video/export-options`, desabilitando o que não está disponível em `VideoExportPanel.vue`
+- [X] T072 [US4] Exibir os tetos e a indisponibilidade na interface a partir de `GET /video/export-options`, desabilitando o que não está disponível em `VideoExportPanel.vue`
 - [ ] T073 [US4] Tratar `source_changed` — arquivo alterado desde o registro do handle — nas rotas de edição
 - [ ] T074 [P] [US4] Escrever as chaves `videoEditor.limits.*` e as mensagens de recusa nos 11 locales (FR-030)
 
