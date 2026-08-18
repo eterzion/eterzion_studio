@@ -194,11 +194,11 @@ temporário.
 - [X] T063 [P] [US3] Implementar `interface/src/renderer/src/composables/useVideoExport.ts` — criação do job, progresso por WebSocket, cancelamento
 - [X] T064 [US3] Implementar `interface/src/renderer/src/components/video/VideoExportPanel.vue` — container, perfil, destino, progresso e cancelar
 - [X] T065 [P] [US3] Adicionar as chamadas de exportação e de opções em `interface/src/renderer/src/services/api.ts`
-- [ ] T066 [US3] Registrar as exportações no histórico em `interface/src/renderer/src/store/history.ts`, no mesmo nível das operações de vídeo existentes (FR-031)
-- [ ] T066a [US3] Garantir em `useVideoExport.ts` que trocar de vídeo ou fechar a área de edição **não** interrompe exportação em curso (FR-023a, primeira metade) — com teste
-- [ ] T066b [US3] Implementar o cancelamento das exportações em andamento no encerramento da aplicação, em `interface/src/main/`, com a mesma limpeza de qualquer cancelamento (FR-023a, segunda metade)
-- [ ] T066c [P] [US3] Verificar espaço em disco antes de iniciar e recusar com `disk_full`, reaproveitando a categoria que `ERROR_CATEGORY_COPY` já define — edge case sem tarefa até aqui
-- [ ] T067 [P] [US3] Escrever as chaves `videoEditor.export.*` nos 11 locales
+- [X] T066 [US3] Registrar as exportações no histórico em `interface/src/renderer/src/store/history.ts`, no mesmo nível das operações de vídeo existentes (FR-031)
+- [X] T066a [US3] Garantir em `useVideoExport.ts` que trocar de vídeo ou fechar a área de edição **não** interrompe exportação em curso (FR-023a, primeira metade) — com teste
+- [X] T066b [US3] Implementar o cancelamento das exportações em andamento no encerramento da aplicação, em `interface/src/main/`, com a mesma limpeza de qualquer cancelamento (FR-023a, segunda metade)
+- [X] T066c [P] [US3] Verificar espaço em disco antes de iniciar e recusar com `disk_full`, reaproveitando a categoria que `ERROR_CATEGORY_COPY` já define — edge case sem tarefa até aqui
+- [X] T067 [P] [US3] Escrever as chaves `videoEditor.export.*` nos 11 locales
 
 **Checkpoint**: o fluxo mínimo completo — ver → ajustar → exportar — está entregue.
 
@@ -213,16 +213,16 @@ antes de qualquer processamento e nomeia o limite.
 
 ### Tests for User Story 4
 
-- [ ] T068 [P] [US4] Escrever `api/astros_upscale_api/tests/test_video_ceilings.py` — cada fator (duração, resolução, FPS, quadros, tamanho) recusa com o seu nome, **sem que nenhum arquivo seja criado** (SC-005)
-- [ ] T069 [P] [US4] Escrever teste de encoder ausente — recusa com `encoder_unavailable` antes de processar (FR-027, cenário 7 do quickstart)
+- [X] T068 [P] [US4] Escrever `api/astros_upscale_api/tests/test_video_ceilings.py` — cada fator (duração, resolução, FPS, quadros, tamanho) recusa com o seu nome, **sem que nenhum arquivo seja criado** (SC-005)
+- [X] T069 [P] [US4] Escrever teste de encoder ausente — recusa com `encoder_unavailable` antes de processar (FR-027, cenário 7 do quickstart)
 
 ### Implementation for User Story 4
 
-- [ ] T070 [US4] Ligar a verificação de tetos ao caminho de criação do job em `api/astros_upscale_api/app/routes.py`, **antes** do `check_capacity` existente, que continua inalterado (plan.md, *Complexity Tracking*)
-- [ ] T071 [US4] Implementar a queda para a próxima opção permitida do mesmo container quando o encoder preferido está ausente, em `api/astros_upscale_api/app/video_edits.py`
+- [X] T070 [US4] Ligar a verificação de tetos ao caminho de criação do job em `api/astros_upscale_api/app/routes.py`, **antes** do `check_capacity` existente, que continua inalterado (plan.md, *Complexity Tracking*)
+- [X] T071 [US4] Implementar a queda para a próxima opção permitida do mesmo container quando o encoder preferido está ausente, em `api/astros_upscale_api/app/video_edits.py`
 - [X] T072 [US4] Exibir os tetos e a indisponibilidade na interface a partir de `GET /video/export-options`, desabilitando o que não está disponível em `VideoExportPanel.vue`
-- [ ] T073 [US4] Tratar `source_changed` — arquivo alterado desde o registro do handle — nas rotas de edição
-- [ ] T074 [P] [US4] Escrever as chaves `videoEditor.limits.*` e as mensagens de recusa nos 11 locales (FR-030)
+- [X] T073 [US4] Tratar `source_changed` — arquivo alterado desde o registro do handle — nas rotas de edição
+- [X] T074 [P] [US4] Escrever as chaves `videoEditor.limits.*` e as mensagens de recusa nos 11 locales (FR-030)
 
 **Checkpoint**: recusas honestas e imediatas, com o motivo nomeado.
 
@@ -235,9 +235,9 @@ antes de qualquer processamento e nomeia o limite.
 **Independent Test**: trocar o idioma e percorrer a área de edição à procura de texto não traduzido
 ou chave crua.
 
-- [ ] T075 [US5] Rodar o teste de paridade de chaves (T004) e corrigir toda divergência entre os 11 locales
+- [X] T075 [US5] Rodar o teste de paridade de chaves (T004) e corrigir toda divergência entre os 11 locales
 - [ ] T076 [US5] Revisar as traduções de `videoEditor.*` nos 11 idiomas — chave presente mas texto não traduzido passa no teste automatizado e reprova o cenário 13 do quickstart
-- [ ] T077 [US5] Conferir que nenhum literal em português restou nos 11 componentes de `interface/src/renderer/src/components/video/` nem em `VideoEditorView.vue`
+- [X] T077 [US5] Conferir que nenhum literal em português restou nos 11 componentes de `interface/src/renderer/src/components/video/` nem em `VideoEditorView.vue`
 - [ ] T078 [US5] Extrair para chave todo literal de componente existente que a área de edição tenha retrabalhado substancialmente — e **somente** esses, sem varredura nas demais telas (Princípio XIV, não retroativo)
 
 **Checkpoint**: todas as histórias entregues.
@@ -249,13 +249,13 @@ ou chave crua.
 - [ ] T079 [P] Medir e registrar o tempo de resposta do preview a alterações de ajuste, contra os 2 s do SC-002 — o Princípio III exige medição, não afirmação
 - [ ] T080 [P] Verificar acessibilidade por teclado em toda a árvore do player (FR-010)
 - [ ] T081 Rodar os 14 cenários de [quickstart.md](./quickstart.md) e registrar o resultado de cada um
-- [ ] T082 [P] Confirmar que `interface/src/renderer/src/views/ImageEditorView.vue` não foi modificado — a isenção da v2.6.0 proíbe dividi-lo como refatoração isolada
+- [X] T082 [P] Confirmar que `interface/src/renderer/src/views/ImageEditorView.vue` não foi modificado — a isenção da v2.6.0 proíbe dividi-lo como refatoração isolada
 - [ ] T083 [P] Confirmar que o fluxo em lote de `VideoView.vue` funciona como antes (FR-032, cenário 14)
 - [ ] T084 Registrar em `docs/` a dívida do `codec='libx264'` em `api/astros_upscale/optimize.py` — não corrigida aqui, não herdada pela allowlist desta feature
 - [ ] T085 ~~Correção da contagem de locales na constituição~~ — **feito na emenda v3.0.0**, junto com a exceção do Princípio XIII. Nada a fazer; mantido para rastreabilidade
-- [ ] T086 [P] Escrever `api/astros_upscale_api/tests/test_no_codec_leak.py` — nenhuma resposta das rotas de vídeo expõe nome de modelo, encoder ou codec, espelhando `test_no_model_leak.py` (SC-009, Princípio V)
+- [X] T086 [P] Escrever `api/astros_upscale_api/tests/test_no_codec_leak.py` — nenhuma resposta das rotas de vídeo expõe nome de modelo, encoder ou codec, espelhando `test_no_model_leak.py` (SC-009, Princípio V)
 - [ ] T087 [P] Conferir que `POST /media/handles` satisfaz as quatro condições da exceção do Princípio XIII (v3.0.0): caminho só do diálogo nativo, validação antes de tudo, caminho nunca devolvido, identificador não reversível
-- [ ] T088 [P] Conferir que nenhuma rota além de `POST /media/handles` aceita caminho — a terceira condição da exceção é a que se perde primeiro quando a superfície cresce
+- [X] T088 [P] Conferir que nenhuma rota além de `POST /media/handles` aceita caminho — a terceira condição da exceção é a que se perde primeiro quando a superfície cresce
 
 ---
 
