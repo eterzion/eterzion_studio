@@ -58,6 +58,10 @@ watch(playback.muted, (value) => {
 })
 
 const duration = computed(() => props.handle?.duration_seconds ?? 0)
+
+// Exposed so the view can seed a trim range from the current position without
+// reaching into the player's internals.
+defineExpose({ currentTime: playback.currentTime })
 const frame = computed(() => timeline.frameAt(playback.presentedTime.value))
 const disabled = computed(() => !props.handle)
 </script>

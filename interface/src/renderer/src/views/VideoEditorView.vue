@@ -7,12 +7,17 @@ import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
 import VideoPlayer from '../components/video/VideoPlayer.vue'
 import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
+import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
+import VideoTrimHandles from '../components/video/VideoTrimHandles.vue'
 import { usePickFiles } from '../composables/usePickFiles'
 import {
   useVideoEdits,
   type VideoAdjustments,
-  type VideoEffects
+  type VideoEffects,
+  type VideoTransform,
+  type VideoTrim
 } from '../composables/useVideoEdits'
+import { useVideoTimeline } from '../composables/useVideoTimeline'
 import { registerMediaHandle, type MediaHandle } from '../services/api'
 import type { DescribedFile } from '../services/native'
 
@@ -50,6 +55,9 @@ const active = computed(
 // Edits are keyed by handle, so switching videos cannot carry one file's
 // settings onto another (FR-003).
 const edits = useVideoEdits(activeId)
+
+// Same conversions the player uses, for the trim readout in the panel.
+const timeline = useVideoTimeline(computed(() => active.value?.handle ?? null))
 
 const items = computed<EditorItem[]>(() =>
   videos.value.map((v) => ({
@@ -92,6 +100,14 @@ function setEffect(key: keyof VideoEffects, value: number | boolean): void {
   // The key decides the type: a toggle takes the boolean, a strength the number.
   if (typeof value === 'boolean') (effects[key] as boolean) = value
   else (effects[key] as number) = value
+}
+
+function setTransform(patch: Partial<VideoTransform>): void {
+  if (activeId.value) Object.assign(edits.editsFor(activeId.value).transform, patch)
+}
+
+function setTrim(trim: VideoTrim | null): void {
+  if (activeId.value) edits.editsFor(activeId.value).trim = trim
 }
 
 function remove(id: string): void {
@@ -145,7 +161,15 @@ function remove(id: string): void {
           :handle="active?.handle ?? null"
           :source-path="active?.sourcePath ?? null"
           :adjustments="edits.current.value.adjustments"
-        />
+        >
+          <template #timeline-overlay>
+            <VideoTrimHandles
+              :trim="edits.current.value.trim"
+              :duration="active?.handle.duration_seconds ?? 0"
+              @update="setTrim"
+            />
+          </template>
+        </VideoPlayer>
       </template>
 
       <template #panel>
@@ -158,6 +182,17 @@ function remove(id: string): void {
           @reset="activeId && edits.reset(activeId)"
           @update-adjustment="setAdjustment"
           @update-effect="setEffect"
+        />
+
+        <VideoTransformPanel
+          :transform="edits.current.value.transform"
+          :trim="edits.current.value.trim"
+          :source-width="active?.handle.width ?? null"
+          :source-height="active?.handle.height ?? null"
+          :format-time="timeline.formatTime"
+          :disabled="!active"
+          @update-transform="setTransform"
+          @clear-trim="setTrim(null)"
         />
       </template>
     </MediaEditorShell>
