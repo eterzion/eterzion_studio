@@ -9,6 +9,11 @@ const props = withDefaults(
     step?: number
     defaultValue?: number
     disabled?: boolean
+    /** Accessible name for the range input. SettingRow renders its label as
+        plain text with no `for`, so without this every slider is an unnamed
+        control to a screen reader (FR-010 in specs/007-video-editor-player).
+        Optional so existing call sites are unaffected. */
+    ariaLabel?: string
   }>(),
   {
     min: 0,
@@ -66,6 +71,7 @@ function onInput(e: Event): void {
       <input
         class="range-input"
         type="range"
+        :aria-label="ariaLabel"
         :min="min"
         :max="max"
         :step="step"

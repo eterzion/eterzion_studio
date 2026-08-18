@@ -17,27 +17,14 @@ const emit = defineEmits<{ toggle: []; stepBack: []; stepForward: [] }>()
 
 const { t } = useI18n()
 
-// Arrow keys step, space toggles — the bindings anyone who has used a video
-// tool already expects. Handled here so the buttons stay reachable by Tab and
-// the shortcuts work without focusing them (FR-010).
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === 'ArrowLeft') {
-    event.preventDefault()
-    emit('stepBack')
-  } else if (event.key === 'ArrowRight') {
-    event.preventDefault()
-    emit('stepForward')
-  } else if (event.key === ' ' || event.key === 'k') {
-    event.preventDefault()
-    emit('toggle')
-  }
-}
-
-defineExpose({ onKeydown })
+// The transport shortcuts live in VideoPlayer, not here. An earlier version
+// defined them in this component and exposed the handler — which nothing bound,
+// so the shortcuts silently never fired. Keyboard handling belongs to whatever
+// actually holds focus, and that is the player, not a button group inside it.
 </script>
 
 <template>
-  <div class="flex items-center gap-1" role="group" :aria-label="t('videoEditor.player.timeline')">
+  <div class="flex items-center gap-1" role="group" :aria-label="t('videoEditor.player.transport')">
     <AppButton
       variant="ghost"
       size="sm"

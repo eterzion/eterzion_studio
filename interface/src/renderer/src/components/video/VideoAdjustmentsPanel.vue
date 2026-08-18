@@ -73,6 +73,7 @@ const isNeutral = computed(() => SLIDERS.every((s) => props.adjustments[s.key] =
           :max="slider.max"
           :step="slider.step"
           :default-value="slider.neutral"
+          :aria-label="t(`videoEditor.edits.${slider.key}`)"
           :disabled="disabled"
           @update:model-value="emit('updateAdjustment', slider.key, $event)"
         />
@@ -105,6 +106,7 @@ const isNeutral = computed(() => SLIDERS.every((s) => props.adjustments[s.key] =
             :min="0"
             :max="100"
             :step="1"
+            :aria-label="`${t(`videoEditor.edits.${effect.toggle}`)} — ${t('videoEditor.edits.strength')}`"
             :disabled="disabled"
             @update:model-value="emit('updateEffect', effect.strength, $event)"
           />

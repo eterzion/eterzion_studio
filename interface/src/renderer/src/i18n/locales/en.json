@@ -79,6 +79,7 @@
       "stepBack": "Previous frame",
       "stepForward": "Next frame",
       "timeline": "Timeline",
+      "transport": "Playback controls",
       "unmute": "Unmute",
       "volume": "Volume"
     },

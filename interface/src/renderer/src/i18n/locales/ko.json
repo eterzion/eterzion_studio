@@ -79,6 +79,7 @@
       "stepBack": "이전 프레임",
       "stepForward": "다음 프레임",
       "timeline": "타임라인",
+      "transport": "재생 컨트롤",
       "unmute": "음소거 해제",
       "volume": "볼륨"
     },

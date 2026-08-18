@@ -79,6 +79,7 @@
       "stepBack": "上一帧",
       "stepForward": "下一帧",
       "timeline": "时间轴",
+      "transport": "播放控件",
       "unmute": "取消静音",
       "volume": "音量"
     },

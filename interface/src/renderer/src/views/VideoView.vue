@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
@@ -37,6 +38,12 @@ import { usePickFiles } from '../composables/usePickFiles'
 import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 
 defineEmits<{ back: []; openEditor: [] }>()
+
+// Only for the Editor button below. The ~32 existing literals in this file stay
+// as they are: Princípio XIV is explicitly non-retroactive and forbids
+// extracting them as an isolated sweep. A NEW string is a different matter — it
+// has to be a key from the start, which is the whole point of the rule.
+const { t } = useI18n()
 
 // T049/FR-081 to FR-086: video-enhance jobs of its own (never touches
 // store/jobs.ts's queueState, same reasoning as CompressConvertView.vue —
@@ -405,7 +412,7 @@ function exportAll(): void {
              removed for it — the batch flow below is untouched. -->
         <AppButton variant="outline" @click="$emit('openEditor')">
           <template #icon><Clapperboard :size="15" /></template>
-          Editor
+          {{ t('videoEditor.editor.open') }}
         </AppButton>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>

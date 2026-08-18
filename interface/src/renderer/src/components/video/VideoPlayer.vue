@@ -64,10 +64,40 @@ const duration = computed(() => props.handle?.duration_seconds ?? 0)
 defineExpose({ currentTime: playback.currentTime })
 const frame = computed(() => timeline.frameAt(playback.presentedTime.value))
 const disabled = computed(() => !props.handle)
+
+// FR-010. Space toggles, arrows step — the bindings anyone who has used a video
+// tool expects. Bound on the player's own container so they work whenever the
+// player has focus, without stealing keys from the rest of the application.
+//
+// Ignored while focus is in a text field or a slider: arrows mean something
+// else there, and a shortcut that hijacks them is worse than no shortcut.
+function onKeydown(event: KeyboardEvent): void {
+  if (disabled.value) return
+  const target = event.target as HTMLElement | null
+  const tag = target?.tagName.toLowerCase()
+  if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return
+
+  if (event.key === ' ' || event.key === 'k') {
+    event.preventDefault()
+    playback.toggle()
+  } else if (event.key === 'ArrowLeft') {
+    event.preventDefault()
+    playback.step(-1, timeline.frameDuration.value)
+  } else if (event.key === 'ArrowRight') {
+    event.preventDefault()
+    playback.step(1, timeline.frameDuration.value)
+  }
+}
 </script>
 
 <template>
-  <div class="flex h-full flex-col">
+  <div
+    class="flex h-full flex-col focus:outline-none"
+    tabindex="0"
+    role="application"
+    :aria-label="handle?.display_name ?? ''"
+    @keydown="onKeydown"
+  >
     <div class="min-h-0 flex-1">
       <VideoPlayerSurface
         :handle="handle"

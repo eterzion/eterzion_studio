@@ -79,6 +79,7 @@
       "stepBack": "Fotograma anterior",
       "stepForward": "Fotograma siguiente",
       "timeline": "Línea de tiempo",
+      "transport": "Controles de reproducción",
       "unmute": "Activar sonido",
       "volume": "Volumen"
     },
