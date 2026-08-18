@@ -74,6 +74,8 @@
       "notPreviewable": "Impossibile mostrare questo video qui.",
       "pause": "Pausa",
       "play": "Riproduci",
+      "previewUnavailable": "Anteprima con regolazioni non disponibile su questa macchina",
+      "recalculating": "Ricalcolo…",
       "stepBack": "Fotogramma precedente",
       "stepForward": "Fotogramma successivo",
       "timeline": "Linea temporale",

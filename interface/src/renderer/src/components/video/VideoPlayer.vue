@@ -10,6 +10,7 @@ import { useVideoPlayback } from '../../composables/useVideoPlayback'
 import { useVideoTimeline } from '../../composables/useVideoTimeline'
 import { useTimelineThumbnails } from '../../composables/useTimelineThumbnails'
 import type { MediaHandle } from '../../services/api'
+import type { VideoAdjustments } from '../../composables/useVideoEdits'
 
 // T030 (specs/007-video-editor-player) — the root of the player component tree
 // the original request specified (constitution.md:29).
@@ -19,7 +20,13 @@ import type { MediaHandle } from '../../services/api'
 // own presentation. What is left here is wiring — which is the shape
 // Princípio X asks for once a part becomes independently meaningful.
 
-const props = defineProps<{ handle: MediaHandle | null; sourcePath: string | null }>()
+const props = defineProps<{
+  handle: MediaHandle | null
+  sourcePath: string | null
+  /** Pushed straight through to the shader. Null means "preview untouched". */
+  adjustments?: VideoAdjustments | null
+  recalculating?: boolean
+}>()
 
 const element = ref<HTMLVideoElement | null>(null)
 const handleRef = computed(() => props.handle)
@@ -58,7 +65,13 @@ const disabled = computed(() => !props.handle)
 <template>
   <div class="flex h-full flex-col">
     <div class="min-h-0 flex-1">
-      <VideoPlayerSurface :handle="handle" :source-path="sourcePath" @ready="onReady" />
+      <VideoPlayerSurface
+        :handle="handle"
+        :source-path="sourcePath"
+        :adjustments="adjustments ?? null"
+        :recalculating="recalculating"
+        @ready="onReady"
+      />
     </div>
 
     <div class="flex flex-col gap-1 border-t border-surface-border bg-surface-2 px-3 py-2">

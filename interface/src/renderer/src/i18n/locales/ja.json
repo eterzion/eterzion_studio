@@ -74,6 +74,8 @@
       "notPreviewable": "この動画はここで表示できません。",
       "pause": "一時停止",
       "play": "再生",
+      "previewUnavailable": "この環境では調整プレビューを利用できません",
+      "recalculating": "再計算中…",
       "stepBack": "前のフレーム",
       "stepForward": "次のフレーム",
       "timeline": "タイムライン",

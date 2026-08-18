@@ -74,6 +74,8 @@
       "notPreviewable": "无法在此显示该视频。",
       "pause": "暂停",
       "play": "播放",
+      "previewUnavailable": "此设备无法预览调整效果",
+      "recalculating": "重新计算中…",
       "stepBack": "上一帧",
       "stepForward": "下一帧",
       "timeline": "时间轴",

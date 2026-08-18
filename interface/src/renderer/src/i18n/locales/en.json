@@ -74,6 +74,8 @@
       "notPreviewable": "This video cannot be shown here.",
       "pause": "Pause",
       "play": "Play",
+      "previewUnavailable": "Adjusted preview unavailable on this machine",
+      "recalculating": "Recalculating…",
       "stepBack": "Previous frame",
       "stepForward": "Next frame",
       "timeline": "Timeline",
