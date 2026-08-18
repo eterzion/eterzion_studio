@@ -29,6 +29,7 @@ from __future__ import annotations
 
 import math
 import os
+import shutil
 from typing import Any, NamedTuple
 
 from app.config import (
@@ -56,6 +57,15 @@ class CeilingExceeded(EditError):
             'ceiling_exceeded',
             f'Excede o limite de {limiting_factor}: {actual} > {limit}.',
             limiting_factor=limiting_factor, limit=limit, actual=actual,
+        )
+
+
+class InsufficientDisk(EditError):
+    def __init__(self, needed: int, available: int):
+        super().__init__(
+            'disk_full',
+            f'Espaço insuficiente: são necessários ~{needed} bytes, há {available}.',
+            needed_bytes=needed, available_bytes=available,
         )
 
 
@@ -113,6 +123,32 @@ def check_ceilings(size: OperationSize, *, reencoding: bool = True) -> None:
         raise CeilingExceeded('frame_count', ceilings.max_frame_count, size.frame_count)
     if size.size_bytes > ceilings.max_size_bytes:
         raise CeilingExceeded('size_bytes', ceilings.max_size_bytes, size.size_bytes)
+
+
+def check_disk_space(destination: str, source_size_bytes: int) -> None:
+    """Refuse before starting when the destination cannot hold the result.
+
+    Estimated as the source's size: a re-encode is usually smaller, but assuming
+    so would turn a refusal into a failure partway through — and running out of
+    space mid-encode is the case the spec lists as an edge case precisely
+    because it is silent until it is not.
+    """
+    try:
+        directory = os.path.dirname(os.path.abspath(destination))
+        while directory and not os.path.isdir(directory):
+            parent = os.path.dirname(directory)
+            if parent == directory:
+                break
+            directory = parent
+        free = shutil.disk_usage(directory).free
+    except (OSError, ValueError):
+        # A destination that cannot even be measured — unreadable, or not a
+        # valid path at all (a null byte raises ValueError, not OSError) — is
+        # the caller's problem to report. Refusing here would turn an unrelated
+        # problem into a capacity error.
+        return
+    if free < source_size_bytes:
+        raise InsufficientDisk(source_size_bytes, free)
 
 
 # ---------------------------- encoder resolution ---------------------------- #

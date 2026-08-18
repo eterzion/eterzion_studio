@@ -842,8 +842,10 @@ async def create_video_edit_job(payload: VideoExportRequest):
             duration_seconds=duration, width=int(width), height=int(height),
             frame_rate=metadata['frame_rate'] or 30.0, size_bytes=metadata['size_bytes'],
         ))
-        choice = video_edits.resolve_encoder(payload.container, payload.profile,
-                                            want_audio=metadata['has_audio'])
+        video_edits.resolve_encoder(payload.container, payload.profile,
+                                    want_audio=metadata['has_audio'])
+        video_edits.check_disk_space(
+            payload.output_directory or os.path.dirname(input_path), metadata['size_bytes'])
     except video_edits.EditError as error:
         raise HTTPException(422, {'reason': error.reason, 'message': str(error), **error.detail}) from error
 
