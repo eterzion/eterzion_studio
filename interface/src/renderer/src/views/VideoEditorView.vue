@@ -127,14 +127,21 @@ async function pickDirectory(): Promise<void> {
 
 function startExport(choice: { container: VideoContainer; profile: Profile }): void {
   if (!activeId.value || !active.value) return
-  exporter.start(activeId.value, {
-    handle_id: activeId.value,
-    edits: JSON.parse(JSON.stringify(edits.current.value)),
-    container: choice.container,
-    profile: choice.profile,
-    output_directory: exportDirectory.value,
-    conflict: 'rename'
-  })
+  exporter.start(
+    activeId.value,
+    {
+      handle_id: activeId.value,
+      edits: JSON.parse(JSON.stringify(edits.current.value)),
+      container: choice.container,
+      profile: choice.profile,
+      output_directory: exportDirectory.value,
+      conflict: 'rename'
+    },
+    {
+      displayName: active.value.handle.display_name,
+      sourcePath: active.value.sourcePath
+    }
+  )
 }
 
 function remove(id: string): void {

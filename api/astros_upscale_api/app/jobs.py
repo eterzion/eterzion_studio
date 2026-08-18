@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import logging
 import os
 import secrets
 import subprocess
@@ -41,6 +42,9 @@ from app.config import settings
 # pool of these, not larger messages on one pipe.
 
 _API_ROOT = Path(__file__).resolve().parent.parent  # app -> astros_upscale_api
+
+
+logger = logging.getLogger(__name__)
 
 
 class ProcessResult(TypedDict, total=False):
@@ -348,7 +352,26 @@ def get_audio_worker_supervisor() -> WorkerSupervisor | None:
 
 
 def shutdown() -> None:
+    """FR-023a, second half: closing the editing area leaves an export running,
+    but shutting the application down cancels one — and a cancellation leaves no
+    partial file behind (FR-023)."""
     global _supervisor, _audio_worker_supervisor
+
+    for job in jobs.values():
+        if job.get('operation') != 'video_edit':
+            continue
+        if job['status'] in ('pending', 'queued', 'processing'):
+            job['status'] = 'cancelled'
+        partial = job.get('partial_output')
+        if partial and os.path.exists(partial):
+            try:
+                os.remove(partial)
+            except OSError:
+                # A file the encoder still holds open cannot be removed here.
+                # Reporting it is more useful than pretending the sweep was
+                # complete.
+                logger.warning('não foi possível remover o parcial %s no encerramento', partial)
+
     if _supervisor is not None:
         _supervisor.terminate()
         _supervisor = None
@@ -513,6 +536,11 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
     # for.
     stem, extension = os.path.splitext(output_path)
     temp_output = f'{stem}.partial{extension}'
+    # Recorded on the job so shutdown() can remove exactly this file. Sweeping
+    # the destination directory by pattern would mean deleting from a folder the
+    # person chose, on a guess about which files are ours — not a trade worth
+    # making for a cleanup.
+    job['partial_output'] = temp_output
     if on_stage:
         on_stage('Exportando')
 

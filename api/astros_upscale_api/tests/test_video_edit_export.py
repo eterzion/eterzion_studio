@@ -196,3 +196,55 @@ class TestFailure:
         out_dir = tmp_path / 'out'
         remaining = [p for p in out_dir.glob('*')] if out_dir.exists() else []
         assert not remaining, f'restou após cancelamento: {remaining}'
+
+
+class TestShutdown:
+    """T066b — FR-023a's second half. Closing the editing area leaves an export
+    running; shutting the application down cancels one, and a cancellation
+    leaves nothing behind."""
+
+    def test_shutdown_cancels_a_running_export_and_removes_its_partial(self, tmp_path):
+        partial = tmp_path / 'saida.partial.webm'
+        partial.write_bytes(b'bytes parciais')
+
+        jobs.jobs['job_shutdown'] = {
+            'id': 'job_shutdown',
+            'status': 'processing',
+            'operation': 'video_edit',
+            'partial_output': str(partial),
+        }
+        try:
+            jobs.shutdown()
+            assert jobs.jobs['job_shutdown']['status'] == 'cancelled'
+            assert not partial.exists(), 'o parcial sobreviveu ao encerramento'
+        finally:
+            jobs.jobs.pop('job_shutdown', None)
+
+    def test_shutdown_leaves_a_finished_export_alone(self, tmp_path):
+        """A completed job is not retroactively cancelled, and its output is not
+        a partial to sweep."""
+        output = tmp_path / 'pronto.webm'
+        output.write_bytes(b'resultado')
+
+        jobs.jobs['job_done'] = {
+            'id': 'job_done',
+            'status': 'done',
+            'operation': 'video_edit',
+            'output_path': str(output),
+        }
+        try:
+            jobs.shutdown()
+            assert jobs.jobs['job_done']['status'] == 'done'
+            assert output.exists()
+        finally:
+            jobs.jobs.pop('job_done', None)
+
+    def test_shutdown_does_not_touch_other_operations(self, tmp_path):
+        jobs.jobs['job_image'] = {
+            'id': 'job_image', 'status': 'processing', 'operation': 'enhance',
+        }
+        try:
+            jobs.shutdown()
+            assert jobs.jobs['job_image']['status'] == 'processing'
+        finally:
+            jobs.jobs.pop('job_image', None)

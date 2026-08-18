@@ -1,6 +1,7 @@
 import { onBeforeUnmount, ref, type Ref } from 'vue'
 import { cancelJob, type JobStatus } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
+import { recordSimpleJob } from '../store/history'
 import { createVideoEditJob, type VideoExportRequest } from '../services/api'
 
 // T063 (specs/007-video-editor-player) — FR-021, FR-023a.
@@ -27,8 +28,23 @@ export interface VideoExport {
       cancel or reassign an export already running (FR-023a). */
   exports: Ref<Map<string, ExportState>>
   stateFor: (handleId: string) => ExportState | null
-  start: (handleId: string, request: VideoExportRequest) => Promise<void>
+  start: (
+    handleId: string,
+    request: VideoExportRequest,
+    history?: { displayName: string; sourcePath: string }
+  ) => Promise<void>
   cancel: (handleId: string) => Promise<void>
+}
+
+// Which job states are worth a history entry. 'creating' is not: a job that
+// does not exist yet has nothing to find later, and writing it would leave a
+// phantom row behind whenever creation is refused.
+const HISTORY_STATUS: Partial<Record<string, 'queued' | 'processing' | 'done' | 'error'>> = {
+  queued: 'queued',
+  processing: 'processing',
+  done: 'done',
+  error: 'error',
+  cancelled: 'error'
 }
 
 export function useVideoExport(): VideoExport {
@@ -57,11 +73,38 @@ export function useVideoExport(): VideoExport {
     return exports.value.get(handleId) ?? null
   }
 
-  async function start(handleId: string, request: VideoExportRequest): Promise<void> {
+  // FR-031: an export shows up in the history at the same level as every other
+  // video operation. This is also what makes FR-023a's "closing the editor does
+  // not stop an export" useful rather than merely true — a running job the
+  // person cannot find again is not much better than a cancelled one.
+  function syncHistory(handleId: string, displayName: string, sourcePath: string): void {
+    const state = exports.value.get(handleId)
+    if (!state?.jobId) return
+    const status = HISTORY_STATUS[state.status]
+    if (!status) return
+    recordSimpleJob({
+      id: state.jobId,
+      sourcePath,
+      fileName: displayName,
+      status,
+      mediaType: 'video',
+      contentType: 'real_video',
+      createdAt: Date.now(),
+      outputPath: state.outputPath ?? undefined,
+      errorMessage: state.error ?? undefined
+    })
+  }
+
+  async function start(
+    handleId: string,
+    request: VideoExportRequest,
+    history?: { displayName: string; sourcePath: string }
+  ): Promise<void> {
     set(handleId, { status: 'creating', progress: 0, error: null, refusal: null })
     try {
       const { job_id: jobId } = await createVideoEditJob(request)
       set(handleId, { jobId, status: 'queued' })
+      if (history) syncHistory(handleId, history.displayName, history.sourcePath)
 
       unsubscribers.get(handleId)?.()
       unsubscribers.set(
@@ -74,6 +117,7 @@ export function useVideoExport(): VideoExport {
             outputPath: status.output_path ?? null,
             error: status.error ?? null
           })
+          if (history) syncHistory(handleId, history.displayName, history.sourcePath)
         })
       )
     } catch (cause) {
