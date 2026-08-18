@@ -108,8 +108,32 @@
       "trimStart": "Inizio spezzone",
       "wholeVideo": "Video intero"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "Annulla",
+      "container": "Formato",
+      "destination": "Destinazione",
+      "done": "File esportato.",
+      "profile": "Qualità",
+      "sameFolder": "Stessa cartella dell’originale",
+      "start": "Esporta",
+      "title": "Esporta",
+      "working": "Elaborazione…"
+    },
+    "limits": {
+      "ceilingExceeded": "Supera il limite di {factor} di questa operazione.",
+      "encoder_unavailable": "Nessun encoder disponibile per questo formato.",
+      "factor_duration": "durata",
+      "factor_frame_count": "numero di fotogrammi",
+      "factor_frame_rate": "frequenza fotogrammi",
+      "factor_height": "altezza",
+      "factor_size_bytes": "dimensione del file",
+      "factor_width": "larghezza",
+      "hardware_insufficient": "Questa macchina non può gestire questa esportazione.",
+      "noContainerAvailable": "Nessun formato di uscita è disponibile su questa macchina.",
+      "noEncoderAvailable": "Non disponibile su questa macchina",
+      "source_changed": "Il file di origine è cambiato. Importalo di nuovo.",
+      "unknown": "Impossibile avviare l’esportazione."
+    },
     "editor": {
       "addMore": "Aggiungi video",
       "importFailed": "Impossibile importare il video.",

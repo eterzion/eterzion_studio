@@ -108,8 +108,32 @@
       "trimStart": "구간 시작",
       "wholeVideo": "전체 영상"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "취소",
+      "container": "형식",
+      "destination": "저장 위치",
+      "done": "파일을 내보냈습니다.",
+      "profile": "품질",
+      "sameFolder": "원본과 같은 폴더",
+      "start": "내보내기",
+      "title": "내보내기",
+      "working": "처리 중…"
+    },
+    "limits": {
+      "ceilingExceeded": "이 작업의 {factor} 한도를 초과했습니다.",
+      "encoder_unavailable": "이 형식에 사용할 인코더가 없습니다.",
+      "factor_duration": "길이",
+      "factor_frame_count": "프레임 수",
+      "factor_frame_rate": "프레임 레이트",
+      "factor_height": "높이",
+      "factor_size_bytes": "파일 크기",
+      "factor_width": "너비",
+      "hardware_insufficient": "이 컴퓨터로는 처리할 수 없습니다.",
+      "noContainerAvailable": "이 컴퓨터에서 사용할 수 있는 출력 형식이 없습니다.",
+      "noEncoderAvailable": "이 컴퓨터에서는 사용할 수 없음",
+      "source_changed": "원본 파일이 변경되었습니다.",
+      "unknown": "내보내기를 시작할 수 없습니다."
+    },
     "editor": {
       "addMore": "비디오 추가",
       "importFailed": "비디오를 가져오지 못했습니다.",

@@ -9,6 +9,7 @@ import VideoPlayer from '../components/video/VideoPlayer.vue'
 import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
 import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
 import VideoTrimHandles from '../components/video/VideoTrimHandles.vue'
+import VideoExportPanel from '../components/video/VideoExportPanel.vue'
 import { usePickFiles } from '../composables/usePickFiles'
 import {
   useVideoEdits,
@@ -18,7 +19,14 @@ import {
   type VideoTrim
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
-import { registerMediaHandle, type MediaHandle } from '../services/api'
+import { useVideoExport } from '../composables/useVideoExport'
+import {
+  registerMediaHandle,
+  type MediaHandle,
+  type Profile,
+  type VideoContainer
+} from '../services/api'
+import { api, hasNativeApi } from '../services/native'
 import type { DescribedFile } from '../services/native'
 
 // T031 (specs/007-video-editor-player) — the video editing area.
@@ -58,6 +66,8 @@ const edits = useVideoEdits(activeId)
 
 // Same conversions the player uses, for the trim readout in the panel.
 const timeline = useVideoTimeline(computed(() => active.value?.handle ?? null))
+const exporter = useVideoExport()
+const exportDirectory = ref<string | null>(null)
 
 const items = computed<EditorItem[]>(() =>
   videos.value.map((v) => ({
@@ -108,6 +118,23 @@ function setTransform(patch: Partial<VideoTransform>): void {
 
 function setTrim(trim: VideoTrim | null): void {
   if (activeId.value) edits.editsFor(activeId.value).trim = trim
+}
+
+async function pickDirectory(): Promise<void> {
+  if (!hasNativeApi) return
+  exportDirectory.value = await api.selectOutputFolder(exportDirectory.value ?? undefined)
+}
+
+function startExport(choice: { container: VideoContainer; profile: Profile }): void {
+  if (!activeId.value || !active.value) return
+  exporter.start(activeId.value, {
+    handle_id: activeId.value,
+    edits: JSON.parse(JSON.stringify(edits.current.value)),
+    container: choice.container,
+    profile: choice.profile,
+    output_directory: exportDirectory.value,
+    conflict: 'rename'
+  })
 }
 
 function remove(id: string): void {
@@ -193,6 +220,15 @@ function remove(id: string): void {
           :disabled="!active"
           @update-transform="setTransform"
           @clear-trim="setTrim(null)"
+        />
+
+        <VideoExportPanel
+          :state="activeId ? exporter.stateFor(activeId) : null"
+          :directory="exportDirectory"
+          :disabled="!active"
+          @export="startExport"
+          @cancel="activeId && exporter.cancel(activeId)"
+          @pick-directory="pickDirectory"
         />
       </template>
     </MediaEditorShell>

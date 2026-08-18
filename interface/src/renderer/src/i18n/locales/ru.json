@@ -108,8 +108,32 @@
       "trimStart": "Начало фрагмента",
       "wholeVideo": "Всё видео"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "Отмена",
+      "container": "Формат",
+      "destination": "Куда",
+      "done": "Файл экспортирован.",
+      "profile": "Качество",
+      "sameFolder": "Та же папка, что и оригинал",
+      "start": "Экспортировать",
+      "title": "Экспорт",
+      "working": "Обработка…"
+    },
+    "limits": {
+      "ceilingExceeded": "Превышен предел: {factor}.",
+      "encoder_unavailable": "Для этого формата нет кодировщика.",
+      "factor_duration": "длительность",
+      "factor_frame_count": "число кадров",
+      "factor_frame_rate": "частота кадров",
+      "factor_height": "высота",
+      "factor_size_bytes": "размер файла",
+      "factor_width": "ширина",
+      "hardware_insufficient": "Это устройство не справится.",
+      "noContainerAvailable": "На этом устройстве нет доступных форматов.",
+      "noEncoderAvailable": "Недоступно на этом устройстве",
+      "source_changed": "Исходный файл изменился.",
+      "unknown": "Не удалось начать экспорт."
+    },
     "editor": {
       "addMore": "Добавить видео",
       "importFailed": "Не удалось импортировать видео.",

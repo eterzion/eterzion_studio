@@ -413,3 +413,42 @@ export async function getVideoExportOptions(): Promise<VideoExportOptions> {
   if (!res.ok) throw new Error(await extractError(res))
   return res.json()
 }
+
+export interface VideoEditSetPayload {
+  adjustments: Record<string, number>
+  effects: Record<string, number | boolean>
+  transform: Record<string, unknown>
+  trim: { start_seconds: number; end_seconds: number } | null
+  audio: { mode: string; volume: number }
+}
+
+export interface VideoExportRequest {
+  handle_id: string
+  edits: VideoEditSetPayload
+  container: VideoContainer
+  profile: Profile
+  output_directory?: string | null
+  output_filename?: string | null
+  conflict?: 'rename' | 'overwrite'
+}
+
+/** Create an export. A 422 body carries a `reason` key (ceiling_exceeded,
+ *  encoder_unavailable, hardware_insufficient, source_changed) and, for a
+ *  ceiling, the `limiting_factor` — so the interface can name what to change
+ *  rather than reporting a generic failure (FR-025). */
+export async function createVideoEditJob(
+  request: VideoExportRequest
+): Promise<{ job_id: string; status: string; estimated_duration_seconds: number | null }> {
+  const res = await fetch(`${BASE_URL}/video/edit-jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  if (!res.ok) {
+    // The detail object is preserved verbatim so useVideoExport can read the
+    // reason key; extractError would flatten it to a sentence.
+    const body = await res.json().catch(() => null)
+    throw new Error(JSON.stringify(body?.detail ?? { reason: 'unknown' }))
+  }
+  return res.json()
+}

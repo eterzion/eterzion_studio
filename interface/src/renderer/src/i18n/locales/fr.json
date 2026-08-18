@@ -108,8 +108,32 @@
       "trimStart": "Début de l’extrait",
       "wholeVideo": "Vidéo entière"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "Annuler",
+      "container": "Format",
+      "destination": "Destination",
+      "done": "Fichier exporté.",
+      "profile": "Qualité",
+      "sameFolder": "Même dossier que l’original",
+      "start": "Exporter",
+      "title": "Exporter",
+      "working": "Traitement…"
+    },
+    "limits": {
+      "ceilingExceeded": "Dépasse la limite de {factor} de cette opération.",
+      "encoder_unavailable": "Aucun encodeur disponible pour ce format.",
+      "factor_duration": "durée",
+      "factor_frame_count": "nombre d’images",
+      "factor_frame_rate": "fréquence d’images",
+      "factor_height": "hauteur",
+      "factor_size_bytes": "taille du fichier",
+      "factor_width": "largeur",
+      "hardware_insufficient": "Cette machine ne peut pas effectuer cet export.",
+      "noContainerAvailable": "Aucun format de sortie n’est disponible sur cette machine.",
+      "noEncoderAvailable": "Indisponible sur cette machine",
+      "source_changed": "Le fichier source a changé. Importez-le à nouveau.",
+      "unknown": "Impossible de démarrer l’export."
+    },
     "editor": {
       "addMore": "Ajouter des vidéos",
       "importFailed": "Impossible d’importer la vidéo.",

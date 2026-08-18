@@ -108,8 +108,32 @@
       "trimStart": "片段起点",
       "wholeVideo": "整个视频"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "取消",
+      "container": "格式",
+      "destination": "保存位置",
+      "done": "文件已导出。",
+      "profile": "画质",
+      "sameFolder": "与原文件相同的文件夹",
+      "start": "导出",
+      "title": "导出",
+      "working": "处理中…"
+    },
+    "limits": {
+      "ceilingExceeded": "超出本次操作的{factor}上限。",
+      "encoder_unavailable": "没有可用于该格式的编码器。",
+      "factor_duration": "时长",
+      "factor_frame_count": "帧数",
+      "factor_frame_rate": "帧率",
+      "factor_height": "高度",
+      "factor_size_bytes": "文件大小",
+      "factor_width": "宽度",
+      "hardware_insufficient": "此设备无法完成该导出。",
+      "noContainerAvailable": "此设备没有可用的输出格式。",
+      "noEncoderAvailable": "此设备不可用",
+      "source_changed": "源文件已更改。",
+      "unknown": "无法开始导出。"
+    },
     "editor": {
       "addMore": "添加视频",
       "importFailed": "无法导入该视频。",

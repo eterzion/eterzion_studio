@@ -108,8 +108,32 @@
       "trimStart": "範囲の開始",
       "wholeVideo": "動画全体"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "キャンセル",
+      "container": "形式",
+      "destination": "保存先",
+      "done": "ファイルを書き出しました。",
+      "profile": "画質",
+      "sameFolder": "元ファイルと同じフォルダー",
+      "start": "書き出す",
+      "title": "書き出し",
+      "working": "処理中…"
+    },
+    "limits": {
+      "ceilingExceeded": "この操作の{factor}の上限を超えています。",
+      "encoder_unavailable": "この形式に使えるエンコーダーがありません。",
+      "factor_duration": "長さ",
+      "factor_frame_count": "フレーム数",
+      "factor_frame_rate": "フレームレート",
+      "factor_height": "高さ",
+      "factor_size_bytes": "ファイルサイズ",
+      "factor_width": "幅",
+      "hardware_insufficient": "この環境ではこの書き出しを実行できません。",
+      "noContainerAvailable": "この環境で利用できる出力形式がありません。",
+      "noEncoderAvailable": "この環境では利用できません",
+      "source_changed": "元ファイルが変更されました。",
+      "unknown": "書き出しを開始できませんでした。"
+    },
     "editor": {
       "addMore": "動画を追加",
       "importFailed": "動画を読み込めませんでした。",

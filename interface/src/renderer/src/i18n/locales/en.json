@@ -108,8 +108,32 @@
       "trimStart": "Range start",
       "wholeVideo": "Whole video"
     },
-    "export": {},
-    "limits": {},
+    "export": {
+      "cancel": "Cancel",
+      "container": "Format",
+      "destination": "Destination",
+      "done": "File exported.",
+      "profile": "Quality",
+      "sameFolder": "Same folder as the original",
+      "start": "Export",
+      "title": "Export",
+      "working": "Working…"
+    },
+    "limits": {
+      "ceilingExceeded": "Exceeds this operation’s {factor} limit.",
+      "encoder_unavailable": "No encoder available for this format.",
+      "factor_duration": "duration",
+      "factor_frame_count": "frame count",
+      "factor_frame_rate": "frame rate",
+      "factor_height": "height",
+      "factor_size_bytes": "file size",
+      "factor_width": "width",
+      "hardware_insufficient": "This machine cannot handle this export.",
+      "noContainerAvailable": "No output format is available on this machine.",
+      "noEncoderAvailable": "Unavailable on this machine",
+      "source_changed": "The source file changed. Import it again.",
+      "unknown": "The export could not be started."
+    },
     "editor": {
       "addMore": "Add videos",
       "importFailed": "Could not import the video.",
