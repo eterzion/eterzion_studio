@@ -82,7 +82,22 @@
       "unmute": "ミュート解除",
       "volume": "音量"
     },
-    "edits": {},
+    "edits": {
+      "adjustments": "画像調整",
+      "blur_enabled": "ぼかし",
+      "brightness": "明るさ",
+      "contrast": "コントラスト",
+      "denoise_enabled": "ノイズ低減",
+      "effects": "エフェクト",
+      "gamma": "ガンマ",
+      "grain_enabled": "グレイン",
+      "hue_degrees": "色相",
+      "notInLivePreview": "一部の設定は再生中のプレビューには反映されません。書き出したファイルにのみ反映されます。",
+      "reset": "初期値に戻す",
+      "saturation": "彩度",
+      "sharpness": "シャープネス",
+      "strength": "強さ"
+    },
     "export": {},
     "limits": {},
     "editor": {

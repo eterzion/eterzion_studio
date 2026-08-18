@@ -82,7 +82,22 @@
       "unmute": "Включить звук",
       "volume": "Громкость"
     },
-    "edits": {},
+    "edits": {
+      "adjustments": "Настройки изображения",
+      "blur_enabled": "Размытие",
+      "brightness": "Яркость",
+      "contrast": "Контраст",
+      "denoise_enabled": "Шумоподавление",
+      "effects": "Эффекты",
+      "gamma": "Гамма",
+      "grain_enabled": "Зерно",
+      "hue_degrees": "Оттенок",
+      "notInLivePreview": "Некоторые активные настройки не видны в движущемся предпросмотре — только в экспортированном файле.",
+      "reset": "Вернуть нейтральные",
+      "saturation": "Насыщенность",
+      "sharpness": "Резкость",
+      "strength": "Интенсивность"
+    },
     "export": {},
     "limits": {},
     "editor": {

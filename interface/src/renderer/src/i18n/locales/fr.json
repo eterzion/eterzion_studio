@@ -82,7 +82,22 @@
       "unmute": "Activer le son",
       "volume": "Volume"
     },
-    "edits": {},
+    "edits": {
+      "adjustments": "Réglages d’image",
+      "blur_enabled": "Flou",
+      "brightness": "Luminosité",
+      "contrast": "Contraste",
+      "denoise_enabled": "Réduction du bruit",
+      "effects": "Effets",
+      "gamma": "Gamma",
+      "grain_enabled": "Grain",
+      "hue_degrees": "Teinte",
+      "notInLivePreview": "Certains réglages actifs n’apparaissent pas dans l’aperçu animé, seulement dans le fichier exporté.",
+      "reset": "Revenir au neutre",
+      "saturation": "Saturation",
+      "sharpness": "Netteté",
+      "strength": "Intensité"
+    },
     "export": {},
     "limits": {},
     "editor": {

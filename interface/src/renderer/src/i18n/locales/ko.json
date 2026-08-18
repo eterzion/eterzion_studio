@@ -82,7 +82,22 @@
       "unmute": "음소거 해제",
       "volume": "볼륨"
     },
-    "edits": {},
+    "edits": {
+      "adjustments": "이미지 조정",
+      "blur_enabled": "흐림",
+      "brightness": "밝기",
+      "contrast": "대비",
+      "denoise_enabled": "노이즈 감소",
+      "effects": "효과",
+      "gamma": "감마",
+      "grain_enabled": "그레인",
+      "hue_degrees": "색조",
+      "notInLivePreview": "일부 설정은 재생 중 미리보기에 반영되지 않고 내보낸 파일에만 적용됩니다.",
+      "reset": "기본값으로",
+      "saturation": "채도",
+      "sharpness": "선명도",
+      "strength": "강도"
+    },
     "export": {},
     "limits": {},
     "editor": {

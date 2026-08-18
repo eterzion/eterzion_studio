@@ -82,7 +82,22 @@
       "unmute": "Ton einschalten",
       "volume": "Lautstärke"
     },
-    "edits": {},
+    "edits": {
+      "adjustments": "Bildanpassungen",
+      "blur_enabled": "Weichzeichnen",
+      "brightness": "Helligkeit",
+      "contrast": "Kontrast",
+      "denoise_enabled": "Rauschreduzierung",
+      "effects": "Effekte",
+      "gamma": "Gamma",
+      "grain_enabled": "Korn",
+      "hue_degrees": "Farbton",
+      "notInLivePreview": "Einige aktive Einstellungen erscheinen nicht in der bewegten Vorschau, nur in der exportierten Datei.",
+      "reset": "Zurück auf neutral",
+      "saturation": "Sättigung",
+      "sharpness": "Schärfe",
+      "strength": "Stärke"
+    },
     "export": {},
     "limits": {},
     "editor": {

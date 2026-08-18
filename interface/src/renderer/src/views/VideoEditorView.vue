@@ -6,7 +6,13 @@ import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
 import VideoPlayer from '../components/video/VideoPlayer.vue'
+import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
 import { usePickFiles } from '../composables/usePickFiles'
+import {
+  useVideoEdits,
+  type VideoAdjustments,
+  type VideoEffects
+} from '../composables/useVideoEdits'
 import { registerMediaHandle, type MediaHandle } from '../services/api'
 import type { DescribedFile } from '../services/native'
 
@@ -41,6 +47,10 @@ const active = computed(
   () => videos.value.find((v) => v.handle.handle_id === activeId.value) ?? null
 )
 
+// Edits are keyed by handle, so switching videos cannot carry one file's
+// settings onto another (FR-003).
+const edits = useVideoEdits(activeId)
+
 const items = computed<EditorItem[]>(() =>
   videos.value.map((v) => ({
     id: v.handle.handle_id,
@@ -70,8 +80,25 @@ const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
   ['video']
 )
 
+// The panel emits; the view applies. Keeping the write here is what makes
+// useVideoEdits the single owner of edit state.
+function setAdjustment(key: keyof VideoAdjustments, value: number): void {
+  if (activeId.value) edits.editsFor(activeId.value).adjustments[key] = value
+}
+
+function setEffect(key: keyof VideoEffects, value: number | boolean): void {
+  if (!activeId.value) return
+  const effects = edits.editsFor(activeId.value).effects
+  // The key decides the type: a toggle takes the boolean, a strength the number.
+  if (typeof value === 'boolean') (effects[key] as boolean) = value
+  else (effects[key] as number) = value
+}
+
 function remove(id: string): void {
   videos.value = videos.value.filter((v) => v.handle.handle_id !== id)
+  // Drop the edits with the video: keeping them would resurrect settings if the
+  // same file were imported again, which is not what removing it means.
+  edits.forget(id)
   if (activeId.value === id) activeId.value = videos.value[0]?.handle.handle_id ?? null
 }
 </script>
@@ -114,16 +141,24 @@ function remove(id: string): void {
       @add="pickFiles"
     >
       <template #preview>
-        <VideoPlayer :handle="active?.handle ?? null" :source-path="active?.sourcePath ?? null" />
+        <VideoPlayer
+          :handle="active?.handle ?? null"
+          :source-path="active?.sourcePath ?? null"
+          :adjustments="edits.current.value.adjustments"
+        />
       </template>
 
       <template #panel>
-        <!-- Adjustments, effects, transform, trim and audio arrive in US2 and
-             US3 (T046-T048, T064). US1 is the player alone, and stops here on
-             purpose: it is independently testable and independently useful. -->
-        <p class="p-4 text-(length:--fs-caption) text-text-tertiary">
-          {{ t('videoEditor.editor.panelPending') }}
-        </p>
+        <!-- Transform, trim and export arrive with T047, T048 and T064. -->
+        <VideoAdjustmentsPanel
+          :adjustments="edits.current.value.adjustments"
+          :effects="edits.current.value.effects"
+          :shows-disclosure="edits.needsDisclosure.value"
+          :disabled="!active"
+          @reset="activeId && edits.reset(activeId)"
+          @update-adjustment="setAdjustment"
+          @update-effect="setEffect"
+        />
       </template>
     </MediaEditorShell>
   </div>
