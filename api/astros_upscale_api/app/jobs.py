@@ -478,6 +478,75 @@ def _compress_convert_output_path(job: dict, params: dict) -> str:
     return output_path
 
 
+def _video_edit_output_path(job: dict, params: dict) -> str:
+    """Where an edited video lands.
+
+    Reuses _compress_convert_output_path's shape rather than growing a second
+    collision policy: renaming on collision is already the established default,
+    and Princípio XV requires that overwriting be an explicit per-operation
+    instruction — never a fallback when a destination is ambiguous.
+    """
+    return _compress_convert_output_path(job, params)
+
+
+def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
+    """FR-013f. Renders the edit set to a new file.
+
+    Cleanup is a single exit path, not a cuidado repeated per error branch: the
+    finally block below covers success, failure and cancellation alike, which is
+    what makes FR-022 checkable rather than aspirational. The partial output is
+    removed too — FR-023 forbids leaving one behind, and ffmpeg will have
+    written bytes before any interruption.
+    """
+    from app import video_edits
+
+    output_path = _video_edit_output_path(job, params)
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
+
+    # Written to a temporary name and moved into place only on success. Without
+    # this, a cancellation halfway leaves a playable-looking file at the
+    # destination that is not the export the person asked for.
+    #
+    # The marker goes BEFORE the extension: ffmpeg infers the container from the
+    # suffix, and 'saida.webm.partial' fails with "Invalid argument" because
+    # .partial is not a format. Found by the export test, which is what it is
+    # for.
+    stem, extension = os.path.splitext(output_path)
+    temp_output = f'{stem}.partial{extension}'
+    if on_stage:
+        on_stage('Exportando')
+
+    try:
+        video_edits.export(
+            job['input_path'], temp_output, params.get('edits') or {},
+            container=params['container'], profile=params.get('profile', 'balanced'),
+            source_width=params['source_width'], source_height=params['source_height'],
+            has_audio=params.get('has_audio', True),
+        )
+        if job['status'] == 'cancelled':
+            raise RuntimeError('cancelado')
+        os.replace(temp_output, output_path)
+        if on_progress:
+            on_progress(100)
+    finally:
+        # Success moved it; anything else leaves it here to remove. One place,
+        # every outcome.
+        if os.path.exists(temp_output):
+            try:
+                os.remove(temp_output)
+            except OSError:
+                pass
+
+    width, height = _media_dimensions(output_path)
+    return {
+        'output_path': output_path,
+        'output_meta': {
+            'width': width, 'height': height,
+            'size_bytes': os.path.getsize(output_path) if os.path.exists(output_path) else None,
+        },
+    }
+
+
 def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dict:
     """FR-025 to FR-030: real ffmpeg/OpenCV transcoding, never an AI model —
     this never touches app.licensing's profile resolver or WorkerSupervisor,
@@ -705,6 +774,9 @@ async def _process_job(job_id: str) -> None:
         loop.call_soon_threadsafe(_notify, job_id)
 
     def blocking_run():
+        if job.get('operation') == 'video_edit':
+            return _run_video_edit(job, params, on_progress, on_stage)
+
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
 

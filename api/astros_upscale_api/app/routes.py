@@ -27,7 +27,7 @@ from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvai
                          DetectContentTypeRequest, ExportRequest, LicenseStatusResponse,
                          LocalJobRequest, MediaHandleRequest, MediaHandleResponse, MediaRequest,
                          VideoCeilingsResponse, VideoExportOptionsResponse,
-                         VideoPreviewFrameRequest)
+                         VideoExportRequest, VideoPreviewFrameRequest)
 
 # ------------------------------- /jobs ------------------------------- #
 
@@ -798,3 +798,88 @@ def preview_video_frame(handle_id: str, payload: VideoPreviewFrameRequest):
         'before': base64.b64encode(before_bytes).decode('ascii'),
         'after': base64.b64encode(after_bytes).decode('ascii'),
     }
+
+
+@video_router.post('/edit-jobs', status_code=202)
+async def create_video_edit_job(payload: VideoExportRequest):
+    """Create an export (FR-013f, FR-021).
+
+    Everything that can refuse does so BEFORE the job exists, so a refusal never
+    arrives after minutes of processing (FR-025). Four reasons, in the order a
+    person would hit them:
+
+      source_changed        the file is not what was registered
+      ceiling_exceeded      this job is unreasonable, whatever the machine
+      hardware_insufficient this machine cannot cope
+      encoder_unavailable   nothing here can write that container
+
+    The job itself then rides the existing job system — progress, cancellation
+    and the WebSocket are the ones every other operation uses.
+    """
+    _enforce_license_gate()
+
+    input_path = media_handles.resolve(payload.handle_id)
+    if input_path is None:
+        raise HTTPException(404, {'reason': 'not_found', 'message': 'Identificador desconhecido.'})
+    if media_handles.has_content_changed(payload.handle_id):
+        raise HTTPException(409, {'reason': 'source_changed',
+                                  'message': 'O arquivo de origem mudou desde o registro.'})
+
+    metadata = media_handles.describe(payload.handle_id)
+    edits = payload.edits.model_dump()
+
+    # The ceiling is checked against the OUTPUT: a 30-second trim out of a
+    # three-hour recording is thirty seconds of work (T014).
+    trim = edits.get('trim')
+    duration = (trim['end_seconds'] - trim['start_seconds']) if trim else metadata['duration_seconds']
+    transform = edits.get('transform') or {}
+    crop = transform.get('crop')
+    width = (transform.get('output_width') or (crop or {}).get('width') or metadata['width'] or 0)
+    height = (transform.get('output_height') or (crop or {}).get('height') or metadata['height'] or 0)
+
+    try:
+        video_edits.check_ceilings(video_edits.OperationSize(
+            duration_seconds=duration, width=int(width), height=int(height),
+            frame_rate=metadata['frame_rate'] or 30.0, size_bytes=metadata['size_bytes'],
+        ))
+        choice = video_edits.resolve_encoder(payload.container, payload.profile,
+                                            want_audio=metadata['has_audio'])
+    except video_edits.EditError as error:
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error), **error.detail}) from error
+
+    # The machine-capacity floor is a separate question from the ceilings above,
+    # and both have to pass (plan.md, Complexity Tracking).
+    from astros_upscale.processing import detect_hardware
+
+    capacity = processing.check_capacity(
+        detect_hardware(), 'video', width=int(width), height=int(height), duration_seconds=duration)
+    if not capacity.fits:
+        raise HTTPException(422, {'reason': 'hardware_insufficient',
+                                  'limiting_resource': capacity.limiting_resource,
+                                  'message': 'Este equipamento não tem capacidade para esta exportação.'})
+
+    job_id = jobs.create_job(
+        input_path=input_path,
+        filename=media_handles.sanitise_display_name(payload.output_filename or metadata['display_name']),
+        media_type='video',
+        operation='video_edit',
+        params={
+            'edits': edits,
+            'container': payload.container,
+            'profile': payload.profile,
+            'source_width': metadata['width'],
+            'source_height': metadata['height'],
+            'has_audio': metadata['has_audio'],
+            'output_target': {
+                'format': payload.container,
+                'directory': payload.output_directory,
+                'filename': payload.output_filename,
+                'conflict': payload.conflict,
+            },
+        },
+    )
+    jobs.set_capacity_check(job_id, True, capacity.estimated_duration, None)
+    await jobs.enqueue(job_id)
+
+    return {'job_id': job_id, 'status': 'queued',
+            'estimated_duration_seconds': capacity.estimated_duration}
