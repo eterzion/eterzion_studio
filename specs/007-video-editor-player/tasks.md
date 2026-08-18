@@ -145,25 +145,25 @@ restaura a imagem, e que o arquivo de origem segue intacto — sem que a exporta
 
 ### Tests for User Story 2
 
-- [ ] T040 [P] [US2] Escrever `interface/src/renderer/src/composables/__tests__/useVideoEdits.spec.ts` — estado neutro, reset (FR-004) e isolamento entre vídeos (FR-003)
+- [X] T040 [P] [US2] Escrever `interface/src/renderer/src/composables/__tests__/useVideoEdits.spec.ts` — estado neutro, reset (FR-004) e isolamento entre vídeos (FR-003)
 - [ ] T041 [P] [US2] Escrever `api/astros_upscale_api/tests/test_preview_frame.py` — o quadro renderizado reflete as edições e nunca escreve na origem
-- [ ] T042 [US2] Escrever o teste de paridade preview × exportação em `api/astros_upscale_api/tests/test_video_edits.py`: mesma entrada de ajuste produz o mesmo resultado pela fórmula do shader e pelo filtro `eq` (cenário 3 do quickstart)
+- [X] T042 [US2] Escrever o teste de paridade preview × exportação em `api/astros_upscale_api/tests/test_video_edits.py`: mesma entrada de ajuste produz o mesmo resultado pela fórmula do shader e pelo filtro `eq` (cenário 3 do quickstart)
 
 ### Implementation for User Story 2
 
-- [ ] T043 [P] [US2] Implementar `interface/src/renderer/src/composables/useVideoEdits.ts` — as cinco famílias, estado neutro e reset por vídeo
-- [ ] T044 [US2] Implementar `interface/src/renderer/src/composables/useVideoPreviewPipeline.ts` — shader WebGL2 com a fórmula do `eq` (research.md Decisão 1); **não usar filtro CSS**, pelo motivo registrado ali
-- [ ] T045 [US2] Ligar o canvas do shader ao `<video>` em `interface/src/renderer/src/components/video/VideoPlayerSurface.vue`
-- [ ] T046 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoAdjustmentsPanel.vue` — ajustes e efeitos, com faixas de data-model.md
+- [X] T043 [P] [US2] Implementar `interface/src/renderer/src/composables/useVideoEdits.ts` — as cinco famílias, estado neutro e reset por vídeo
+- [X] T044 [US2] Implementar `interface/src/renderer/src/composables/useVideoPreviewPipeline.ts` — shader WebGL2 com a fórmula do `eq` (research.md Decisão 1); **não usar filtro CSS**, pelo motivo registrado ali
+- [X] T045 [US2] Ligar o canvas do shader ao `<video>` em `interface/src/renderer/src/components/video/VideoPlayerSurface.vue`
+- [X] T046 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoAdjustmentsPanel.vue` — ajustes e efeitos, com faixas de data-model.md
 - [ ] T047 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTransformPanel.vue` — recorte, rotação, espelho, tamanho de saída
 - [ ] T048 [P] [US2] Implementar `interface/src/renderer/src/components/video/VideoTrimHandles.vue` — pontos de entrada e saída, com o trecho selecionado distinguível (FR-007b)
-- [ ] T049 [US2] Integrar os controles de áudio (manter/silenciar/remover, volume) ao painel de ajustes (FR-013e)
+- [X] T049 [US2] Integrar os controles de áudio (manter/silenciar/remover, volume) ao painel de ajustes (FR-013e)
 - [ ] T050 [US2] Implementar `POST /media/handles/{handle_id}/preview-frame` em `api/astros_upscale_api/app/routes.py`, reaproveitando a forma da rota de preview de imagem
 - [ ] T051 [US2] Implementar o preview sob demanda no renderer, espelhando debounce, guarda de corrida e invalidação ao trocar de arquivo de `useDenoisePreview.ts` (research.md Decisão 2)
 - [ ] T052 [US2] Exibir o aviso do FR-015 quando um efeito ativo não estiver no preview em movimento
-- [ ] T052a [US2] Exibir o indicador de recálculo enquanto o preview está sendo atualizado, em `VideoPlayerSurface.vue` — cláusula do FR-014 que faltava tarefa
-- [ ] T052b [US2] Implementar o descarte de **todas as cinco famílias** no reset de `useVideoEdits.ts`, não apenas dos ajustes de imagem (FR-004, desambiguado)
-- [ ] T053 [P] [US2] Escrever as chaves `videoEditor.edits.*` nos 11 locales
+- [X] T052a [US2] Exibir o indicador de recálculo enquanto o preview está sendo atualizado, em `VideoPlayerSurface.vue` — cláusula do FR-014 que faltava tarefa
+- [X] T052b [US2] Implementar o descarte de **todas as cinco famílias** no reset de `useVideoEdits.ts`, não apenas dos ajustes de imagem (FR-004, desambiguado)
+- [X] T053 [P] [US2] Escrever as chaves `videoEditor.edits.*` nos 11 locales
 
 **Checkpoint**: US1 e US2 funcionam independentemente. A pessoa vê o resultado antes de gastar tempo.
 
