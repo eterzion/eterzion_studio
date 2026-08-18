@@ -146,7 +146,7 @@ restaura a imagem, e que o arquivo de origem segue intacto — sem que a exporta
 ### Tests for User Story 2
 
 - [X] T040 [P] [US2] Escrever `interface/src/renderer/src/composables/__tests__/useVideoEdits.spec.ts` — estado neutro, reset (FR-004) e isolamento entre vídeos (FR-003)
-- [ ] T041 [P] [US2] Escrever `api/astros_upscale_api/tests/test_preview_frame.py` — o quadro renderizado reflete as edições e nunca escreve na origem
+- [X] T041 [P] [US2] Escrever `api/astros_upscale_api/tests/test_preview_frame.py` — o quadro renderizado reflete as edições e nunca escreve na origem
 - [X] T042 [US2] Escrever o teste de paridade preview × exportação em `api/astros_upscale_api/tests/test_video_edits.py`: mesma entrada de ajuste produz o mesmo resultado pela fórmula do shader e pelo filtro `eq` (cenário 3 do quickstart)
 
 ### Implementation for User Story 2
@@ -186,7 +186,7 @@ temporário.
 ### Implementation for User Story 3
 
 - [X] T057 [US3] Implementar o tipo de job de exportação de vídeo editado em `api/astros_upscale_api/app/jobs.py`, reaproveitando progresso, cancelamento e WebSocket existentes (FR-021)
-- [ ] T058 [US3] Implementar a orquestração da exportação em `api/astros_upscale_api/app/processing.py`, chamando `video_edits.py` para o grafo
+- [X] T058 [US3] ~~Orquestração da exportação em `processing.py`~~ — **desvio: ficou em `jobs.py`.** O plano previa `processing.py`, mas a orquestração de uma exportação é o ciclo de vida de um job — caminho de saída, arquivo parcial, limpeza, cancelamento — e `jobs.py` já é o dono disso para `enhance`, `compress` e `convert`. Pôr um quarto tipo de operação em outro módulo teria criado dois lugares onde procurar "como um job roda". `_run_video_edit` fica ao lado de `_run_compress_convert`, e `video_edits.py` continua sendo quem monta o grafo
 - [X] T059 [US3] Implementar a limpeza de temporários como **ponto único de saída** do job, cobrindo sucesso, falha e cancelamento (FR-022) — não espalhada por ramo de erro
 - [X] T060 [US3] Implementar a resolução de colisão com renomeação por padrão em `api/astros_upscale_api/app/processing.py` (FR-020)
 - [X] T061 [US3] Implementar `POST /video/edit-jobs` em `api/astros_upscale_api/app/routes.py`, com as quatro razões de recusa de contracts/api.md
@@ -251,10 +251,10 @@ ou chave crua.
 - [ ] T081 Rodar os 14 cenários de [quickstart.md](./quickstart.md) e registrar o resultado de cada um
 - [X] T082 [P] Confirmar que `interface/src/renderer/src/views/ImageEditorView.vue` não foi modificado — a isenção da v2.6.0 proíbe dividi-lo como refatoração isolada
 - [ ] T083 [P] Confirmar que o fluxo em lote de `VideoView.vue` funciona como antes (FR-032, cenário 14)
-- [ ] T084 Registrar em `docs/` a dívida do `codec='libx264'` em `api/astros_upscale/optimize.py` — não corrigida aqui, não herdada pela allowlist desta feature
+- [X] T084 Registrar em `docs/` a dívida do `codec='libx264'` em `api/astros_upscale/optimize.py` — não corrigida aqui, não herdada pela allowlist desta feature
 - [ ] T085 ~~Correção da contagem de locales na constituição~~ — **feito na emenda v3.0.0**, junto com a exceção do Princípio XIII. Nada a fazer; mantido para rastreabilidade
 - [X] T086 [P] Escrever `api/astros_upscale_api/tests/test_no_codec_leak.py` — nenhuma resposta das rotas de vídeo expõe nome de modelo, encoder ou codec, espelhando `test_no_model_leak.py` (SC-009, Princípio V)
-- [ ] T087 [P] Conferir que `POST /media/handles` satisfaz as quatro condições da exceção do Princípio XIII (v3.0.0): caminho só do diálogo nativo, validação antes de tudo, caminho nunca devolvido, identificador não reversível
+- [X] T087 [P] Conferir que `POST /media/handles` satisfaz as quatro condições da exceção do Princípio XIII (v3.0.0): caminho só do diálogo nativo, validação antes de tudo, caminho nunca devolvido, identificador não reversível
 - [X] T088 [P] Conferir que nenhuma rota além de `POST /media/handles` aceita caminho — a terceira condição da exceção é a que se perde primeiro quando a superfície cresce
 
 ---
