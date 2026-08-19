@@ -68,6 +68,10 @@ export interface MediaRequest {
   device?: string
   custom_size?: CustomSize | null
   quality?: number | null // compress/convert only (FR-027)
+  /** specs/007-video-editor-player — the editor's settings, applied to the
+      upscaled result as a second pass. Omitted means "no edits", and the job
+      behaves exactly as it did before the unified screen existed. */
+  edits?: unknown
 }
 
 export type JobStatusValue =

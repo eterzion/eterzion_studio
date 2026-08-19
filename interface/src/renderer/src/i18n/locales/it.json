@@ -72,6 +72,7 @@
       "open": "Apri l’editor video",
       "panelPending": "I controlli di modifica arrivano nei passaggi successivi.",
       "ready": "Pronto per la modifica",
+      "runAll": "Elabora tutti",
       "title": "Editor video",
       "uploadSubtitle": "oppure usa i pulsanti qui sotto per scegliere i file",
       "uploadTitle": "Trascina qui i video"
@@ -161,6 +162,23 @@
       "transport": "Comandi di riproduzione",
       "unmute": "Attiva audio",
       "volume": "Volume"
+    },
+    "secondary": {
+      "chapters": "Capitoli",
+      "extra_audio_tracks": "Tracce audio aggiuntive",
+      "proceed": "Continua comunque",
+      "subtitles": "Sottotitoli incorporati",
+      "warning": "Questa elaborazione scarterà parti del file:"
+    },
+    "status": {
+      "awaiting_confirmation": "In attesa di conferma",
+      "cancelled": "Annullato",
+      "creating": "Preparazione…",
+      "done": "Completato",
+      "error": "Errore",
+      "idle": "Pronto",
+      "processing": "Elaborazione",
+      "queued": "In coda"
     }
   }
 }

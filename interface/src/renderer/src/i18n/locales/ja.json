@@ -72,6 +72,7 @@
       "open": "動画エディターを開く",
       "panelPending": "編集コントロールは次の段階で追加されます。",
       "ready": "編集の準備完了",
+      "runAll": "すべて処理",
       "title": "動画エディター",
       "uploadSubtitle": "下のボタンからファイルを選ぶこともできます",
       "uploadTitle": "ここに動画をドロップ"
@@ -161,6 +162,23 @@
       "transport": "再生コントロール",
       "unmute": "ミュート解除",
       "volume": "音量"
+    },
+    "secondary": {
+      "chapters": "チャプター",
+      "extra_audio_tracks": "追加の音声トラック",
+      "proceed": "それでも続行",
+      "subtitles": "埋め込み字幕",
+      "warning": "この処理でファイルの一部が失われます:"
+    },
+    "status": {
+      "awaiting_confirmation": "確認待ち",
+      "cancelled": "キャンセル済み",
+      "creating": "準備中…",
+      "done": "完了",
+      "error": "エラー",
+      "idle": "準備完了",
+      "processing": "処理中",
+      "queued": "待機中"
     }
   }
 }

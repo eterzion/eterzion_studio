@@ -72,6 +72,7 @@
       "open": "Abrir editor de vídeo",
       "panelPending": "Os controlos de edição chegam nas próximas etapas.",
       "ready": "Pronto para editar",
+      "runAll": "Processar todos",
       "title": "Editor de vídeo",
       "uploadSubtitle": "ou use os botões abaixo para escolher os ficheiros",
       "uploadTitle": "Arraste vídeos para aqui"
@@ -161,6 +162,23 @@
       "transport": "Controlos de reprodução",
       "unmute": "Ativar som",
       "volume": "Volume"
+    },
+    "secondary": {
+      "chapters": "Capítulos",
+      "extra_audio_tracks": "Faixas de áudio extra",
+      "proceed": "Continuar mesmo assim",
+      "subtitles": "Legendas incorporadas",
+      "warning": "Este processamento vai descartar partes do ficheiro:"
+    },
+    "status": {
+      "awaiting_confirmation": "A aguardar confirmação",
+      "cancelled": "Cancelado",
+      "creating": "A preparar…",
+      "done": "Concluído",
+      "error": "Erro",
+      "idle": "Pronto",
+      "processing": "A processar",
+      "queued": "Na fila"
     }
   }
 }

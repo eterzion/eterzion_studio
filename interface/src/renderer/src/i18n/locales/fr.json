@@ -72,6 +72,7 @@
       "open": "Ouvrir l’éditeur vidéo",
       "panelPending": "Les commandes d’édition arrivent aux étapes suivantes.",
       "ready": "Prêt à modifier",
+      "runAll": "Tout traiter",
       "title": "Éditeur vidéo",
       "uploadSubtitle": "ou utilisez les boutons ci-dessous pour choisir les fichiers",
       "uploadTitle": "Déposez des vidéos ici"
@@ -161,6 +162,23 @@
       "transport": "Commandes de lecture",
       "unmute": "Activer le son",
       "volume": "Volume"
+    },
+    "secondary": {
+      "chapters": "Chapitres",
+      "extra_audio_tracks": "Pistes audio supplémentaires",
+      "proceed": "Continuer quand même",
+      "subtitles": "Sous-titres intégrés",
+      "warning": "Ce traitement va supprimer des parties du fichier :"
+    },
+    "status": {
+      "awaiting_confirmation": "En attente de confirmation",
+      "cancelled": "Annulé",
+      "creating": "Préparation…",
+      "done": "Terminé",
+      "error": "Erreur",
+      "idle": "Prêt",
+      "processing": "Traitement",
+      "queued": "En file"
     }
   }
 }

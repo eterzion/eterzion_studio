@@ -72,6 +72,7 @@
       "open": "Video-Editor öffnen",
       "panelPending": "Die Bearbeitungsregler folgen in den nächsten Schritten.",
       "ready": "Bereit zum Bearbeiten",
+      "runAll": "Alle verarbeiten",
       "title": "Video-Editor",
       "uploadSubtitle": "oder wählen Sie die Dateien über die Schaltflächen unten",
       "uploadTitle": "Videos hier ablegen"
@@ -161,6 +162,23 @@
       "transport": "Wiedergabesteuerung",
       "unmute": "Ton einschalten",
       "volume": "Lautstärke"
+    },
+    "secondary": {
+      "chapters": "Kapitel",
+      "extra_audio_tracks": "Zusätzliche Tonspuren",
+      "proceed": "Trotzdem fortfahren",
+      "subtitles": "Eingebettete Untertitel",
+      "warning": "Dabei gehen Teile der Datei verloren:"
+    },
+    "status": {
+      "awaiting_confirmation": "Warten auf Bestätigung",
+      "cancelled": "Abgebrochen",
+      "creating": "Wird vorbereitet…",
+      "done": "Fertig",
+      "error": "Fehler",
+      "idle": "Bereit",
+      "processing": "Wird verarbeitet",
+      "queued": "In Warteschlange"
     }
   }
 }

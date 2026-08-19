@@ -72,6 +72,7 @@
       "open": "Open video editor",
       "panelPending": "Editing controls arrive in the next steps.",
       "ready": "Ready to edit",
+      "runAll": "Process all",
       "title": "Video editor",
       "uploadSubtitle": "or use the buttons below to choose files",
       "uploadTitle": "Drop videos here"
@@ -161,6 +162,23 @@
       "transport": "Playback controls",
       "unmute": "Unmute",
       "volume": "Volume"
+    },
+    "secondary": {
+      "chapters": "Chapters",
+      "extra_audio_tracks": "Extra audio tracks",
+      "proceed": "Continue anyway",
+      "subtitles": "Embedded subtitles",
+      "warning": "This will discard parts of the file:"
+    },
+    "status": {
+      "awaiting_confirmation": "Awaiting confirmation",
+      "cancelled": "Cancelled",
+      "creating": "Preparing…",
+      "done": "Done",
+      "error": "Error",
+      "idle": "Ready",
+      "processing": "Processing",
+      "queued": "Queued"
     }
   }
 }

@@ -14,7 +14,7 @@ import {
 } from '../../services/api'
 import { PROFILE_OPTIONS } from '../../constants/processing'
 import type { Profile } from '../../services/api'
-import type { ExportState } from '../../composables/useVideoExport'
+import type { ProcessingState } from '../../composables/useVideoProcessing'
 
 // T064/T072 (specs/007-video-editor-player) — FR-018, FR-027, FR-025.
 //
@@ -24,7 +24,7 @@ import type { ExportState } from '../../composables/useVideoExport'
 // the reason GET /video/export-options exists.
 
 const props = defineProps<{
-  state: ExportState | null
+  state: ProcessingState | null
   /** Chosen in the view, which owns the native dialog. Held there rather than
       here so the button label reflects the real destination — a local ref would
       always have read "same folder" no matter what was picked. */

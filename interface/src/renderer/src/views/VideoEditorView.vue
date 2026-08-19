@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertCircle } from '@lucide/vue'
+import { AlertCircle, AlertTriangle, Play } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
+import AppButton from '../components/atoms/AppButton.vue'
 import VideoPlayer from '../components/video/VideoPlayer.vue'
+import VideoEnhancePanel, { type EnhanceSettings } from '../components/video/VideoEnhancePanel.vue'
 import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
 import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
 import VideoTrimHandles from '../components/video/VideoTrimHandles.vue'
@@ -19,27 +21,22 @@ import {
   type VideoTrim
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
-import { useVideoExport } from '../composables/useVideoExport'
-import {
-  registerMediaHandle,
-  type MediaHandle,
-  type Profile,
-  type VideoContainer
-} from '../services/api'
-import { api, hasNativeApi } from '../services/native'
-import type { DescribedFile } from '../services/native'
+import { useVideoProcessing, type VideoRequest } from '../composables/useVideoProcessing'
+import { registerMediaHandle, type MediaHandle, type VideoContainer } from '../services/api'
+import { api, hasNativeApi, type DescribedFile } from '../services/native'
 
-// T031 (specs/007-video-editor-player) — the video editing area.
+// The one Vídeo screen (specs/007-video-editor-player, FR-032 as amended).
 //
-// Layout comes from MediaEditorShell, which the Imagem screen established and
-// which knows nothing about jobs or processing (Princípio II: reuse it, do not
-// grow a second one alongside).
+// Replaces both the editor and the separate upscale screen. The two used to
+// coexist as modes, which was my reading of an ambiguous requirement; the
+// product decision is one screen, so VideoView.vue is retired rather than left
+// beside this as a second way to do the same thing (Princípio X: dead code is
+// deleted, not archived).
 //
-// Handle registration happens in this view's addFile, not inside usePickFiles.
-// tasks.md T019 records the reasoning: usePickFiles is shared with Áudio and the
-// batch screens, and registering there would impose an API round trip on
-// imports that need no handle. The addFile callback is the per-screen extension
-// point, which is exactly what it is being used as here.
+// Everything the old screen could do still happens here: content type, scale,
+// profile, device, batch processing, and — the one that matters most — the
+// secondary-elements confirmation, which warns before enhance silently drops
+// extra audio tracks, subtitles or chapters.
 
 defineEmits<{ back: [] }>()
 
@@ -47,36 +44,57 @@ const { t } = useI18n()
 
 interface EditorVideo {
   handle: MediaHandle
-  /** Kept for the astros-media:// preview URL only. Never sent to the API —
-      every call uses handle.handle_id (Princípio XIII). */
+  /** For the astros-media:// preview URL and the enhance route, which predates
+      handles. Never sent to the edit routes — those take handle_id only
+      (Princípio XIII). */
   sourcePath: string
 }
 
 const videos = ref<EditorVideo[]>([])
 const activeId = ref<string | null>(null)
 const importError = ref<string | null>(null)
+const exportDirectory = ref<string | null>(null)
+const container = ref<VideoContainer>('mp4')
 
 const active = computed(
   () => videos.value.find((v) => v.handle.handle_id === activeId.value) ?? null
 )
 
-// Edits are keyed by handle, so switching videos cannot carry one file's
-// settings onto another (FR-003).
 const edits = useVideoEdits(activeId)
-
-// Same conversions the player uses, for the trim readout in the panel.
 const timeline = useVideoTimeline(computed(() => active.value?.handle ?? null))
-const exporter = useVideoExport()
-const exportDirectory = ref<string | null>(null)
+const processing = useVideoProcessing()
+
+// Enhance settings are per video for the same reason edits are: a batch of
+// clips rarely wants one scale for all of them, and carrying one video's choice
+// onto another silently is the bug nobody notices until the output is wrong.
+const enhanceByHandle = reactive(new Map<string, EnhanceSettings>())
+
+function enhanceFor(handleId: string): EnhanceSettings {
+  let settings = enhanceByHandle.get(handleId)
+  if (!settings) {
+    settings = {
+      scale: 'none',
+      customWidth: null,
+      customHeight: null,
+      contentType: 'real_video',
+      profile: 'balanced',
+      device: 'auto'
+    }
+    enhanceByHandle.set(handleId, settings)
+  }
+  return settings
+}
+
+const activeEnhance = computed(() =>
+  activeId.value ? enhanceFor(activeId.value) : enhanceFor('__none__')
+)
 
 const items = computed<EditorItem[]>(() =>
   videos.value.map((v) => ({
     id: v.handle.handle_id,
     fileName: v.handle.display_name,
     sourcePath: v.sourcePath,
-    statusLabel: v.handle.frame_rate_is_variable
-      ? t('videoEditor.player.frameUnavailable')
-      : t('videoEditor.editor.ready'),
+    statusLabel: t(`videoEditor.status.${processing.stateFor(v.handle.handle_id).status}`),
     kind: 'video' as const
   }))
 )
@@ -98,7 +116,7 @@ const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
   ['video']
 )
 
-// The panel emits; the view applies. Keeping the write here is what makes
+// The panels emit; the view applies. Keeping the writes here is what makes
 // useVideoEdits the single owner of edit state.
 function setAdjustment(key: keyof VideoAdjustments, value: number): void {
   if (activeId.value) edits.editsFor(activeId.value).adjustments[key] = value
@@ -107,7 +125,6 @@ function setAdjustment(key: keyof VideoAdjustments, value: number): void {
 function setEffect(key: keyof VideoEffects, value: number | boolean): void {
   if (!activeId.value) return
   const effects = edits.editsFor(activeId.value).effects
-  // The key decides the type: a toggle takes the boolean, a strength the number.
   if (typeof value === 'boolean') (effects[key] as boolean) = value
   else (effects[key] as number) = value
 }
@@ -120,42 +137,72 @@ function setTrim(trim: VideoTrim | null): void {
   if (activeId.value) edits.editsFor(activeId.value).trim = trim
 }
 
+function setEnhance(patch: Partial<EnhanceSettings>): void {
+  if (activeId.value) Object.assign(enhanceFor(activeId.value), patch)
+}
+
 async function pickDirectory(): Promise<void> {
   if (!hasNativeApi) return
   exportDirectory.value = await api.selectOutputFolder(exportDirectory.value ?? undefined)
 }
 
-function startExport(choice: { container: VideoContainer; profile: Profile }): void {
-  if (!activeId.value || !active.value) return
-  exporter.start(
-    activeId.value,
-    {
-      handle_id: activeId.value,
-      edits: JSON.parse(JSON.stringify(edits.current.value)),
-      container: choice.container,
-      profile: choice.profile,
-      output_directory: exportDirectory.value,
-      conflict: 'rename'
-    },
-    {
-      displayName: active.value.handle.display_name,
-      sourcePath: active.value.sourcePath
-    }
-  )
+function requestFor(video: EditorVideo): VideoRequest {
+  return {
+    handleId: video.handle.handle_id,
+    displayName: video.handle.display_name,
+    sourcePath: video.sourcePath,
+    edits: JSON.parse(JSON.stringify(edits.editsFor(video.handle.handle_id))),
+    enhance: { ...enhanceFor(video.handle.handle_id) },
+    container: container.value,
+    directory: exportDirectory.value
+  }
 }
+
+function runActive(choice: { container: VideoContainer }): void {
+  if (!active.value) return
+  container.value = choice.container
+  processing.start(requestFor(active.value))
+}
+
+/** Batch, kept from the old screen: every video that is not already running. */
+function runAll(): void {
+  for (const video of videos.value) {
+    if (!processing.isBusy(video.handle.handle_id)) processing.start(requestFor(video))
+  }
+}
+
+const pendingCount = computed(
+  () => videos.value.filter((v) => !processing.isBusy(v.handle.handle_id)).length
+)
+
+const activeState = computed(() => (activeId.value ? processing.stateFor(activeId.value) : null))
+
+// FR-081 to FR-086. The list is what enhance would drop; the person decides
+// before anything is processed.
+// `losses` is the backend's own list of what would be dropped — the same
+// strings VideoView mapped through LOSS_LABELS. Reading it rather than
+// re-deriving from the stream counts means the warning cannot disagree with
+// what the backend actually decided.
+const losses = computed(() => activeState.value?.secondaryElements?.losses ?? [])
 
 function remove(id: string): void {
   videos.value = videos.value.filter((v) => v.handle.handle_id !== id)
-  // Drop the edits with the video: keeping them would resurrect settings if the
-  // same file were imported again, which is not what removing it means.
   edits.forget(id)
+  enhanceByHandle.delete(id)
   if (activeId.value === id) activeId.value = videos.value[0]?.handle.handle_id ?? null
 }
 </script>
 
 <template>
   <div class="flex h-full flex-col">
-    <TopBar :title="t('videoEditor.editor.title')" @back="$emit('back')" />
+    <TopBar :title="t('videoEditor.editor.title')" show-back @back="$emit('back')">
+      <template #actions>
+        <AppButton variant="outline" :disabled="!pendingCount" @click="runAll">
+          <template #icon><Play :size="15" /></template>
+          {{ t('videoEditor.editor.runAll') }}
+        </AppButton>
+      </template>
+    </TopBar>
 
     <p
       v-if="importError"
@@ -165,10 +212,6 @@ function remove(id: string): void {
       {{ importError }}
     </p>
 
-    <!-- UploadZone's defaults are the Imagem screen's — "Arraste imagens aqui",
-         PNG/JPG/WEBP. Left unset they render an image prompt inside a video
-         editor, which is what a browser check caught. The prop is `loading`,
-         not `uploading`. -->
     <UploadZone
       v-if="videos.length === 0"
       :loading="uploading"
@@ -207,7 +250,41 @@ function remove(id: string): void {
       </template>
 
       <template #panel>
-        <!-- Transform, trim and export arrive with T047, T048 and T064. -->
+        <!-- FR-081 to FR-086: what enhance would silently drop, shown BEFORE
+             anything is processed. Carried over from the old screen — losing it
+             in the unification would mean deleting people's subtitles without
+             telling them. -->
+        <div
+          v-if="losses.length"
+          class="flex flex-col gap-2 rounded border border-state-danger bg-state-danger-soft px-3 py-2"
+        >
+          <p class="flex items-start gap-2 text-(length:--fs-caption) text-state-danger">
+            <AlertTriangle :size="14" class="mt-0.5 shrink-0" />
+            {{ t('videoEditor.secondary.warning') }}
+          </p>
+          <ul class="ml-6 list-disc text-(length:--fs-caption) text-text-secondary">
+            <li v-for="loss in losses" :key="loss">
+              {{ t(`videoEditor.secondary.${loss}`, loss) }}
+            </li>
+          </ul>
+          <AppButton
+            variant="danger"
+            size="sm"
+            class="self-start"
+            @click="activeId && processing.confirm(activeId)"
+          >
+            {{ t('videoEditor.secondary.proceed') }}
+          </AppButton>
+        </div>
+
+        <VideoEnhancePanel
+          :settings="activeEnhance"
+          :source-width="active?.handle.width ?? null"
+          :source-height="active?.handle.height ?? null"
+          :disabled="!active || processing.isBusy(activeId ?? '')"
+          @update="setEnhance"
+        />
+
         <VideoAdjustmentsPanel
           :adjustments="edits.current.value.adjustments"
           :effects="edits.current.value.effects"
@@ -230,11 +307,11 @@ function remove(id: string): void {
         />
 
         <VideoExportPanel
-          :state="activeId ? exporter.stateFor(activeId) : null"
+          :state="activeState"
           :directory="exportDirectory"
           :disabled="!active"
-          @export="startExport"
-          @cancel="activeId && exporter.cancel(activeId)"
+          @export="runActive"
+          @cancel="activeId && processing.cancel(activeId)"
           @pick-directory="pickDirectory"
         />
       </template>

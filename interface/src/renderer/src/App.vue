@@ -8,7 +8,6 @@ import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
-import VideoView from './views/VideoView.vue'
 import VideoEditorView from './views/VideoEditorView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
@@ -78,17 +77,12 @@ onMounted(() => {
            panel each screen was showing. Everything else is deliberately NOT
            cached: Histórico and Configurações load their data on mount and
            would go stale. -->
-      <KeepAlive v-else :include="['VideoView', 'AudioView']">
+      <KeepAlive v-else :include="['VideoEditorView', 'AudioView']">
         <HomeView v-if="active === 'home'" @navigate="navigate" />
         <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
         <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
         <SettingsView v-else-if="active === 'configuracoes'" />
-        <VideoView
-          v-else-if="active === 'video'"
-          @back="active = 'home'"
-          @open-editor="active = 'video-editor'"
-        />
-        <VideoEditorView v-else-if="active === 'video-editor'" @back="active = 'video'" />
+        <VideoEditorView v-else-if="active === 'video'" @back="active = 'home'" />
         <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
         <div v-else class="placeholder-view">
           <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
