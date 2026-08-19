@@ -27,6 +27,7 @@ import {
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import SettingRow from '../components/SettingRow.vue'
+import NumberStepper from '../components/NumberStepper.vue'
 import SettingSwitch from '../components/SettingSwitch.vue'
 import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
@@ -341,23 +342,23 @@ const outputFolderLabel = computed(
           <div class="group-header">
             <div class="group-icon icon-chip"><HistoryIcon :size="18" /></div>
             <div>
-              <h2 class="group-title">Histórico</h2>
+              <h2 class="group-title">{{ t('history.title') }}</h2>
               <p class="group-description">
-                {{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente
+                {{ t('history.storedCount', historyCount) }}
               </p>
             </div>
           </div>
           <div class="group-body">
             <SettingRow
-              label="Limite máximo de registros"
-              description="Os mais antigos são removidos ao ultrapassar"
+              :label="t('history.limitSettingLabel')"
+              :description="t('history.limitSettingDescription')"
             >
-              <input
-                v-model.number="settingsState.historyLimit"
-                type="number"
-                min="1"
-                max="5000"
-                class="number-input"
+              <NumberStepper
+                v-model="settingsState.historyLimit"
+                compact
+                :min="1"
+                :max="5000"
+                :aria-label="t('history.limitSettingLabel')"
               />
             </SettingRow>
             <SettingRow
@@ -783,17 +784,6 @@ const outputFolderLabel = computed(
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
-}
-
-.number-input {
-  width: 90px;
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 7px 10px;
-  font-size: var(--fs-label);
-  font-family: var(--font-mono);
 }
 
 .licensing-url-input {

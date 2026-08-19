@@ -11,7 +11,7 @@ import ComparisonStats from '../components/ComparisonStats.vue'
 import BatchExportModal from '../components/BatchExportModal.vue'
 import AppSelect from '../components/AppSelect.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
-import ResolutionStepper from '../components/ResolutionStepper.vue'
+import NumberStepper from '../components/NumberStepper.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import ProgressBar from '../components/atoms/ProgressBar.vue'
@@ -705,7 +705,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 </button>
               </div>
               <div class="steppers-row">
-                <ResolutionStepper
+                <NumberStepper
                   label="Largura"
                   :model-value="job.scaleConfig.customWidth ?? job.sourceMeta.width ?? 0"
                   :min="
@@ -720,7 +720,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                   "
                   @update:model-value="(v) => onCustomWidthInput(job!, String(v))"
                 />
-                <ResolutionStepper
+                <NumberStepper
                   label="Altura"
                   :model-value="job.scaleConfig.customHeight ?? job.sourceMeta.height ?? 0"
                   :min="

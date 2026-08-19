@@ -1,7 +1,9 @@
 {
   "actions": {
+    "decrease": "Diminuisci",
     "exportAll": "Esporta tutto",
     "import": "Importa",
+    "increase": "Aumenta",
     "noAudioSelected": "Nessun audio selezionato",
     "noImageSelected": "Nessuna immagine selezionata",
     "noVideoSelected": "Nessun video selezionato",
@@ -67,7 +69,11 @@
     "emptyTitle": "Nessuna elaborazione effettuata",
     "last30": "Ultimi 30 giorni",
     "last7": "Ultimi 7 giorni",
+    "limitLabel": "Limite di voci",
+    "limitSettingDescription": "Le più vecchie vengono rimosse al superamento",
+    "limitSettingLabel": "Numero massimo di voci",
     "newest": "Più recenti",
+    "noFilterMatch": "Nessun elemento corrisponde ai filtri attuali.",
     "oldest": "Meno recenti",
     "resAsc": "Risoluzione più bassa",
     "resDesc": "Risoluzione più alta",
@@ -75,6 +81,7 @@
     "reuseTooOld": "Questa configurazione precede l’aggiornamento e non può più essere riutilizzata — impostala di nuovo.",
     "sizeAsc": "Dimensione minore",
     "sizeDesc": "Dimensione maggiore",
+    "storedCount": "{n} voce salvata localmente | {n} voci salvate localmente",
     "title": "Cronologia",
     "today": "Oggi"
   },

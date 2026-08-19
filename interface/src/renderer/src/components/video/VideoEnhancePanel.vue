@@ -5,7 +5,7 @@ import CollapsiblePanel from '../CollapsiblePanel.vue'
 import SettingRow from '../SettingRow.vue'
 import AppSelect from '../AppSelect.vue'
 import SegmentedControl from '../SegmentedControl.vue'
-import ResolutionStepper from '../ResolutionStepper.vue'
+import NumberStepper from '../NumberStepper.vue'
 import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../../constants/processing'
 import type { ContentType, Profile } from '../../services/api'
 
@@ -100,13 +100,13 @@ const resultSize = computed(() => {
     <template v-if="settings.scale === 'custom'">
       <SettingRow :label="t('videoEditor.enhance.customSize')">
         <div class="flex items-center gap-2">
-          <ResolutionStepper
+          <NumberStepper
             :model-value="settings.customWidth ?? sourceWidth ?? 0"
             :label="t('videoEditor.enhance.width')"
             :disabled="disabled"
             @update:model-value="emit('update', { customWidth: $event })"
           />
-          <ResolutionStepper
+          <NumberStepper
             :model-value="settings.customHeight ?? sourceHeight ?? 0"
             :label="t('videoEditor.enhance.height')"
             :disabled="disabled"

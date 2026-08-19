@@ -1,7 +1,9 @@
 {
   "actions": {
+    "decrease": "Verringern",
     "exportAll": "Alle exportieren",
     "import": "Importieren",
+    "increase": "Erhöhen",
     "noAudioSelected": "Kein Audio ausgewählt",
     "noImageSelected": "Kein Bild ausgewählt",
     "noVideoSelected": "Kein Video ausgewählt",
@@ -67,7 +69,11 @@
     "emptyTitle": "Noch nichts verarbeitet",
     "last30": "Letzte 30 Tage",
     "last7": "Letzte 7 Tage",
+    "limitLabel": "Eintragsgrenze",
+    "limitSettingDescription": "Die ältesten werden bei Überschreitung entfernt",
+    "limitSettingLabel": "Maximale Anzahl an Einträgen",
     "newest": "Neueste zuerst",
+    "noFilterMatch": "Kein Eintrag entspricht den aktuellen Filtern.",
     "oldest": "Älteste zuerst",
     "resAsc": "Niedrigste Auflösung",
     "resDesc": "Höchste Auflösung",
@@ -75,6 +81,7 @@
     "reuseTooOld": "Diese Konfiguration stammt aus der Zeit vor dem Update und kann nicht mehr wiederverwendet werden — bitte neu einrichten.",
     "sizeAsc": "Kleinste Datei",
     "sizeDesc": "Größte Datei",
+    "storedCount": "{n} Eintrag lokal gespeichert | {n} Einträge lokal gespeichert",
     "title": "Verlauf",
     "today": "Heute"
   },

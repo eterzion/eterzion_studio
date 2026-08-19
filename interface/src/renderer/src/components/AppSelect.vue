@@ -222,9 +222,9 @@ watch(filteredOptions, () => {
                narrower than the menu it opens. Measuring text in JS would need
                the font to have loaded and would re-run on every resize; the
                browser already does this correctly during layout. -->
-          <span v-for="option in options" :key="`sizer-${option.value}`" class="trigger-sizer"
-            >{{ option.label }}</span
-          >
+          <span v-for="option in options" :key="`sizer-${option.value}`" class="trigger-sizer">{{
+            option.label
+          }}</span>
         </slot>
       </span>
       <AppSpinner v-if="loading" :size="15" class="trigger-icon" />

@@ -2,13 +2,12 @@
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { KeyRound, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2 } from '@lucide/vue'
-import { licenseState, activateLicense, deactivateLicense } from '../store/license'
+import { licenseState, deactivateLicense } from '../store/license'
 import AppButton from './atoms/AppButton.vue'
 
 const { t } = useI18n()
 
 const open = ref(false)
-const licenseInput = ref('')
 const root = ref<HTMLElement | null>(null)
 
 const meta = computed(() => {
@@ -33,12 +32,6 @@ const meta = computed(() => {
       return { icon: ShieldQuestion, label: t('license.generic'), tone: 'neutral' }
   }
 })
-
-async function submit(): Promise<void> {
-  if (!licenseInput.value.trim()) return
-  await activateLicense(licenseInput.value.trim())
-  if (licenseState.status === 'active') licenseInput.value = ''
-}
 
 function onDocClick(e: MouseEvent): void {
   if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false
@@ -66,6 +59,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 
     <div v-if="open" class="license-popover">
       <p class="popover-title">{{ t('license.title') }}</p>
+      <!-- The state in words. Without it the popover can open showing nothing
+           but its own title: installations, offline days and the deactivate
+           button are all conditional, and none of them applies to, say, a
+           licence that is simply not configured. -->
+      <p class="popover-detail" :class="'tone-' + meta.tone">
+        <component :is="meta.icon" :size="13" />
+        {{ meta.label }}
+      </p>
       <p v-if="licenseState.installationsLimit" class="popover-detail">
         {{
           t('license.installations', {
@@ -87,34 +88,20 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           licenseState.status === 'offline_expiring'
         "
       >
-        <p class="popover-detail success"><ShieldCheck :size="13" /> {{ t('license.activeHere') }}</p>
+        <p class="popover-detail success">
+          <ShieldCheck :size="13" /> {{ t('license.activeHere') }}
+        </p>
         <AppButton variant="danger" class="mt-1" @click="deactivateLicense">
           {{ t('license.deactivate') }}
         </AppButton>
       </template>
 
-      <template v-else>
-        <label class="popover-label" for="license-id-input">{{ t('license.idLabel') }}</label>
-        <input
-          id="license-id-input"
-          v-model="licenseInput"
-          type="text"
-          placeholder="lic_..."
-          class="popover-input"
-          :disabled="licenseState.status === 'checking'"
-          @keydown.enter="submit"
-        />
-        <p class="popover-hint">{{ t('license.idHint') }}</p>
-        <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
-        <AppButton
-          variant="primary"
-          class="mt-1"
-          :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
-          @click="submit"
-        >
-          {{ licenseState.status === 'checking' ? t('license.activating') : t('license.activate') }}
-        </AppButton>
-      </template>
+      <!-- No activation form here. `not_activated` and `blocked` are hard
+           blocks (isHardBlocked in store/license.ts): LicenseActivationView
+           takes over the whole window, so this popover is unreachable in
+           exactly the states a form would serve. What is left for it to say is
+           whether the licence is working — and, when it is not, why. -->
+      <p v-else-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
     </div>
   </div>
 </template>
@@ -226,6 +213,18 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .popover-hint {
   font-size: 11px;
   color: var(--text-tertiary);
+}
+
+.popover-detail.tone-success {
+  color: var(--color-success);
+}
+
+.popover-detail.tone-warning {
+  color: var(--color-warning);
+}
+
+.popover-detail.tone-danger {
+  color: var(--color-danger);
 }
 
 .popover-error {

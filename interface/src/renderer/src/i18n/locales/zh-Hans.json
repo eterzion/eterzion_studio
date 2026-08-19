@@ -1,7 +1,9 @@
 {
   "actions": {
+    "decrease": "减少",
     "exportAll": "全部导出",
     "import": "导入",
+    "increase": "增加",
     "noAudioSelected": "未选择音频",
     "noImageSelected": "未选择图片",
     "noVideoSelected": "未选择视频",
@@ -67,7 +69,11 @@
     "emptyTitle": "尚未处理任何内容",
     "last30": "最近 30 天",
     "last7": "最近 7 天",
+    "limitLabel": "记录上限",
+    "limitSettingDescription": "超出后会删除最早的记录",
+    "limitSettingLabel": "最大记录数",
     "newest": "最新优先",
+    "noFilterMatch": "没有符合当前筛选条件的项目。",
     "oldest": "最早优先",
     "resAsc": "分辨率从低到高",
     "resDesc": "分辨率从高到低",
@@ -75,6 +81,7 @@
     "reuseTooOld": "该配置早于本次更新，已无法复用，请重新设置。",
     "sizeAsc": "体积从小到大",
     "sizeDesc": "体积从大到小",
+    "storedCount": "本地已保存 {n} 条记录",
     "title": "历史记录",
     "today": "今天"
   },

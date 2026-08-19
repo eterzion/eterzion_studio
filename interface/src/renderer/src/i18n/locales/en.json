@@ -1,7 +1,9 @@
 {
   "actions": {
+    "decrease": "Decrease",
     "exportAll": "Export all",
     "import": "Import",
+    "increase": "Increase",
     "noAudioSelected": "No audio selected",
     "noImageSelected": "No image selected",
     "noVideoSelected": "No video selected",
@@ -67,7 +69,11 @@
     "emptyTitle": "Nothing processed yet",
     "last30": "Last 30 days",
     "last7": "Last 7 days",
+    "limitLabel": "Entry limit",
+    "limitSettingDescription": "The oldest are dropped when the limit is passed",
+    "limitSettingLabel": "Maximum number of entries",
     "newest": "Newest first",
+    "noFilterMatch": "No item matches the current filters.",
     "oldest": "Oldest first",
     "resAsc": "Lowest resolution",
     "resDesc": "Highest resolution",
@@ -75,6 +81,7 @@
     "reuseTooOld": "This configuration predates the update and can no longer be reused — set it up again.",
     "sizeAsc": "Smallest size",
     "sizeDesc": "Largest size",
+    "storedCount": "{n} entry stored locally | {n} entries stored locally",
     "title": "History",
     "today": "Today"
   },

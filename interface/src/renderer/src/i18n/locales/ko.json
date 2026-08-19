@@ -1,7 +1,9 @@
 {
   "actions": {
+    "decrease": "감소",
     "exportAll": "모두 내보내기",
     "import": "가져오기",
+    "increase": "증가",
     "noAudioSelected": "선택된 오디오 없음",
     "noImageSelected": "선택된 이미지 없음",
     "noVideoSelected": "선택된 비디오 없음",
@@ -67,7 +69,11 @@
     "emptyTitle": "아직 처리한 항목이 없습니다",
     "last30": "최근 30일",
     "last7": "최근 7일",
+    "limitLabel": "기록 상한",
+    "limitSettingDescription": "상한을 넘으면 오래된 것부터 삭제됩니다",
+    "limitSettingLabel": "최대 기록 수",
     "newest": "최신순",
+    "noFilterMatch": "현재 필터와 일치하는 항목이 없습니다.",
     "oldest": "오래된순",
     "resAsc": "해상도 낮은순",
     "resDesc": "해상도 높은순",
@@ -75,6 +81,7 @@
     "reuseTooOld": "이 설정은 업데이트 이전의 것이라 재사용할 수 없습니다 — 다시 설정하세요.",
     "sizeAsc": "크기 작은순",
     "sizeDesc": "크기 큰순",
+    "storedCount": "로컬에 {n}개 저장됨",
     "title": "기록",
     "today": "오늘"
   },

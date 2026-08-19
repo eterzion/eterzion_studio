@@ -17,6 +17,7 @@ import {
   Image as ImageIcon
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
+import NumberStepper from '../components/NumberStepper.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppBadge from '../components/atoms/AppBadge.vue'
 import EmptyState from '../components/molecules/EmptyState.vue'
@@ -63,7 +64,9 @@ function contentTypeLabel(entry: HistoryEntry): string {
   if (!entry.contentType) return t('contentType.archived')
   // Falling back to the raw value keeps an unknown type visible instead of
   // blank — an entry from a future version should still say something.
-  return te(`contentType.${entry.contentType}`) ? t(`contentType.${entry.contentType}`) : entry.contentType
+  return te(`contentType.${entry.contentType}`)
+    ? t(`contentType.${entry.contentType}`)
+    : entry.contentType
 }
 
 const undoEntry = ref<HistoryEntry | null>(null)
@@ -83,7 +86,10 @@ const contentTypeOptions = computed(() => {
   for (const e of historyState.entries) if (e.contentType) present.add(e.contentType)
   return [
     { value: 'all', label: t('history.allTypes') },
-    ...Array.from(present).map((c) => ({ value: c, label: te(`contentType.${c}`) ? t(`contentType.${c}`) : c }))
+    ...Array.from(present).map((c) => ({
+      value: c,
+      label: te(`contentType.${c}`) ? t(`contentType.${c}`) : c
+    }))
   ]
 })
 
@@ -141,10 +147,12 @@ const filteredEntries = computed(() => {
   return list
 })
 
-const statusMeta = computed<Record<
-  HistoryStatus,
-  { label: string; icon: unknown; tone: 'success' | 'info' | 'neutral' | 'danger' }
->>(() => ({
+const statusMeta = computed<
+  Record<
+    HistoryStatus,
+    { label: string; icon: unknown; tone: 'success' | 'info' | 'neutral' | 'danger' }
+  >
+>(() => ({
   done: { label: t('status.done'), icon: CircleCheck, tone: 'success' },
   processing: { label: t('status.processing'), icon: LoaderCircle, tone: 'info' },
   queued: { label: t('status.queued'), icon: Clock, tone: 'neutral' },
@@ -198,8 +206,7 @@ async function reuseConfig(entry: HistoryEntry): Promise<void> {
     return
   }
   if (!entry.scaleConfig?.contentType) {
-    reuseError.value =
-      t('history.reuseTooOld')
+    reuseError.value = t('history.reuseTooOld')
     return
   }
   const described = await api.statPath(entry.sourcePath)
@@ -297,15 +304,17 @@ function applyLimit(): void {
           </div>
 
           <div class="limit-control">
-            <label for="history-limit">Limite de registros</label>
-            <input
-              id="history-limit"
-              v-model.number="limitInput"
-              type="number"
-              min="1"
-              max="2000"
-              class="limit-input"
-              @change="applyLimit"
+            <label for="history-limit">{{ t('history.limitLabel') }}</label>
+            <!-- The shared stepper, not a bare number input: the native one
+                 brings its own spin buttons and focus ring, which match the
+                 browser rather than this app. -->
+            <NumberStepper
+              v-model="limitInput"
+              compact
+              :min="1"
+              :max="2000"
+              :aria-label="t('history.limitLabel')"
+              @update:model-value="applyLimit"
             />
           </div>
         </div>
@@ -313,7 +322,7 @@ function applyLimit(): void {
         <p v-if="reuseError" class="banner-error">{{ reuseError }}</p>
 
         <div v-if="!filteredEntries.length" class="empty-filtered">
-          Nenhum item corresponde aos filtros atuais.
+          {{ t('history.noFilterMatch') }}
         </div>
 
         <div v-else class="history-list">
@@ -501,16 +510,6 @@ function applyLimit(): void {
   gap: var(--space-1-5);
   font-size: var(--fs-caption);
   color: var(--text-secondary);
-}
-
-.limit-input {
-  width: 70px;
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 6px 8px;
-  font-size: var(--fs-caption);
 }
 
 .banner-error {
