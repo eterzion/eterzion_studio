@@ -38,7 +38,7 @@ import {
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../services/native'
 import { type ContentType, type Profile } from '../services/api'
-import { ERROR_CATEGORY_COPY } from '../services/api'
+import { errorCategoryCopy } from '../services/api'
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
@@ -581,11 +581,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <span>
                 {{
                   job.errorCategory
-                    ? ERROR_CATEGORY_COPY[job.errorCategory].message
+                    ? errorCategoryCopy(job.errorCategory).message
                     : job.errorMessage
                 }}
                 <template v-if="job.errorCategory">
-                  {{ ERROR_CATEGORY_COPY[job.errorCategory].action }}</template
+                  {{ errorCategoryCopy(job.errorCategory).action }}</template
                 >
               </span>
             </p>

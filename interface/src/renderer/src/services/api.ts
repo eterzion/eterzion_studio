@@ -5,6 +5,8 @@
 // no process.env, and making every call site await the port from the main
 // process would turn a constant into an async dependency for no gain.
 declare const __ASTROS_API_PORT__: string
+import { i18n } from '../i18n'
+
 export const BASE_URL = `http://127.0.0.1:${__ASTROS_API_PORT__}`
 
 // T069/T070 — GET /components (FR-063/FR-064): capability-first, never a raw
@@ -318,31 +320,34 @@ export function defaultAdjustments(): Adjustments {
   }
 }
 
-export const ERROR_CATEGORY_COPY: Record<ErrorCategory, { message: string; action: string }> = {
-  out_of_memory: {
-    message: 'Memória insuficiente para este tamanho de saída.',
-    action: 'Tente reduzir o fator de escala ou o tamanho customizado.'
-  },
-  corrupted_input: {
-    message: 'Não foi possível ler o arquivo de origem.',
-    action: 'Remova este item da fila e tente importar o arquivo novamente.'
-  },
-  model_failure: {
-    message: 'Erro no processamento.',
-    action: 'Tente novamente — se persistir, tente outro modelo ou dispositivo.'
-  },
-  disk_full: {
-    message: 'Espaço em disco insuficiente.',
-    action: 'Escolha outra pasta de destino com mais espaço livre.'
-  },
-  hardware_insufficient: {
-    message: 'Este equipamento não tem capacidade para este processamento.',
-    action: 'Tente um tamanho de saída menor ou o perfil Rápido.'
-  },
-  license_invalid: {
-    message: 'Sua licença não está ativa.',
-    action: 'Verifique o status da sua licença nas Configurações.'
+/** Copy for a failed job, in the current language.
+ *
+ *  A function, not a const object: a const is evaluated once at module load, so
+ *  it would freeze whichever locale happened to be active at startup and never
+ *  follow a language change — which is the bug this sweep exists to fix.
+ *
+ *  Keys live under errors.category.* so the message and its suggested action
+ *  stay together; splitting them invites a message that no longer matches the
+ *  advice beneath it. */
+export function errorCategoryCopy(category: ErrorCategory): { message: string; action: string } {
+  const key = ERROR_CATEGORY_KEYS[category]
+  const t = i18n.global.t
+  return {
+    message: t(`errors.category.${key}.message`),
+    action: t(`errors.category.${key}.action`)
   }
+}
+
+// The API's snake_case categories mapped to the locale files' camelCase keys.
+// Explicit rather than derived, so renaming one side breaks the build here
+// instead of silently rendering a raw identifier on screen.
+const ERROR_CATEGORY_KEYS: Record<ErrorCategory, string> = {
+  out_of_memory: 'outOfMemory',
+  corrupted_input: 'corruptedInput',
+  model_failure: 'modelFailure',
+  disk_full: 'diskFull',
+  hardware_insufficient: 'hardwareInsufficient',
+  license_invalid: 'licenseInvalid'
 }
 
 // --- Video editing (specs/007-video-editor-player) ---

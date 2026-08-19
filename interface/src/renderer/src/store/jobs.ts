@@ -16,6 +16,12 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
+import { i18n } from '../i18n'
+
+// A store has no component instance, so useI18n() does not apply here.
+// Calling through the global instance per message is also what makes a
+// language change take effect immediately rather than at the next reload.
+const t = i18n.global.t
 
 // ------------------------------------------------------------------------- //
 // Data model — mirrors the Spec Kit's Job/ScaleConfig/QueueState, adapted to
@@ -151,7 +157,7 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
     if (f.kind !== 'Imagem') {
       rejected.push({
         name: f.name,
-        reason: 'Formato não suportado (apenas imagens: PNG, JPG, TIFF, WEBP, BMP).'
+        reason: t('errors.job.unsupportedFormat')
       })
       continue
     }
@@ -179,7 +185,7 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
     if (dims && (dims.width > 10000 || dims.height > 10000)) {
       rejected.push({
         name: f.name,
-        reason: 'Resolução de entrada muito alta (acima de 10000px); o upscale pode não ser viável.'
+        reason: t('errors.job.resolutionTooHigh')
       })
       continue
     }
@@ -333,12 +339,12 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   // type — which exists only to pick one — cannot block it. Requiring it here is
   // what left Processar disabled on the one mode that never needed it.
   if (job.scaleConfig.mode !== 'original' && !job.scaleConfig.contentType)
-    return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
+    return { valid: false, reason: t('errors.job.contentTypeMissing') }
 
   const { width: srcW, height: srcH } = job.sourceMeta
   if (job.scaleConfig.mode === 'preset') {
     if (![2, 4].includes(job.scaleConfig.presetFactor))
-      return { valid: false, reason: 'Escolha um fator de escala.' }
+      return { valid: false, reason: t('errors.job.scaleMissing') }
     if (srcW && srcH) {
       const outW = srcW * job.scaleConfig.presetFactor
       const outH = srcH * job.scaleConfig.presetFactor
@@ -354,7 +360,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 
   const w = job.scaleConfig.customWidth
   const h = job.scaleConfig.customHeight
-  if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: 'Informe largura e altura.' }
+  if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: t('errors.job.sizeMissing') }
 
   // 'original' is the mirror of 'custom': it exists precisely to NOT enlarge, so
   // its target may only shrink. Everything else about the job — filters, face
@@ -366,8 +372,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
     if (srcW && srcH && (w > srcW || h > srcH)) {
       return {
         valid: false,
-        reason:
-          'No modo Original o tamanho não pode passar do original — para ampliar, use Predefinido ou Custom.'
+        reason: t('errors.job.originalTooLarge')
       }
     }
     return { valid: true }
@@ -379,7 +384,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   if (srcW && srcH && (w < srcW || h < srcH)) {
     return {
       valid: false,
-      reason: 'O tamanho customizado não pode ser menor que o original (isto é um upscaler).'
+      reason: t('errors.job.customTooSmall')
     }
   }
   return { valid: true }
@@ -427,7 +432,9 @@ function stopWatching(backendJobId: string): void {
 function notifyDone(job: Job): void {
   if (typeof document === 'undefined' || document.hasFocus()) return
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  new Notification('Astros Upscale', { body: `${job.fileName} foi processada com sucesso.` })
+  new Notification('Astros Upscale', {
+    body: t('errors.job.notificationDone', { file: job.fileName })
+  })
 }
 
 function applyApiStatus(job: Job, status: ApiJobStatus): void {
@@ -463,7 +470,7 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
     notifyDone(job)
   } else if (status.status === 'error') {
     job.status = 'error'
-    job.errorMessage = status.error ?? 'Falha no processamento.'
+    job.errorMessage = status.error ?? t('errors.job.processingFailed')
     job.errorCategory = status.error_category ?? undefined
   } else if (status.status === 'cancelled') {
     job.status = 'cancelled'
@@ -535,7 +542,7 @@ export async function startProcessing(job: Job): Promise<void> {
           .then((status) => applyApiStatus(job, status))
           .catch(() => {
             job.status = 'error'
-            job.errorMessage = 'Falha na comunicação com o servidor durante o processamento.'
+            job.errorMessage = t('errors.job.connectionLost')
             recordJob(job, job.status)
           })
       }
@@ -543,7 +550,7 @@ export async function startProcessing(job: Job): Promise<void> {
     jobUnsubscribers.set(backendJobId, unsubscribe)
   } catch (error) {
     job.status = 'error'
-    job.errorMessage = error instanceof Error ? error.message : 'Falha ao criar o job.'
+    job.errorMessage = error instanceof Error ? error.message : t('errors.job.createFailed')
     recordJob(job, job.status)
   }
 }
@@ -580,7 +587,7 @@ export async function exportOne(
   job: Job,
   options: ExportOptions
 ): Promise<{ ok: boolean; path?: string; error?: string }> {
-  if (!job.backendJobId) return { ok: false, error: 'Job sem processamento associado.' }
+  if (!job.backendJobId) return { ok: false, error: t('errors.job.noBackendJob') }
   job.exportState = 'exporting'
   job.exportError = undefined
   const request: ExportRequest = {
