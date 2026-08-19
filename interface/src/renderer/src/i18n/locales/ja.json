@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "フレーム",
-      "frameUnavailable": "フレーム番号は正確ではありません（可変フレームレート）",
-      "mute": "ミュート",
-      "noAudio": "音声トラックなし",
-      "notPreviewable": "この動画はここで表示できません。",
-      "pause": "一時停止",
-      "play": "再生",
-      "previewUnavailable": "この環境では調整プレビューを利用できません",
-      "recalculating": "再計算中…",
-      "stepBack": "前のフレーム",
-      "stepForward": "次のフレーム",
-      "timeline": "タイムライン",
-      "transport": "再生コントロール",
-      "unmute": "ミュート解除",
-      "volume": "音量"
+    "editor": {
+      "addMore": "動画を追加",
+      "importFailed": "動画を読み込めませんでした。",
+      "open": "動画エディターを開く",
+      "panelPending": "編集コントロールは次の段階で追加されます。",
+      "ready": "編集の準備完了",
+      "title": "動画エディター",
+      "uploadSubtitle": "下のボタンからファイルを選ぶこともできます",
+      "uploadTitle": "ここに動画をドロップ"
     },
     "edits": {
       "adjustments": "画像調整",
@@ -109,6 +102,23 @@
       "trimStart": "範囲の開始",
       "wholeVideo": "動画全体"
     },
+    "enhance": {
+      "animeVideo": "アニメ / アニメーション",
+      "animeVideoHint": "アニメ、マンガ調、モーショングラフィックス — 輪郭がはっきりした平坦な色",
+      "contentType": "コンテンツの種類",
+      "custom": "カスタム",
+      "customSize": "出力サイズ",
+      "device": "処理",
+      "height": "高さ",
+      "noUpscale": "拡大しない",
+      "profile": "画質",
+      "realVideo": "実写映像",
+      "realVideoHint": "カメラ、画面録画など、現実世界を撮影したもの",
+      "resultSize": "結果",
+      "scale": "拡大",
+      "title": "高画質化",
+      "width": "幅"
+    },
     "export": {
       "cancel": "キャンセル",
       "container": "形式",
@@ -135,15 +145,22 @@
       "source_changed": "元ファイルが変更されました。",
       "unknown": "書き出しを開始できませんでした。"
     },
-    "editor": {
-      "addMore": "動画を追加",
-      "importFailed": "動画を読み込めませんでした。",
-      "open": "動画エディターを開く",
-      "panelPending": "編集コントロールは次の段階で追加されます。",
-      "ready": "編集の準備完了",
-      "title": "動画エディター",
-      "uploadSubtitle": "下のボタンからファイルを選ぶこともできます",
-      "uploadTitle": "ここに動画をドロップ"
+    "player": {
+      "frame": "フレーム",
+      "frameUnavailable": "フレーム番号は正確ではありません（可変フレームレート）",
+      "mute": "ミュート",
+      "noAudio": "音声トラックなし",
+      "notPreviewable": "この動画はここで表示できません。",
+      "pause": "一時停止",
+      "play": "再生",
+      "previewUnavailable": "この環境では調整プレビューを利用できません",
+      "recalculating": "再計算中…",
+      "stepBack": "前のフレーム",
+      "stepForward": "次のフレーム",
+      "timeline": "タイムライン",
+      "transport": "再生コントロール",
+      "unmute": "ミュート解除",
+      "volume": "音量"
     }
   }
 }

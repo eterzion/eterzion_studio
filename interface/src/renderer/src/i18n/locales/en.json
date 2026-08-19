@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "Frame",
-      "frameUnavailable": "Frame not exact (variable rate)",
-      "mute": "Mute",
-      "noAudio": "No audio track",
-      "notPreviewable": "This video cannot be shown here.",
-      "pause": "Pause",
-      "play": "Play",
-      "previewUnavailable": "Adjusted preview unavailable on this machine",
-      "recalculating": "Recalculating…",
-      "stepBack": "Previous frame",
-      "stepForward": "Next frame",
-      "timeline": "Timeline",
-      "transport": "Playback controls",
-      "unmute": "Unmute",
-      "volume": "Volume"
+    "editor": {
+      "addMore": "Add videos",
+      "importFailed": "Could not import the video.",
+      "open": "Open video editor",
+      "panelPending": "Editing controls arrive in the next steps.",
+      "ready": "Ready to edit",
+      "title": "Video editor",
+      "uploadSubtitle": "or use the buttons below to choose files",
+      "uploadTitle": "Drop videos here"
     },
     "edits": {
       "adjustments": "Image adjustments",
@@ -109,6 +102,23 @@
       "trimStart": "Range start",
       "wholeVideo": "Whole video"
     },
+    "enhance": {
+      "animeVideo": "Anime / animation",
+      "animeVideoHint": "Anime, cartoons, motion graphics — defined lines and flat colour",
+      "contentType": "Content type",
+      "custom": "Custom",
+      "customSize": "Output size",
+      "device": "Processing",
+      "height": "Height",
+      "noUpscale": "No upscale",
+      "profile": "Quality",
+      "realVideo": "Real video (footage)",
+      "realVideoHint": "Camera, screen recording, anything captured from the world",
+      "resultSize": "Result",
+      "scale": "Scale",
+      "title": "Enhancement",
+      "width": "Width"
+    },
     "export": {
       "cancel": "Cancel",
       "container": "Format",
@@ -135,15 +145,22 @@
       "source_changed": "The source file changed. Import it again.",
       "unknown": "The export could not be started."
     },
-    "editor": {
-      "addMore": "Add videos",
-      "importFailed": "Could not import the video.",
-      "open": "Open video editor",
-      "panelPending": "Editing controls arrive in the next steps.",
-      "ready": "Ready to edit",
-      "title": "Video editor",
-      "uploadSubtitle": "or use the buttons below to choose files",
-      "uploadTitle": "Drop videos here"
+    "player": {
+      "frame": "Frame",
+      "frameUnavailable": "Frame not exact (variable rate)",
+      "mute": "Mute",
+      "noAudio": "No audio track",
+      "notPreviewable": "This video cannot be shown here.",
+      "pause": "Pause",
+      "play": "Play",
+      "previewUnavailable": "Adjusted preview unavailable on this machine",
+      "recalculating": "Recalculating…",
+      "stepBack": "Previous frame",
+      "stepForward": "Next frame",
+      "timeline": "Timeline",
+      "transport": "Playback controls",
+      "unmute": "Unmute",
+      "volume": "Volume"
     }
   }
 }

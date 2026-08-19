@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "프레임",
-      "frameUnavailable": "프레임이 정확하지 않음 (가변 프레임 레이트)",
-      "mute": "음소거",
-      "noAudio": "오디오 트랙 없음",
-      "notPreviewable": "이 동영상은 여기에서 표시할 수 없습니다.",
-      "pause": "일시정지",
-      "play": "재생",
-      "previewUnavailable": "이 컴퓨터에서는 조정 미리보기를 사용할 수 없습니다",
-      "recalculating": "다시 계산 중…",
-      "stepBack": "이전 프레임",
-      "stepForward": "다음 프레임",
-      "timeline": "타임라인",
-      "transport": "재생 컨트롤",
-      "unmute": "음소거 해제",
-      "volume": "볼륨"
+    "editor": {
+      "addMore": "비디오 추가",
+      "importFailed": "비디오를 가져오지 못했습니다.",
+      "open": "비디오 편집기 열기",
+      "panelPending": "편집 컨트롤은 다음 단계에서 추가됩니다.",
+      "ready": "편집 준비 완료",
+      "title": "비디오 편집기",
+      "uploadSubtitle": "아래 버튼으로 파일을 선택할 수도 있습니다",
+      "uploadTitle": "여기에 비디오를 놓으세요"
     },
     "edits": {
       "adjustments": "이미지 조정",
@@ -109,6 +102,23 @@
       "trimStart": "구간 시작",
       "wholeVideo": "전체 영상"
     },
+    "enhance": {
+      "animeVideo": "애니메이션",
+      "animeVideoHint": "애니메이션, 만화, 모션 그래픽 — 뚜렷한 선과 단색 면",
+      "contentType": "콘텐츠 유형",
+      "custom": "사용자 지정",
+      "customSize": "출력 크기",
+      "device": "처리",
+      "height": "높이",
+      "noUpscale": "개선 안 함",
+      "profile": "품질",
+      "realVideo": "실사 영상",
+      "realVideoHint": "카메라, 화면 녹화 등 현실 세계를 촬영한 영상",
+      "resultSize": "결과",
+      "scale": "배율",
+      "title": "화질 개선",
+      "width": "너비"
+    },
     "export": {
       "cancel": "취소",
       "container": "형식",
@@ -135,15 +145,22 @@
       "source_changed": "원본 파일이 변경되었습니다.",
       "unknown": "내보내기를 시작할 수 없습니다."
     },
-    "editor": {
-      "addMore": "비디오 추가",
-      "importFailed": "비디오를 가져오지 못했습니다.",
-      "open": "비디오 편집기 열기",
-      "panelPending": "편집 컨트롤은 다음 단계에서 추가됩니다.",
-      "ready": "편집 준비 완료",
-      "title": "비디오 편집기",
-      "uploadSubtitle": "아래 버튼으로 파일을 선택할 수도 있습니다",
-      "uploadTitle": "여기에 비디오를 놓으세요"
+    "player": {
+      "frame": "프레임",
+      "frameUnavailable": "프레임이 정확하지 않음 (가변 프레임 레이트)",
+      "mute": "음소거",
+      "noAudio": "오디오 트랙 없음",
+      "notPreviewable": "이 동영상은 여기에서 표시할 수 없습니다.",
+      "pause": "일시정지",
+      "play": "재생",
+      "previewUnavailable": "이 컴퓨터에서는 조정 미리보기를 사용할 수 없습니다",
+      "recalculating": "다시 계산 중…",
+      "stepBack": "이전 프레임",
+      "stepForward": "다음 프레임",
+      "timeline": "타임라인",
+      "transport": "재생 컨트롤",
+      "unmute": "음소거 해제",
+      "volume": "볼륨"
     }
   }
 }

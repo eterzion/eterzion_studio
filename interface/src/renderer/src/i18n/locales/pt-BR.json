@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "Quadro",
-      "frameUnavailable": "Quadro não exato (taxa variável)",
-      "mute": "Silenciar",
-      "noAudio": "Sem trilha de áudio",
-      "notPreviewable": "Não é possível exibir este vídeo aqui.",
-      "pause": "Pausar",
-      "play": "Reproduzir",
-      "previewUnavailable": "Prévia com ajustes indisponível neste equipamento",
-      "recalculating": "Recalculando…",
-      "stepBack": "Quadro anterior",
-      "stepForward": "Próximo quadro",
-      "timeline": "Linha de tempo",
-      "transport": "Controles de reprodução",
-      "unmute": "Ativar som",
-      "volume": "Volume"
+    "editor": {
+      "addMore": "Adicionar vídeos",
+      "importFailed": "Falha ao importar o vídeo.",
+      "open": "Abrir editor de vídeo",
+      "panelPending": "Os controles de edição chegam nas próximas etapas.",
+      "ready": "Pronto para editar",
+      "title": "Editor de vídeo",
+      "uploadSubtitle": "ou use os botões abaixo para escolher os arquivos",
+      "uploadTitle": "Arraste vídeos aqui"
     },
     "edits": {
       "adjustments": "Ajustes de imagem",
@@ -109,6 +102,23 @@
       "trimStart": "Início do trecho",
       "wholeVideo": "Vídeo inteiro"
     },
+    "enhance": {
+      "animeVideo": "Vídeo de anime/animação",
+      "animeVideoHint": "Anime, desenho, motion graphics — traços definidos e cores chapadas",
+      "contentType": "Tipo de conteúdo",
+      "custom": "Personalizado",
+      "customSize": "Tamanho de saída",
+      "device": "Processamento",
+      "height": "Altura",
+      "noUpscale": "Não melhorar",
+      "profile": "Qualidade",
+      "realVideo": "Vídeo real (filmagem)",
+      "realVideoHint": "Câmera, gravação de tela, qualquer imagem capturada do mundo",
+      "resultSize": "Resultado",
+      "scale": "Escala",
+      "title": "Melhoria",
+      "width": "Largura"
+    },
     "export": {
       "cancel": "Cancelar",
       "container": "Formato",
@@ -135,15 +145,22 @@
       "source_changed": "O arquivo de origem mudou. Importe-o novamente.",
       "unknown": "Não foi possível iniciar a exportação."
     },
-    "editor": {
-      "addMore": "Adicionar vídeos",
-      "importFailed": "Falha ao importar o vídeo.",
-      "open": "Abrir editor de vídeo",
-      "panelPending": "Os controles de edição chegam nas próximas etapas.",
-      "ready": "Pronto para editar",
-      "title": "Editor de vídeo",
-      "uploadSubtitle": "ou use os botões abaixo para escolher os arquivos",
-      "uploadTitle": "Arraste vídeos aqui"
+    "player": {
+      "frame": "Quadro",
+      "frameUnavailable": "Quadro não exato (taxa variável)",
+      "mute": "Silenciar",
+      "noAudio": "Sem trilha de áudio",
+      "notPreviewable": "Não é possível exibir este vídeo aqui.",
+      "pause": "Pausar",
+      "play": "Reproduzir",
+      "previewUnavailable": "Prévia com ajustes indisponível neste equipamento",
+      "recalculating": "Recalculando…",
+      "stepBack": "Quadro anterior",
+      "stepForward": "Próximo quadro",
+      "timeline": "Linha de tempo",
+      "transport": "Controles de reprodução",
+      "unmute": "Ativar som",
+      "volume": "Volume"
     }
   }
 }

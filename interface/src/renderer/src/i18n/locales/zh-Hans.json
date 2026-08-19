@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "帧",
-      "frameUnavailable": "帧号不精确（可变帧率）",
-      "mute": "静音",
-      "noAudio": "无音频轨道",
-      "notPreviewable": "无法在此显示该视频。",
-      "pause": "暂停",
-      "play": "播放",
-      "previewUnavailable": "此设备无法预览调整效果",
-      "recalculating": "重新计算中…",
-      "stepBack": "上一帧",
-      "stepForward": "下一帧",
-      "timeline": "时间轴",
-      "transport": "播放控件",
-      "unmute": "取消静音",
-      "volume": "音量"
+    "editor": {
+      "addMore": "添加视频",
+      "importFailed": "无法导入该视频。",
+      "open": "打开视频编辑器",
+      "panelPending": "编辑控件将在后续步骤中加入。",
+      "ready": "可以编辑",
+      "title": "视频编辑器",
+      "uploadSubtitle": "也可以使用下方按钮选择文件",
+      "uploadTitle": "将视频拖放到这里"
     },
     "edits": {
       "adjustments": "图像调整",
@@ -109,6 +102,23 @@
       "trimStart": "片段起点",
       "wholeVideo": "整个视频"
     },
+    "enhance": {
+      "animeVideo": "动画 / 动漫",
+      "animeVideoHint": "动漫、卡通、动态图形 — 线条清晰、色块平坦",
+      "contentType": "内容类型",
+      "custom": "自定义",
+      "customSize": "输出尺寸",
+      "device": "处理方式",
+      "height": "高度",
+      "noUpscale": "不放大",
+      "profile": "画质",
+      "realVideo": "实拍视频",
+      "realVideoHint": "摄像、录屏等从现实世界拍摄的画面",
+      "resultSize": "结果",
+      "scale": "放大",
+      "title": "画质增强",
+      "width": "宽度"
+    },
     "export": {
       "cancel": "取消",
       "container": "格式",
@@ -135,15 +145,22 @@
       "source_changed": "源文件已更改。",
       "unknown": "无法开始导出。"
     },
-    "editor": {
-      "addMore": "添加视频",
-      "importFailed": "无法导入该视频。",
-      "open": "打开视频编辑器",
-      "panelPending": "编辑控件将在后续步骤中加入。",
-      "ready": "可以编辑",
-      "title": "视频编辑器",
-      "uploadSubtitle": "也可以使用下方按钮选择文件",
-      "uploadTitle": "将视频拖放到这里"
+    "player": {
+      "frame": "帧",
+      "frameUnavailable": "帧号不精确（可变帧率）",
+      "mute": "静音",
+      "noAudio": "无音频轨道",
+      "notPreviewable": "无法在此显示该视频。",
+      "pause": "暂停",
+      "play": "播放",
+      "previewUnavailable": "此设备无法预览调整效果",
+      "recalculating": "重新计算中…",
+      "stepBack": "上一帧",
+      "stepForward": "下一帧",
+      "timeline": "时间轴",
+      "transport": "播放控件",
+      "unmute": "取消静音",
+      "volume": "音量"
     }
   }
 }

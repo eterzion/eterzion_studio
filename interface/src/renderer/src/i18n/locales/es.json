@@ -66,22 +66,15 @@
     }
   },
   "videoEditor": {
-    "player": {
-      "frame": "Fotograma",
-      "frameUnavailable": "Fotograma no exacto (tasa variable)",
-      "mute": "Silenciar",
-      "noAudio": "Sin pista de audio",
-      "notPreviewable": "No se puede mostrar este vídeo aquí.",
-      "pause": "Pausar",
-      "play": "Reproducir",
-      "previewUnavailable": "Vista previa con ajustes no disponible en este equipo",
-      "recalculating": "Recalculando…",
-      "stepBack": "Fotograma anterior",
-      "stepForward": "Fotograma siguiente",
-      "timeline": "Línea de tiempo",
-      "transport": "Controles de reproducción",
-      "unmute": "Activar sonido",
-      "volume": "Volumen"
+    "editor": {
+      "addMore": "Añadir vídeos",
+      "importFailed": "No se pudo importar el vídeo.",
+      "open": "Abrir editor de vídeo",
+      "panelPending": "Los controles de edición llegan en los próximos pasos.",
+      "ready": "Listo para editar",
+      "title": "Editor de vídeo",
+      "uploadSubtitle": "o usa los botones de abajo para elegir los archivos",
+      "uploadTitle": "Arrastra vídeos aquí"
     },
     "edits": {
       "adjustments": "Ajustes de imagen",
@@ -109,6 +102,23 @@
       "trimStart": "Inicio del fragmento",
       "wholeVideo": "Vídeo completo"
     },
+    "enhance": {
+      "animeVideo": "Anime / animación",
+      "animeVideoHint": "Anime, dibujos, motion graphics — líneas definidas y colores planos",
+      "contentType": "Tipo de contenido",
+      "custom": "Personalizado",
+      "customSize": "Tamaño de salida",
+      "device": "Procesamiento",
+      "height": "Alto",
+      "noUpscale": "Sin mejora",
+      "profile": "Calidad",
+      "realVideo": "Vídeo real (grabación)",
+      "realVideoHint": "Cámara, grabación de pantalla, cualquier imagen captada del mundo",
+      "resultSize": "Resultado",
+      "scale": "Escala",
+      "title": "Mejora",
+      "width": "Ancho"
+    },
     "export": {
       "cancel": "Cancelar",
       "container": "Formato",
@@ -135,15 +145,22 @@
       "source_changed": "El archivo de origen cambió. Impórtalo de nuevo.",
       "unknown": "No se pudo iniciar la exportación."
     },
-    "editor": {
-      "addMore": "Añadir vídeos",
-      "importFailed": "No se pudo importar el vídeo.",
-      "open": "Abrir editor de vídeo",
-      "panelPending": "Los controles de edición llegan en los próximos pasos.",
-      "ready": "Listo para editar",
-      "title": "Editor de vídeo",
-      "uploadSubtitle": "o usa los botones de abajo para elegir los archivos",
-      "uploadTitle": "Arrastra vídeos aquí"
+    "player": {
+      "frame": "Fotograma",
+      "frameUnavailable": "Fotograma no exacto (tasa variable)",
+      "mute": "Silenciar",
+      "noAudio": "Sin pista de audio",
+      "notPreviewable": "No se puede mostrar este vídeo aquí.",
+      "pause": "Pausar",
+      "play": "Reproducir",
+      "previewUnavailable": "Vista previa con ajustes no disponible en este equipo",
+      "recalculating": "Recalculando…",
+      "stepBack": "Fotograma anterior",
+      "stepForward": "Fotograma siguiente",
+      "timeline": "Línea de tiempo",
+      "transport": "Controles de reproducción",
+      "unmute": "Activar sonido",
+      "volume": "Volumen"
     }
   }
 }
