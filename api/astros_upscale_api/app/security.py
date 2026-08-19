@@ -578,7 +578,23 @@ PROTECTED_FILES = (
 
 
 def _hash_file(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """Hash the file's CONTENT, with line endings normalised first.
+
+    Hashing raw bytes made the manifest depend on how git happened to
+    materialise the file rather than on what the file says. With
+    core.autocrlf=true -- the Windows default -- the repository stores LF and
+    the working copy gets CRLF, so a manifest generated on one checkout fails
+    to verify on another, and a fresh clone can refuse to start the worker
+    with nobody having touched a line of code. That is a false positive on a
+    check whose whole job is to be trusted, and a false positive here is not
+    a warning: the worker fails closed and every job dies at startup.
+
+    Normalising costs nothing in what this defends against. The threat is
+    someone editing code to change what it does; swapping CRLF for LF changes
+    no behaviour, and any real tamper still lands on different content.
+    """
+    normalised = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(normalised).hexdigest()
 
 
 def compute_hashes() -> dict[str, str]:
