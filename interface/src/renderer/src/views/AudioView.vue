@@ -8,7 +8,7 @@ import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
-import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX } from '@lucide/vue'
+import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX, Sparkles } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -272,6 +272,7 @@ function exportAll(): void {
           {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringCount" @click="runAll">
+          <template #icon><Sparkles :size="15" /></template>
           {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneCount" @click="exportAll">

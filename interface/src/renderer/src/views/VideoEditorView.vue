@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertCircle, AlertTriangle, Download, Play, Upload } from '@lucide/vue'
+import { AlertCircle, AlertTriangle, Download, Sparkles, Upload } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
@@ -227,7 +227,7 @@ function remove(id: string): void {
           {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!pendingCount" @click="runAll">
-          <template #icon><Play :size="15" /></template>
+          <template #icon><Sparkles :size="15" /></template>
           {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneCount" @click="revealFirstResult">

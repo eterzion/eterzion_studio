@@ -35,7 +35,8 @@ import {
   XCircle,
   Columns2,
   GalleryHorizontal,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../services/native'
 import { type ContentType, type Profile } from '../services/api'
@@ -387,6 +388,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringJobs.length" @click="processAll">
+          <template #icon><Sparkles :size="15" /></template>
           {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneJobs.length" @click="showBatchModal = true">

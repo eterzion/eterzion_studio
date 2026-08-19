@@ -29,6 +29,9 @@ const props = defineProps<{
 }>()
 
 const element = ref<HTMLVideoElement | null>(null)
+/** Rendered width of the picture, reported by the surface. The controls match
+ *  it so the timeline lines up with the frame instead of with the stage. */
+const pictureWidth = ref(0)
 const handleRef = computed(() => props.handle)
 
 const timeline = useVideoTimeline(handleRef)
@@ -92,7 +95,7 @@ function onKeydown(event: KeyboardEvent): void {
 
 <template>
   <div
-    class="flex h-full flex-col focus:outline-none"
+    class="video-player"
     tabindex="0"
     role="application"
     :aria-label="handle?.display_name ?? ''"
@@ -105,10 +108,14 @@ function onKeydown(event: KeyboardEvent): void {
         :adjustments="adjustments ?? null"
         :recalculating="recalculating"
         @ready="onReady"
+        @picture-resize="pictureWidth = $event"
       />
     </div>
 
-    <div class="player-controls">
+    <!-- Width tied to the picture above it, so the timeline starts and ends
+         where the frame does. min-width keeps it usable under a very narrow
+         clip, where matching the picture exactly would crush the transport. -->
+    <div class="player-controls" :style="{ width: pictureWidth ? `${pictureWidth}px` : undefined }">
       <VideoTimeline
         :progress="timeline.progressAt(playback.currentTime.value)"
         :duration="duration"
@@ -159,18 +166,27 @@ function onKeydown(event: KeyboardEvent): void {
 <style scoped>
 /* The video should be as large as the stage allows, so the frame is what fills
    the eye rather than the chrome around it. The controls keep their intrinsic
-   height; everything left over goes to the picture. */
+   height; everything left over goes to the picture.
+ *
+ * This block used to be dead: the root element carried Tailwind utilities and
+ * never the .video-player class, so none of it applied. The measured result was
+ * a player 454px wide inside a 680px stage — the width was being decided by the
+ * intrinsic width of the controls, with the rest of the stage left empty. */
 .video-player {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
   height: 100%;
   min-height: 0;
+  gap: var(--space-2);
 }
 .video-player:focus {
   outline: none;
 }
 
 .player-stage {
+  width: 100%;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -179,13 +195,21 @@ function onKeydown(event: KeyboardEvent): void {
   overflow: hidden;
 }
 
+.player-stage :deep(.video-surface) {
+  width: 100%;
+  height: 100%;
+}
+
 .player-controls {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
-  border-top: 1px solid var(--surface-border);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   flex: 0 0 auto;
+  max-width: 100%;
+  min-width: min(420px, 100%);
 }
 </style>
