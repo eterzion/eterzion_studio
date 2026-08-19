@@ -211,13 +211,13 @@ async function reuseConfig(entry: HistoryEntry): Promise<void> {
   }
   const described = await api.statPath(entry.sourcePath)
   if (!described || described.kind !== 'Imagem') {
-    reuseError.value = `Arquivo original não encontrado: ${entry.sourcePath}`
+    reuseError.value = t('history.sourceMissing', { path: entry.sourcePath })
     return
   }
   const result = await addFiles([described])
   const newJob = result.added[0]
   if (!newJob) {
-    reuseError.value = 'Este arquivo já está na fila atual.'
+    reuseError.value = t('history.alreadyQueued')
     return
   }
   newJob.scaleConfig = { ...entry.scaleConfig }
@@ -269,7 +269,7 @@ function applyLimit(): void {
         <div class="toolbar">
           <div class="search-bar">
             <Search :size="16" />
-            <input v-model="search" type="text" placeholder="Buscar por nome ou modelo…" />
+            <input v-model="search" type="text" :placeholder="t('history.searchPlaceholder')" />
           </div>
 
           <div class="filters-row">
@@ -368,7 +368,7 @@ function applyLimit(): void {
                 <button
                   class="icon-action"
                   type="button"
-                  title="Visualizar"
+                  :title="t('history.view')"
                   :disabled="!entry.outputPath"
                   @click="view(entry)"
                 >
@@ -377,7 +377,7 @@ function applyLimit(): void {
                 <button
                   class="icon-action"
                   type="button"
-                  title="Baixar novamente"
+                  :title="t('history.downloadAgain')"
                   :disabled="!entry.outputPath"
                   @click="downloadAgain(entry)"
                 >
@@ -387,14 +387,14 @@ function applyLimit(): void {
                   <button
                     class="icon-action"
                     type="button"
-                    title="Mais ações"
+                    :title="t('history.moreActions')"
                     @click="toggleMenu(entry.id)"
                   >
                     <EllipsisVertical :size="15" />
                   </button>
                   <div v-if="openMenuId === entry.id" class="dropdown-menu">
                     <button type="button" @click="reuseConfig(entry)">
-                      <RotateCcw :size="13" /> Reutilizar configurações
+                      <RotateCcw :size="13" /> {{ t('history.reuseSettings') }}
                     </button>
                     <button type="button" @click="toggleDetails(entry.id)">
                       <Info :size="13" /> Ver detalhes
@@ -409,19 +409,19 @@ function applyLimit(): void {
 
             <div v-if="expandedId === entry.id" class="card-details">
               <div class="detail-item">
-                <dt>Origem</dt>
+                <dt>{{ t('history.source') }}</dt>
                 <dd>{{ entry.sourcePath }}</dd>
               </div>
               <div class="detail-item">
-                <dt>Saída</dt>
-                <dd>{{ entry.outputPath ?? 'Ainda não exportado' }}</dd>
+                <dt>{{ t('history.output') }}</dt>
+                <dd>{{ entry.outputPath ?? t('history.notExported') }}</dd>
               </div>
               <div class="detail-item">
-                <dt>Concluído em</dt>
+                <dt>{{ t('history.finishedAt') }}</dt>
                 <dd>{{ entry.completedAt ? fmtDateTime(entry.completedAt) : '—' }}</dd>
               </div>
               <div v-if="entry.errorMessage" class="detail-item">
-                <dt>Erro</dt>
+                <dt>{{ t('history.errorLabel') }}</dt>
                 <dd>{{ entry.errorMessage }}</dd>
               </div>
             </div>
@@ -431,8 +431,8 @@ function applyLimit(): void {
     </div>
 
     <div v-if="undoEntry" class="undo-toast">
-      <span>"{{ undoEntry.fileName }}" removido do histórico.</span>
-      <button type="button" @click="undoRemove">Desfazer</button>
+      <span>{{ t('history.removed', { name: undoEntry.fileName }) }}</span>
+      <button type="button" @click="undoRemove">{{ t('actions.undo') }}</button>
     </div>
   </div>
 </template>

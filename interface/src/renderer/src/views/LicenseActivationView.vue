@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   ShieldAlert,
   ShieldCheck,
@@ -18,6 +19,8 @@ import AppButton from '../components/atoms/AppButton.vue'
 // whenever isHardBlocked() is true — before the first successful check this
 // session, or once a status is confirmed bad (not_activated/blocked). Never
 // touches files already on disk (FR-059/SC-019), it only gates new work.
+
+const { t } = useI18n()
 
 const licenseInput = ref('')
 const copied = ref(false)
@@ -40,26 +43,20 @@ function openHelp(): void {
   window.open('https://example.com/astros-upscale/help', '_blank')
 }
 
-const STATUS_COPY: Record<string, { title: string; body: string }> = {
-  not_activated: {
-    title: 'Ative sua licença',
-    body: 'Este produto ainda não foi ativado nesta instalação. Informe o ID da licença enviado por e-mail após a compra.'
-  },
-  blocked: {
-    title: 'Licença bloqueada',
-    body: 'Sua licença não está mais ativa, ou o período de uso offline expirou. Verifique o status da sua assinatura ou conecte-se à internet para revalidar.'
-  },
-  error: {
-    title: 'Não foi possível verificar sua licença',
-    body: 'Ocorreu um erro ao consultar o status da licença. Verifique sua conexão com a internet e tente novamente.'
-  },
-  checking: {
-    title: 'Verificando sua licença…',
-    body: 'Só um instante.'
-  }
+// Inside the computed rather than in a const map beside it: a const is built
+// once at import and would keep whichever language was active then. This screen
+// in particular can be the first thing shown, before anything else has run.
+const COPY_KEYS: Record<string, string> = {
+  not_activated: 'notActivated',
+  blocked: 'blocked',
+  error: 'error',
+  checking: 'checking'
 }
 
-const copy = computed(() => STATUS_COPY[licenseState.status] ?? STATUS_COPY.error)
+const copy = computed(() => {
+  const key = COPY_KEYS[licenseState.status] ?? 'error'
+  return { title: t(`activation.${key}Title`), body: t(`activation.${key}Body`) }
+})
 const icon = computed(() => {
   if (licenseState.status === 'checking') return Loader2
   if (licenseState.status === 'not_activated') return KeyRound
@@ -92,7 +89,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
         <hr class="divider" />
 
         <div class="field-group">
-          <label class="field-label" for="activation-license-id">ID da licença</label>
+          <label class="field-label" for="activation-license-id">{{ t('license.idLabel') }}</label>
           <div class="input-wrap">
             <KeyRound :size="15" class="input-icon" />
             <input
@@ -107,25 +104,22 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
               variant="ghost"
               icon-only
               size="sm"
-              title="Copiar"
+              :title="t('activation.copy')"
               :disabled="!licenseInput.trim()"
               @click="copyInput"
             >
               <template #icon><Copy :size="14" /></template>
             </AppButton>
           </div>
-          <p v-if="copied" class="copied-hint">Copiado!</p>
+          <p v-if="copied" class="copied-hint">{{ t('activation.copied') }}</p>
         </div>
 
         <div v-if="licenseState.status === 'error'" class="fetch-error-box">
           <XCircle :size="18" class="fetch-error-icon" />
           <div>
-            <p class="fetch-error-title">Falha ao buscar informações</p>
+            <p class="fetch-error-title">{{ t('activation.fetchErrorTitle') }}</p>
             <p class="fetch-error-detail">
-              {{
-                licenseState.error ??
-                'Não foi possível conectar aos nossos servidores. Verifique sua conexão e tente novamente.'
-              }}
+              {{ licenseState.error ?? t('activation.fetchErrorDetail') }}
             </p>
           </div>
         </div>
@@ -140,7 +134,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
             @click="submit"
           >
             <template #icon><ShieldCheck :size="16" /></template>
-            Ativar
+            {{ t('license.activate') }}
           </AppButton>
           <AppButton
             v-else
@@ -150,12 +144,12 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
             @click="refreshLicenseStatus"
           >
             <template #icon><RefreshCw :size="16" /></template>
-            Tentar novamente
+            {{ t('activation.retry') }}
           </AppButton>
 
           <AppButton variant="ghost" size="lg" class="w-full" @click="openHelp">
             <template #icon><HelpCircle :size="16" /></template>
-            Precisa de ajuda?
+            {{ t('activation.needHelp') }}
           </AppButton>
         </div>
       </template>
