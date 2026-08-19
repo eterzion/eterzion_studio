@@ -23,11 +23,14 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import { usePickFiles } from '../composables/usePickFiles'
-import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
+import { profileOptions, deviceOptions } from '../constants/processing'
 
 defineEmits<{ back: [] }>()
 
 const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
+const devices = computed(() => deviceOptions())
 // T057/FR-081-086 don't apply to audio (no secondary streams to lose) — this
 // mirrors VideoView.vue's job-list shape without the confirmation step.
 // IMPORTANT (FR-023 / spec.md LC-003): there is no compression-artifact
@@ -81,18 +84,14 @@ function syncHistory(job: AudioJob): void {
   })
 }
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
-  {
-    value: 'speech',
-    label: 'Fala / voz',
-    description: 'Locução, podcast, entrevista — uma voz em primeiro plano'
-  },
-  {
-    value: 'music',
-    label: 'Música',
-    description: 'Faixa musical completa, com instrumentos e mixagem'
-  }
-]
+// computed, not a const: a const is evaluated once at import and would keep
+// whichever language was active then.
+const contentTypeOptions = computed<{ value: ContentType; label: string; description: string }[]>(
+  () => [
+    { value: 'speech', label: t('audio.speechLabel'), description: t('audio.speechDescription') },
+    { value: 'music', label: t('audio.musicLabel'), description: t('audio.musicDescription') }
+  ]
+)
 
 const jobs = ref<AudioJob[]>([])
 const importError = ref<string | null>(null)
@@ -102,13 +101,8 @@ const importError = ref<string | null>(null)
 const activeId = ref<string | null>(null)
 const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
 
-const STATUS_LABEL: Record<LocalStatus, string> = {
-  detecting: 'Detectando…',
-  configuring: 'Pronto para processar',
-  queued: 'Na fila',
-  processing: 'Processando',
-  done: 'Concluído',
-  error: 'Erro'
+function statusLabel(status: LocalStatus): string {
+  return t(`localStatus.${status}`)
 }
 
 const editorItems = computed(() =>
@@ -116,14 +110,14 @@ const editorItems = computed(() =>
     id: j.id,
     fileName: j.file.name,
     sourcePath: j.file.path,
-    statusLabel: STATUS_LABEL[j.status],
+    statusLabel: statusLabel(j.status),
     kind: 'audio' as const
   }))
 )
 
 async function addFile(described: DescribedFile): Promise<void> {
   if (described.kind !== 'Áudio') {
-    importError.value = `Formato não suportado: ${described.name}`
+    importError.value = t('audio.unsupportedFormat', { name: described.name })
     return
   }
   jobs.value.push({
@@ -244,7 +238,7 @@ async function runJob(job: AudioJob): Promise<void> {
           })
           .catch(() => {
             job.status = 'error'
-            job.error = 'Falha na comunicação com o servidor.'
+            job.error = t('localStatus.serverCommunication')
             syncHistory(job)
           })
       }
@@ -318,7 +312,7 @@ function exportAll(): void {
         class="editor-shell"
         :items="editorItems"
         :active-id="activeId"
-        add-label="Adicionar áudio"
+        :add-label="t('audio.addAudio')"
         @select="activeId = $event"
         @remove="removeById"
         @add="pickFiles"
@@ -339,24 +333,24 @@ function exportAll(): void {
 
             <div v-else-if="activeJob.status === 'configuring'" class="panel-section">
               <CollapsiblePanel
-                title="Processamento"
-                description="Como o áudio é processado pelo modelo"
+                :title="t('audio.processingTitle')"
+                :description="t('audio.processingDescription')"
                 :icon="Cpu"
               >
                 <div class="field">
-                  <label class="field-label">Conteúdo detectado</label>
+                  <label class="field-label">{{ t('audio.detectedContent') }}</label>
                   <AppSelect
                     :model-value="activeJob.contentType"
-                    :options="CONTENT_TYPE_OPTIONS"
+                    :options="contentTypeOptions"
                     @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
                   />
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Esforço do processamento</label>
+                  <label class="field-label">{{ t('audio.effort') }}</label>
                   <AppSelect
                     :model-value="activeJob.profile"
-                    :options="PROFILE_OPTIONS"
+                    :options="profiles"
                     @update:model-value="(v) => (activeJob!.profile = v as Profile)"
                   />
                 </div>
@@ -365,7 +359,7 @@ function exportAll(): void {
                   <label class="field-label">Onde processar</label>
                   <AppSelect
                     :model-value="activeJob.device"
-                    :options="DEVICE_OPTIONS"
+                    :options="devices"
                     @update:model-value="(v) => (activeJob!.device = String(v))"
                   />
                 </div>

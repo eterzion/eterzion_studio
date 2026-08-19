@@ -9,6 +9,18 @@
     "noVideoSelected": "動画が選択されていません",
     "processAll": "すべて処理"
   },
+  "audio": {
+    "addAudio": "音声を追加",
+    "detectedContent": "検出された種類",
+    "effort": "処理の強さ",
+    "musicDescription": "楽器とミックスを含む完成した楽曲",
+    "musicLabel": "音楽",
+    "processingDescription": "モデルが音声をどう処理するか",
+    "processingTitle": "処理",
+    "speechDescription": "ナレーション、ポッドキャスト、インタビュー — 声が前面にあるもの",
+    "speechLabel": "音声・ナレーション",
+    "unsupportedFormat": "未対応の形式: {name}"
+  },
   "contentType": {
     "anime_image": "アニメ・イラスト",
     "anime_video": "アニメ映像",
@@ -117,6 +129,15 @@
     "offlineDays": "オフライン猶予: 残り {n} 日",
     "title": "ライセンス"
   },
+  "localStatus": {
+    "configuring": "処理の準備ができました",
+    "detecting": "判別中…",
+    "done": "完了",
+    "error": "エラー",
+    "processing": "処理中",
+    "queued": "待機中",
+    "serverCommunication": "サーバーと通信できませんでした。"
+  },
   "nav": {
     "home": "ホーム",
     "image": "画像",
@@ -124,6 +145,36 @@
     "audio": "音声",
     "history": "履歴",
     "settings": "設定"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "自動",
+        "description": "GPU があれば GPU、なければ CPU。"
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "低速ですが、どの環境でも動きます。"
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "高速ですが NVIDIA ドライバーが必要です。"
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "高速",
+        "description": "ディテールは控えめ、早く終わります"
+      },
+      "balanced": {
+        "label": "バランス",
+        "description": "ディテールと時間の中間"
+      },
+      "quality": {
+        "label": "高品質",
+        "description": "ディテール重視、時間がかかります"
+      }
+    }
   },
   "queue": {
     "clear": "キューを空にする",

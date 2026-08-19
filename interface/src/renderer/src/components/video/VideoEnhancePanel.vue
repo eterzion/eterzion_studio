@@ -6,7 +6,7 @@ import SettingRow from '../SettingRow.vue'
 import AppSelect from '../AppSelect.vue'
 import SegmentedControl from '../SegmentedControl.vue'
 import NumberStepper from '../NumberStepper.vue'
-import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../../constants/processing'
+import { profileOptions, deviceOptions } from '../../constants/processing'
 import type { ContentType, Profile } from '../../services/api'
 
 // Unifies the upscale controls into the editor, so video has one screen instead
@@ -38,6 +38,9 @@ const props = defineProps<{
 const emit = defineEmits<{ update: [patch: Partial<EnhanceSettings>] }>()
 
 const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
+const devices = computed(() => deviceOptions())
 
 // 'none' is what makes the unified screen honest about cost: with no upscale
 // requested there is no model pass at all, and the job goes through the
@@ -133,7 +136,7 @@ const resultSize = computed(() => {
       <SettingRow :label="t('videoEditor.enhance.profile')">
         <AppSelect
           :model-value="settings.profile"
-          :options="PROFILE_OPTIONS"
+          :options="profiles"
           :disabled="disabled"
           @update:model-value="emit('update', { profile: $event as Profile })"
         />
@@ -142,7 +145,7 @@ const resultSize = computed(() => {
       <SettingRow :label="t('videoEditor.enhance.device')">
         <AppSelect
           :model-value="settings.device"
-          :options="DEVICE_OPTIONS"
+          :options="devices"
           :disabled="disabled"
           @update:model-value="emit('update', { device: $event as string })"
         />

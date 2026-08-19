@@ -9,6 +9,18 @@
     "noVideoSelected": "Aucune vidéo sélectionnée",
     "processAll": "Tout traiter"
   },
+  "audio": {
+    "addAudio": "Ajouter un audio",
+    "detectedContent": "Contenu détecté",
+    "effort": "Effort de traitement",
+    "musicDescription": "Un morceau complet, avec instruments et mixage",
+    "musicLabel": "Musique",
+    "processingDescription": "Comment le modèle traite l’audio",
+    "processingTitle": "Traitement",
+    "speechDescription": "Narration, podcast, entretien — une voix au premier plan",
+    "speechLabel": "Parole / voix",
+    "unsupportedFormat": "Format non pris en charge : {name}"
+  },
   "contentType": {
     "anime_image": "Anime / illustration",
     "anime_video": "Vidéo anime",
@@ -117,6 +129,15 @@
     "offlineDays": "Tolérance hors ligne : {n} jour restant | Tolérance hors ligne : {n} jours restants",
     "title": "Licence"
   },
+  "localStatus": {
+    "configuring": "Prêt à traiter",
+    "detecting": "Détection…",
+    "done": "Terminé",
+    "error": "Erreur",
+    "processing": "Traitement",
+    "queued": "En file",
+    "serverCommunication": "Échec de la communication avec le serveur."
+  },
   "nav": {
     "home": "Accueil",
     "image": "Image",
@@ -124,6 +145,36 @@
     "audio": "Audio",
     "history": "Historique",
     "settings": "Paramètres"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automatique",
+        "description": "GPU s’il y en a un, sinon CPU."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Plus lent, fonctionne sur toute machine."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Plus rapide, nécessite un pilote NVIDIA."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Rapide",
+        "description": "Moins de détail, se termine plus tôt"
+      },
+      "balanced": {
+        "label": "Équilibré",
+        "description": "Entre détail et durée"
+      },
+      "quality": {
+        "label": "Qualité",
+        "description": "Plus de détail, prend plus de temps"
+      }
+    }
   },
   "queue": {
     "clear": "Vider la file",

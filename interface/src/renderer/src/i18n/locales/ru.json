@@ -9,6 +9,18 @@
     "noVideoSelected": "Видео не выбрано",
     "processAll": "Обработать все"
   },
+  "audio": {
+    "addAudio": "Добавить аудио",
+    "detectedContent": "Определённое содержимое",
+    "effort": "Усилие обработки",
+    "musicDescription": "Полноценный музыкальный трек с инструментами и сведением",
+    "musicLabel": "Музыка",
+    "processingDescription": "Как модель обрабатывает аудио",
+    "processingTitle": "Обработка",
+    "speechDescription": "Закадровый голос, подкаст, интервью — один голос на переднем плане",
+    "speechLabel": "Речь / голос",
+    "unsupportedFormat": "Неподдерживаемый формат: {name}"
+  },
   "contentType": {
     "anime_image": "Аниме/иллюстрация",
     "anime_video": "Аниме-видео",
@@ -117,6 +129,15 @@
     "offlineDays": "Офлайн-режим: остался {n} день | Офлайн-режим: осталось {n} дня | Офлайн-режим: осталось {n} дней",
     "title": "Лицензия"
   },
+  "localStatus": {
+    "configuring": "Готово к обработке",
+    "detecting": "Определение…",
+    "done": "Готово",
+    "error": "Ошибка",
+    "processing": "Обработка",
+    "queued": "В очереди",
+    "serverCommunication": "Не удалось связаться с сервером."
+  },
   "nav": {
     "home": "Главная",
     "image": "Изображение",
@@ -124,6 +145,36 @@
     "audio": "Аудио",
     "history": "История",
     "settings": "Настройки"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Автоматически",
+        "description": "GPU при наличии, иначе CPU."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Медленнее, работает на любой машине."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Быстрее, нужен драйвер NVIDIA."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Быстро",
+        "description": "Меньше деталей, завершается раньше"
+      },
+      "balanced": {
+        "label": "Сбалансированно",
+        "description": "Компромисс между деталями и временем"
+      },
+      "quality": {
+        "label": "Качество",
+        "description": "Больше деталей, дольше"
+      }
+    }
   },
   "queue": {
     "clear": "Очистить очередь",

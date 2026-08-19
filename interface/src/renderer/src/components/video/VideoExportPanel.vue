@@ -12,7 +12,7 @@ import {
   type VideoContainer,
   type VideoExportOptions
 } from '../../services/api'
-import { PROFILE_OPTIONS } from '../../constants/processing'
+import { profileOptions } from '../../constants/processing'
 import type { Profile } from '../../services/api'
 import type { ProcessingState } from '../../composables/useVideoProcessing'
 
@@ -39,6 +39,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
 
 const options = ref<VideoExportOptions | null>(null)
 // Null until the options load, and again if they fail. Both cases mean the same
@@ -104,7 +106,7 @@ const refusalMessage = computed(() => {
     </SettingRow>
 
     <SettingRow :label="t('videoEditor.export.profile')">
-      <AppSelect v-model="profile" :options="PROFILE_OPTIONS" :disabled="disabled || running" />
+      <AppSelect v-model="profile" :options="profiles" :disabled="disabled || running" />
     </SettingRow>
 
     <SettingRow :label="t('videoEditor.export.destination')">

@@ -9,6 +9,18 @@
     "noVideoSelected": "Nenhum vídeo selecionado",
     "processAll": "Processar todos"
   },
+  "audio": {
+    "addAudio": "Adicionar áudio",
+    "detectedContent": "Conteúdo detectado",
+    "effort": "Esforço do processamento",
+    "musicDescription": "Faixa musical completa, com instrumentos e mixagem",
+    "musicLabel": "Música",
+    "processingDescription": "Como o áudio é processado pelo modelo",
+    "processingTitle": "Processamento",
+    "speechDescription": "Locução, podcast, entrevista — uma voz em primeiro plano",
+    "speechLabel": "Fala / voz",
+    "unsupportedFormat": "Formato não suportado: {name}"
+  },
   "contentType": {
     "anime_image": "Anime/Ilustração",
     "anime_video": "Vídeo anime",
@@ -117,6 +129,15 @@
     "offlineDays": "Tolerância offline: {n} dia restante | Tolerância offline: {n} dias restantes",
     "title": "Licença"
   },
+  "localStatus": {
+    "configuring": "Pronto para processar",
+    "detecting": "Detectando…",
+    "done": "Concluído",
+    "error": "Erro",
+    "processing": "Processando",
+    "queued": "Na fila",
+    "serverCommunication": "Falha na comunicação com o servidor."
+  },
   "nav": {
     "home": "Home",
     "image": "Imagem",
@@ -124,6 +145,36 @@
     "audio": "Áudio",
     "history": "Histórico",
     "settings": "Configurações"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automático",
+        "description": "GPU quando houver, CPU caso contrário."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Mais lento, funciona em qualquer máquina."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Mais rápido, exige driver NVIDIA."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Rápido",
+        "description": "Menos detalhe, termina antes"
+      },
+      "balanced": {
+        "label": "Equilibrado",
+        "description": "Meio-termo entre detalhe e tempo"
+      },
+      "quality": {
+        "label": "Qualidade",
+        "description": "Mais detalhe, leva mais tempo"
+      }
+    }
   },
   "queue": {
     "clear": "Limpar fila",

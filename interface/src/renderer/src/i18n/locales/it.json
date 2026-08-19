@@ -9,6 +9,18 @@
     "noVideoSelected": "Nessun video selezionato",
     "processAll": "Elabora tutti"
   },
+  "audio": {
+    "addAudio": "Aggiungi audio",
+    "detectedContent": "Contenuto rilevato",
+    "effort": "Impegno di elaborazione",
+    "musicDescription": "Un brano musicale completo, con strumenti e mix",
+    "musicLabel": "Musica",
+    "processingDescription": "Come il modello elabora l’audio",
+    "processingTitle": "Elaborazione",
+    "speechDescription": "Voce narrante, podcast, intervista — una voce in primo piano",
+    "speechLabel": "Parlato / voce",
+    "unsupportedFormat": "Formato non supportato: {name}"
+  },
   "contentType": {
     "anime_image": "Anime/Illustrazione",
     "anime_video": "Video anime",
@@ -117,6 +129,15 @@
     "offlineDays": "Tolleranza offline: {n} giorno rimasto | Tolleranza offline: {n} giorni rimasti",
     "title": "Licenza"
   },
+  "localStatus": {
+    "configuring": "Pronto per l’elaborazione",
+    "detecting": "Rilevamento…",
+    "done": "Completato",
+    "error": "Errore",
+    "processing": "Elaborazione",
+    "queued": "In coda",
+    "serverCommunication": "Comunicazione con il server non riuscita."
+  },
   "nav": {
     "home": "Home",
     "image": "Immagine",
@@ -124,6 +145,36 @@
     "audio": "Audio",
     "history": "Cronologia",
     "settings": "Impostazioni"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automatico",
+        "description": "GPU se presente, altrimenti CPU."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Più lento, funziona su qualsiasi macchina."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Più veloce, richiede driver NVIDIA."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Veloce",
+        "description": "Meno dettaglio, finisce prima"
+      },
+      "balanced": {
+        "label": "Equilibrato",
+        "description": "Via di mezzo tra dettaglio e tempo"
+      },
+      "quality": {
+        "label": "Qualità",
+        "description": "Più dettaglio, richiede più tempo"
+      }
+    }
   },
   "queue": {
     "clear": "Svuota la coda",

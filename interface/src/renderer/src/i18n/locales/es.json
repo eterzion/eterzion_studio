@@ -9,6 +9,18 @@
     "noVideoSelected": "Ningún vídeo seleccionado",
     "processAll": "Procesar todos"
   },
+  "audio": {
+    "addAudio": "Añadir audio",
+    "detectedContent": "Contenido detectado",
+    "effort": "Esfuerzo de procesamiento",
+    "musicDescription": "Pista musical completa, con instrumentos y mezcla",
+    "musicLabel": "Música",
+    "processingDescription": "Cómo procesa el audio el modelo",
+    "processingTitle": "Procesamiento",
+    "speechDescription": "Locución, pódcast, entrevista: una voz en primer plano",
+    "speechLabel": "Habla / voz",
+    "unsupportedFormat": "Formato no compatible: {name}"
+  },
   "contentType": {
     "anime_image": "Anime/Ilustración",
     "anime_video": "Vídeo anime",
@@ -117,6 +129,15 @@
     "offlineDays": "Tolerancia sin conexión: queda {n} día | Tolerancia sin conexión: quedan {n} días",
     "title": "Licencia"
   },
+  "localStatus": {
+    "configuring": "Listo para procesar",
+    "detecting": "Detectando…",
+    "done": "Completado",
+    "error": "Error",
+    "processing": "Procesando",
+    "queued": "En cola",
+    "serverCommunication": "Fallo de comunicación con el servidor."
+  },
   "nav": {
     "home": "Inicio",
     "image": "Imagen",
@@ -124,6 +145,36 @@
     "audio": "Audio",
     "history": "Historial",
     "settings": "Ajustes"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automático",
+        "description": "GPU si la hay, CPU en caso contrario."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Más lento, funciona en cualquier equipo."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Más rápido, requiere driver NVIDIA."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Rápido",
+        "description": "Menos detalle, termina antes"
+      },
+      "balanced": {
+        "label": "Equilibrado",
+        "description": "Punto medio entre detalle y tiempo"
+      },
+      "quality": {
+        "label": "Calidad",
+        "description": "Más detalle, tarda más"
+      }
+    }
   },
   "queue": {
     "clear": "Vaciar cola",

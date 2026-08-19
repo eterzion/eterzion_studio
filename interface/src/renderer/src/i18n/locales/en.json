@@ -9,6 +9,18 @@
     "noVideoSelected": "No video selected",
     "processAll": "Process all"
   },
+  "audio": {
+    "addAudio": "Add audio",
+    "detectedContent": "Detected content",
+    "effort": "Processing effort",
+    "musicDescription": "A full musical track, with instruments and a mix",
+    "musicLabel": "Music",
+    "processingDescription": "How the model processes the audio",
+    "processingTitle": "Processing",
+    "speechDescription": "Narration, podcast, interview — one voice in front",
+    "speechLabel": "Speech / voice",
+    "unsupportedFormat": "Unsupported format: {name}"
+  },
   "contentType": {
     "anime_image": "Anime / illustration",
     "anime_video": "Anime video",
@@ -117,6 +129,15 @@
     "offlineDays": "Offline tolerance: {n} day left | Offline tolerance: {n} days left",
     "title": "Licence"
   },
+  "localStatus": {
+    "configuring": "Ready to process",
+    "detecting": "Detecting…",
+    "done": "Done",
+    "error": "Error",
+    "processing": "Processing",
+    "queued": "Queued",
+    "serverCommunication": "Could not reach the server."
+  },
   "nav": {
     "home": "Home",
     "image": "Image",
@@ -124,6 +145,36 @@
     "audio": "Audio",
     "history": "History",
     "settings": "Settings"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automatic",
+        "description": "GPU where there is one, CPU otherwise."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Slower, works on any machine."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Faster, needs an NVIDIA driver."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Fast",
+        "description": "Less detail, finishes sooner"
+      },
+      "balanced": {
+        "label": "Balanced",
+        "description": "Between detail and time"
+      },
+      "quality": {
+        "label": "Quality",
+        "description": "More detail, takes longer"
+      }
+    }
   },
   "queue": {
     "clear": "Clear queue",

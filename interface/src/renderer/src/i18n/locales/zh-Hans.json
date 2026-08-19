@@ -9,6 +9,18 @@
     "noVideoSelected": "未选择视频",
     "processAll": "全部处理"
   },
+  "audio": {
+    "addAudio": "添加音频",
+    "detectedContent": "检测到的内容",
+    "effort": "处理强度",
+    "musicDescription": "包含乐器与混音的完整音乐曲目",
+    "musicLabel": "音乐",
+    "processingDescription": "模型如何处理音频",
+    "processingTitle": "处理",
+    "speechDescription": "旁白、播客、访谈 — 以人声为主",
+    "speechLabel": "语音 / 人声",
+    "unsupportedFormat": "不支持的格式：{name}"
+  },
   "contentType": {
     "anime_image": "动漫/插画",
     "anime_video": "动画视频",
@@ -117,6 +129,15 @@
     "offlineDays": "离线宽限：剩余 {n} 天",
     "title": "许可证"
   },
+  "localStatus": {
+    "configuring": "可以开始处理",
+    "detecting": "识别中…",
+    "done": "完成",
+    "error": "错误",
+    "processing": "处理中",
+    "queued": "排队中",
+    "serverCommunication": "无法与服务器通信。"
+  },
   "nav": {
     "home": "主页",
     "image": "图像",
@@ -124,6 +145,36 @@
     "audio": "音频",
     "history": "历史记录",
     "settings": "设置"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "自动",
+        "description": "有 GPU 就用 GPU，否则用 CPU。"
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "较慢，但任何机器都能运行。"
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "更快，需要 NVIDIA 驱动。"
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "快速",
+        "description": "细节较少，完成更快"
+      },
+      "balanced": {
+        "label": "均衡",
+        "description": "在细节与耗时之间取中"
+      },
+      "quality": {
+        "label": "高质量",
+        "description": "细节更多，耗时更长"
+      }
+    }
   },
   "queue": {
     "clear": "清空队列",

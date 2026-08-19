@@ -5,7 +5,7 @@ import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
-import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
+import { profileOptions, deviceOptions } from '../constants/processing'
 import CompareSlider from '../components/CompareSlider.vue'
 import ComparisonStats from '../components/ComparisonStats.vue'
 import BatchExportModal from '../components/BatchExportModal.vue'
@@ -69,6 +69,9 @@ defineEmits<{
 }>()
 
 const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
+const devices = computed(() => deviceOptions())
 
 const panelOpen = ref(false)
 const showBatchModal = ref(false)
@@ -628,7 +631,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <label class="field-label">Esforço do processamento</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
-                :options="PROFILE_OPTIONS"
+                :options="profiles"
                 @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
               />
             </div>
@@ -637,7 +640,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <label class="field-label">Onde processar</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
-                :options="DEVICE_OPTIONS"
+                :options="devices"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
             </div>

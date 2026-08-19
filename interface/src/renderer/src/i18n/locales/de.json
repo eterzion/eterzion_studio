@@ -9,6 +9,18 @@
     "noVideoSelected": "Kein Video ausgewählt",
     "processAll": "Alle verarbeiten"
   },
+  "audio": {
+    "addAudio": "Audio hinzufügen",
+    "detectedContent": "Erkannter Inhalt",
+    "effort": "Verarbeitungsaufwand",
+    "musicDescription": "Ein vollständiger Musiktitel mit Instrumenten und Mischung",
+    "musicLabel": "Musik",
+    "processingDescription": "Wie das Modell das Audio verarbeitet",
+    "processingTitle": "Verarbeitung",
+    "speechDescription": "Sprechertext, Podcast, Interview — eine Stimme im Vordergrund",
+    "speechLabel": "Sprache / Stimme",
+    "unsupportedFormat": "Nicht unterstütztes Format: {name}"
+  },
   "contentType": {
     "anime_image": "Anime/Illustration",
     "anime_video": "Anime-Video",
@@ -117,6 +129,15 @@
     "offlineDays": "Offline-Toleranz: noch {n} Tag | Offline-Toleranz: noch {n} Tage",
     "title": "Lizenz"
   },
+  "localStatus": {
+    "configuring": "Bereit zur Verarbeitung",
+    "detecting": "Wird erkannt…",
+    "done": "Fertig",
+    "error": "Fehler",
+    "processing": "Wird verarbeitet",
+    "queued": "In der Warteschlange",
+    "serverCommunication": "Keine Verbindung zum Server."
+  },
   "nav": {
     "home": "Start",
     "image": "Bild",
@@ -124,6 +145,36 @@
     "audio": "Audio",
     "history": "Verlauf",
     "settings": "Einstellungen"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "label": "Automatisch",
+        "description": "GPU, wenn vorhanden, sonst CPU."
+      },
+      "cpu": {
+        "label": "CPU",
+        "description": "Langsamer, läuft auf jedem Rechner."
+      },
+      "cuda": {
+        "label": "GPU (CUDA)",
+        "description": "Schneller, erfordert NVIDIA-Treiber."
+      }
+    },
+    "profile": {
+      "fast": {
+        "label": "Schnell",
+        "description": "Weniger Detail, früher fertig"
+      },
+      "balanced": {
+        "label": "Ausgewogen",
+        "description": "Mittelweg aus Detail und Dauer"
+      },
+      "quality": {
+        "label": "Qualität",
+        "description": "Mehr Detail, dauert länger"
+      }
+    }
   },
   "queue": {
     "clear": "Warteschlange leeren",
