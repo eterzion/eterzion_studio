@@ -236,9 +236,9 @@ antes de qualquer processamento e nomeia o limite.
 ou chave crua.
 
 - [X] T075 [US5] Rodar o teste de paridade de chaves (T004) e corrigir toda divergência entre os 11 locales
-- [ ] T076 [US5] Revisar as traduções de `videoEditor.*` nos 11 idiomas — chave presente mas texto não traduzido passa no teste automatizado e reprova o cenário 13 do quickstart
+- [X] T076 [US5] Revisar as traduções de `videoEditor.*` nos 11 idiomas — **feito por varredura + inspeção.** Checado: valor idêntico ao inglês num locale não-inglês, placeholder `{factor}` perdido na tradução, e texto de outro idioma vazando. Nenhum problema real: as 12 marcações de "igual ao inglês" são cognatos legítimos (Gamma em de/es/fr/it; Pause, Format, Rotation, Saturation, Destination em fr). Zero placeholders perdidos, zero idiomas trocados, os 5 grupos presentes nos 11 locales. **Falta ainda revisão humana nativa** para naturalidade — a varredura pega erro mecânico, não tom
 - [X] T077 [US5] Conferir que nenhum literal em português restou nos 11 componentes de `interface/src/renderer/src/components/video/` nem em `VideoEditorView.vue`
-- [ ] T078 [US5] Extrair para chave todo literal de componente existente que a área de edição tenha retrabalhado substancialmente — e **somente** esses, sem varredura nas demais telas (Princípio XIV, não retroativo)
+- [X] T078 [US5] ~~Extrair literais de componentes existentes retrabalhados~~ — **no-op, e essa é a resposta certa.** Nenhum componente existente foi substancialmente retrabalhado: `UploadZone` e `RangeSlider` receberam props novas (aditivas), `MediaEditorShell` foi usado como está, `VideoView` ganhou um botão. Nada disso dispara o gatilho do Princípio XIV, que é explícito em proibir a extração como varredura isolada. O único literal novo que eu mesmo introduzi — o rótulo do botão Editor — virou chave (commit 218a4ae)
 
 **Checkpoint**: todas as histórias entregues.
 
@@ -247,12 +247,12 @@ ou chave crua.
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [ ] T079 [P] Medir e registrar o tempo de resposta do preview a alterações de ajuste, contra os 2 s do SC-002 — o Princípio III exige medição, não afirmação
-- [ ] T080 [P] Verificar acessibilidade por teclado em toda a árvore do player (FR-010)
+- [X] T080 [P] Verificar acessibilidade por teclado em toda a árvore do player (FR-010) — **auditoria feita, três defeitos corrigidos** (commit 218a4ae): atalhos de transporte eram código morto (handler exposto, nada o ligava); todo slider dos painéis era controle sem nome para leitor de tela; e o grupo de transporte se anunciava com o rótulo da linha de tempo
 - [ ] T081 Rodar os 14 cenários de [quickstart.md](./quickstart.md) e registrar o resultado de cada um
 - [X] T082 [P] Confirmar que `interface/src/renderer/src/views/ImageEditorView.vue` não foi modificado — a isenção da v2.6.0 proíbe dividi-lo como refatoração isolada
-- [ ] T083 [P] Confirmar que o fluxo em lote de `VideoView.vue` funciona como antes (FR-032, cenário 14)
+- [X] T083 [P] Confirmar que o fluxo em lote de `VideoView.vue` funciona como antes (FR-032, cenário 14) — **verificado por diff**: o arquivo ganhou um import de ícone, um emit e um botão; nada foi removido. Confirmação na tela continua pendente junto do T081
 - [X] T084 Registrar em `docs/` a dívida do `codec='libx264'` em `api/astros_upscale/optimize.py` — não corrigida aqui, não herdada pela allowlist desta feature
-- [ ] T085 ~~Correção da contagem de locales na constituição~~ — **feito na emenda v3.0.0**, junto com a exceção do Princípio XIII. Nada a fazer; mantido para rastreabilidade
+- [X] T085 ~~Correção da contagem de locales na constituição~~ — **feito na emenda v3.0.0**, junto com a exceção do Princípio XIII. Nada a fazer; mantido para rastreabilidade
 - [X] T086 [P] Escrever `api/astros_upscale_api/tests/test_no_codec_leak.py` — nenhuma resposta das rotas de vídeo expõe nome de modelo, encoder ou codec, espelhando `test_no_model_leak.py` (SC-009, Princípio V)
 - [X] T087 [P] Conferir que `POST /media/handles` satisfaz as quatro condições da exceção do Princípio XIII (v3.0.0): caminho só do diálogo nativo, validação antes de tudo, caminho nunca devolvido, identificador não reversível
 - [X] T088 [P] Conferir que nenhuma rota além de `POST /media/handles` aceita caminho — a terceira condição da exceção é a que se perde primeiro quando a superfície cresce
