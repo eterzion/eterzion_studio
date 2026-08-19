@@ -10,6 +10,10 @@ import vue from '@vitejs/plugin-vue'
 // concerns for no gain.
 export default defineConfig({
   plugins: [vue()],
+  // Mirrors electron.vite.config.ts's define. Without it, importing
+  // services/api.ts here fails on an undeclared global — the tests would be
+  // exercising a different module than the app does.
+  define: { __ASTROS_API_PORT__: JSON.stringify(process.env.ASTROS_API_PORT || '8765') },
   resolve: {
     alias: { '@renderer': resolve('src/renderer/src') }
   },

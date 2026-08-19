@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "Home",
-    "image": "Immagine",
-    "video": "Video",
-    "audio": "Audio",
-    "history": "Cronologia",
-    "settings": "Impostazioni"
+  "actions": {
+    "exportAll": "Esporta tutto",
+    "import": "Importa",
+    "noAudioSelected": "Nessun audio selezionato",
+    "noImageSelected": "Nessuna immagine selezionata",
+    "noVideoSelected": "Nessun video selezionato",
+    "processAll": "Elabora tutti"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "Memoria insufficiente per questa dimensione di uscita.",
+        "action": "Prova un fattore di scala o una dimensione personalizzata più piccoli."
+      },
+      "corruptedInput": {
+        "message": "Non è stato possibile leggere il file di origine.",
+        "action": "Rimuovi questo elemento dalla coda e importa di nuovo il file."
+      },
+      "modelFailure": {
+        "message": "Errore di elaborazione.",
+        "action": "Riprova — se persiste, prova un altro modello o dispositivo."
+      },
+      "diskFull": {
+        "message": "Spazio su disco insufficiente.",
+        "action": "Scegli un’altra cartella di destinazione con più spazio libero."
+      },
+      "hardwareInsufficient": {
+        "message": "Questa macchina non può gestire questa elaborazione.",
+        "action": "Prova una dimensione di uscita minore o il profilo Veloce."
+      },
+      "licenseInvalid": {
+        "message": "La tua licenza non è attiva.",
+        "action": "Controlla lo stato della licenza nelle Impostazioni."
+      }
+    },
+    "job": {
+      "connectionLost": "Comunicazione con il server persa durante l’elaborazione.",
+      "contentTypeMissing": "Tipo di contenuto non ancora rilevato — selezionalo manualmente.",
+      "createFailed": "Impossibile creare l’operazione.",
+      "customTooSmall": "La dimensione personalizzata non può essere minore dell’originale (questo è un upscaler).",
+      "noBackendJob": "Operazione senza elaborazione associata.",
+      "notificationDone": "{file} è stata elaborata con successo.",
+      "originalTooLarge": "In modalità Originale la dimensione non può superare l’originale — per ingrandire, usa Predefinito o Personalizzato.",
+      "processingFailed": "Elaborazione non riuscita.",
+      "resolutionTooHigh": "Risoluzione in ingresso troppo alta (oltre 10000px); l’ingrandimento potrebbe non essere fattibile.",
+      "scaleMissing": "Scegli un fattore di scala.",
+      "sizeMissing": "Indica larghezza e altezza.",
+      "unsupportedFormat": "Formato non supportato (solo immagini: PNG, JPG, TIFF, WEBP, BMP)."
+    }
   },
   "home": {
     "title": "Cosa vuoi migliorare oggi?",
@@ -19,20 +61,24 @@
       "empty": "Vuoto"
     }
   },
-  "sidebar": {
-    "support": "Supporto",
-    "collapse": "Comprimi barra laterale",
-    "expand": "Espandi barra laterale",
-    "darkMode": "Modalità scura",
-    "lightMode": "Modalità chiara",
-    "toggleTheme": "Alterna tema chiaro/scuro",
-    "links": {
-      "site": "Sito ufficiale",
-      "discord": "Discord",
-      "faq": "Domande frequenti",
-      "help": "Centro assistenza",
-      "email": "E-mail di supporto"
-    }
+  "nav": {
+    "home": "Home",
+    "image": "Immagine",
+    "video": "Video",
+    "audio": "Audio",
+    "history": "Cronologia",
+    "settings": "Impostazioni"
+  },
+  "queue": {
+    "clear": "Svuota la coda",
+    "currentStatus": "Stato attuale",
+    "empty": "Vuota",
+    "fileCount": "File in coda",
+    "fileCountLabel": "{n} file | {n} file",
+    "quality": "Qualità e dettaglio",
+    "readyToEnhance": "Pronto per migliorare",
+    "title": "Coda di elaborazione",
+    "totalSize": "Dimensione totale"
   },
   "settings": {
     "title": "Impostazioni",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "Supporto",
+    "collapse": "Comprimi barra laterale",
+    "expand": "Espandi barra laterale",
+    "darkMode": "Modalità scura",
+    "lightMode": "Modalità chiara",
+    "toggleTheme": "Alterna tema chiaro/scuro",
+    "links": {
+      "site": "Sito ufficiale",
+      "discord": "Discord",
+      "faq": "Domande frequenti",
+      "help": "Centro assistenza",
+      "email": "E-mail di supporto"
+    }
+  },
+  "upload": {
+    "aria": "Trascina qui i file, oppure premi Invio per sceglierli",
+    "audioTitle": "Trascina qui gli audio",
+    "dropHere": "Rilascia per importare",
+    "failed": "Non è stato possibile importare i file",
+    "imagesTitle": "Trascina qui le immagini",
+    "importing": "Importazione dei file…",
+    "limit": "fino a 500 MB per file",
+    "pickFiles": "Scegli i file",
+    "pickFolder": "Scegli la cartella",
+    "subtitle": "oppure usa i pulsanti qui sotto",
+    "videoTitle": "Trascina qui i video"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "Aggiungi video",
@@ -74,7 +148,7 @@
       "ready": "Pronto per la modifica",
       "runAll": "Elabora tutti",
       "title": "Editor video",
-      "uploadSubtitle": "oppure usa i pulsanti qui sotto per scegliere i file",
+      "uploadSubtitle": "oppure usa i pulsanti qui sotto",
       "uploadTitle": "Trascina qui i video"
     },
     "edits": {

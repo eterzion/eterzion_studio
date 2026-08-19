@@ -1,7 +1,11 @@
 // Client for the astros_upscale_api FastAPI server (api/astros_upscale_api).
 // Mirrors app/models/schemas.py — keep the two in sync when either changes.
 
-export const BASE_URL = 'http://127.0.0.1:8765'
+// Inlined at build time by electron.vite.config.ts's `define`. The renderer has
+// no process.env, and making every call site await the port from the main
+// process would turn a constant into an async dependency for no gain.
+declare const __ASTROS_API_PORT__: string
+export const BASE_URL = `http://127.0.0.1:${__ASTROS_API_PORT__}`
 
 // T069/T070 — GET /components (FR-063/FR-064): capability-first, never a raw
 // technical model identifier at the list level (FR-009). Replaces the old

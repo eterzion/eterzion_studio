@@ -98,7 +98,7 @@ function onKeydown(event: KeyboardEvent): void {
     :aria-label="handle?.display_name ?? ''"
     @keydown="onKeydown"
   >
-    <div class="min-h-0 flex-1">
+    <div class="player-stage">
       <VideoPlayerSurface
         :handle="handle"
         :source-path="sourcePath"
@@ -108,7 +108,7 @@ function onKeydown(event: KeyboardEvent): void {
       />
     </div>
 
-    <div class="flex flex-col gap-1 border-t border-surface-border bg-surface-2 px-3 py-2">
+    <div class="player-controls">
       <VideoTimeline
         :progress="timeline.progressAt(playback.currentTime.value)"
         :duration="duration"
@@ -155,3 +155,37 @@ function onKeydown(event: KeyboardEvent): void {
     </div>
   </div>
 </template>
+
+<style scoped>
+/* The video should be as large as the stage allows, so the frame is what fills
+   the eye rather than the chrome around it. The controls keep their intrinsic
+   height; everything left over goes to the picture. */
+.video-player {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.video-player:focus {
+  outline: none;
+}
+
+.player-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.player-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-top: 1px solid var(--surface-border);
+  background: var(--surface-2);
+  flex: 0 0 auto;
+}
+</style>

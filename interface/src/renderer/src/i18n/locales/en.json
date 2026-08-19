@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "Home",
-    "image": "Image",
-    "video": "Video",
-    "audio": "Audio",
-    "history": "History",
-    "settings": "Settings"
+  "actions": {
+    "exportAll": "Export all",
+    "import": "Import",
+    "noAudioSelected": "No audio selected",
+    "noImageSelected": "No image selected",
+    "noVideoSelected": "No video selected",
+    "processAll": "Process all"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "Not enough memory for this output size.",
+        "action": "Try a smaller scale factor or a smaller custom size."
+      },
+      "corruptedInput": {
+        "message": "The source file could not be read.",
+        "action": "Remove this item from the queue and import the file again."
+      },
+      "modelFailure": {
+        "message": "Processing error.",
+        "action": "Try again — if it persists, try another model or device."
+      },
+      "diskFull": {
+        "message": "Not enough disk space.",
+        "action": "Choose another destination folder with more free space."
+      },
+      "hardwareInsufficient": {
+        "message": "This machine cannot handle this processing.",
+        "action": "Try a smaller output size or the Fast profile."
+      },
+      "licenseInvalid": {
+        "message": "Your licence is not active.",
+        "action": "Check your licence status in Settings."
+      }
+    },
+    "job": {
+      "connectionLost": "Lost communication with the server during processing.",
+      "contentTypeMissing": "Content type not detected yet — select it manually.",
+      "createFailed": "Could not create the job.",
+      "customTooSmall": "The custom size cannot be smaller than the original (this is an upscaler).",
+      "noBackendJob": "Job has no associated processing.",
+      "notificationDone": "{file} was processed successfully.",
+      "originalTooLarge": "In Original mode the size cannot exceed the original — to enlarge, use Preset or Custom.",
+      "processingFailed": "Processing failed.",
+      "resolutionTooHigh": "Input resolution too high (over 10000px); upscaling may not be viable.",
+      "scaleMissing": "Choose a scale factor.",
+      "sizeMissing": "Enter a width and height.",
+      "unsupportedFormat": "Unsupported format (images only: PNG, JPG, TIFF, WEBP, BMP)."
+    }
   },
   "home": {
     "title": "What would you like to improve today?",
@@ -19,20 +61,24 @@
       "empty": "Empty"
     }
   },
-  "sidebar": {
-    "support": "Support",
-    "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar",
-    "darkMode": "Dark mode",
-    "lightMode": "Light mode",
-    "toggleTheme": "Toggle light/dark theme",
-    "links": {
-      "site": "Official website",
-      "discord": "Discord",
-      "faq": "FAQ",
-      "help": "Help center",
-      "email": "Support email"
-    }
+  "nav": {
+    "home": "Home",
+    "image": "Image",
+    "video": "Video",
+    "audio": "Audio",
+    "history": "History",
+    "settings": "Settings"
+  },
+  "queue": {
+    "clear": "Clear queue",
+    "currentStatus": "Current status",
+    "empty": "Empty",
+    "fileCount": "Files in queue",
+    "fileCountLabel": "{n} file | {n} files",
+    "quality": "Quality and detail",
+    "readyToEnhance": "Ready to enhance",
+    "title": "Processing queue",
+    "totalSize": "Total size"
   },
   "settings": {
     "title": "Settings",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "Support",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "toggleTheme": "Toggle light/dark theme",
+    "links": {
+      "site": "Official website",
+      "discord": "Discord",
+      "faq": "FAQ",
+      "help": "Help center",
+      "email": "Support email"
+    }
+  },
+  "upload": {
+    "aria": "Drop files here, or press Enter to choose",
+    "audioTitle": "Drop audio here",
+    "dropHere": "Drop to import",
+    "failed": "The files could not be imported",
+    "imagesTitle": "Drop images here",
+    "importing": "Importing files…",
+    "limit": "up to 500 MB per file",
+    "pickFiles": "Choose files",
+    "pickFolder": "Choose folder",
+    "subtitle": "or use the buttons below",
+    "videoTitle": "Drop videos here"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "Add videos",
@@ -74,7 +148,7 @@
       "ready": "Ready to edit",
       "runAll": "Process all",
       "title": "Video editor",
-      "uploadSubtitle": "or use the buttons below to choose files",
+      "uploadSubtitle": "or use the buttons below",
       "uploadTitle": "Drop videos here"
     },
     "edits": {

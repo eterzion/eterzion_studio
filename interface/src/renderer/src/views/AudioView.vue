@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
@@ -26,6 +27,7 @@ import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
 
 defineEmits<{ back: [] }>()
 
+const { t } = useI18n()
 // T057/FR-081-086 don't apply to audio (no secondary streams to lose) — this
 // mirrors VideoView.vue's job-list shape without the confirmation step.
 // IMPORTANT (FR-023 / spec.md LC-003): there is no compression-artifact
@@ -304,8 +306,7 @@ function exportAll(): void {
         class="upload-fill"
         :error="importError"
         :loading="uploading"
-        title="Arraste áudios aqui"
-        subtitle="ou use os botões abaixo — voz e música são identificadas automaticamente"
+        :title="t('upload.audioTitle')"
         :formats="['MP3', 'WAV', 'FLAC', 'M4A', 'OGG', 'OPUS']"
         @pick-files="pickFiles"
         @pick-folder="pickFolder"

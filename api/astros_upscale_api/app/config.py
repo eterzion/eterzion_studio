@@ -10,9 +10,20 @@ APP_DIR = Path(__file__).resolve().parent
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file='.env', env_prefix='ASTROS_')
 
-    port: int = 8765
-    # 'null' covers the packaged Electron app (loaded via file://, which sends Origin: null).
-    cors_origins: list[str] = ['http://localhost:5173', 'app://.', 'null']
+    # The packaged default. Development uses 8050, passed in as ASTROS_PORT by
+    # the Electron main process (see interface/electron.vite.config.ts). The two
+    # differ so a dev run and a packaged build can be open at once.
+    port: int = 8051
+    # An explicit list, not a wildcard: this API answers on loopback and any
+    # page in a browser could otherwise call it. 'null' covers the packaged
+    # Electron app, which loads via file:// and sends Origin: null. 8055 is the
+    # renderer's dev server — a rejected origin here surfaces as a dead backend
+    # rather than as a CORS problem, which is a slow thing to diagnose.
+    cors_origins: list[str] = [
+        'http://localhost:8055',
+        'app://.',
+        'null',
+    ]
     # APP_DIR = <repo>/api/astros_upscale_api/app -> repo root is 3 levels up.
     # /models stays at the true git repo root (data, not application source),
     # unlike app.processing's _REPO_ROOT (component management) which points

@@ -2,7 +2,12 @@ import { spawn, ChildProcess } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-export const API_BASE_URL = 'http://127.0.0.1:8765'
+// 8051 is the packaged default; development uses 8050, set by
+// electron.vite.config.ts and passed to the Python process below as
+// ASTROS_PORT. They differ so a dev run and a packaged build can be open at the
+// same time without one refusing to start.
+export const API_PORT = process.env.ASTROS_API_PORT || '8051'
+export const API_BASE_URL = `http://127.0.0.1:${API_PORT}`
 
 /** Locates the bundled FFmpeg binary's directory (electron-builder extraResources,
  *  see electron-builder.yml win/linux `extraResources: ... to: ffmpeg`), if one was
@@ -93,9 +98,14 @@ export async function ensureApiRunning(
 
   const python = resolvePythonExecutable(repoRoot)
   const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath)
-  const env = bundledFfmpegDir
-    ? { ...process.env, ASTROS_FFMPEG_DIR: bundledFfmpegDir }
-    : process.env
+  // ASTROS_PORT is the API's own setting name (app/config.py, env_prefix
+  // 'ASTROS_'). Passing it explicitly rather than relying on inheritance means
+  // the child binds the port this process is already pointing at.
+  const env = {
+    ...process.env,
+    ASTROS_PORT: API_PORT,
+    ...(bundledFfmpegDir ? { ASTROS_FFMPEG_DIR: bundledFfmpegDir } : {})
+  }
   const child = spawn(python, [runScript], { cwd: apiDir, env })
   ownedProcess = child
 

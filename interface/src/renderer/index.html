@@ -3,10 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <title>Astros Upscale</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+         The API origin is substituted at build time by the astrosApiOrigin()
+         plugin in electron.vite.config.ts — the port moves between packaged
+         (8051) and development (8050), and a CSP that named one of them would
+         silently block every call in the other. 8766 is the licensing service,
+         whose port does not move. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: astros-media: https://assets.ericinacio.com; media-src 'self' astros-media:; connect-src 'self' http://127.0.0.1:8765 ws://127.0.0.1:8765 http://127.0.0.1:8766"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: astros-media: https://assets.ericinacio.com; media-src 'self' astros-media:; connect-src 'self' %ASTROS_API_ORIGIN% %ASTROS_API_WS_ORIGIN% http://127.0.0.1:8766"
     />
   </head>
 

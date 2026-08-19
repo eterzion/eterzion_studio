@@ -136,7 +136,22 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
     }
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
+    } catch {
+      // A tainted texture throws here — the media scheme is a different origin
+      // from the renderer, so the video needs crossorigin AND the handler needs
+      // to answer CORS. When either is missing this throws on the first frame,
+      // and an unguarded throw kills the requestAnimationFrame loop: the canvas
+      // freezes black while the player underneath keeps decoding, which reads
+      // as "the video is broken" rather than "the shader is".
+      //
+      // Falling back means the caller shows the untouched <video> and says the
+      // adjusted preview is unavailable — honest, and far better than black.
+      supported.value = false
+      stop()
+      return
+    }
 
     const a = current ?? {
       brightness: 0,

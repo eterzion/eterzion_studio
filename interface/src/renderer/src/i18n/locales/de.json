@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "Start",
-    "image": "Bild",
-    "video": "Video",
-    "audio": "Audio",
-    "history": "Verlauf",
-    "settings": "Einstellungen"
+  "actions": {
+    "exportAll": "Alle exportieren",
+    "import": "Importieren",
+    "noAudioSelected": "Kein Audio ausgewählt",
+    "noImageSelected": "Kein Bild ausgewählt",
+    "noVideoSelected": "Kein Video ausgewählt",
+    "processAll": "Alle verarbeiten"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "Nicht genug Speicher für diese Ausgabegröße.",
+        "action": "Versuchen Sie einen kleineren Skalierungsfaktor oder eine kleinere eigene Größe."
+      },
+      "corruptedInput": {
+        "message": "Die Quelldatei konnte nicht gelesen werden.",
+        "action": "Entfernen Sie diesen Eintrag aus der Warteschlange und importieren Sie die Datei erneut."
+      },
+      "modelFailure": {
+        "message": "Fehler bei der Verarbeitung.",
+        "action": "Versuchen Sie es erneut — bei anhaltendem Fehler ein anderes Modell oder Gerät."
+      },
+      "diskFull": {
+        "message": "Nicht genug Speicherplatz.",
+        "action": "Wählen Sie einen anderen Zielordner mit mehr freiem Speicher."
+      },
+      "hardwareInsufficient": {
+        "message": "Dieses Gerät kann diese Verarbeitung nicht ausführen.",
+        "action": "Versuchen Sie eine kleinere Ausgabegröße oder das Profil Schnell."
+      },
+      "licenseInvalid": {
+        "message": "Ihre Lizenz ist nicht aktiv.",
+        "action": "Prüfen Sie den Lizenzstatus in den Einstellungen."
+      }
+    },
+    "job": {
+      "connectionLost": "Verbindung zum Server während der Verarbeitung verloren.",
+      "contentTypeMissing": "Inhaltstyp noch nicht erkannt — bitte manuell auswählen.",
+      "createFailed": "Auftrag konnte nicht erstellt werden.",
+      "customTooSmall": "Die benutzerdefinierte Größe darf nicht kleiner als das Original sein (dies ist ein Upscaler).",
+      "noBackendJob": "Auftrag ohne zugehörige Verarbeitung.",
+      "notificationDone": "{file} wurde erfolgreich verarbeitet.",
+      "originalTooLarge": "Im Modus Original darf die Größe das Original nicht überschreiten — zum Vergrößern Voreinstellung oder Benutzerdefiniert verwenden.",
+      "processingFailed": "Verarbeitung fehlgeschlagen.",
+      "resolutionTooHigh": "Eingangsauflösung zu hoch (über 10000px); das Hochskalieren ist möglicherweise nicht machbar.",
+      "scaleMissing": "Wählen Sie einen Skalierungsfaktor.",
+      "sizeMissing": "Geben Sie Breite und Höhe an.",
+      "unsupportedFormat": "Format nicht unterstützt (nur Bilder: PNG, JPG, TIFF, WEBP, BMP)."
+    }
   },
   "home": {
     "title": "Was möchten Sie heute verbessern?",
@@ -19,20 +61,24 @@
       "empty": "Leer"
     }
   },
-  "sidebar": {
-    "support": "Support",
-    "collapse": "Seitenleiste einklappen",
-    "expand": "Seitenleiste ausklappen",
-    "darkMode": "Dunkler Modus",
-    "lightMode": "Heller Modus",
-    "toggleTheme": "Hell/Dunkel-Modus umschalten",
-    "links": {
-      "site": "Offizielle Website",
-      "discord": "Discord",
-      "faq": "FAQ",
-      "help": "Hilfe-Center",
-      "email": "Support-E-Mail"
-    }
+  "nav": {
+    "home": "Start",
+    "image": "Bild",
+    "video": "Video",
+    "audio": "Audio",
+    "history": "Verlauf",
+    "settings": "Einstellungen"
+  },
+  "queue": {
+    "clear": "Warteschlange leeren",
+    "currentStatus": "Aktueller Status",
+    "empty": "Leer",
+    "fileCount": "Dateien in der Warteschlange",
+    "fileCountLabel": "{n} Datei | {n} Dateien",
+    "quality": "Qualität und Details",
+    "readyToEnhance": "Bereit zur Verbesserung",
+    "title": "Verarbeitungswarteschlange",
+    "totalSize": "Gesamtgröße"
   },
   "settings": {
     "title": "Einstellungen",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "Support",
+    "collapse": "Seitenleiste einklappen",
+    "expand": "Seitenleiste ausklappen",
+    "darkMode": "Dunkler Modus",
+    "lightMode": "Heller Modus",
+    "toggleTheme": "Hell/Dunkel-Modus umschalten",
+    "links": {
+      "site": "Offizielle Website",
+      "discord": "Discord",
+      "faq": "FAQ",
+      "help": "Hilfe-Center",
+      "email": "Support-E-Mail"
+    }
+  },
+  "upload": {
+    "aria": "Dateien hier ablegen oder Eingabetaste zum Auswählen drücken",
+    "audioTitle": "Audiodateien hier ablegen",
+    "dropHere": "Zum Importieren ablegen",
+    "failed": "Die Dateien konnten nicht importiert werden",
+    "imagesTitle": "Bilder hier ablegen",
+    "importing": "Dateien werden importiert…",
+    "limit": "bis zu 500 MB pro Datei",
+    "pickFiles": "Dateien wählen",
+    "pickFolder": "Ordner wählen",
+    "subtitle": "oder nutzen Sie die Schaltflächen unten",
+    "videoTitle": "Videos hier ablegen"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "Videos hinzufügen",
@@ -74,7 +148,7 @@
       "ready": "Bereit zum Bearbeiten",
       "runAll": "Alle verarbeiten",
       "title": "Video-Editor",
-      "uploadSubtitle": "oder wählen Sie die Dateien über die Schaltflächen unten",
+      "uploadSubtitle": "oder nutzen Sie die Schaltflächen unten",
       "uploadTitle": "Videos hier ablegen"
     },
     "edits": {

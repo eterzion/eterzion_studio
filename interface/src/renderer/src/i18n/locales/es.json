@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "Inicio",
-    "image": "Imagen",
-    "video": "Vídeo",
-    "audio": "Audio",
-    "history": "Historial",
-    "settings": "Ajustes"
+  "actions": {
+    "exportAll": "Exportar todo",
+    "import": "Importar",
+    "noAudioSelected": "Ningún audio seleccionado",
+    "noImageSelected": "Ninguna imagen seleccionada",
+    "noVideoSelected": "Ningún vídeo seleccionado",
+    "processAll": "Procesar todos"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "Memoria insuficiente para este tamaño de salida.",
+        "action": "Prueba con un factor de escala o un tamaño personalizado menor."
+      },
+      "corruptedInput": {
+        "message": "No se pudo leer el archivo de origen.",
+        "action": "Quita este elemento de la cola e importa el archivo de nuevo."
+      },
+      "modelFailure": {
+        "message": "Error en el procesamiento.",
+        "action": "Inténtalo de nuevo — si persiste, prueba otro modelo o dispositivo."
+      },
+      "diskFull": {
+        "message": "Espacio en disco insuficiente.",
+        "action": "Elige otra carpeta de destino con más espacio libre."
+      },
+      "hardwareInsufficient": {
+        "message": "Este equipo no tiene capacidad para este procesamiento.",
+        "action": "Prueba un tamaño de salida menor o el perfil Rápido."
+      },
+      "licenseInvalid": {
+        "message": "Tu licencia no está activa.",
+        "action": "Comprueba el estado de tu licencia en Ajustes."
+      }
+    },
+    "job": {
+      "connectionLost": "Se perdió la comunicación con el servidor durante el procesamiento.",
+      "contentTypeMissing": "Tipo de contenido aún no detectado — selecciónalo manualmente.",
+      "createFailed": "No se pudo crear la tarea.",
+      "customTooSmall": "El tamaño personalizado no puede ser menor que el original (esto es un escalador).",
+      "noBackendJob": "La tarea no tiene procesamiento asociado.",
+      "notificationDone": "{file} se procesó correctamente.",
+      "originalTooLarge": "En modo Original el tamaño no puede superar al original — para ampliar, usa Predefinido o Personalizado.",
+      "processingFailed": "Fallo en el procesamiento.",
+      "resolutionTooHigh": "Resolución de entrada demasiado alta (más de 10000px); el escalado puede no ser viable.",
+      "scaleMissing": "Elige un factor de escala.",
+      "sizeMissing": "Indica ancho y alto.",
+      "unsupportedFormat": "Formato no compatible (solo imágenes: PNG, JPG, TIFF, WEBP, BMP)."
+    }
   },
   "home": {
     "title": "¿Qué te gustaría mejorar hoy?",
@@ -19,20 +61,24 @@
       "empty": "Vacío"
     }
   },
-  "sidebar": {
-    "support": "Soporte",
-    "collapse": "Contraer barra lateral",
-    "expand": "Expandir barra lateral",
-    "darkMode": "Modo oscuro",
-    "lightMode": "Modo claro",
-    "toggleTheme": "Alternar tema claro/oscuro",
-    "links": {
-      "site": "Sitio oficial",
-      "discord": "Discord",
-      "faq": "Preguntas frecuentes",
-      "help": "Centro de ayuda",
-      "email": "Correo de soporte"
-    }
+  "nav": {
+    "home": "Inicio",
+    "image": "Imagen",
+    "video": "Vídeo",
+    "audio": "Audio",
+    "history": "Historial",
+    "settings": "Ajustes"
+  },
+  "queue": {
+    "clear": "Vaciar cola",
+    "currentStatus": "Estado actual",
+    "empty": "Vacía",
+    "fileCount": "Archivos en cola",
+    "fileCountLabel": "{n} archivo | {n} archivos",
+    "quality": "Calidad y detalle",
+    "readyToEnhance": "Listo para mejorar",
+    "title": "Cola de procesamiento",
+    "totalSize": "Tamaño total"
   },
   "settings": {
     "title": "Ajustes",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "Soporte",
+    "collapse": "Contraer barra lateral",
+    "expand": "Expandir barra lateral",
+    "darkMode": "Modo oscuro",
+    "lightMode": "Modo claro",
+    "toggleTheme": "Alternar tema claro/oscuro",
+    "links": {
+      "site": "Sitio oficial",
+      "discord": "Discord",
+      "faq": "Preguntas frecuentes",
+      "help": "Centro de ayuda",
+      "email": "Correo de soporte"
+    }
+  },
+  "upload": {
+    "aria": "Arrastra archivos aquí o pulsa Enter para elegir",
+    "audioTitle": "Arrastra audios aquí",
+    "dropHere": "Suelta para importar",
+    "failed": "No se pudieron importar los archivos",
+    "imagesTitle": "Arrastra imágenes aquí",
+    "importing": "Importando archivos…",
+    "limit": "hasta 500 MB por archivo",
+    "pickFiles": "Elegir archivos",
+    "pickFolder": "Elegir carpeta",
+    "subtitle": "o usa los botones de abajo",
+    "videoTitle": "Arrastra vídeos aquí"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "Añadir vídeos",
@@ -74,7 +148,7 @@
       "ready": "Listo para editar",
       "runAll": "Procesar todos",
       "title": "Editor de vídeo",
-      "uploadSubtitle": "o usa los botones de abajo para elegir los archivos",
+      "uploadSubtitle": "o usa los botones de abajo",
       "uploadTitle": "Arrastra vídeos aquí"
     },
     "edits": {

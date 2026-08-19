@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "ホーム",
-    "image": "画像",
-    "video": "動画",
-    "audio": "音声",
-    "history": "履歴",
-    "settings": "設定"
+  "actions": {
+    "exportAll": "すべて書き出す",
+    "import": "読み込む",
+    "noAudioSelected": "音声が選択されていません",
+    "noImageSelected": "画像が選択されていません",
+    "noVideoSelected": "動画が選択されていません",
+    "processAll": "すべて処理"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "この出力サイズにはメモリが足りません。",
+        "action": "拡大率を下げるか、カスタムサイズを小さくしてください。"
+      },
+      "corruptedInput": {
+        "message": "元のファイルを読み込めませんでした。",
+        "action": "この項目をキューから削除し、もう一度読み込んでください。"
+      },
+      "modelFailure": {
+        "message": "処理でエラーが発生しました。",
+        "action": "もう一度お試しください。続く場合は別のモデルかデバイスをお試しください。"
+      },
+      "diskFull": {
+        "message": "ディスクの空き容量が足りません。",
+        "action": "空き容量の多い別の保存先を選んでください。"
+      },
+      "hardwareInsufficient": {
+        "message": "この環境ではこの処理を実行できません。",
+        "action": "出力サイズを小さくするか、「高速」プロファイルをお試しください。"
+      },
+      "licenseInvalid": {
+        "message": "ライセンスが有効ではありません。",
+        "action": "設定でライセンスの状態を確認してください。"
+      }
+    },
+    "job": {
+      "connectionLost": "処理中にサーバーとの通信が切断されました。",
+      "contentTypeMissing": "コンテンツの種類が未検出です。手動で選択してください。",
+      "createFailed": "ジョブを作成できませんでした。",
+      "customTooSmall": "カスタムサイズは元より小さくできません（これは拡大ツールです）。",
+      "noBackendJob": "このジョブには処理が紐づいていません。",
+      "notificationDone": "{file} の処理が完了しました。",
+      "originalTooLarge": "「オリジナル」では元のサイズを超えられません。拡大するにはプリセットかカスタムを使ってください。",
+      "processingFailed": "処理に失敗しました。",
+      "resolutionTooHigh": "入力解像度が高すぎます（10000pxを超過）。拡大できない可能性があります。",
+      "scaleMissing": "拡大率を選んでください。",
+      "sizeMissing": "幅と高さを入力してください。",
+      "unsupportedFormat": "未対応の形式です（画像のみ: PNG, JPG, TIFF, WEBP, BMP）。"
+    }
   },
   "home": {
     "title": "今日は何を改善しますか？",
@@ -19,20 +61,24 @@
       "empty": "空"
     }
   },
-  "sidebar": {
-    "support": "サポート",
-    "collapse": "サイドバーを折りたたむ",
-    "expand": "サイドバーを展開する",
-    "darkMode": "ダークモード",
-    "lightMode": "ライトモード",
-    "toggleTheme": "ライト/ダークテーマを切り替え",
-    "links": {
-      "site": "公式サイト",
-      "discord": "Discord",
-      "faq": "よくある質問",
-      "help": "ヘルプセンター",
-      "email": "サポートメール"
-    }
+  "nav": {
+    "home": "ホーム",
+    "image": "画像",
+    "video": "動画",
+    "audio": "音声",
+    "history": "履歴",
+    "settings": "設定"
+  },
+  "queue": {
+    "clear": "キューを空にする",
+    "currentStatus": "現在の状態",
+    "empty": "空",
+    "fileCount": "キュー内のファイル",
+    "fileCountLabel": "{n} 件のファイル",
+    "quality": "画質とディテール",
+    "readyToEnhance": "処理の準備完了",
+    "title": "処理キュー",
+    "totalSize": "合計サイズ"
   },
   "settings": {
     "title": "設定",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "サポート",
+    "collapse": "サイドバーを折りたたむ",
+    "expand": "サイドバーを展開する",
+    "darkMode": "ダークモード",
+    "lightMode": "ライトモード",
+    "toggleTheme": "ライト/ダークテーマを切り替え",
+    "links": {
+      "site": "公式サイト",
+      "discord": "Discord",
+      "faq": "よくある質問",
+      "help": "ヘルプセンター",
+      "email": "サポートメール"
+    }
+  },
+  "upload": {
+    "aria": "ここにファイルをドロップするか、Enterキーで選択します",
+    "audioTitle": "ここに音声をドロップ",
+    "dropHere": "ドロップして読み込む",
+    "failed": "ファイルを読み込めませんでした",
+    "imagesTitle": "ここに画像をドロップ",
+    "importing": "ファイルを読み込み中…",
+    "limit": "1ファイルあたり500MBまで",
+    "pickFiles": "ファイルを選ぶ",
+    "pickFolder": "フォルダーを選ぶ",
+    "subtitle": "下のボタンからも選べます",
+    "videoTitle": "ここに動画をドロップ"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "動画を追加",
@@ -74,7 +148,7 @@
       "ready": "編集の準備完了",
       "runAll": "すべて処理",
       "title": "動画エディター",
-      "uploadSubtitle": "下のボタンからファイルを選ぶこともできます",
+      "uploadSubtitle": "下のボタンからも選べます",
       "uploadTitle": "ここに動画をドロップ"
     },
     "edits": {

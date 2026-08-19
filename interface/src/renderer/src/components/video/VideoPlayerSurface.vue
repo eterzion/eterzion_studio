@@ -81,22 +81,19 @@ watch(video, (element) => {
 </script>
 
 <template>
-  <div class="relative flex h-full w-full items-center justify-center bg-surface-1">
+  <div class="video-surface">
     <template v-if="sourceUrl && !failed">
       <video
         ref="video"
         :src="sourceUrl"
-        class="max-h-full max-w-full"
-        :class="{ 'invisible absolute': pipeline.supported.value }"
+        class="video-canvas"
+        :class="{ hidden: pipeline.supported.value }"
         preload="metadata"
         playsinline
+        crossorigin="anonymous"
         @error="failed = true"
       />
-      <canvas
-        v-show="pipeline.supported.value"
-        ref="canvas"
-        class="max-h-full max-w-full object-contain"
-      />
+      <canvas v-show="pipeline.supported.value" ref="canvas" class="video-canvas" />
 
       <!-- FR-014: say when the preview is being recalculated, rather than
            showing a stale frame that looks current. -->
@@ -127,3 +124,37 @@ watch(video, (element) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.video-surface {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: var(--surface-1);
+}
+
+/* Both the <video> and the canvas use this. max-* rather than a fixed size:
+   the element keeps its own aspect ratio and grows until whichever edge runs
+   out first, so a tall clip and a wide one both fill the stage without
+   distortion. */
+.video-canvas {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
+}
+
+/* The <video> stays in the tree while the shader draws — it is the source
+   texture, not a fallback — but must not take layout space alongside the
+   canvas. */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+</style>

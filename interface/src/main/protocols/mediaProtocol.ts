@@ -100,7 +100,12 @@ export function registerMediaProtocolHandler(): void {
               'Content-Type': contentType,
               'Content-Length': String(end - start + 1),
               'Content-Range': `bytes ${start}-${end}/${size}`,
-              'Accept-Ranges': 'bytes'
+              'Accept-Ranges': 'bytes',
+              // WebGL refuses a cross-origin texture, and this scheme IS a
+              // different origin from the renderer. Without this header the
+              // video decodes fine but texImage2D throws, which killed the
+              // draw loop and left a black canvas over a working player.
+              'Access-Control-Allow-Origin': '*'
             }
           }
         )
@@ -109,6 +114,7 @@ export function registerMediaProtocolHandler(): void {
       return new Response(Readable.toWeb(createReadStream(filePath)) as ReadableStream, {
         headers: {
           'Content-Type': contentType,
+          'Access-Control-Allow-Origin': '*',
           'Content-Length': String(size),
           'Accept-Ranges': 'bytes'
         }

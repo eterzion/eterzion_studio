@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { Clock3, Files, HardDrive, Sparkles } from '@lucide/vue'
 defineProps<{
   fileCount: number
@@ -6,6 +7,8 @@ defineProps<{
   statusLabel: string
   qualityLabel: string
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -15,7 +18,7 @@ defineProps<{
         <div class="summary-icon icon-chip"><Files :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ fileCount }}</div>
-          <div class="summary-label">Arquivos na fila</div>
+          <div class="summary-label">{{ t('queue.fileCount') }}</div>
         </div>
       </div>
     </article>
@@ -24,7 +27,7 @@ defineProps<{
         <div class="summary-icon icon-chip"><HardDrive :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ totalSizeLabel }}</div>
-          <div class="summary-label">Tamanho total</div>
+          <div class="summary-label">{{ t('queue.totalSize') }}</div>
         </div>
       </div>
     </article>
@@ -33,7 +36,7 @@ defineProps<{
         <div class="summary-icon icon-chip"><Clock3 :size="28" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value">{{ statusLabel }}</div>
-          <div class="summary-label">Status atual</div>
+          <div class="summary-label">{{ t('queue.currentStatus') }}</div>
         </div>
       </div>
     </article>
@@ -42,7 +45,7 @@ defineProps<{
         <div class="summary-icon icon-chip"><Sparkles :size="29" :stroke-width="1.75" /></div>
         <div class="summary-copy">
           <div class="summary-value quality-value">{{ qualityLabel }}</div>
-          <div class="summary-label">Qualidade e detalhes</div>
+          <div class="summary-label">{{ t('queue.quality') }}</div>
         </div>
       </div>
     </article>

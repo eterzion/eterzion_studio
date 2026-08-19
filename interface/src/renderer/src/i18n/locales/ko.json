@@ -1,11 +1,53 @@
 {
-  "nav": {
-    "home": "홈",
-    "image": "이미지",
-    "video": "동영상",
-    "audio": "오디오",
-    "history": "기록",
-    "settings": "설정"
+  "actions": {
+    "exportAll": "모두 내보내기",
+    "import": "가져오기",
+    "noAudioSelected": "선택된 오디오 없음",
+    "noImageSelected": "선택된 이미지 없음",
+    "noVideoSelected": "선택된 비디오 없음",
+    "processAll": "모두 처리"
+  },
+  "errors": {
+    "category": {
+      "outOfMemory": {
+        "message": "이 출력 크기에는 메모리가 부족합니다.",
+        "action": "배율을 낮추거나 사용자 지정 크기를 줄여 보세요."
+      },
+      "corruptedInput": {
+        "message": "원본 파일을 읽을 수 없습니다.",
+        "action": "이 항목을 대기열에서 제거하고 파일을 다시 가져오세요."
+      },
+      "modelFailure": {
+        "message": "처리 중 오류가 발생했습니다.",
+        "action": "다시 시도하세요. 계속되면 다른 모델이나 장치를 사용해 보세요."
+      },
+      "diskFull": {
+        "message": "디스크 공간이 부족합니다.",
+        "action": "여유 공간이 더 많은 다른 폴더를 선택하세요."
+      },
+      "hardwareInsufficient": {
+        "message": "이 컴퓨터로는 이 처리를 할 수 없습니다.",
+        "action": "출력 크기를 줄이거나 빠름 프로필을 사용해 보세요."
+      },
+      "licenseInvalid": {
+        "message": "라이선스가 활성화되어 있지 않습니다.",
+        "action": "설정에서 라이선스 상태를 확인하세요."
+      }
+    },
+    "job": {
+      "connectionLost": "처리 중 서버와의 연결이 끊겼습니다.",
+      "contentTypeMissing": "콘텐츠 유형이 아직 감지되지 않았습니다 — 직접 선택하세요.",
+      "createFailed": "작업을 만들지 못했습니다.",
+      "customTooSmall": "사용자 지정 크기는 원본보다 작을 수 없습니다 (업스케일러입니다).",
+      "noBackendJob": "이 작업에 연결된 처리가 없습니다.",
+      "notificationDone": "{file} 처리가 완료되었습니다.",
+      "originalTooLarge": "원본 모드에서는 원본보다 커질 수 없습니다 — 확대하려면 사전 설정이나 사용자 지정을 사용하세요.",
+      "processingFailed": "처리에 실패했습니다.",
+      "resolutionTooHigh": "입력 해상도가 너무 큽니다 (10000px 초과). 업스케일이 불가능할 수 있습니다.",
+      "scaleMissing": "배율을 선택하세요.",
+      "sizeMissing": "너비와 높이를 입력하세요.",
+      "unsupportedFormat": "지원하지 않는 형식입니다 (이미지만: PNG, JPG, TIFF, WEBP, BMP)."
+    }
   },
   "home": {
     "title": "오늘은 무엇을 개선하시겠습니까?",
@@ -19,20 +61,24 @@
       "empty": "비어 있음"
     }
   },
-  "sidebar": {
-    "support": "지원",
-    "collapse": "사이드바 접기",
-    "expand": "사이드바 펼치기",
-    "darkMode": "다크 모드",
-    "lightMode": "라이트 모드",
-    "toggleTheme": "라이트/다크 테마 전환",
-    "links": {
-      "site": "공식 사이트",
-      "discord": "Discord",
-      "faq": "자주 묻는 질문",
-      "help": "도움말 센터",
-      "email": "지원 이메일"
-    }
+  "nav": {
+    "home": "홈",
+    "image": "이미지",
+    "video": "동영상",
+    "audio": "오디오",
+    "history": "기록",
+    "settings": "설정"
+  },
+  "queue": {
+    "clear": "대기열 비우기",
+    "currentStatus": "현재 상태",
+    "empty": "비어 있음",
+    "fileCount": "대기열의 파일",
+    "fileCountLabel": "파일 {n}개",
+    "quality": "품질과 디테일",
+    "readyToEnhance": "개선 준비 완료",
+    "title": "처리 대기열",
+    "totalSize": "총 크기"
   },
   "settings": {
     "title": "설정",
@@ -65,6 +111,34 @@
       }
     }
   },
+  "sidebar": {
+    "support": "지원",
+    "collapse": "사이드바 접기",
+    "expand": "사이드바 펼치기",
+    "darkMode": "다크 모드",
+    "lightMode": "라이트 모드",
+    "toggleTheme": "라이트/다크 테마 전환",
+    "links": {
+      "site": "공식 사이트",
+      "discord": "Discord",
+      "faq": "자주 묻는 질문",
+      "help": "도움말 센터",
+      "email": "지원 이메일"
+    }
+  },
+  "upload": {
+    "aria": "여기에 파일을 놓거나 Enter 키를 눌러 선택하세요",
+    "audioTitle": "여기에 오디오를 놓으세요",
+    "dropHere": "놓아서 가져오기",
+    "failed": "파일을 가져오지 못했습니다",
+    "imagesTitle": "여기에 이미지를 놓으세요",
+    "importing": "파일 가져오는 중…",
+    "limit": "파일당 최대 500MB",
+    "pickFiles": "파일 선택",
+    "pickFolder": "폴더 선택",
+    "subtitle": "아래 버튼을 사용해도 됩니다",
+    "videoTitle": "여기에 비디오를 놓으세요"
+  },
   "videoEditor": {
     "editor": {
       "addMore": "비디오 추가",
@@ -74,7 +148,7 @@
       "ready": "편집 준비 완료",
       "runAll": "모두 처리",
       "title": "비디오 편집기",
-      "uploadSubtitle": "아래 버튼으로 파일을 선택할 수도 있습니다",
+      "uploadSubtitle": "아래 버튼을 사용해도 됩니다",
       "uploadTitle": "여기에 비디오를 놓으세요"
     },
     "edits": {

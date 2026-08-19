@@ -34,7 +34,7 @@ const { t } = useI18n()
       :aria-label="t('videoEditor.player.stepBack')"
       @click="emit('stepBack')"
     >
-      <SkipBack :size="16" />
+      <template #icon><SkipBack :size="16" /></template>
     </AppButton>
 
     <AppButton
@@ -46,8 +46,10 @@ const { t } = useI18n()
       :aria-label="isPlaying ? t('videoEditor.player.pause') : t('videoEditor.player.play')"
       @click="emit('toggle')"
     >
-      <Pause v-if="isPlaying" :size="18" />
-      <Play v-else :size="18" />
+      <template #icon>
+        <Pause v-if="isPlaying" :size="18" />
+        <Play v-else :size="18" />
+      </template>
     </AppButton>
 
     <AppButton
@@ -59,7 +61,7 @@ const { t } = useI18n()
       :aria-label="t('videoEditor.player.stepForward')"
       @click="emit('stepForward')"
     >
-      <SkipForward :size="16" />
+      <template #icon><SkipForward :size="16" /></template>
     </AppButton>
   </div>
 </template>

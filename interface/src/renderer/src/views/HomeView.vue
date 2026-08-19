@@ -72,14 +72,18 @@ function openImage(id?: string): void {
           <div class="queue-heading">
             <div class="queue-icon icon-chip"><FolderOpen :size="22" :stroke-width="1.8" /></div>
             <div>
-              <h2 id="queue-title" class="queue-title">Fila de processamento</h2>
+              <h2 id="queue-title" class="queue-title">{{ t('queue.title') }}</h2>
               <p class="queue-subtitle">
-                <span class="queue-dot" />{{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }}
+                <!-- t(key, n) picks the plural form from the locale. The previous
+                     `fileCount === 1 ? '' : 's'` only worked for languages whose
+                     plural is "add an s" — Russian needs three forms, and
+                     Japanese, Korean and Chinese need none. -->
+                <span class="queue-dot" />{{ t('queue.fileCountLabel', fileCount) }}
               </p>
             </div>
           </div>
           <button class="clear-button" type="button" :disabled="!jobs.length" @click="clearQueue">
-            <Trash2 :size="17" :stroke-width="1.8" /> Limpar fila
+            <Trash2 :size="17" :stroke-width="1.8" /> {{ t('queue.clear') }}
           </button>
         </header>
         <div v-if="jobs.length" class="queue-list">
@@ -97,7 +101,7 @@ function openImage(id?: string): void {
         :file-count="fileCount"
         :total-size-label="totalSizeLabel"
         :status-label="statusLabel"
-        quality-label="Pronto para melhorar"
+        :quality-label="t('queue.readyToEnhance')"
       />
     </div>
   </main>
