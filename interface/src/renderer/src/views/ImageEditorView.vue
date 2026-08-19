@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
@@ -66,6 +67,8 @@ import {
 defineEmits<{
   back: []
 }>()
+
+const { t } = useI18n()
 
 const panelOpen = ref(false)
 const showBatchModal = ref(false)
@@ -375,18 +378,18 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
 <template>
   <div class="editor-view" data-module="image">
-    <TopBar :title="job?.fileName ?? 'Nenhuma imagem selecionada'" show-back @back="$emit('back')">
+    <TopBar :title="job?.fileName ?? t('actions.noImageSelected')" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="importFiles">
           <template #icon><Upload :size="15" /></template>
-          Importar
+          {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringJobs.length" @click="processAll">
-          Processar todos
+          {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneJobs.length" @click="showBatchModal = true">
           <template #icon><Download :size="15" /></template>
-          Exportar tudo
+          {{ t('actions.exportAll') }}
         </AppButton>
       </template>
     </TopBar>

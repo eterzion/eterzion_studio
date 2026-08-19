@@ -7,6 +7,15 @@
     "noVideoSelected": "선택된 비디오 없음",
     "processAll": "모두 처리"
   },
+  "contentType": {
+    "anime_image": "애니메이션/일러스트",
+    "anime_video": "애니메이션 영상",
+    "archived": "보관됨",
+    "music": "음악",
+    "photo": "사진",
+    "real_video": "실사 영상",
+    "speech": "음성"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -49,6 +58,22 @@
       "unsupportedFormat": "지원하지 않는 형식입니다 (이미지만: PNG, JPG, TIFF, WEBP, BMP)."
     }
   },
+  "history": {
+    "allStatuses": "모든 상태",
+    "allTypes": "모든 유형",
+    "anyDate": "모든 날짜",
+    "last30": "최근 30일",
+    "last7": "최근 7일",
+    "newest": "최신순",
+    "oldest": "오래된순",
+    "resAsc": "해상도 낮은순",
+    "resDesc": "해상도 높은순",
+    "reuseImageOnly": "설정 재사용은 이미지 항목에서만 가능합니다.",
+    "reuseTooOld": "이 설정은 업데이트 이전의 것이라 재사용할 수 없습니다 — 다시 설정하세요.",
+    "sizeAsc": "크기 작은순",
+    "sizeDesc": "크기 큰순",
+    "today": "오늘"
+  },
   "home": {
     "title": "오늘은 무엇을 개선하시겠습니까?",
     "openAria": "{label} 열기",
@@ -79,6 +104,9 @@
     "readyToEnhance": "개선 준비 완료",
     "title": "처리 대기열",
     "totalSize": "총 크기"
+  },
+  "select": {
+    "search": "검색…"
   },
   "settings": {
     "title": "설정",
@@ -125,6 +153,13 @@
       "help": "도움말 센터",
       "email": "지원 이메일"
     }
+  },
+  "status": {
+    "cancelled": "취소됨",
+    "done": "완료",
+    "error": "실패",
+    "processing": "처리 중",
+    "queued": "대기 중"
   },
   "upload": {
     "aria": "여기에 파일을 놓거나 Enter 키를 눌러 선택하세요",

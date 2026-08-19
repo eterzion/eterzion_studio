@@ -275,21 +275,21 @@ function exportAll(): void {
 <template>
   <div class="audio-view" data-module="audio">
     <TopBar
-      :title="activeJob?.file.name ?? 'Nenhum áudio selecionado'"
+      :title="activeJob?.file.name ?? t('actions.noAudioSelected')"
       show-back
       @back="$emit('back')"
     >
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
-          Importar
+          {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringCount" @click="runAll">
-          Processar todos
+          {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneCount" @click="exportAll">
           <template #icon><Download :size="15" /></template>
-          Exportar tudo
+          {{ t('actions.exportAll') }}
         </AppButton>
       </template>
     </TopBar>

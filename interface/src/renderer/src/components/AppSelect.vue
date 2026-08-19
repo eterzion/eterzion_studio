@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { ChevronDown, Search, AlertCircle, Check } from '@lucide/vue'
 import AppSpinner from './atoms/AppSpinner.vue'
@@ -29,6 +30,8 @@ const props = withDefaults(
     disabled: false
   }
 )
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: string | number]
@@ -213,6 +216,15 @@ watch(filteredOptions, () => {
             >{{ selected.label }}</span
           >
           <span v-else class="trigger-placeholder">{{ placeholder }}</span>
+          <!-- Every option, stacked in the same grid cell and hidden. The cell
+               is as wide as the widest one, so the control keeps a stable width
+               instead of shrinking to whatever is selected — and never ends up
+               narrower than the menu it opens. Measuring text in JS would need
+               the font to have loaded and would re-run on every resize; the
+               browser already does this correctly during layout. -->
+          <span v-for="option in options" :key="`sizer-${option.value}`" class="trigger-sizer"
+            >{{ option.label }}</span
+          >
         </slot>
       </span>
       <AppSpinner v-if="loading" :size="15" class="trigger-icon" />
@@ -239,7 +251,7 @@ watch(filteredOptions, () => {
             ref="searchInput"
             v-model="query"
             type="text"
-            placeholder="Buscar…"
+            :placeholder="t('select.search')"
             class="search-input"
           />
         </div>
@@ -283,6 +295,8 @@ watch(filteredOptions, () => {
 .app-select {
   position: relative;
   width: 100%;
+  min-width: max-content;
+  --select-min-width: 200px;
 }
 
 .trigger {
@@ -296,6 +310,8 @@ watch(filteredOptions, () => {
   color: var(--text-primary);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
+  min-width: var(--select-min-width);
+  max-width: 100%;
   font-size: var(--fs-label);
   font-family: inherit;
   cursor: pointer;
@@ -318,13 +334,29 @@ watch(filteredOptions, () => {
   cursor: not-allowed;
 }
 
+.trigger-content > * {
+  grid-area: 1 / 1;
+}
+
+.trigger-sizer {
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
 .app-select.error .trigger {
   border-color: var(--color-danger);
 }
 
+/* One grid cell with every label stacked in it: the cell is as wide as the
+   widest label, so the control keeps a stable width instead of resizing with
+   the selection — and never ends up narrower than the menu it opens.
+   max-content rather than 0, or the cell collapses and the sizers do nothing. */
 .trigger-content {
+  display: grid;
+  grid-template-columns: auto;
   flex: 1;
-  min-width: 0;
+  min-width: max-content;
   text-align: left;
   overflow: hidden;
 }
@@ -368,7 +400,7 @@ watch(filteredOptions, () => {
   right: 0;
   top: calc(100% + 4px);
   z-index: 30;
-  min-width: 200px;
+  min-width: var(--select-min-width, 200px);
   background: var(--surface-1);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);

@@ -7,6 +7,15 @@
     "noVideoSelected": "No video selected",
     "processAll": "Process all"
   },
+  "contentType": {
+    "anime_image": "Anime / illustration",
+    "anime_video": "Anime video",
+    "archived": "Archived",
+    "music": "Music",
+    "photo": "Photo",
+    "real_video": "Real video",
+    "speech": "Speech"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -49,6 +58,22 @@
       "unsupportedFormat": "Unsupported format (images only: PNG, JPG, TIFF, WEBP, BMP)."
     }
   },
+  "history": {
+    "allStatuses": "All statuses",
+    "allTypes": "All types",
+    "anyDate": "Any date",
+    "last30": "Last 30 days",
+    "last7": "Last 7 days",
+    "newest": "Newest first",
+    "oldest": "Oldest first",
+    "resAsc": "Lowest resolution",
+    "resDesc": "Highest resolution",
+    "reuseImageOnly": "Reusing a configuration is only available for image entries.",
+    "reuseTooOld": "This configuration predates the update and can no longer be reused — set it up again.",
+    "sizeAsc": "Smallest size",
+    "sizeDesc": "Largest size",
+    "today": "Today"
+  },
   "home": {
     "title": "What would you like to improve today?",
     "openAria": "Open {label}",
@@ -79,6 +104,9 @@
     "readyToEnhance": "Ready to enhance",
     "title": "Processing queue",
     "totalSize": "Total size"
+  },
+  "select": {
+    "search": "Search…"
   },
   "settings": {
     "title": "Settings",
@@ -125,6 +153,13 @@
       "help": "Help center",
       "email": "Support email"
     }
+  },
+  "status": {
+    "cancelled": "Cancelled",
+    "done": "Done",
+    "error": "Failed",
+    "processing": "Processing",
+    "queued": "Waiting"
   },
   "upload": {
     "aria": "Drop files here, or press Enter to choose",

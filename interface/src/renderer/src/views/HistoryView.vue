@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import {
   Search,
@@ -35,6 +36,12 @@ const emit = defineEmits<{
   openImage: []
 }>()
 
+// t/te/locale rather than just t: `te` checks a key exists before using it, so
+// an unknown content type falls back to its raw value instead of rendering a
+// missing-key placeholder; `locale` drives date formatting, which followed
+// pt-BR regardless of language before.
+const { t, te, locale } = useI18n()
+
 const search = ref('')
 const statusFilter = ref<'all' | HistoryStatus>('all')
 const contentTypeFilter = ref<'all' | string>('all')
@@ -49,56 +56,52 @@ const reuseError = ref<string | null>(null)
 // (FR-009/FR-063). Entries recorded before this field existed (pre-Unified
 // Media Processing) only have the legacy `model` string; shown as
 // "Arquivado" since it no longer maps to anything meaningful.
-const CONTENT_TYPE_LABEL: Record<string, string> = {
-  photo: 'Foto',
-  anime_image: 'Anime/Ilustração',
-  real_video: 'Vídeo real',
-  anime_video: 'Vídeo anime',
-  speech: 'Voz',
-  music: 'Música'
-}
-
+// A function rather than a const map: a const is evaluated once at module load
+// and would keep whichever language was active at startup. Every label in this
+// file follows the same rule for the same reason.
 function contentTypeLabel(entry: HistoryEntry): string {
-  if (entry.contentType) return CONTENT_TYPE_LABEL[entry.contentType] ?? entry.contentType
-  return 'Arquivado'
+  if (!entry.contentType) return t('contentType.archived')
+  // Falling back to the raw value keeps an unknown type visible instead of
+  // blank — an entry from a future version should still say something.
+  return te(`contentType.${entry.contentType}`) ? t(`contentType.${entry.contentType}`) : entry.contentType
 }
 
 const undoEntry = ref<HistoryEntry | null>(null)
 let undoTimer: ReturnType<typeof setTimeout> | undefined
 
-const statusOptions = [
-  { value: 'all', label: 'Todos os status' },
-  { value: 'done', label: 'Concluído' },
-  { value: 'processing', label: 'Processando' },
-  { value: 'queued', label: 'Aguardando' },
-  { value: 'error', label: 'Falhou' },
-  { value: 'cancelled', label: 'Cancelado' }
-]
+const statusOptions = computed(() => [
+  { value: 'all', label: t('history.allStatuses') },
+  { value: 'done', label: t('status.done') },
+  { value: 'processing', label: t('status.processing') },
+  { value: 'queued', label: t('status.queued') },
+  { value: 'error', label: t('status.error') },
+  { value: 'cancelled', label: t('status.cancelled') }
+])
 
 const contentTypeOptions = computed(() => {
   const present = new Set<string>()
   for (const e of historyState.entries) if (e.contentType) present.add(e.contentType)
   return [
-    { value: 'all', label: 'Todos os tipos' },
-    ...Array.from(present).map((c) => ({ value: c, label: CONTENT_TYPE_LABEL[c] ?? c }))
+    { value: 'all', label: t('history.allTypes') },
+    ...Array.from(present).map((c) => ({ value: c, label: te(`contentType.${c}`) ? t(`contentType.${c}`) : c }))
   ]
 })
 
-const dateOptions = [
-  { value: 'all', label: 'Qualquer data' },
-  { value: 'today', label: 'Hoje' },
-  { value: '7d', label: 'Últimos 7 dias' },
-  { value: '30d', label: 'Últimos 30 dias' }
-]
+const dateOptions = computed(() => [
+  { value: 'all', label: t('history.anyDate') },
+  { value: 'today', label: t('history.today') },
+  { value: '7d', label: t('history.last7') },
+  { value: '30d', label: t('history.last30') }
+])
 
-const sortOptions: { value: SortKey; label: string }[] = [
-  { value: 'newest', label: 'Mais recentes' },
-  { value: 'oldest', label: 'Mais antigos' },
-  { value: 'res-desc', label: 'Maior resolução' },
-  { value: 'res-asc', label: 'Menor resolução' },
-  { value: 'size-desc', label: 'Maior tamanho' },
-  { value: 'size-asc', label: 'Menor tamanho' }
-]
+const sortOptions = computed<{ value: SortKey; label: string }[]>(() => [
+  { value: 'newest', label: t('history.newest') },
+  { value: 'oldest', label: t('history.oldest') },
+  { value: 'res-desc', label: t('history.resDesc') },
+  { value: 'res-asc', label: t('history.resAsc') },
+  { value: 'size-desc', label: t('history.sizeDesc') },
+  { value: 'size-asc', label: t('history.sizeAsc') }
+])
 
 function withinDateFilter(entry: HistoryEntry): boolean {
   if (dateFilter.value === 'all') return true
@@ -138,19 +141,19 @@ const filteredEntries = computed(() => {
   return list
 })
 
-const statusMeta: Record<
+const statusMeta = computed<Record<
   HistoryStatus,
   { label: string; icon: unknown; tone: 'success' | 'info' | 'neutral' | 'danger' }
-> = {
-  done: { label: 'Concluído', icon: CircleCheck, tone: 'success' },
-  processing: { label: 'Processando', icon: LoaderCircle, tone: 'info' },
-  queued: { label: 'Aguardando', icon: Clock, tone: 'neutral' },
-  error: { label: 'Falhou', icon: CircleX, tone: 'danger' },
-  cancelled: { label: 'Cancelado', icon: CircleX, tone: 'neutral' }
-}
+>>(() => ({
+  done: { label: t('status.done'), icon: CircleCheck, tone: 'success' },
+  processing: { label: t('status.processing'), icon: LoaderCircle, tone: 'info' },
+  queued: { label: t('status.queued'), icon: Clock, tone: 'neutral' },
+  error: { label: t('status.error'), icon: CircleX, tone: 'danger' },
+  cancelled: { label: t('status.cancelled'), icon: CircleX, tone: 'neutral' }
+}))
 
 function fmtDateTime(ts: number): string {
-  return new Date(ts).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+  return new Date(ts).toLocaleString(locale.value, { dateStyle: 'short', timeStyle: 'short' })
 }
 
 function fmtBytes(bytes: number | undefined): string {
@@ -191,12 +194,12 @@ async function reuseConfig(entry: HistoryEntry): Promise<void> {
   reuseError.value = null
   if (!hasNativeApi) return
   if (entry.mediaType && entry.mediaType !== 'image') {
-    reuseError.value = 'Reaproveitar configuração só está disponível para entradas de imagem.'
+    reuseError.value = t('history.reuseImageOnly')
     return
   }
   if (!entry.scaleConfig?.contentType) {
     reuseError.value =
-      'Esta configuração é de antes da atualização e não pode mais ser reaproveitada — configure novamente.'
+      t('history.reuseTooOld')
     return
   }
   const described = await api.statPath(entry.sourcePath)

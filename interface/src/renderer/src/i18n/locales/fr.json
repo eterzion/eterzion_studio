@@ -7,6 +7,15 @@
     "noVideoSelected": "Aucune vidéo sélectionnée",
     "processAll": "Tout traiter"
   },
+  "contentType": {
+    "anime_image": "Anime / illustration",
+    "anime_video": "Vidéo anime",
+    "archived": "Archivé",
+    "music": "Musique",
+    "photo": "Photo",
+    "real_video": "Vidéo réelle",
+    "speech": "Voix"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -49,6 +58,22 @@
       "unsupportedFormat": "Format non pris en charge (images uniquement : PNG, JPG, TIFF, WEBP, BMP)."
     }
   },
+  "history": {
+    "allStatuses": "Tous les états",
+    "allTypes": "Tous les types",
+    "anyDate": "Toutes les dates",
+    "last30": "30 derniers jours",
+    "last7": "7 derniers jours",
+    "newest": "Plus récents",
+    "oldest": "Plus anciens",
+    "resAsc": "Résolution la plus basse",
+    "resDesc": "Résolution la plus élevée",
+    "reuseImageOnly": "La réutilisation d’une configuration n’est disponible que pour les images.",
+    "reuseTooOld": "Cette configuration est antérieure à la mise à jour et ne peut plus être réutilisée — reconfigurez-la.",
+    "sizeAsc": "Taille la plus petite",
+    "sizeDesc": "Taille la plus grande",
+    "today": "Aujourd’hui"
+  },
   "home": {
     "title": "Que souhaitez-vous améliorer aujourd'hui ?",
     "openAria": "Ouvrir {label}",
@@ -79,6 +104,9 @@
     "readyToEnhance": "Prêt à améliorer",
     "title": "File de traitement",
     "totalSize": "Taille totale"
+  },
+  "select": {
+    "search": "Rechercher…"
   },
   "settings": {
     "title": "Paramètres",
@@ -125,6 +153,13 @@
       "help": "Centre d'aide",
       "email": "E-mail d'assistance"
     }
+  },
+  "status": {
+    "cancelled": "Annulé",
+    "done": "Terminé",
+    "error": "Échec",
+    "processing": "Traitement",
+    "queued": "En attente"
   },
   "upload": {
     "aria": "Déposez des fichiers ici, ou appuyez sur Entrée pour choisir",

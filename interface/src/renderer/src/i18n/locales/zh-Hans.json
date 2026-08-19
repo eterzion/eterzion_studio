@@ -7,6 +7,15 @@
     "noVideoSelected": "未选择视频",
     "processAll": "全部处理"
   },
+  "contentType": {
+    "anime_image": "动漫/插画",
+    "anime_video": "动画视频",
+    "archived": "已归档",
+    "music": "音乐",
+    "photo": "照片",
+    "real_video": "实拍视频",
+    "speech": "语音"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -49,6 +58,22 @@
       "unsupportedFormat": "不支持的格式（仅限图片：PNG、JPG、TIFF、WEBP、BMP）。"
     }
   },
+  "history": {
+    "allStatuses": "全部状态",
+    "allTypes": "全部类型",
+    "anyDate": "任意日期",
+    "last30": "最近 30 天",
+    "last7": "最近 7 天",
+    "newest": "最新优先",
+    "oldest": "最早优先",
+    "resAsc": "分辨率从低到高",
+    "resDesc": "分辨率从高到低",
+    "reuseImageOnly": "仅图片条目支持复用配置。",
+    "reuseTooOld": "该配置早于本次更新，已无法复用，请重新设置。",
+    "sizeAsc": "体积从小到大",
+    "sizeDesc": "体积从大到小",
+    "today": "今天"
+  },
   "home": {
     "title": "今天您想改善什么？",
     "openAria": "打开{label}",
@@ -79,6 +104,9 @@
     "readyToEnhance": "可以开始增强",
     "title": "处理队列",
     "totalSize": "总大小"
+  },
+  "select": {
+    "search": "搜索…"
   },
   "settings": {
     "title": "设置",
@@ -125,6 +153,13 @@
       "help": "帮助中心",
       "email": "支持邮箱"
     }
+  },
+  "status": {
+    "cancelled": "已取消",
+    "done": "完成",
+    "error": "失败",
+    "processing": "处理中",
+    "queued": "等待中"
   },
   "upload": {
     "aria": "将文件拖放到这里，或按 Enter 选择",
