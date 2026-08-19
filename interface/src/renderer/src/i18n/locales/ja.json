@@ -7,6 +7,7 @@
     "noAudioSelected": "音声が選択されていません",
     "noImageSelected": "画像が選択されていません",
     "noVideoSelected": "動画が選択されていません",
+    "openFolder": "フォルダーを開く",
     "processAll": "すべて処理",
     "undo": "元に戻す"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "キューを空にする",
     "currentStatus": "現在の状態",
+    "dragToReorder": "ドラッグして並べ替え",
     "empty": "空",
     "fileCount": "キュー内のファイル",
     "fileCountLabel": "{n} 件のファイル",
+    "kind": {
+      "image": "画像",
+      "video": "動画",
+      "audio": "音声"
+    },
     "quality": "画質とディテール",
     "readyToEnhance": "処理の準備完了",
     "title": "処理キュー",

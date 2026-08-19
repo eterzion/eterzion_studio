@@ -7,6 +7,7 @@
     "noAudioSelected": "No audio selected",
     "noImageSelected": "No image selected",
     "noVideoSelected": "No video selected",
+    "openFolder": "Open folder",
     "processAll": "Process all",
     "undo": "Undo"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Clear queue",
     "currentStatus": "Current status",
+    "dragToReorder": "Drag to reorder",
     "empty": "Empty",
     "fileCount": "Files in queue",
     "fileCountLabel": "{n} file | {n} files",
+    "kind": {
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio"
+    },
     "quality": "Quality and detail",
     "readyToEnhance": "Ready to enhance",
     "title": "Processing queue",

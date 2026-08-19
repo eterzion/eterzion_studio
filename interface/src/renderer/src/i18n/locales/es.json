@@ -7,6 +7,7 @@
     "noAudioSelected": "Ningún audio seleccionado",
     "noImageSelected": "Ninguna imagen seleccionada",
     "noVideoSelected": "Ningún vídeo seleccionado",
+    "openFolder": "Abrir carpeta",
     "processAll": "Procesar todos",
     "undo": "Deshacer"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Vaciar cola",
     "currentStatus": "Estado actual",
+    "dragToReorder": "Arrastra para reordenar",
     "empty": "Vacía",
     "fileCount": "Archivos en cola",
     "fileCountLabel": "{n} archivo | {n} archivos",
+    "kind": {
+      "image": "Imagen",
+      "video": "Vídeo",
+      "audio": "Audio"
+    },
     "quality": "Calidad y detalle",
     "readyToEnhance": "Listo para mejorar",
     "title": "Cola de procesamiento",

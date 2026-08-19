@@ -7,6 +7,7 @@
     "noAudioSelected": "Nenhum áudio selecionado",
     "noImageSelected": "Nenhuma imagem selecionada",
     "noVideoSelected": "Nenhum vídeo selecionado",
+    "openFolder": "Abrir pasta",
     "processAll": "Processar todos",
     "undo": "Anular"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Limpar fila",
     "currentStatus": "Estado atual",
+    "dragToReorder": "Arraste para reordenar",
     "empty": "Vazia",
     "fileCount": "Ficheiros na fila",
     "fileCountLabel": "{n} ficheiro | {n} ficheiros",
+    "kind": {
+      "image": "Imagem",
+      "video": "Vídeo",
+      "audio": "Áudio"
+    },
     "quality": "Qualidade e detalhe",
     "readyToEnhance": "Pronto para melhorar",
     "title": "Fila de processamento",

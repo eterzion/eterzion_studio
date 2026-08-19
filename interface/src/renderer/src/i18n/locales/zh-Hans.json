@@ -7,6 +7,7 @@
     "noAudioSelected": "未选择音频",
     "noImageSelected": "未选择图片",
     "noVideoSelected": "未选择视频",
+    "openFolder": "打开文件夹",
     "processAll": "全部处理",
     "undo": "撤销"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "清空队列",
     "currentStatus": "当前状态",
+    "dragToReorder": "拖动可重新排序",
     "empty": "空",
     "fileCount": "队列中的文件",
     "fileCountLabel": "{n} 个文件",
+    "kind": {
+      "image": "图片",
+      "video": "视频",
+      "audio": "音频"
+    },
     "quality": "画质与细节",
     "readyToEnhance": "可以开始增强",
     "title": "处理队列",

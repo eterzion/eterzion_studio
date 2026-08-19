@@ -245,6 +245,18 @@ export function setActiveJob(id: string): void {
   queueState.activeJobId = id
 }
 
+/** Move one job to a new index. processAll() submits in array order, so this
+ *  array decides which image the backend is handed first — but only for jobs
+ *  not yet submitted. Once a job is queued server-side its position comes from
+ *  the API (job.queuePosition), and moving it here would change nothing. */
+export function reorderJob(fromIndex: number, toIndex: number): void {
+  const list = queueState.jobs
+  if (fromIndex < 0 || fromIndex >= list.length) return
+  if (toIndex < 0 || toIndex >= list.length) return
+  const [moved] = list.splice(fromIndex, 1)
+  list.splice(toIndex, 0, moved)
+}
+
 export function removeJob(id: string): void {
   const job = getJobById(id)
   if (job?.status === 'processing' || job?.status === 'queued') {

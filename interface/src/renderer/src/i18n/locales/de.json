@@ -7,6 +7,7 @@
     "noAudioSelected": "Kein Audio ausgewählt",
     "noImageSelected": "Kein Bild ausgewählt",
     "noVideoSelected": "Kein Video ausgewählt",
+    "openFolder": "Ordner öffnen",
     "processAll": "Alle verarbeiten",
     "undo": "Rückgängig"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Warteschlange leeren",
     "currentStatus": "Aktueller Status",
+    "dragToReorder": "Zum Umsortieren ziehen",
     "empty": "Leer",
     "fileCount": "Dateien in der Warteschlange",
     "fileCountLabel": "{n} Datei | {n} Dateien",
+    "kind": {
+      "image": "Bild",
+      "video": "Video",
+      "audio": "Audio"
+    },
     "quality": "Qualität und Details",
     "readyToEnhance": "Bereit zur Verbesserung",
     "title": "Verarbeitungswarteschlange",

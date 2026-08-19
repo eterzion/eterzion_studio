@@ -7,6 +7,7 @@
     "noAudioSelected": "Аудио не выбрано",
     "noImageSelected": "Изображение не выбрано",
     "noVideoSelected": "Видео не выбрано",
+    "openFolder": "Открыть папку",
     "processAll": "Обработать все",
     "undo": "Отменить"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Очистить очередь",
     "currentStatus": "Текущий статус",
+    "dragToReorder": "Перетащите, чтобы изменить порядок",
     "empty": "Пусто",
     "fileCount": "Файлов в очереди",
     "fileCountLabel": "{n} файл | {n} файла | {n} файлов",
+    "kind": {
+      "image": "Изображение",
+      "video": "Видео",
+      "audio": "Аудио"
+    },
     "quality": "Качество и детали",
     "readyToEnhance": "Готово к улучшению",
     "title": "Очередь обработки",

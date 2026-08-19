@@ -7,6 +7,7 @@
     "noAudioSelected": "Aucun audio sélectionné",
     "noImageSelected": "Aucune image sélectionnée",
     "noVideoSelected": "Aucune vidéo sélectionnée",
+    "openFolder": "Ouvrir le dossier",
     "processAll": "Tout traiter",
     "undo": "Annuler"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "Vider la file",
     "currentStatus": "État actuel",
+    "dragToReorder": "Glissez pour réordonner",
     "empty": "Vide",
     "fileCount": "Fichiers en file",
     "fileCountLabel": "{n} fichier | {n} fichiers",
+    "kind": {
+      "image": "Image",
+      "video": "Vidéo",
+      "audio": "Audio"
+    },
     "quality": "Qualité et détail",
     "readyToEnhance": "Prêt à améliorer",
     "title": "File de traitement",

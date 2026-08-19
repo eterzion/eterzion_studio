@@ -22,8 +22,9 @@ import {
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
 import { useVideoProcessing, type VideoRequest } from '../composables/useVideoProcessing'
-import { registerMediaHandle, type MediaHandle, type VideoContainer } from '../services/api'
+import { registerMediaHandle, type VideoContainer } from '../services/api'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
+import { addVideo, removeVideo, videoQueue, type EditorVideo } from '../store/videoQueue'
 
 // The one Vídeo screen (specs/007-video-editor-player, FR-032 as amended).
 //
@@ -42,16 +43,14 @@ defineEmits<{ back: [] }>()
 
 const { t } = useI18n()
 
-interface EditorVideo {
-  handle: MediaHandle
-  /** For the astros-media:// preview URL and the enhance route, which predates
-      handles. Never sent to the edit routes — those take handle_id only
-      (Princípio XIII). */
-  sourcePath: string
-}
-
-const videos = ref<EditorVideo[]>([])
-const activeId = ref<string | null>(null)
+// The list and the selection live in store/videoQueue.ts, not here: the Início
+// queue has to be able to see them, and a ref inside this component is
+// invisible to every other screen.
+const videos = computed(() => videoQueue.videos)
+const activeId = computed({
+  get: () => videoQueue.activeId,
+  set: (value: string | null) => (videoQueue.activeId = value)
+})
 const importError = ref<string | null>(null)
 const exportDirectory = ref<string | null>(null)
 const container = ref<VideoContainer>('mp4')
@@ -102,8 +101,7 @@ const items = computed<EditorItem[]>(() =>
 async function addFile(file: DescribedFile): Promise<void> {
   try {
     const handle = await registerMediaHandle(file.path)
-    videos.value.push({ handle, sourcePath: file.path })
-    activeId.value ??= handle.handle_id
+    addVideo({ handle, sourcePath: file.path })
   } catch (error) {
     importError.value =
       error instanceof Error ? error.message : t('videoEditor.editor.importFailed')
@@ -201,7 +199,7 @@ const doneCount = computed(
 )
 
 function remove(id: string): void {
-  videos.value = videos.value.filter((v) => v.handle.handle_id !== id)
+  removeVideo(id)
   edits.forget(id)
   enhanceByHandle.delete(id)
   if (activeId.value === id) activeId.value = videos.value[0]?.handle.handle_id ?? null

@@ -7,6 +7,7 @@
     "noAudioSelected": "선택된 오디오 없음",
     "noImageSelected": "선택된 이미지 없음",
     "noVideoSelected": "선택된 비디오 없음",
+    "openFolder": "폴더 열기",
     "processAll": "모두 처리",
     "undo": "실행 취소"
   },
@@ -325,9 +326,15 @@
   "queue": {
     "clear": "대기열 비우기",
     "currentStatus": "현재 상태",
+    "dragToReorder": "끌어서 순서 변경",
     "empty": "비어 있음",
     "fileCount": "대기열의 파일",
     "fileCountLabel": "파일 {n}개",
+    "kind": {
+      "image": "이미지",
+      "video": "비디오",
+      "audio": "오디오"
+    },
     "quality": "품질과 디테일",
     "readyToEnhance": "개선 준비 완료",
     "title": "처리 대기열",
