@@ -62,6 +62,9 @@
     "allStatuses": "Tous les états",
     "allTypes": "Tous les types",
     "anyDate": "Toutes les dates",
+    "emptyAction": "Traiter une image",
+    "emptyDescription": "Les images traitées apparaîtront ici.",
+    "emptyTitle": "Aucun traitement effectué",
     "last30": "30 derniers jours",
     "last7": "7 derniers jours",
     "newest": "Plus récents",
@@ -72,6 +75,7 @@
     "reuseTooOld": "Cette configuration est antérieure à la mise à jour et ne peut plus être réutilisée — reconfigurez-la.",
     "sizeAsc": "Taille la plus petite",
     "sizeDesc": "Taille la plus grande",
+    "title": "Historique",
     "today": "Aujourd’hui"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "Configuration",
       "empty": "Vide"
     }
+  },
+  "license": {
+    "activate": "Activer",
+    "activating": "Activation…",
+    "active": "Licence active",
+    "activeHere": "Active sur cette installation",
+    "activeOffline": "Active (hors ligne)",
+    "blocked": "Licence bloquée",
+    "checkConnection": "Vérifiez votre connexion",
+    "checking": "Vérification…",
+    "deactivate": "Désactiver sur cette installation",
+    "error": "Erreur de licence",
+    "generic": "Licence",
+    "idHint": "Envoyé par e-mail après l’achat.",
+    "idLabel": "Identifiant de licence",
+    "installations": "Installations : {used}/{limit}",
+    "notActivated": "Non activée",
+    "notConfigured": "Aucune licence",
+    "offlineDays": "Tolérance hors ligne : {n} jour restant | Tolérance hors ligne : {n} jours restants",
+    "title": "Licence"
   },
   "nav": {
     "home": "Accueil",

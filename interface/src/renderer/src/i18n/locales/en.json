@@ -62,6 +62,9 @@
     "allStatuses": "All statuses",
     "allTypes": "All types",
     "anyDate": "Any date",
+    "emptyAction": "Process an image",
+    "emptyDescription": "Processed images will show up here.",
+    "emptyTitle": "Nothing processed yet",
     "last30": "Last 30 days",
     "last7": "Last 7 days",
     "newest": "Newest first",
@@ -72,6 +75,7 @@
     "reuseTooOld": "This configuration predates the update and can no longer be reused — set it up again.",
     "sizeAsc": "Smallest size",
     "sizeDesc": "Largest size",
+    "title": "History",
     "today": "Today"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "Configuring",
       "empty": "Empty"
     }
+  },
+  "license": {
+    "activate": "Activate",
+    "activating": "Activating…",
+    "active": "Licence active",
+    "activeHere": "Active on this installation",
+    "activeOffline": "Active (offline)",
+    "blocked": "Licence blocked",
+    "checkConnection": "Check your connection",
+    "checking": "Checking…",
+    "deactivate": "Deactivate on this installation",
+    "error": "Licence error",
+    "generic": "Licensing",
+    "idHint": "Sent by email after purchase.",
+    "idLabel": "Licence ID",
+    "installations": "Installations: {used}/{limit}",
+    "notActivated": "Not activated",
+    "notConfigured": "No licence",
+    "offlineDays": "Offline tolerance: {n} day left | Offline tolerance: {n} days left",
+    "title": "Licence"
   },
   "nav": {
     "home": "Home",

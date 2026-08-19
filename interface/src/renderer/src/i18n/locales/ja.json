@@ -62,6 +62,9 @@
     "allStatuses": "すべての状態",
     "allTypes": "すべての種類",
     "anyDate": "すべての日付",
+    "emptyAction": "画像を処理",
+    "emptyDescription": "処理した画像はここに表示されます。",
+    "emptyTitle": "まだ処理はありません",
     "last30": "過去30日間",
     "last7": "過去7日間",
     "newest": "新しい順",
@@ -72,6 +75,7 @@
     "reuseTooOld": "この設定は更新前のもので、再利用できません。もう一度設定してください。",
     "sizeAsc": "サイズが小さい順",
     "sizeDesc": "サイズが大きい順",
+    "title": "履歴",
     "today": "今日"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "設定中",
       "empty": "空"
     }
+  },
+  "license": {
+    "activate": "アクティベート",
+    "activating": "アクティベート中…",
+    "active": "ライセンス有効",
+    "activeHere": "このインストールで有効",
+    "activeOffline": "有効（オフライン）",
+    "blocked": "ライセンスがブロックされています",
+    "checkConnection": "接続を確認してください",
+    "checking": "確認中…",
+    "deactivate": "このインストールで無効にする",
+    "error": "ライセンスエラー",
+    "generic": "ライセンス",
+    "idHint": "購入後にメールで送信されます。",
+    "idLabel": "ライセンス ID",
+    "installations": "インストール数: {used}/{limit}",
+    "notActivated": "未アクティベート",
+    "notConfigured": "ライセンスなし",
+    "offlineDays": "オフライン猶予: 残り {n} 日",
+    "title": "ライセンス"
   },
   "nav": {
     "home": "ホーム",

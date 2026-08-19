@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { KeyRound, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2 } from '@lucide/vue'
 import { licenseState, activateLicense, deactivateLicense } from '../store/license'
 import AppButton from './atoms/AppButton.vue'
+
+const { t } = useI18n()
 
 const open = ref(false)
 const licenseInput = ref('')
@@ -11,23 +14,23 @@ const root = ref<HTMLElement | null>(null)
 const meta = computed(() => {
   switch (licenseState.status) {
     case 'active':
-      return { icon: ShieldCheck, label: 'Licença ativa', tone: 'success' }
+      return { icon: ShieldCheck, label: t('license.active'), tone: 'success' }
     case 'offline_tolerance':
-      return { icon: ShieldCheck, label: 'Ativa (offline)', tone: 'success' }
+      return { icon: ShieldCheck, label: t('license.activeOffline'), tone: 'success' }
     case 'offline_expiring':
-      return { icon: ShieldAlert, label: 'Verifique sua conexão', tone: 'warning' }
+      return { icon: ShieldAlert, label: t('license.checkConnection'), tone: 'warning' }
     case 'checking':
-      return { icon: Loader2, label: 'Verificando…', tone: 'neutral' }
+      return { icon: Loader2, label: t('license.checking'), tone: 'neutral' }
     case 'error':
-      return { icon: ShieldAlert, label: 'Erro de licença', tone: 'danger' }
+      return { icon: ShieldAlert, label: t('license.error'), tone: 'danger' }
     case 'blocked':
-      return { icon: ShieldAlert, label: 'Licença bloqueada', tone: 'danger' }
+      return { icon: ShieldAlert, label: t('license.blocked'), tone: 'danger' }
     case 'not_activated':
-      return { icon: KeyRound, label: 'Não ativada', tone: 'warning' }
+      return { icon: KeyRound, label: t('license.notActivated'), tone: 'warning' }
     case 'not_configured':
-      return { icon: KeyRound, label: 'Sem licenciamento', tone: 'neutral' }
+      return { icon: KeyRound, label: t('license.notConfigured'), tone: 'neutral' }
     default:
-      return { icon: ShieldQuestion, label: 'Licenciamento', tone: 'neutral' }
+      return { icon: ShieldQuestion, label: t('license.generic'), tone: 'neutral' }
   }
 })
 
@@ -50,7 +53,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       class="license-pill"
       :class="'tone-' + meta.tone"
       type="button"
-      title="Licença"
+      :title="t('license.title')"
       @click="open = !open"
     >
       <component
@@ -62,12 +65,19 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     </button>
 
     <div v-if="open" class="license-popover">
-      <p class="popover-title">Licença</p>
+      <p class="popover-title">{{ t('license.title') }}</p>
       <p v-if="licenseState.installationsLimit" class="popover-detail">
-        Instalações: {{ licenseState.installationsUsed }}/{{ licenseState.installationsLimit }}
+        {{
+          t('license.installations', {
+            used: licenseState.installationsUsed,
+            limit: licenseState.installationsLimit
+          })
+        }}
       </p>
+      <!-- Pluralised rather than "dia(s)": Russian needs three forms and
+           Japanese none, and neither is expressible with a parenthesised s. -->
       <p v-if="licenseState.offlineDaysRemaining != null" class="popover-detail">
-        Tolerância offline: {{ licenseState.offlineDaysRemaining }} dia(s) restante(s)
+        {{ t('license.offlineDays', licenseState.offlineDaysRemaining) }}
       </p>
 
       <template
@@ -77,14 +87,14 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           licenseState.status === 'offline_expiring'
         "
       >
-        <p class="popover-detail success"><ShieldCheck :size="13" /> Ativa nesta instalação</p>
+        <p class="popover-detail success"><ShieldCheck :size="13" /> {{ t('license.activeHere') }}</p>
         <AppButton variant="danger" class="mt-1" @click="deactivateLicense">
-          Desativar nesta instalação
+          {{ t('license.deactivate') }}
         </AppButton>
       </template>
 
       <template v-else>
-        <label class="popover-label" for="license-id-input">ID da licença</label>
+        <label class="popover-label" for="license-id-input">{{ t('license.idLabel') }}</label>
         <input
           id="license-id-input"
           v-model="licenseInput"
@@ -94,7 +104,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           :disabled="licenseState.status === 'checking'"
           @keydown.enter="submit"
         />
-        <p class="popover-hint">Enviado por e-mail após a compra.</p>
+        <p class="popover-hint">{{ t('license.idHint') }}</p>
         <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
         <AppButton
           variant="primary"
@@ -102,7 +112,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
           @click="submit"
         >
-          {{ licenseState.status === 'checking' ? 'Ativando…' : 'Ativar' }}
+          {{ licenseState.status === 'checking' ? t('license.activating') : t('license.activate') }}
         </AppButton>
       </template>
     </div>

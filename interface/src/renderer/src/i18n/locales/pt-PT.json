@@ -62,6 +62,9 @@
     "allStatuses": "Todos os estados",
     "allTypes": "Todos os tipos",
     "anyDate": "Qualquer data",
+    "emptyAction": "Processar imagem",
+    "emptyDescription": "As imagens processadas aparecerão aqui.",
+    "emptyTitle": "Nenhum processamento efetuado",
     "last30": "Últimos 30 dias",
     "last7": "Últimos 7 dias",
     "newest": "Mais recentes",
@@ -72,6 +75,7 @@
     "reuseTooOld": "Esta configuração é anterior à atualização e já não pode ser reutilizada — configure novamente.",
     "sizeAsc": "Menor tamanho",
     "sizeDesc": "Maior tamanho",
+    "title": "Histórico",
     "today": "Hoje"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "A configurar",
       "empty": "Vazio"
     }
+  },
+  "license": {
+    "activate": "Ativar",
+    "activating": "A ativar…",
+    "active": "Licença ativa",
+    "activeHere": "Ativa nesta instalação",
+    "activeOffline": "Ativa (offline)",
+    "blocked": "Licença bloqueada",
+    "checkConnection": "Verifique a sua ligação",
+    "checking": "A verificar…",
+    "deactivate": "Desativar nesta instalação",
+    "error": "Erro de licença",
+    "generic": "Licenciamento",
+    "idHint": "Enviado por e-mail após a compra.",
+    "idLabel": "ID da licença",
+    "installations": "Instalações: {used}/{limit}",
+    "notActivated": "Não ativada",
+    "notConfigured": "Sem licenciamento",
+    "offlineDays": "Tolerância offline: {n} dia restante | Tolerância offline: {n} dias restantes",
+    "title": "Licença"
   },
   "nav": {
     "home": "Início",

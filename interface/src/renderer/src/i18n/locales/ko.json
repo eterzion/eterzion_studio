@@ -62,6 +62,9 @@
     "allStatuses": "모든 상태",
     "allTypes": "모든 유형",
     "anyDate": "모든 날짜",
+    "emptyAction": "이미지 처리",
+    "emptyDescription": "처리한 이미지가 여기에 표시됩니다.",
+    "emptyTitle": "아직 처리한 항목이 없습니다",
     "last30": "최근 30일",
     "last7": "최근 7일",
     "newest": "최신순",
@@ -72,6 +75,7 @@
     "reuseTooOld": "이 설정은 업데이트 이전의 것이라 재사용할 수 없습니다 — 다시 설정하세요.",
     "sizeAsc": "크기 작은순",
     "sizeDesc": "크기 큰순",
+    "title": "기록",
     "today": "오늘"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "구성 중",
       "empty": "비어 있음"
     }
+  },
+  "license": {
+    "activate": "활성화",
+    "activating": "활성화 중…",
+    "active": "라이선스 활성",
+    "activeHere": "이 설치에서 활성",
+    "activeOffline": "활성(오프라인)",
+    "blocked": "라이선스 차단됨",
+    "checkConnection": "연결을 확인하세요",
+    "checking": "확인 중…",
+    "deactivate": "이 설치에서 비활성화",
+    "error": "라이선스 오류",
+    "generic": "라이선스",
+    "idHint": "구매 후 이메일로 전송됩니다.",
+    "idLabel": "라이선스 ID",
+    "installations": "설치: {used}/{limit}",
+    "notActivated": "활성화되지 않음",
+    "notConfigured": "라이선스 없음",
+    "offlineDays": "오프라인 허용 기간: {n}일 남음",
+    "title": "라이선스"
   },
   "nav": {
     "home": "홈",

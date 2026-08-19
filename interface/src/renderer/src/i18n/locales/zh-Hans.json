@@ -62,6 +62,9 @@
     "allStatuses": "全部状态",
     "allTypes": "全部类型",
     "anyDate": "任意日期",
+    "emptyAction": "处理图片",
+    "emptyDescription": "处理过的图片会显示在这里。",
+    "emptyTitle": "尚未处理任何内容",
     "last30": "最近 30 天",
     "last7": "最近 7 天",
     "newest": "最新优先",
@@ -72,6 +75,7 @@
     "reuseTooOld": "该配置早于本次更新，已无法复用，请重新设置。",
     "sizeAsc": "体积从小到大",
     "sizeDesc": "体积从大到小",
+    "title": "历史记录",
     "today": "今天"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "配置中",
       "empty": "空"
     }
+  },
+  "license": {
+    "activate": "激活",
+    "activating": "正在激活…",
+    "active": "许可证已激活",
+    "activeHere": "已在此安装上激活",
+    "activeOffline": "已激活（离线）",
+    "blocked": "许可证已封禁",
+    "checkConnection": "请检查网络连接",
+    "checking": "正在检查…",
+    "deactivate": "在此安装上停用",
+    "error": "许可证错误",
+    "generic": "许可",
+    "idHint": "购买后通过电子邮件发送。",
+    "idLabel": "许可证 ID",
+    "installations": "安装数：{used}/{limit}",
+    "notActivated": "未激活",
+    "notConfigured": "未配置许可证",
+    "offlineDays": "离线宽限：剩余 {n} 天",
+    "title": "许可证"
   },
   "nav": {
     "home": "主页",

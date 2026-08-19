@@ -245,14 +245,14 @@ function applyLimit(): void {
 
 <template>
   <div class="history-view">
-    <TopBar title="Histórico" />
+    <TopBar :title="t('history.title')" />
 
     <div class="history-content">
       <EmptyState
         v-if="!queueState.jobs.length && !historyState.entries.length"
-        title="Nenhum processamento realizado"
-        description="As imagens processadas aparecerão aqui."
-        action-label="Processar imagem"
+        :title="t('history.emptyTitle')"
+        :description="t('history.emptyDescription')"
+        :action-label="t('history.emptyAction')"
         @action="goProcess"
       >
         <template #icon><HistoryIcon :size="40" /></template>

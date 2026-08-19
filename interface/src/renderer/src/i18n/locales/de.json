@@ -62,6 +62,9 @@
     "allStatuses": "Alle Status",
     "allTypes": "Alle Typen",
     "anyDate": "Beliebiges Datum",
+    "emptyAction": "Bild verarbeiten",
+    "emptyDescription": "Verarbeitete Bilder erscheinen hier.",
+    "emptyTitle": "Noch nichts verarbeitet",
     "last30": "Letzte 30 Tage",
     "last7": "Letzte 7 Tage",
     "newest": "Neueste zuerst",
@@ -72,6 +75,7 @@
     "reuseTooOld": "Diese Konfiguration stammt aus der Zeit vor dem Update und kann nicht mehr wiederverwendet werden — bitte neu einrichten.",
     "sizeAsc": "Kleinste Datei",
     "sizeDesc": "Größte Datei",
+    "title": "Verlauf",
     "today": "Heute"
   },
   "home": {
@@ -85,6 +89,26 @@
       "configuring": "Wird konfiguriert",
       "empty": "Leer"
     }
+  },
+  "license": {
+    "activate": "Aktivieren",
+    "activating": "Wird aktiviert…",
+    "active": "Lizenz aktiv",
+    "activeHere": "Auf dieser Installation aktiv",
+    "activeOffline": "Aktiv (offline)",
+    "blocked": "Lizenz gesperrt",
+    "checkConnection": "Verbindung prüfen",
+    "checking": "Wird geprüft…",
+    "deactivate": "Auf dieser Installation deaktivieren",
+    "error": "Lizenzfehler",
+    "generic": "Lizenzierung",
+    "idHint": "Nach dem Kauf per E-Mail zugesandt.",
+    "idLabel": "Lizenz-ID",
+    "installations": "Installationen: {used}/{limit}",
+    "notActivated": "Nicht aktiviert",
+    "notConfigured": "Keine Lizenz",
+    "offlineDays": "Offline-Toleranz: noch {n} Tag | Offline-Toleranz: noch {n} Tage",
+    "title": "Lizenz"
   },
   "nav": {
     "home": "Start",
