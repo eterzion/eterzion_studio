@@ -26,6 +26,14 @@
     "notActivatedTitle": "Активируйте лицензию",
     "retry": "Повторить"
   },
+  "app": {
+    "apiCheckFailed": "Не удалось проверить API.",
+    "apiErrorTitle": "Не удалось подключиться к API",
+    "apiUnreachable": "Не удалось связаться с сервером API.",
+    "connecting": "Подключение к серверу API (astros_upscale_api)…",
+    "desktopOnly": "Доступно только в настольном приложении.",
+    "notImplemented": "Этот раздел ещё не реализован в этом предпросмотре."
+  },
   "audio": {
     "addAudio": "Добавить аудио",
     "detectedContent": "Определённое содержимое",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Не удалось выбрать папку.",
     "rejected": "{n} файл не удалось импортировать (неподдерживаемый или нечитаемый формат). | {n} файла не удалось импортировать (неподдерживаемый или нечитаемый формат). | {n} файлов не удалось импортировать (неподдерживаемый или нечитаемый формат)."
   },
+  "jobState": {
+    "awaiting_confirmation": "Ожидание подтверждения",
+    "cancelled": "Отменено",
+    "configuring": "Настройка",
+    "detecting": "Определение типа содержимого",
+    "done": "Готово",
+    "error": "Ошибка",
+    "processing": "Обработка",
+    "queuePosition": "позиция {position}",
+    "queued": "В очереди"
+  },
   "license": {
     "activate": "Активировать",
     "activating": "Активация…",
@@ -242,6 +261,16 @@
     "processing": "Обработка",
     "queued": "В очереди",
     "serverCommunication": "Не удалось связаться с сервером."
+  },
+  "misc": {
+    "defaultValue": "По умолчанию: {value}",
+    "denoiseCustom": "Своё",
+    "denoiseHigh": "Высокое",
+    "denoiseLow": "Низкое",
+    "denoiseMedium": "Среднее",
+    "previewFailed": "Не удалось построить предпросмотр.",
+    "remove": "Удалить",
+    "selectCompleted": "Выберите, какие готовые изображения экспортировать:"
   },
   "nav": {
     "home": "Главная",
@@ -340,6 +369,18 @@
       "help": "Центр помощи",
       "email": "Эл. почта поддержки"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Применённые настройки",
+    "faces": "Лица {value}",
+    "fileSize": "Размер файла",
+    "modelAndParams": "Модель и параметры",
+    "newResolution": "Новое разрешение",
+    "noise": "Шум {value}",
+    "originalResolution": "Исходное разрешение",
+    "processingTime": "Время обработки",
+    "resolution": "Разрешение",
+    "sharpness": "Резкость {value}"
   },
   "status": {
     "cancelled": "Отменено",

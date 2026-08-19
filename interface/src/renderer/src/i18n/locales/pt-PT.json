@@ -26,6 +26,14 @@
     "notActivatedTitle": "Ative a sua licença",
     "retry": "Tentar novamente"
   },
+  "app": {
+    "apiCheckFailed": "Falha ao verificar a API.",
+    "apiErrorTitle": "Não foi possível ligar à API",
+    "apiUnreachable": "Não foi possível ligar ao servidor da API.",
+    "connecting": "A ligar ao servidor da API (astros_upscale_api)…",
+    "desktopOnly": "Disponível apenas na aplicação desktop.",
+    "notImplemented": "Esta secção ainda não foi implementada nesta pré-visualização."
+  },
   "audio": {
     "addAudio": "Adicionar áudio",
     "detectedContent": "Conteúdo detetado",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Falha ao selecionar a pasta.",
     "rejected": "{n} ficheiro não pôde ser importado (formato não suportado ou ilegível). | {n} ficheiros não puderam ser importados (formato não suportado ou ilegível)."
   },
+  "jobState": {
+    "awaiting_confirmation": "A aguardar confirmação",
+    "cancelled": "Cancelado",
+    "configuring": "A configurar",
+    "detecting": "A detetar o tipo de conteúdo",
+    "done": "Concluído",
+    "error": "Erro",
+    "processing": "A processar",
+    "queuePosition": "posição {position}",
+    "queued": "Na fila"
+  },
   "license": {
     "activate": "Ativar",
     "activating": "A ativar…",
@@ -242,6 +261,16 @@
     "processing": "A processar",
     "queued": "Na fila",
     "serverCommunication": "Falha na comunicação com o servidor."
+  },
+  "misc": {
+    "defaultValue": "Predefinição: {value}",
+    "denoiseCustom": "Personalizado",
+    "denoiseHigh": "Alto",
+    "denoiseLow": "Baixo",
+    "denoiseMedium": "Médio",
+    "previewFailed": "Falha ao gerar a pré-visualização.",
+    "remove": "Remover",
+    "selectCompleted": "Selecione que imagens concluídas exportar:"
   },
   "nav": {
     "home": "Início",
@@ -340,6 +369,18 @@
       "help": "Central de ajuda",
       "email": "E-mail de suporte"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Ajustes aplicados",
+    "faces": "Rostos {value}",
+    "fileSize": "Tamanho do ficheiro",
+    "modelAndParams": "Modelo e parâmetros",
+    "newResolution": "Nova resolução",
+    "noise": "Ruído {value}",
+    "originalResolution": "Resolução original",
+    "processingTime": "Tempo de processamento",
+    "resolution": "Resolução",
+    "sharpness": "Nitidez {value}"
   },
   "status": {
     "cancelled": "Cancelado",

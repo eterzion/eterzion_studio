@@ -140,7 +140,7 @@ const conflictOptions = [
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const {
-  DENOISE_PRESETS,
+  denoisePresets,
   denoiseActivePresetKey,
   denoisePreview,
   denoisePreviewLoading,
@@ -794,7 +794,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <div v-if="job.scaleConfig.denoiseFilterEnabled" class="denoise-filter-panel">
               <div class="denoise-preset-row">
                 <button
-                  v-for="preset in DENOISE_PRESETS"
+                  v-for="preset in denoisePresets"
                   :key="preset.key"
                   type="button"
                   class="preset-btn"

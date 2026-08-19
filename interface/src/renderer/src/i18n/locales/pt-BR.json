@@ -26,6 +26,14 @@
     "notActivatedTitle": "Ative sua licença",
     "retry": "Tentar novamente"
   },
+  "app": {
+    "apiCheckFailed": "Falha ao verificar a API.",
+    "apiErrorTitle": "Não foi possível conectar à API",
+    "apiUnreachable": "Não foi possível conectar ao servidor da API.",
+    "connecting": "Conectando ao servidor da API (astros_upscale_api)…",
+    "desktopOnly": "Disponível apenas no aplicativo desktop.",
+    "notImplemented": "Esta seção ainda não foi implementada nesta prévia de redesenho."
+  },
   "audio": {
     "addAudio": "Adicionar áudio",
     "detectedContent": "Conteúdo detectado",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Falha ao selecionar a pasta.",
     "rejected": "{n} arquivo não pôde ser importado (formato não suportado ou ilegível). | {n} arquivos não puderam ser importados (formato não suportado ou ilegível)."
   },
+  "jobState": {
+    "awaiting_confirmation": "Aguardando confirmação",
+    "cancelled": "Cancelado",
+    "configuring": "Configurando",
+    "detecting": "Detectando tipo de conteúdo",
+    "done": "Concluído",
+    "error": "Erro",
+    "processing": "Processando",
+    "queuePosition": "posição {position}",
+    "queued": "Na fila"
+  },
   "license": {
     "activate": "Ativar",
     "activating": "Ativando…",
@@ -242,6 +261,16 @@
     "processing": "Processando",
     "queued": "Na fila",
     "serverCommunication": "Falha na comunicação com o servidor."
+  },
+  "misc": {
+    "defaultValue": "Padrão: {value}",
+    "denoiseCustom": "Personalizado",
+    "denoiseHigh": "Alto",
+    "denoiseLow": "Baixo",
+    "denoiseMedium": "Médio",
+    "previewFailed": "Falha ao gerar prévia.",
+    "remove": "Remover",
+    "selectCompleted": "Selecione quais imagens concluídas exportar:"
   },
   "nav": {
     "home": "Home",
@@ -340,6 +369,18 @@
       "help": "Central de ajuda",
       "email": "E-mail de suporte"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Ajustes aplicados",
+    "faces": "Faces {value}",
+    "fileSize": "Tamanho do arquivo",
+    "modelAndParams": "Modelo e parâmetros",
+    "newResolution": "Nova resolução",
+    "noise": "Ruído {value}",
+    "originalResolution": "Resolução original",
+    "processingTime": "Tempo de processamento",
+    "resolution": "Resolução",
+    "sharpness": "Nitidez {value}"
   },
   "status": {
     "cancelled": "Cancelado",

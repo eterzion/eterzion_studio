@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -23,6 +24,8 @@ const props = withDefaults(
     disabled: false
   }
 )
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -65,7 +68,7 @@ function onInput(e: Event): void {
         <div
           class="default-marker"
           :style="{ left: thumbCentre(defaultPercent) }"
-          :title="`Padrão: ${defaultValue}`"
+          :title="t('misc.defaultValue', { value: defaultValue })"
         />
       </div>
       <input

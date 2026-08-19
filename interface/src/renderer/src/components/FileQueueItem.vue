@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X, Image } from '@lucide/vue'
 import type { Job } from '../store/jobs'
 import AppButton from './atoms/AppButton.vue'
@@ -14,16 +15,20 @@ defineEmits<{
   remove: [id: string]
 }>()
 
+const { t } = useI18n()
+
 // StatusBadge owns the label/icon/tone for each state — this only supplies what
 // is specific to THIS job (queue position, progress, failure reason).
 const statusDetail = computed(() => {
   switch (props.job.status) {
     case 'queued':
-      return props.job.queuePosition ? `posição ${props.job.queuePosition}` : null
+      return props.job.queuePosition
+        ? t('jobState.queuePosition', { position: props.job.queuePosition })
+        : null
     case 'processing':
       return `${props.job.progress}%`
     case 'error':
-      return props.job.errorMessage || 'falha no processamento'
+      return props.job.errorMessage || t('jobState.error').toLowerCase()
     default:
       return null
   }

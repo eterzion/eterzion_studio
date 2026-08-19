@@ -26,6 +26,14 @@
     "notActivatedTitle": "Activez votre licence",
     "retry": "Réessayer"
   },
+  "app": {
+    "apiCheckFailed": "Impossible de vérifier l’API.",
+    "apiErrorTitle": "Impossible de se connecter à l’API",
+    "apiUnreachable": "Impossible de joindre le serveur de l’API.",
+    "connecting": "Connexion au serveur de l’API (astros_upscale_api)…",
+    "desktopOnly": "Disponible uniquement dans l’application de bureau.",
+    "notImplemented": "Cette section n’est pas encore implémentée dans cet aperçu."
+  },
   "audio": {
     "addAudio": "Ajouter un audio",
     "detectedContent": "Contenu détecté",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Impossible de sélectionner le dossier.",
     "rejected": "{n} fichier n’a pas pu être importé (format non pris en charge ou illisible). | {n} fichiers n’ont pas pu être importés (format non pris en charge ou illisible)."
   },
+  "jobState": {
+    "awaiting_confirmation": "En attente de confirmation",
+    "cancelled": "Annulé",
+    "configuring": "Configuration",
+    "detecting": "Détection du type de contenu",
+    "done": "Terminé",
+    "error": "Erreur",
+    "processing": "Traitement",
+    "queuePosition": "position {position}",
+    "queued": "En file"
+  },
   "license": {
     "activate": "Activer",
     "activating": "Activation…",
@@ -242,6 +261,16 @@
     "processing": "Traitement",
     "queued": "En file",
     "serverCommunication": "Échec de la communication avec le serveur."
+  },
+  "misc": {
+    "defaultValue": "Par défaut : {value}",
+    "denoiseCustom": "Personnalisé",
+    "denoiseHigh": "Élevé",
+    "denoiseLow": "Faible",
+    "denoiseMedium": "Moyen",
+    "previewFailed": "Impossible de générer l’aperçu.",
+    "remove": "Retirer",
+    "selectCompleted": "Choisissez les images terminées à exporter :"
   },
   "nav": {
     "home": "Accueil",
@@ -340,6 +369,18 @@
       "help": "Centre d'aide",
       "email": "E-mail d'assistance"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Réglages appliqués",
+    "faces": "Visages {value}",
+    "fileSize": "Taille du fichier",
+    "modelAndParams": "Modèle et paramètres",
+    "newResolution": "Nouvelle résolution",
+    "noise": "Bruit {value}",
+    "originalResolution": "Résolution d’origine",
+    "processingTime": "Durée de traitement",
+    "resolution": "Résolution",
+    "sharpness": "Netteté {value}"
   },
   "status": {
     "cancelled": "Annulé",

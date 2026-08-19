@@ -1,15 +1,30 @@
-import { ref, watch, type ComputedRef, type Ref } from 'vue'
+import { computed, ref, watch, type ComputedRef, type Ref } from 'vue'
+import { i18n } from '../i18n'
 import { hasNativeApi } from '../services/native'
 import { previewDenoise, type DenoisePreview } from '../services/api'
 
 type DenoisePresetKey = 'low' | 'medium' | 'high' | 'custom'
 
-const DENOISE_PRESETS: { key: DenoisePresetKey; label: string; strength: number | null }[] = [
-  { key: 'low', label: 'Baixo', strength: 20 },
-  { key: 'medium', label: 'Médio', strength: 45 },
-  { key: 'high', label: 'Alto', strength: 75 },
-  { key: 'custom', label: 'Custom', strength: null }
+// A function, not a const: a const built at import keeps whichever language
+// was active then, and the preset row would stay in it forever.
+const DENOISE_STRENGTHS: { key: DenoisePresetKey; strength: number | null }[] = [
+  { key: 'low', strength: 20 },
+  { key: 'medium', strength: 45 },
+  { key: 'high', strength: 75 },
+  { key: 'custom', strength: null }
 ]
+
+export function denoisePresets(): {
+  key: DenoisePresetKey
+  label: string
+  strength: number | null
+}[] {
+  const t = i18n.global.t
+  return DENOISE_STRENGTHS.map((preset) => ({
+    ...preset,
+    label: t(`misc.denoise${preset.key[0].toUpperCase()}${preset.key.slice(1)}`)
+  }))
+}
 
 interface DenoiseJob {
   sourcePath: string
@@ -27,7 +42,7 @@ interface DenoiseJob {
 export function useDenoisePreview<T extends DenoiseJob>(
   job: ComputedRef<T | undefined>
 ): {
-  DENOISE_PRESETS: { key: DenoisePresetKey; label: string; strength: number | null }[]
+  denoisePresets: ComputedRef<{ key: DenoisePresetKey; label: string; strength: number | null }[]>
   denoiseActivePresetKey: Ref<DenoisePresetKey>
   denoisePreview: Ref<DenoisePreview | null>
   denoisePreviewLoading: Ref<boolean>
@@ -60,7 +75,7 @@ export function useDenoisePreview<T extends DenoiseJob>(
       } catch (error) {
         if (requestId === denoisePreviewRequestId) {
           denoisePreviewError.value =
-            error instanceof Error ? error.message : 'Falha ao gerar prévia.'
+            error instanceof Error ? error.message : i18n.global.t('misc.previewFailed')
         }
       } finally {
         if (requestId === denoisePreviewRequestId) denoisePreviewLoading.value = false
@@ -98,7 +113,7 @@ export function useDenoisePreview<T extends DenoiseJob>(
     job.value.scaleConfig.denoiseFilterEnabled = !job.value.scaleConfig.denoiseFilterEnabled
     denoisePreview.value = null
     if (job.value.scaleConfig.denoiseFilterEnabled) {
-      const matched = DENOISE_PRESETS.find(
+      const matched = DENOISE_STRENGTHS.find(
         (p) => p.strength === job.value!.scaleConfig.denoiseFilterStrength
       )
       denoiseActivePresetKey.value = matched?.key ?? 'custom'
@@ -107,7 +122,7 @@ export function useDenoisePreview<T extends DenoiseJob>(
   }
 
   return {
-    DENOISE_PRESETS,
+    denoisePresets: computed(() => denoisePresets()),
     denoiseActivePresetKey,
     denoisePreview,
     denoisePreviewLoading,

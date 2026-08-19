@@ -26,6 +26,14 @@
     "notActivatedTitle": "Attiva la tua licenza",
     "retry": "Riprova"
   },
+  "app": {
+    "apiCheckFailed": "Impossibile verificare l’API.",
+    "apiErrorTitle": "Impossibile connettersi all’API",
+    "apiUnreachable": "Impossibile raggiungere il server dell’API.",
+    "connecting": "Connessione al server dell’API (astros_upscale_api)…",
+    "desktopOnly": "Disponibile solo nell’app desktop.",
+    "notImplemented": "Questa sezione non è ancora stata realizzata in questa anteprima."
+  },
   "audio": {
     "addAudio": "Aggiungi audio",
     "detectedContent": "Contenuto rilevato",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Impossibile selezionare la cartella.",
     "rejected": "{n} file non è stato importato (formato non supportato o illeggibile). | {n} file non sono stati importati (formato non supportato o illeggibile)."
   },
+  "jobState": {
+    "awaiting_confirmation": "In attesa di conferma",
+    "cancelled": "Annullato",
+    "configuring": "Configurazione",
+    "detecting": "Rilevamento del tipo di contenuto",
+    "done": "Completato",
+    "error": "Errore",
+    "processing": "Elaborazione",
+    "queuePosition": "posizione {position}",
+    "queued": "In coda"
+  },
   "license": {
     "activate": "Attiva",
     "activating": "Attivazione…",
@@ -242,6 +261,16 @@
     "processing": "Elaborazione",
     "queued": "In coda",
     "serverCommunication": "Comunicazione con il server non riuscita."
+  },
+  "misc": {
+    "defaultValue": "Predefinito: {value}",
+    "denoiseCustom": "Personalizzato",
+    "denoiseHigh": "Alto",
+    "denoiseLow": "Basso",
+    "denoiseMedium": "Medio",
+    "previewFailed": "Impossibile generare l’anteprima.",
+    "remove": "Rimuovi",
+    "selectCompleted": "Scegli quali immagini completate esportare:"
   },
   "nav": {
     "home": "Home",
@@ -340,6 +369,18 @@
       "help": "Centro assistenza",
       "email": "E-mail di supporto"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Regolazioni applicate",
+    "faces": "Volti {value}",
+    "fileSize": "Dimensione del file",
+    "modelAndParams": "Modello e parametri",
+    "newResolution": "Nuova risoluzione",
+    "noise": "Rumore {value}",
+    "originalResolution": "Risoluzione originale",
+    "processingTime": "Tempo di elaborazione",
+    "resolution": "Risoluzione",
+    "sharpness": "Nitidezza {value}"
   },
   "status": {
     "cancelled": "Annullato",

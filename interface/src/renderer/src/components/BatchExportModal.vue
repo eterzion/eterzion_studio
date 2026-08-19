@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { X, CheckCircle2, AlertCircle, FolderOpen } from '@lucide/vue'
 import type { Job, ExportOptions } from '../store/jobs'
 import { exportOne } from '../store/jobs'
@@ -66,20 +67,22 @@ async function run(): Promise<void> {
   }
   running.value = false
 }
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="modal-backdrop" @click.self="emit('close')">
     <div class="modal">
       <div class="modal-header">
-        <h3>Exportar tudo</h3>
+        <h3>{{ t('actions.exportAll') }}</h3>
         <AppButton variant="ghost" icon-only @click="emit('close')">
           <template #icon><X :size="18" /></template>
         </AppButton>
       </div>
 
       <div v-if="!finished" class="modal-body">
-        <p class="modal-hint">Selecione quais imagens concluídas exportar:</p>
+        <p class="modal-hint">{{ t('misc.selectCompleted') }}</p>
         <div class="job-list">
           <label v-for="job in jobs" :key="job.id" class="job-row">
             <input type="checkbox" :checked="selected.has(job.id)" @change="toggle(job.id)" />
@@ -88,7 +91,7 @@ async function run(): Promise<void> {
         </div>
 
         <div class="field-row">
-          <label class="field-label">Formato</label>
+          <label class="field-label">{{ t('imageEditor.format') }}</label>
           <AppSelect
             :model-value="format"
             :options="formatOptions"

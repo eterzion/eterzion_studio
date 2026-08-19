@@ -26,6 +26,14 @@
     "notActivatedTitle": "Lizenz aktivieren",
     "retry": "Erneut versuchen"
   },
+  "app": {
+    "apiCheckFailed": "Die API konnte nicht geprüft werden.",
+    "apiErrorTitle": "Keine Verbindung zur API",
+    "apiUnreachable": "Der API-Server war nicht erreichbar.",
+    "connecting": "Verbindung zum API-Server (astros_upscale_api)…",
+    "desktopOnly": "Nur in der Desktop-App verfügbar.",
+    "notImplemented": "Dieser Bereich ist in dieser Redesign-Vorschau noch nicht umgesetzt."
+  },
   "audio": {
     "addAudio": "Audio hinzufügen",
     "detectedContent": "Erkannter Inhalt",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Der Ordner konnte nicht ausgewählt werden.",
     "rejected": "{n} Datei konnte nicht importiert werden (nicht unterstütztes oder unlesbares Format). | {n} Dateien konnten nicht importiert werden (nicht unterstütztes oder unlesbares Format)."
   },
+  "jobState": {
+    "awaiting_confirmation": "Wartet auf Bestätigung",
+    "cancelled": "Abgebrochen",
+    "configuring": "Wird konfiguriert",
+    "detecting": "Inhaltstyp wird erkannt",
+    "done": "Fertig",
+    "error": "Fehler",
+    "processing": "Wird verarbeitet",
+    "queuePosition": "Position {position}",
+    "queued": "In der Warteschlange"
+  },
   "license": {
     "activate": "Aktivieren",
     "activating": "Wird aktiviert…",
@@ -242,6 +261,16 @@
     "processing": "Wird verarbeitet",
     "queued": "In der Warteschlange",
     "serverCommunication": "Keine Verbindung zum Server."
+  },
+  "misc": {
+    "defaultValue": "Standard: {value}",
+    "denoiseCustom": "Benutzerdefiniert",
+    "denoiseHigh": "Hoch",
+    "denoiseLow": "Niedrig",
+    "denoiseMedium": "Mittel",
+    "previewFailed": "Die Vorschau konnte nicht erstellt werden.",
+    "remove": "Entfernen",
+    "selectCompleted": "Wählen Sie, welche fertigen Bilder exportiert werden:"
   },
   "nav": {
     "home": "Start",
@@ -340,6 +369,18 @@
       "help": "Hilfe-Center",
       "email": "Support-E-Mail"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Angewandte Anpassungen",
+    "faces": "Gesichter {value}",
+    "fileSize": "Dateigröße",
+    "modelAndParams": "Modell und Parameter",
+    "newResolution": "Neue Auflösung",
+    "noise": "Rauschen {value}",
+    "originalResolution": "Ursprüngliche Auflösung",
+    "processingTime": "Verarbeitungsdauer",
+    "resolution": "Auflösung",
+    "sharpness": "Schärfe {value}"
   },
   "status": {
     "cancelled": "Abgebrochen",

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ServerCrash } from '@lucide/vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppButton from './components/atoms/AppButton.vue'
@@ -46,6 +47,8 @@ onMounted(() => {
   }
   initLicense()
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -61,13 +64,15 @@ onMounted(() => {
 
       <div v-if="apiStatus.checking" class="api-status-view">
         <AppSpinner :size="28" class="text-accent" />
-        <p>Conectando ao servidor da API (astros_upscale_api)…</p>
+        <p>{{ t('app.connecting') }}</p>
       </div>
       <div v-else-if="apiStatus.error" class="api-status-view error">
         <ServerCrash :size="28" />
-        <p class="api-error-title">Não foi possível conectar à API</p>
+        <p class="api-error-title">{{ t('app.apiErrorTitle') }}</p>
         <p class="api-error-detail">{{ apiStatus.error }}</p>
-        <AppButton variant="primary" size="lg" @click="checkApiStatus">Tentar novamente</AppButton>
+        <AppButton variant="primary" size="lg" @click="checkApiStatus">{{
+          t('activation.retry')
+        }}</AppButton>
       </div>
 
       <!-- Vídeo and Áudio keep their queues in component state, so switching
@@ -85,7 +90,7 @@ onMounted(() => {
         <VideoEditorView v-else-if="active === 'video'" @back="active = 'home'" />
         <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
         <div v-else class="placeholder-view">
-          <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
+          <p>{{ t('app.notImplemented') }}</p>
         </div>
       </KeepAlive>
     </template>

@@ -1,16 +1,19 @@
 <script setup lang="ts">
 import { X } from '@lucide/vue'
+import { useI18n } from 'vue-i18n'
 import AppButton from '../atoms/AppButton.vue'
 
 defineProps<{ fileName: string }>()
 defineEmits<{ remove: [] }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
   <div class="job-card">
     <div class="job-card-header">
       <span class="job-name">{{ fileName }}</span>
-      <AppButton variant="ghost" icon-only title="Remover" @click="$emit('remove')">
+      <AppButton variant="ghost" icon-only :title="t('misc.remove')" @click="$emit('remove')">
         <template #icon><X :size="16" /></template>
       </AppButton>
     </div>

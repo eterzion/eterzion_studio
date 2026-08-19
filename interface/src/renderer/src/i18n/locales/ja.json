@@ -26,6 +26,14 @@
     "notActivatedTitle": "ライセンスを有効化してください",
     "retry": "もう一度試す"
   },
+  "app": {
+    "apiCheckFailed": "API を確認できませんでした。",
+    "apiErrorTitle": "API に接続できませんでした",
+    "apiUnreachable": "API サーバーに接続できませんでした。",
+    "connecting": "API サーバー（astros_upscale_api）に接続しています…",
+    "desktopOnly": "デスクトップアプリでのみ利用できます。",
+    "notImplemented": "このセクションは、このリデザイン版ではまだ実装されていません。"
+  },
   "audio": {
     "addAudio": "音声を追加",
     "detectedContent": "検出された種類",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "フォルダーを選択できませんでした。",
     "rejected": "{n} 件を読み込めませんでした（未対応または読み取れない形式）。"
   },
+  "jobState": {
+    "awaiting_confirmation": "確認待ち",
+    "cancelled": "キャンセル済み",
+    "configuring": "設定中",
+    "detecting": "内容の種類を判別中",
+    "done": "完了",
+    "error": "エラー",
+    "processing": "処理中",
+    "queuePosition": "{position} 番目",
+    "queued": "待機中"
+  },
   "license": {
     "activate": "アクティベート",
     "activating": "アクティベート中…",
@@ -242,6 +261,16 @@
     "processing": "処理中",
     "queued": "待機中",
     "serverCommunication": "サーバーと通信できませんでした。"
+  },
+  "misc": {
+    "defaultValue": "既定値: {value}",
+    "denoiseCustom": "カスタム",
+    "denoiseHigh": "強",
+    "denoiseLow": "弱",
+    "denoiseMedium": "中",
+    "previewFailed": "プレビューを生成できませんでした。",
+    "remove": "削除",
+    "selectCompleted": "書き出す完了済みの画像を選んでください:"
   },
   "nav": {
     "home": "ホーム",
@@ -340,6 +369,18 @@
       "help": "ヘルプセンター",
       "email": "サポートメール"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "適用した調整",
+    "faces": "顔 {value}",
+    "fileSize": "ファイルサイズ",
+    "modelAndParams": "モデルとパラメーター",
+    "newResolution": "新しい解像度",
+    "noise": "ノイズ除去 {value}",
+    "originalResolution": "元の解像度",
+    "processingTime": "処理時間",
+    "resolution": "解像度",
+    "sharpness": "シャープネス {value}"
   },
   "status": {
     "cancelled": "キャンセル済み",

@@ -26,6 +26,14 @@
     "notActivatedTitle": "Activate your licence",
     "retry": "Try again"
   },
+  "app": {
+    "apiCheckFailed": "Could not check the API.",
+    "apiErrorTitle": "Could not connect to the API",
+    "apiUnreachable": "Could not reach the API server.",
+    "connecting": "Connecting to the API server (astros_upscale_api)…",
+    "desktopOnly": "Only available in the desktop app.",
+    "notImplemented": "This section has not been built in this redesign preview yet."
+  },
   "audio": {
     "addAudio": "Add audio",
     "detectedContent": "Detected content",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "Could not select the folder.",
     "rejected": "{n} file could not be imported (unsupported or unreadable format). | {n} files could not be imported (unsupported or unreadable format)."
   },
+  "jobState": {
+    "awaiting_confirmation": "Awaiting confirmation",
+    "cancelled": "Cancelled",
+    "configuring": "Configuring",
+    "detecting": "Detecting content type",
+    "done": "Done",
+    "error": "Error",
+    "processing": "Processing",
+    "queuePosition": "position {position}",
+    "queued": "Queued"
+  },
   "license": {
     "activate": "Activate",
     "activating": "Activating…",
@@ -242,6 +261,16 @@
     "processing": "Processing",
     "queued": "Queued",
     "serverCommunication": "Could not reach the server."
+  },
+  "misc": {
+    "defaultValue": "Default: {value}",
+    "denoiseCustom": "Custom",
+    "denoiseHigh": "High",
+    "denoiseLow": "Low",
+    "denoiseMedium": "Medium",
+    "previewFailed": "Could not build the preview.",
+    "remove": "Remove",
+    "selectCompleted": "Choose which finished images to export:"
   },
   "nav": {
     "home": "Home",
@@ -340,6 +369,18 @@
       "help": "Help center",
       "email": "Support email"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "Adjustments applied",
+    "faces": "Faces {value}",
+    "fileSize": "File size",
+    "modelAndParams": "Model and parameters",
+    "newResolution": "New resolution",
+    "noise": "Noise {value}",
+    "originalResolution": "Original resolution",
+    "processingTime": "Processing time",
+    "resolution": "Resolution",
+    "sharpness": "Sharpness {value}"
   },
   "status": {
     "cancelled": "Cancelled",

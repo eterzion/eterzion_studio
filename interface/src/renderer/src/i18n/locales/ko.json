@@ -26,6 +26,14 @@
     "notActivatedTitle": "라이선스를 활성화하세요",
     "retry": "다시 시도"
   },
+  "app": {
+    "apiCheckFailed": "API를 확인하지 못했습니다.",
+    "apiErrorTitle": "API에 연결하지 못했습니다",
+    "apiUnreachable": "API 서버에 연결하지 못했습니다.",
+    "connecting": "API 서버(astros_upscale_api)에 연결하는 중…",
+    "desktopOnly": "데스크톱 앱에서만 사용할 수 있습니다.",
+    "notImplemented": "이 섹션은 이 리디자인 미리보기에서 아직 구현되지 않았습니다."
+  },
   "audio": {
     "addAudio": "오디오 추가",
     "detectedContent": "감지된 콘텐츠",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "폴더를 선택하지 못했습니다.",
     "rejected": "{n}개를 가져오지 못했습니다(지원하지 않거나 읽을 수 없는 형식)."
   },
+  "jobState": {
+    "awaiting_confirmation": "확인 대기 중",
+    "cancelled": "취소됨",
+    "configuring": "설정 중",
+    "detecting": "콘텐츠 유형 감지 중",
+    "done": "완료",
+    "error": "오류",
+    "processing": "처리 중",
+    "queuePosition": "{position}번째",
+    "queued": "대기 중"
+  },
   "license": {
     "activate": "활성화",
     "activating": "활성화 중…",
@@ -242,6 +261,16 @@
     "processing": "처리 중",
     "queued": "대기 중",
     "serverCommunication": "서버와 통신하지 못했습니다."
+  },
+  "misc": {
+    "defaultValue": "기본값: {value}",
+    "denoiseCustom": "사용자 지정",
+    "denoiseHigh": "높음",
+    "denoiseLow": "낮음",
+    "denoiseMedium": "중간",
+    "previewFailed": "미리보기를 만들지 못했습니다.",
+    "remove": "제거",
+    "selectCompleted": "내보낼 완료된 이미지를 선택하세요:"
   },
   "nav": {
     "home": "홈",
@@ -340,6 +369,18 @@
       "help": "도움말 센터",
       "email": "지원 이메일"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "적용된 조정",
+    "faces": "얼굴 {value}",
+    "fileSize": "파일 크기",
+    "modelAndParams": "모델과 매개변수",
+    "newResolution": "새 해상도",
+    "noise": "노이즈 {value}",
+    "originalResolution": "원본 해상도",
+    "processingTime": "처리 시간",
+    "resolution": "해상도",
+    "sharpness": "선명도 {value}"
   },
   "status": {
     "cancelled": "취소됨",

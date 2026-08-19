@@ -26,6 +26,14 @@
     "notActivatedTitle": "激活您的许可证",
     "retry": "重试"
   },
+  "app": {
+    "apiCheckFailed": "无法检查 API。",
+    "apiErrorTitle": "无法连接到 API",
+    "apiUnreachable": "无法连接到 API 服务器。",
+    "connecting": "正在连接 API 服务器（astros_upscale_api）…",
+    "desktopOnly": "仅在桌面应用中可用。",
+    "notImplemented": "此部分在本次改版预览中尚未实现。"
+  },
   "audio": {
     "addAudio": "添加音频",
     "detectedContent": "检测到的内容",
@@ -214,6 +222,17 @@
     "pickFolderFailed": "无法选择文件夹。",
     "rejected": "有 {n} 个文件无法导入（格式不受支持或无法读取）。"
   },
+  "jobState": {
+    "awaiting_confirmation": "等待确认",
+    "cancelled": "已取消",
+    "configuring": "配置中",
+    "detecting": "正在识别内容类型",
+    "done": "完成",
+    "error": "错误",
+    "processing": "处理中",
+    "queuePosition": "第 {position} 位",
+    "queued": "排队中"
+  },
   "license": {
     "activate": "激活",
     "activating": "正在激活…",
@@ -242,6 +261,16 @@
     "processing": "处理中",
     "queued": "排队中",
     "serverCommunication": "无法与服务器通信。"
+  },
+  "misc": {
+    "defaultValue": "默认值：{value}",
+    "denoiseCustom": "自定义",
+    "denoiseHigh": "高",
+    "denoiseLow": "低",
+    "denoiseMedium": "中",
+    "previewFailed": "无法生成预览。",
+    "remove": "移除",
+    "selectCompleted": "选择要导出的已完成图片："
   },
   "nav": {
     "home": "主页",
@@ -340,6 +369,18 @@
       "help": "帮助中心",
       "email": "支持邮箱"
     }
+  },
+  "stats": {
+    "adjustmentsApplied": "已应用的调整",
+    "faces": "人脸 {value}",
+    "fileSize": "文件大小",
+    "modelAndParams": "模型与参数",
+    "newResolution": "新分辨率",
+    "noise": "降噪 {value}",
+    "originalResolution": "原始分辨率",
+    "processingTime": "处理时长",
+    "resolution": "分辨率",
+    "sharpness": "锐度 {value}"
   },
   "status": {
     "cancelled": "已取消",
