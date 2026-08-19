@@ -351,9 +351,17 @@ de edição de vídeo à procura de texto não traduzido ou de chave exibida cru
 
 - **FR-031**: As operações de vídeo desta feature MUST aparecer no histórico da aplicação com o
   mesmo nível de informação que as operações de vídeo já existentes.
-- **FR-032**: A área de edição de vídeo MUST coexistir com o fluxo de upscale/otimização em lote já
-  existente na tela de Vídeo, como um modo adicional. Nenhuma capacidade existente MUST ser removida
-  por esta feature, e MUST ficar claro para a pessoa qual dos dois modos faz o quê.
+- **FR-032**: A aplicação MUST ter **uma única tela de Vídeo**, que reúne edição e melhoria. A
+  área de edição absorve os controles de upscale (escala, tipo de conteúdo, perfil, dispositivo);
+  a tela separada de lote é aposentada, não mantida ao lado.
+  - **FR-032a**: Nenhuma capacidade existente MUST ser perdida na unificação. Em particular, a
+    confirmação de elementos secundários — o aviso de que o processamento vai descartar trilhas de
+    áudio extras, legendas embutidas ou capítulos — MUST continuar acontecendo **antes** de
+    qualquer processamento começar.
+  - **FR-032b**: O processamento em lote MUST continuar existindo: acionar o processamento de
+    todos os vídeos importados de uma vez.
+  - **FR-032c**: Quando nenhuma melhoria for pedida, a operação MUST NOT executar o modelo. Uma
+    pessoa que abre a tela para cortar dez segundos não deve pagar o custo de uma rede neural.
 
 ### Key Entities
 
@@ -409,10 +417,11 @@ revertida sem reescrever a spec inteira, mas todas afetam o plano.
   sessão anterior; o escopo das operações foi recuperado da constituição v2.6.0 (ver *Escopo
   recuperado da constituição*). Se o texto original da solicitação for recuperado, esta spec deve
   ser conferida contra ele antes do `/speckit.plan`.
-- **A área de edição é um modo adicional, não uma substituição** (decisão sobre a antiga Q3). O
-  fluxo de upscale/otimização em lote da tela de Vídeo continua existindo. Escolhido por ser a
-  opção que não remove capacidade que a pessoa já tem; se a intenção original era um só lugar para
-  processar vídeo, isto precisa ser revertido antes do `/speckit.plan`.
+- **A área de edição é a tela única de vídeo** (decisão sobre a antiga Q3, **corrigida**). Eu
+  havia escolhido "convivem como modos" por ser a opção que não removia capacidade. O dono do
+  produto decidiu o contrário: uma tela só, com o editor absorvendo o upscale e o lote mantido.
+  A escolha anterior está registrada aqui porque foi ela que orientou o plano e as primeiras
+  tarefas — o FR-032 foi reescrito, e `VideoView.vue` foi removido em vez de mantido ao lado.
 - **Arquivos passam a ser referenciados por identificador apenas nas operações desta feature**
   (decisão sobre a antiga Q2). A rota em lote existente, que recebe caminho local, não é alterada.
   Escolhido por cumprir o Princípio XIII na superfície nova sem arrastar o fluxo em lote para o
@@ -476,7 +485,8 @@ revertida sem reescrever a spec inteira, mas todas afetam o plano.
 - Edição multipista, sobreposição de clipes ou transições entre vídeos.
 - Legendas: criação, edição ou queima na imagem.
 - Persistência das edições entre execuções da aplicação.
-- Remoção ou reescrita do fluxo de upscale/otimização em lote da tela de Vídeo.
+- Alteração do pipeline de upscale em si (o modelo, os perfis, a resolução de engine). A
+  unificação acrescenta uma passada de filtros ao resultado; não muda como o modelo roda.
 - Migração do fluxo em lote existente para referência de arquivo por identificador.
 - Correção da fila da tela inicial não listar vídeo e áudio — pendência conhecida
   (`queueState.jobs` só é alimentado por `addFiles()` em `store/jobs.ts`, que rejeita não-imagens),
@@ -492,7 +502,7 @@ delas muda o tamanho da feature.
 |---|----------|---------|------|
 | Q1 | Quais operações de edição entram no escopo? | As seis famílias do FR-013: ajustes, efeitos, transformação, corte temporal, áudio, exportação | **Evidência**, não escolha — recuperada de `constitution.md:27`, que descreve o subsistema a partir do texto original |
 | Q2 | Como referenciar arquivos por identificador numa aplicação desktop? | Registro do arquivo devolve identificador; só as operações desta feature o usam; o fluxo em lote não muda (FR-028a) | Escolha. Cumpre o Princípio XIII na superfície nova sem arrastar o fluxo em lote para o escopo |
-| Q3 | A área de edição substitui a tela de Vídeo? | Convivem: modo adicional, nada existente é removido (FR-032) | Escolha. Reduzir capacidade existente é decisão do dono do produto, não minha |
+| Q3 | A área de edição substitui a tela de Vídeo? | ~~Convivem~~ → **uma tela só**, o editor absorve o upscale e o lote é mantido | **Corrigida pelo dono do produto.** Minha escolha inicial foi conviverem, por não remover capacidade; a decisão real foi unificar. Registrado por ser exatamente o tipo de pergunta que eu não deveria ter respondido sozinho |
 
 Q1 deixou de ser uma escolha assim que a constituição foi lida como fonte: ela foi redigida a
 partir da solicitação original e nomeia o subsistema termo a termo. Q2 e Q3 continuam sendo
