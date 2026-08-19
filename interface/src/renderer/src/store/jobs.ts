@@ -34,7 +34,13 @@ const t = i18n.global.t
 export type JobStatus = 'configuring' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
 export type ExportState = 'idle' | 'exporting' | 'exported' | 'error'
 
-export const MIN_DIMENSION = 16
+// 1, not 16. The 16px floor rejected legitimate work — game and UI sprite
+// sheets are routinely 8x8 or 12x10, and upscaling exactly that kind of art is
+// a reason someone reaches for this app. It was a client-side rule with nothing
+// behind it: the API accepts and enqueues an 8x8 job the same as any other
+// (verified against the running server). What remains is the only floor that
+// means anything — a side of zero is not a picture.
+export const MIN_DIMENSION = 1
 export const MAX_OUTPUT_DIMENSION = 32000
 export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024
 
