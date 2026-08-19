@@ -565,13 +565,13 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
             except OSError:
                 pass
 
-    width, height = _media_dimensions(output_path)
+    # Same shape _run_compress_convert returns, because both are consumed by the
+    # same branch of _process_job. Dimensions are derived there; size is not, so
+    # it belongs here. Returning less than the sibling was a KeyError waiting on
+    # the first real export — and it got one.
     return {
         'output_path': output_path,
-        'output_meta': {
-            'width': width, 'height': height,
-            'size_bytes': os.path.getsize(output_path) if os.path.exists(output_path) else None,
-        },
+        'size_bytes': os.path.getsize(output_path) if os.path.isfile(output_path) else None,
     }
 
 
@@ -945,9 +945,18 @@ async def _process_job(job_id: str) -> None:
         job['progress'] = 100
         job['stage'] = None
         job['processing_ended_at'] = _now_iso()
-        if job.get('operation') in ('compress', 'convert'):
-            # No lossless "master" here (unlike enhance) — optimize_file()
-            # already wrote the real, final result.
+        if job.get('operation') in ('compress', 'convert', 'video_edit'):
+            # No lossless "master" here (unlike enhance) — optimize_file() and
+            # video_edits.export() already wrote the real, final result.
+            #
+            # video_edit belongs in THIS branch, not the media_type == 'video'
+            # one below: that branch is the upscale path, which reads
+            # result_meta['source_size'] and resolves the output to
+            # _video_output_path(job_id). Falling into it raised KeyError on
+            # 'source_size' and would then have pointed output_path at the
+            # upscale location rather than where the export was written.
+            # Checking the OPERATION before the media type is what keeps the two
+            # apart.
             job['output_path'] = result_meta['output_path']
             source_w, source_h = _media_dimensions(job['input_path'])
             output_w, output_h = _media_dimensions(result_meta['output_path'])

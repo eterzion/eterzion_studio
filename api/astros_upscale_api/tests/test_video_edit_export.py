@@ -248,3 +248,58 @@ class TestShutdown:
             assert jobs.jobs['job_image']['status'] == 'processing'
         finally:
             jobs.jobs.pop('job_image', None)
+
+
+@needs_ffmpeg
+class TestThroughTheJobPipeline:
+    """The gap every other test in this file left open.
+
+    They all call _run_video_edit directly, which exercises the encoding but not
+    what _process_job does with the result afterwards. That handoff was broken:
+    media_type is 'video', so the result fell into the UPSCALE branch, which
+    reads result_meta['source_size'] — a key this operation does not produce —
+    and resolves the output to _video_output_path(job_id) rather than where the
+    export was actually written. It raised KeyError('source_size') on the first
+    real export, through the browser, after every unit test passed.
+
+    Running through the pipeline is what catches that class of defect.
+    """
+
+    def test_a_queued_export_completes_and_reports_its_real_output(
+        self, source, tmp_path, container
+    ):
+        # asyncio.run rather than pytest-asyncio: the project does not depend on
+        # it, and one await does not justify adding a dependency.
+        import asyncio
+
+        job_id = jobs.create_job(
+            input_path=str(source),
+            filename=f'saida.{container}',
+            media_type='video',
+            operation='video_edit',
+            params={
+                'edits': {'adjustments': {'brightness': 0.2}},
+                'container': container,
+                'profile': 'fast',
+                'source_width': 1920,
+                'source_height': 1080,
+                'has_audio': True,
+                'output_target': {
+                    'format': container,
+                    'directory': str(tmp_path / 'out'),
+                    'filename': f'saida.{container}',
+                    'conflict': 'rename',
+                },
+            },
+        )
+        asyncio.run(jobs._process_job(job_id))
+
+        job = jobs.get_job(job_id)
+        assert job['status'] == 'done', f"job falhou: {job['error']}"
+        # The path reported must be the file that exists, not the upscale
+        # pipeline's location.
+        assert job['output_path'], 'nenhum caminho de saída reportado'
+        assert os.path.isfile(job['output_path'])
+        assert str(tmp_path) in job['output_path']
+        assert job['output_meta']['size_bytes'] > 0
+        assert source.read_bytes(), 'origem desapareceu'
