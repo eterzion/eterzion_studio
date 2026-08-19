@@ -174,3 +174,56 @@ verificações de conformidade constitucional estão feitas:
 
 Uma feature não está completa por compilar. Ela precisa rodar, ter testes passando, e spec, plano,
 tarefas e implementação concordando entre si.
+
+---
+
+## Resultado da validação — 2026-08-19
+
+Executado contra a API viva (`127.0.0.1:8765`) com FFmpeg real, na máquina de
+desenvolvimento. **9 dos 14 cenários rodaram e passaram**; os 5 restantes exigem
+a janela do Electron e estão nomeados abaixo como não executados, não como
+aprovados.
+
+| # | Cenário | Resultado |
+|---|---------|-----------|
+| 4 | Origem intacta | ✅ `done`, hash idêntico, nenhum parcial remanescente |
+| 5 | Colisão de nome | ✅ `curto.webm` → `curto (1).webm`, o primeiro preservado |
+| 6 | Recusa antes de começar | ✅ 422 `ceiling_exceeded`, fator `width` nomeado |
+| 7 | Encoder ausente | ✅ `mp4` e `mov` indisponíveis com `no_encoder_available`, nenhum nome de encoder na resposta |
+| 8 | Contorno da interface | ✅ `codec` → 422, `input_path` → 422 |
+| 9 | Corte temporal | ✅ 3,008 s de um pedido 2 s→5 s |
+| 10 | Áudio | ✅ trilha removida na saída; `sem_audio.mp4` reporta `has_audio: false` |
+| 11 | Taxa de quadros variável | ✅ `frame_rate_is_variable: true` |
+| 12 | Cache invalidado por conteúdo | ✅ preview recusa com 409, chave de conteúdo muda |
+
+### Não executados
+
+Os cinco dependem do diálogo nativo de arquivos ou de renderização por GPU, e
+nenhum dos dois existe fora da janela do Electron. Um navegador comum tem
+`hasNativeApi` falso, então a superfície cai no estado "não é possível exibir" —
+que é o comportamento correto do FR-011, e não evidência de reprodução.
+
+| # | Cenário | Por que não rodou |
+|---|---------|-------------------|
+| 1 | Reproduzir, pausar, navegar quadro a quadro | Exige importar arquivo pelo diálogo nativo |
+| 2 | Ajuste refletido no preview | Exige o shader rodando na GPU do renderer |
+| 3 | Paridade preview × exportação | Parcialmente coberto: `test_video_edits.py` mede a fórmula contra o FFmpeg real; falta a conferência visual |
+| 13 | Troca de idioma | Exige percorrer a interface |
+| 14 | Fluxo em lote intacto | Verificado por diff (só adições em `VideoView.vue`); falta a conferência na tela |
+
+### Medição do SC-002 — parcial
+
+O nível **sob demanda** do preview, medido em 1080p, 5 execuções por caso:
+
+| Caso | Mediana | Pior |
+|------|---------|------|
+| Quadro puro | 123 ms | 293 ms |
+| Ajustes (`eq`) | 122 ms | 127 ms |
+| Redução de ruído | 132 ms | 134 ms |
+| Ruído + desfoque + granulação | 146 ms | 150 ms |
+
+Folgadamente dentro dos 2 s. Note que empilhar três efeitos custa 24 ms a mais
+que o quadro puro — o custo está em decodificar e escrever, não nos filtros.
+
+O nível **interativo** (o shader) não está medido: roda na GPU do renderer e
+exige a janela do Electron. É metade do SC-002.

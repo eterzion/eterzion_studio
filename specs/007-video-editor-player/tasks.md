@@ -246,9 +246,9 @@ ou chave crua.
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T079 [P] Medir e registrar o tempo de resposta do preview a alterações de ajuste, contra os 2 s do SC-002 — o Princípio III exige medição, não afirmação
+- [ ] T079 [P] Medir o tempo de resposta do preview contra os 2 s do SC-002 — **metade feita.** O nível sob demanda foi medido (123–146 ms de mediana em 1080p, registrado em quickstart.md). O nível interativo, o shader, roda na GPU do renderer e exige a janela do Electron — **não medido**, e metade de uma medição não fecha a tarefa
 - [X] T080 [P] Verificar acessibilidade por teclado em toda a árvore do player (FR-010) — **auditoria feita, três defeitos corrigidos** (commit 218a4ae): atalhos de transporte eram código morto (handler exposto, nada o ligava); todo slider dos painéis era controle sem nome para leitor de tela; e o grupo de transporte se anunciava com o rótulo da linha de tempo
-- [ ] T081 Rodar os 14 cenários de [quickstart.md](./quickstart.md) e registrar o resultado de cada um
+- [ ] T081 Rodar os 14 cenários de [quickstart.md](./quickstart.md) — **9 de 14 executados e aprovados** contra a API viva com FFmpeg real (resultados em quickstart.md). Os 5 restantes (1, 2, 3, 13, 14) exigem o diálogo nativo ou a GPU do renderer, ambos só existentes na janela do Electron
 - [X] T082 [P] Confirmar que `interface/src/renderer/src/views/ImageEditorView.vue` não foi modificado — a isenção da v2.6.0 proíbe dividi-lo como refatoração isolada
 - [X] T083 [P] Confirmar que o fluxo em lote de `VideoView.vue` funciona como antes (FR-032, cenário 14) — **verificado por diff**: o arquivo ganhou um import de ícone, um emit e um botão; nada foi removido. Confirmação na tela continua pendente junto do T081
 - [X] T084 Registrar em `docs/` a dívida do `codec='libx264'` em `api/astros_upscale/optimize.py` — não corrigida aqui, não herdada pela allowlist desta feature
