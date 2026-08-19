@@ -55,6 +55,18 @@
     "real_video": "Video reale",
     "speech": "Voce"
   },
+  "credits": {
+    "audioMusic": "Miglioramento audio — Musica",
+    "audioSpeech": "Miglioramento audio — Voce",
+    "faceEnhance": "Miglioramento dei volti (immagine)",
+    "imageAnime": "Miglioramento immagine — Anime/Illustrazione",
+    "imagePhoto": "Miglioramento immagine — Foto",
+    "media": "Elaborazione multimediale",
+    "noteFfmpeg": "(build di distribuzione)",
+    "noteSonicMaster": "Apache-2.0 — condizionale (dipende dal VAE di Stable Audio Open)",
+    "videoAnime": "Miglioramento video — Anime/Animazione",
+    "videoReal": "Miglioramento video — Riprese reali"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Cerca…"
   },
   "settings": {
-    "title": "Impostazioni",
+    "advancedDescription": "Diagnostica e informazioni tecniche",
+    "advancedTitle": "Avanzate",
+    "animations": "Attiva le animazioni",
+    "animationsDescription": "Transizioni e microanimazioni dell’interfaccia",
+    "appVersion": "Versione dell’app",
+    "autoCleanup": "Pulizia automatica",
+    "autoCleanupDescription": "Rimuove le voci più vecchie del periodo indicato sotto",
+    "cacheRefreshFailed": "Impossibile aggiornare la cache.",
+    "cacheRefreshFailedWith": "Aggiornamento non riuscito: {error}",
+    "cacheRefreshed": "Cache dei componenti aggiornata dall’API.",
+    "clearCache": "Svuota cache",
+    "clearCacheDescription": "Ricarica l’elenco dei modelli direttamente dall’API",
+    "clearHistory": "Svuota la cronologia manualmente",
+    "clearHistoryAction": "Svuota cronologia",
+    "clearHistoryDescription": "Rimuove tutte le voci salvate — non tocca i file esportati",
+    "collapse": "Comprimi",
+    "comfortable": "Comoda",
+    "compact": "Compatta",
+    "concurrentJobs": "Attività simultanee",
+    "concurrentJobsDescription": "Fissato a 1 dall’architettura attuale dell’elaborazione (coda seriale, un worker)",
+    "confirmClear": "Conferma eliminazione",
+    "creditsDescription": "Attribuzione obbligatoria dei componenti utilizzati.",
+    "creditsTitle": "Crediti",
+    "days": "{n} giorno | {n} giorni",
+    "defaultScale": "Scala predefinita",
+    "defaultScaleDescription": "Fattore preselezionato per le nuove immagini",
+    "density": "Densità dell’interfaccia",
+    "densityDescription": "Spaziatura tra gli elementi",
+    "details": "Dettagli",
+    "distributedUnder": "Distribuito con licenza {license}.",
     "general": {
       "title": "Generale",
       "description": "Preferenze generali dell'applicazione",
@@ -353,7 +394,30 @@
         "label": "Formato immagine predefinito",
         "description": "Preselezionato all'apertura del pannello di esportazione"
       }
-    }
+    },
+    "imageQuality": "Qualità dell’immagine",
+    "imageQualityDescription": "Predefinito per l’esportazione in .jpg/.webp",
+    "interfaceDescription": "Quante informazioni mostrare, e con quale densità",
+    "interfaceTitle": "Interfaccia",
+    "keepAspect": "Mantieni le proporzioni automaticamente",
+    "keepAspectDescription": "Blocca larghezza/altezza in modalità personalizzata",
+    "keepFor": "Conserva per",
+    "keepForDescription": "Giorni prima della rimozione automatica",
+    "large": "Grandi",
+    "medium": "Medie",
+    "openSourceOnly": "Usiamo solo componenti open source con licenze compatibili.",
+    "processingDescription": "Valori predefiniti usati per una nuova immagine",
+    "processingTitle": "Elaborazione",
+    "runtimeVersions": "Versioni del runtime",
+    "showCommercial": "Mostra gli indicatori di uso commerciale",
+    "showCommercialDescription": "Badge di licenza sui modelli",
+    "showDescriptions": "Mostra le descrizioni dei modelli",
+    "showDescriptionsDescription": "Mostra lo scopo in una riga sulle schede della sezione Modelli",
+    "small": "Piccole",
+    "standard": "Standard",
+    "thumbnailSize": "Dimensione delle miniature",
+    "thumbnailSizeDescription": "Coda, editor e cronologia",
+    "title": "Impostazioni"
   },
   "sidebar": {
     "support": "Supporto",
@@ -401,6 +465,15 @@
     "pickFolder": "Scegli la cartella",
     "subtitle": "oppure usa i pulsanti qui sotto",
     "videoTitle": "Trascina qui i video"
+  },
+  "validation": {
+    "exportFailed": "Esportazione non riuscita.",
+    "maxSide": "Massimo {max}px per lato.",
+    "minSide": "Minimo {min}px per lato.",
+    "nameConflict": "Nella destinazione esiste già un file con questo nome.",
+    "outputTooLarge": "L’output supererebbe il limite di {max}px per lato.",
+    "tooLargeFile": "File più grande del limite di {mb} MB.",
+    "tooSmall": "Risoluzione troppo bassa (minimo {min}×{min}px)."
   },
   "videoEditor": {
     "editor": {

@@ -55,6 +55,18 @@
     "real_video": "Vídeo real",
     "speech": "Voz"
   },
+  "credits": {
+    "audioMusic": "Melhoria de áudio — Música",
+    "audioSpeech": "Melhoria de áudio — Voz",
+    "faceEnhance": "Realce de rosto (imagem)",
+    "imageAnime": "Melhoria de imagem — Anime/Ilustração",
+    "imagePhoto": "Melhoria de imagem — Foto",
+    "media": "Processamento de multimédia",
+    "noteFfmpeg": "(build de distribuição)",
+    "noteSonicMaster": "Apache-2.0 — condicional (depende do VAE do Stable Audio Open)",
+    "videoAnime": "Melhoria de vídeo — Anime/Animação",
+    "videoReal": "Melhoria de vídeo — Filmagem real"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Pesquisar…"
   },
   "settings": {
-    "title": "Definições",
+    "advancedDescription": "Diagnóstico e informações técnicas",
+    "advancedTitle": "Avançado",
+    "animations": "Ativar animações",
+    "animationsDescription": "Transições e microanimações da interface",
+    "appVersion": "Versão da aplicação",
+    "autoCleanup": "Limpeza automática",
+    "autoCleanupDescription": "Remove registos mais antigos do que o período abaixo",
+    "cacheRefreshFailed": "Falha ao atualizar a cache.",
+    "cacheRefreshFailedWith": "Falha ao atualizar: {error}",
+    "cacheRefreshed": "Cache de componentes atualizada a partir da API.",
+    "clearCache": "Limpar cache",
+    "clearCacheDescription": "Recarrega a lista de modelos direto da API",
+    "clearHistory": "Limpar histórico manualmente",
+    "clearHistoryAction": "Limpar histórico",
+    "clearHistoryDescription": "Remove todos os registos guardados — não afeta os ficheiros exportados",
+    "collapse": "Recolher",
+    "comfortable": "Confortável",
+    "compact": "Compacta",
+    "concurrentJobs": "Tarefas simultâneas",
+    "concurrentJobsDescription": "Fixo em 1 pela arquitetura atual do processamento (fila serial, um worker)",
+    "confirmClear": "Confirmar exclusão",
+    "creditsDescription": "Atribuição obrigatória dos componentes usados.",
+    "creditsTitle": "Créditos",
+    "days": "{n} dia | {n} dias",
+    "defaultScale": "Escala padrão",
+    "defaultScaleDescription": "Fator pré-selecionado para novas imagens",
+    "density": "Densidade da interface",
+    "densityDescription": "Espaçamento entre elementos",
+    "details": "Detalhes",
+    "distributedUnder": "Distribuído sob licença {license}.",
     "general": {
       "title": "Geral",
       "description": "Preferências gerais da aplicação",
@@ -353,7 +394,30 @@
         "label": "Formato predefinido da imagem",
         "description": "Pré-selecionado ao abrir o painel de exportação"
       }
-    }
+    },
+    "imageQuality": "Qualidade da imagem",
+    "imageQualityDescription": "Padrão para exportação em .jpg/.webp",
+    "interfaceDescription": "Personalize a exibição de informações e densidade",
+    "interfaceTitle": "Interface",
+    "keepAspect": "Manter proporção automaticamente",
+    "keepAspectDescription": "Trava largura/altura no modo customizado",
+    "keepFor": "Manter por",
+    "keepForDescription": "Dias antes da remoção automática",
+    "large": "Grandes",
+    "medium": "Médias",
+    "openSourceOnly": "Utilizamos apenas componentes de código aberto com licenças compatíveis.",
+    "processingDescription": "Padrões usados ao configurar uma nova imagem",
+    "processingTitle": "Processamento",
+    "runtimeVersions": "Versões do runtime",
+    "showCommercial": "Mostrar indicadores de uso comercial",
+    "showCommercialDescription": "Badge de licença nos modelos",
+    "showDescriptions": "Mostrar descrições dos modelos",
+    "showDescriptionsDescription": "Exibe a finalidade resumida nos cards da aba Modelos",
+    "small": "Pequenas",
+    "standard": "Padrão",
+    "thumbnailSize": "Tamanho das miniaturas",
+    "thumbnailSizeDescription": "Fila, editor e histórico",
+    "title": "Definições"
   },
   "sidebar": {
     "support": "Suporte",
@@ -401,6 +465,15 @@
     "pickFolder": "Selecionar pasta",
     "subtitle": "ou use os botões abaixo",
     "videoTitle": "Arraste vídeos para aqui"
+  },
+  "validation": {
+    "exportFailed": "Falha ao exportar.",
+    "maxSide": "Máximo de {max}px por lado.",
+    "minSide": "Mínimo de {min}px por lado.",
+    "nameConflict": "Já existe um ficheiro com esse nome no destino.",
+    "outputTooLarge": "A saída excederia o limite de {max}px por lado.",
+    "tooLargeFile": "Ficheiro maior do que o limite de {mb} MB.",
+    "tooSmall": "Resolução demasiado baixa (mínimo {min}×{min}px)."
   },
   "videoEditor": {
     "editor": {

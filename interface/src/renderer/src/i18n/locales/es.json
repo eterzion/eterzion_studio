@@ -55,6 +55,18 @@
     "real_video": "Vídeo real",
     "speech": "Voz"
   },
+  "credits": {
+    "audioMusic": "Mejora de audio — Música",
+    "audioSpeech": "Mejora de audio — Voz",
+    "faceEnhance": "Mejora de rostros (imagen)",
+    "imageAnime": "Mejora de imagen — Anime/Ilustración",
+    "imagePhoto": "Mejora de imagen — Foto",
+    "media": "Procesamiento multimedia",
+    "noteFfmpeg": "(compilación de distribución)",
+    "noteSonicMaster": "Apache-2.0 — condicional (depende del VAE de Stable Audio Open)",
+    "videoAnime": "Mejora de vídeo — Anime/Animación",
+    "videoReal": "Mejora de vídeo — Imagen real"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Buscar…"
   },
   "settings": {
-    "title": "Ajustes",
+    "advancedDescription": "Diagnóstico e información técnica",
+    "advancedTitle": "Avanzado",
+    "animations": "Activar animaciones",
+    "animationsDescription": "Transiciones y microanimaciones de la interfaz",
+    "appVersion": "Versión de la aplicación",
+    "autoCleanup": "Limpieza automática",
+    "autoCleanupDescription": "Elimina los registros más antiguos que el periodo de abajo",
+    "cacheRefreshFailed": "No se pudo actualizar la caché.",
+    "cacheRefreshFailedWith": "No se pudo actualizar: {error}",
+    "cacheRefreshed": "Caché de componentes actualizada desde la API.",
+    "clearCache": "Vaciar caché",
+    "clearCacheDescription": "Recarga la lista de modelos directamente desde la API",
+    "clearHistory": "Borrar el historial manualmente",
+    "clearHistoryAction": "Borrar historial",
+    "clearHistoryDescription": "Elimina todos los registros guardados; no afecta a los archivos exportados",
+    "collapse": "Contraer",
+    "comfortable": "Cómoda",
+    "compact": "Compacta",
+    "concurrentJobs": "Tareas simultáneas",
+    "concurrentJobsDescription": "Fijado en 1 por la arquitectura actual del procesamiento (cola en serie, un worker)",
+    "confirmClear": "Confirmar borrado",
+    "creditsDescription": "Atribución obligatoria de los componentes utilizados.",
+    "creditsTitle": "Créditos",
+    "days": "{n} día | {n} días",
+    "defaultScale": "Escala por defecto",
+    "defaultScaleDescription": "Factor preseleccionado para imágenes nuevas",
+    "density": "Densidad de la interfaz",
+    "densityDescription": "Espaciado entre elementos",
+    "details": "Detalles",
+    "distributedUnder": "Distribuido bajo la licencia {license}.",
     "general": {
       "title": "General",
       "description": "Preferencias generales de la aplicación",
@@ -353,7 +394,30 @@
         "label": "Formato de imagen predeterminado",
         "description": "Preseleccionado al abrir el panel de exportación"
       }
-    }
+    },
+    "imageQuality": "Calidad de imagen",
+    "imageQualityDescription": "Valor por defecto al exportar a .jpg/.webp",
+    "interfaceDescription": "Ajusta cuánta información se muestra y con qué densidad",
+    "interfaceTitle": "Interfaz",
+    "keepAspect": "Mantener la proporción automáticamente",
+    "keepAspectDescription": "Bloquea ancho/alto en modo personalizado",
+    "keepFor": "Conservar durante",
+    "keepForDescription": "Días antes de la eliminación automática",
+    "large": "Grandes",
+    "medium": "Medianas",
+    "openSourceOnly": "Solo usamos componentes de código abierto con licencias compatibles.",
+    "processingDescription": "Valores por defecto al configurar una imagen nueva",
+    "processingTitle": "Procesamiento",
+    "runtimeVersions": "Versiones del runtime",
+    "showCommercial": "Mostrar indicadores de uso comercial",
+    "showCommercialDescription": "Insignia de licencia en los modelos",
+    "showDescriptions": "Mostrar descripciones de los modelos",
+    "showDescriptionsDescription": "Muestra la finalidad resumida en las tarjetas de la pestaña Modelos",
+    "small": "Pequeñas",
+    "standard": "Estándar",
+    "thumbnailSize": "Tamaño de las miniaturas",
+    "thumbnailSizeDescription": "Cola, editor e historial",
+    "title": "Ajustes"
   },
   "sidebar": {
     "support": "Soporte",
@@ -401,6 +465,15 @@
     "pickFolder": "Elegir carpeta",
     "subtitle": "o usa los botones de abajo",
     "videoTitle": "Arrastra vídeos aquí"
+  },
+  "validation": {
+    "exportFailed": "No se pudo exportar.",
+    "maxSide": "Máximo {max}px por lado.",
+    "minSide": "Mínimo {min}px por lado.",
+    "nameConflict": "Ya existe un archivo con ese nombre en el destino.",
+    "outputTooLarge": "La salida superaría el límite de {max}px por lado.",
+    "tooLargeFile": "Archivo mayor que el límite de {mb} MB.",
+    "tooSmall": "Resolución demasiado baja (mínimo {min}×{min}px)."
   },
   "videoEditor": {
     "editor": {

@@ -34,11 +34,7 @@ export function useExportPanel(): {
       filename: exportFilename.value,
       conflict: exportConflict.value
     })
-    if (
-      !result.ok &&
-      j.exportError === 'Já existe um arquivo com esse nome no destino.' &&
-      exportConflict.value === 'ask'
-    ) {
+    if (!result.ok && j.exportConflicted && exportConflict.value === 'ask') {
       conflictPrompt.value = { job: j }
     }
   }

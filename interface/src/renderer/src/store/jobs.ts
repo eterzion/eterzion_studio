@@ -95,6 +95,8 @@ export interface Job {
   processingEndedAt?: number
   exportState: ExportState
   exportError?: string
+  /** The last export failed because the name was taken. */
+  exportConflicted?: boolean
   lastExportPath?: string
   thumbnail?: string
 }
@@ -168,7 +170,7 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
     if (f.size > MAX_FILE_SIZE_BYTES) {
       rejected.push({
         name: f.name,
-        reason: `Arquivo maior que o limite de ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
+        reason: t('validation.tooLargeFile', { mb: MAX_FILE_SIZE_BYTES / (1024 * 1024) })
       })
       continue
     }
@@ -178,7 +180,7 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
     if (dims && (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION)) {
       rejected.push({
         name: f.name,
-        reason: `Resolução muito baixa (mínimo ${MIN_DIMENSION}×${MIN_DIMENSION}px).`
+        reason: t('validation.tooSmall', { min: MIN_DIMENSION })
       })
       continue
     }
@@ -351,7 +353,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
       if (outW > MAX_OUTPUT_DIMENSION || outH > MAX_OUTPUT_DIMENSION) {
         return {
           valid: false,
-          reason: `Saída excederia o limite de ${MAX_OUTPUT_DIMENSION}px por lado.`
+          reason: t('validation.outputTooLarge', { max: MAX_OUTPUT_DIMENSION })
         }
       }
     }
@@ -367,7 +369,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   // recovery, denoise — runs exactly the same way in both modes.
   if (job.scaleConfig.mode === 'original') {
     if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
-      return { valid: false, reason: `Mínimo de ${MIN_DIMENSION}px por lado.` }
+      return { valid: false, reason: t('validation.minSide', { min: MIN_DIMENSION }) }
     }
     if (srcW && srcH && (w > srcW || h > srcH)) {
       return {
@@ -379,7 +381,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   }
 
   if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
-    return { valid: false, reason: `Máximo de ${MAX_OUTPUT_DIMENSION}px por lado.` }
+    return { valid: false, reason: t('validation.maxSide', { max: MAX_OUTPUT_DIMENSION }) }
   }
   if (srcW && srcH && (w < srcW || h < srcH)) {
     return {
@@ -590,6 +592,7 @@ export async function exportOne(
   if (!job.backendJobId) return { ok: false, error: t('errors.job.noBackendJob') }
   job.exportState = 'exporting'
   job.exportError = undefined
+  job.exportConflicted = false
   const request: ExportRequest = {
     format: options.format,
     quality: options.quality,
@@ -603,11 +606,13 @@ export async function exportOne(
     job.lastExportPath = path
     return { ok: true, path }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Falha ao exportar.'
+    const message = error instanceof Error ? error.message : t('validation.exportFailed')
     job.exportState = 'error'
-    job.exportError = message.startsWith('CONFLICT:')
-      ? 'Já existe um arquivo com esse nome no destino.'
-      : message
+    // The flag, not the message, is what callers branch on: useExportPanel
+    // used to compare against this exact sentence, which a translation breaks
+    // the moment it is no longer written in Portuguese.
+    job.exportConflicted = message.startsWith('CONFLICT:')
+    job.exportError = job.exportConflicted ? t('validation.nameConflict') : message
     return { ok: false, error: job.exportError }
   }
 }

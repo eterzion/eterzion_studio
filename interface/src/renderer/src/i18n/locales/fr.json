@@ -55,6 +55,18 @@
     "real_video": "Vidéo réelle",
     "speech": "Voix"
   },
+  "credits": {
+    "audioMusic": "Amélioration audio — Musique",
+    "audioSpeech": "Amélioration audio — Voix",
+    "faceEnhance": "Amélioration des visages (image)",
+    "imageAnime": "Amélioration d’image — Anime / illustration",
+    "imagePhoto": "Amélioration d’image — Photo",
+    "media": "Traitement des médias",
+    "noteFfmpeg": "(build de distribution)",
+    "noteSonicMaster": "Apache-2.0 — conditionnel (dépend du VAE de Stable Audio Open)",
+    "videoAnime": "Amélioration vidéo — Anime / animation",
+    "videoReal": "Amélioration vidéo — Prises de vue réelles"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Rechercher…"
   },
   "settings": {
-    "title": "Paramètres",
+    "advancedDescription": "Diagnostic et informations techniques",
+    "advancedTitle": "Avancé",
+    "animations": "Activer les animations",
+    "animationsDescription": "Transitions et micro-animations de l’interface",
+    "appVersion": "Version de l’application",
+    "autoCleanup": "Nettoyage automatique",
+    "autoCleanupDescription": "Supprime les entrées plus anciennes que la période ci-dessous",
+    "cacheRefreshFailed": "Échec de l’actualisation du cache.",
+    "cacheRefreshFailedWith": "Échec de l’actualisation : {error}",
+    "cacheRefreshed": "Cache des composants actualisé depuis l’API.",
+    "clearCache": "Vider le cache",
+    "clearCacheDescription": "Recharge la liste des modèles directement depuis l’API",
+    "clearHistory": "Vider l’historique manuellement",
+    "clearHistoryAction": "Vider l’historique",
+    "clearHistoryDescription": "Supprime toutes les entrées enregistrées — sans toucher aux fichiers exportés",
+    "collapse": "Réduire",
+    "comfortable": "Confortable",
+    "compact": "Compacte",
+    "concurrentJobs": "Tâches simultanées",
+    "concurrentJobsDescription": "Fixé à 1 par l’architecture actuelle du traitement (file en série, un worker)",
+    "confirmClear": "Confirmer la suppression",
+    "creditsDescription": "Attribution obligatoire des composants utilisés.",
+    "creditsTitle": "Crédits",
+    "days": "{n} jour | {n} jours",
+    "defaultScale": "Échelle par défaut",
+    "defaultScaleDescription": "Facteur présélectionné pour les nouvelles images",
+    "density": "Densité de l’interface",
+    "densityDescription": "Espacement entre les éléments",
+    "details": "Détails",
+    "distributedUnder": "Distribué sous licence {license}.",
     "general": {
       "title": "Général",
       "description": "Préférences générales de l'application",
@@ -353,7 +394,30 @@
         "label": "Format d'image par défaut",
         "description": "Présélectionné à l'ouverture du panneau d'exportation"
       }
-    }
+    },
+    "imageQuality": "Qualité d’image",
+    "imageQualityDescription": "Valeur par défaut pour l’export en .jpg/.webp",
+    "interfaceDescription": "Réglez la quantité d’informations et la densité",
+    "interfaceTitle": "Interface",
+    "keepAspect": "Conserver les proportions automatiquement",
+    "keepAspectDescription": "Verrouille largeur/hauteur en mode personnalisé",
+    "keepFor": "Conserver pendant",
+    "keepForDescription": "Jours avant la suppression automatique",
+    "large": "Grandes",
+    "medium": "Moyennes",
+    "openSourceOnly": "Nous n’utilisons que des composants open source aux licences compatibles.",
+    "processingDescription": "Valeurs par défaut lors de la configuration d’une nouvelle image",
+    "processingTitle": "Traitement",
+    "runtimeVersions": "Versions du runtime",
+    "showCommercial": "Afficher les indicateurs d’usage commercial",
+    "showCommercialDescription": "Badge de licence sur les modèles",
+    "showDescriptions": "Afficher les descriptions des modèles",
+    "showDescriptionsDescription": "Affiche l’objectif résumé sur les cartes de l’onglet Modèles",
+    "small": "Petites",
+    "standard": "Standard",
+    "thumbnailSize": "Taille des vignettes",
+    "thumbnailSizeDescription": "File, éditeur et historique",
+    "title": "Paramètres"
   },
   "sidebar": {
     "support": "Assistance",
@@ -401,6 +465,15 @@
     "pickFolder": "Choisir un dossier",
     "subtitle": "ou utilisez les boutons ci-dessous",
     "videoTitle": "Déposez des vidéos ici"
+  },
+  "validation": {
+    "exportFailed": "Échec de l’export.",
+    "maxSide": "Maximum {max} px par côté.",
+    "minSide": "Minimum {min} px par côté.",
+    "nameConflict": "Un fichier portant ce nom existe déjà à destination.",
+    "outputTooLarge": "La sortie dépasserait la limite de {max} px par côté.",
+    "tooLargeFile": "Fichier plus grand que la limite de {mb} Mo.",
+    "tooSmall": "Résolution trop basse (minimum {min}×{min} px)."
   },
   "videoEditor": {
     "editor": {

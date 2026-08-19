@@ -55,6 +55,18 @@
     "real_video": "実写映像",
     "speech": "音声"
   },
+  "credits": {
+    "audioMusic": "音声の高音質化 — 音楽",
+    "audioSpeech": "音声の高音質化 — 音声",
+    "faceEnhance": "顔の補正（画像）",
+    "imageAnime": "画像の高画質化 — アニメ・イラスト",
+    "imagePhoto": "画像の高画質化 — 写真",
+    "media": "メディア処理",
+    "noteFfmpeg": "（配布用ビルド）",
+    "noteSonicMaster": "Apache-2.0 — 条件付き（Stable Audio Open の VAE に依存）",
+    "videoAnime": "映像の高画質化 — アニメ",
+    "videoReal": "映像の高画質化 — 実写"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "検索…"
   },
   "settings": {
-    "title": "設定",
+    "advancedDescription": "診断と技術情報",
+    "advancedTitle": "詳細設定",
+    "animations": "アニメーションを有効にする",
+    "animationsDescription": "画面遷移とマイクロアニメーション",
+    "appVersion": "アプリのバージョン",
+    "autoCleanup": "自動クリーンアップ",
+    "autoCleanupDescription": "下の期間より古い記録を削除します",
+    "cacheRefreshFailed": "キャッシュを更新できませんでした。",
+    "cacheRefreshFailedWith": "更新に失敗しました: {error}",
+    "cacheRefreshed": "コンポーネントのキャッシュを API から更新しました。",
+    "clearCache": "キャッシュを消去",
+    "clearCacheDescription": "モデル一覧を API から読み込み直します",
+    "clearHistory": "履歴を手動で消去",
+    "clearHistoryAction": "履歴を消去",
+    "clearHistoryDescription": "保存された記録をすべて削除します。書き出したファイルには影響しません",
+    "collapse": "折りたたむ",
+    "comfortable": "ゆったり",
+    "compact": "高密度",
+    "concurrentJobs": "同時に実行する処理",
+    "concurrentJobsDescription": "現在の処理アーキテクチャ（直列キュー、ワーカー 1 つ）により 1 に固定",
+    "confirmClear": "削除を確定",
+    "creditsDescription": "使用しているコンポーネントの必須表示。",
+    "creditsTitle": "クレジット",
+    "days": "{n} 日",
+    "defaultScale": "既定の拡大率",
+    "defaultScaleDescription": "新しい画像であらかじめ選ばれる倍率",
+    "density": "表示の密度",
+    "densityDescription": "要素どうしの間隔",
+    "details": "詳細",
+    "distributedUnder": "{license} ライセンスで配布されています。",
     "general": {
       "title": "一般",
       "description": "アプリケーションの一般設定",
@@ -353,7 +394,30 @@
         "label": "既定の画像形式",
         "description": "エクスポートパネルを開いたときに事前選択されます"
       }
-    }
+    },
+    "imageQuality": "画質",
+    "imageQualityDescription": ".jpg/.webp で書き出すときの既定値",
+    "interfaceDescription": "表示する情報量と密度",
+    "interfaceTitle": "インターフェース",
+    "keepAspect": "縦横比を自動で保つ",
+    "keepAspectDescription": "カスタムモードで幅と高さを連動させます",
+    "keepFor": "保持期間",
+    "keepForDescription": "自動削除までの日数",
+    "large": "大",
+    "medium": "中",
+    "openSourceOnly": "ライセンスに適合するオープンソースのコンポーネントのみを使用しています。",
+    "processingDescription": "新しい画像を設定するときの既定値",
+    "processingTitle": "処理",
+    "runtimeVersions": "ランタイムのバージョン",
+    "showCommercial": "商用利用の表示を出す",
+    "showCommercialDescription": "モデルにライセンスのバッジを付けます",
+    "showDescriptions": "モデルの説明を表示",
+    "showDescriptionsDescription": "「モデル」タブのカードに用途を 1 行で表示します",
+    "small": "小",
+    "standard": "標準",
+    "thumbnailSize": "サムネイルのサイズ",
+    "thumbnailSizeDescription": "キュー、エディター、履歴",
+    "title": "設定"
   },
   "sidebar": {
     "support": "サポート",
@@ -401,6 +465,15 @@
     "pickFolder": "フォルダーを選ぶ",
     "subtitle": "下のボタンからも選べます",
     "videoTitle": "ここに動画をドロップ"
+  },
+  "validation": {
+    "exportFailed": "書き出しに失敗しました。",
+    "maxSide": "1 辺あたり最大 {max}px。",
+    "minSide": "1 辺あたり最小 {min}px。",
+    "nameConflict": "保存先に同じ名前のファイルがすでにあります。",
+    "outputTooLarge": "出力が 1 辺 {max}px の上限を超えます。",
+    "tooLargeFile": "{mb} MB の上限を超えるファイルです。",
+    "tooSmall": "解像度が低すぎます（最小 {min}×{min}px）。"
   },
   "videoEditor": {
     "editor": {

@@ -55,6 +55,18 @@
     "real_video": "Echtes Video",
     "speech": "Sprache"
   },
+  "credits": {
+    "audioMusic": "Audioverbesserung — Musik",
+    "audioSpeech": "Audioverbesserung — Sprache",
+    "faceEnhance": "Gesichtsverbesserung (Bild)",
+    "imageAnime": "Bildverbesserung — Anime/Illustration",
+    "imagePhoto": "Bildverbesserung — Foto",
+    "media": "Medienverarbeitung",
+    "noteFfmpeg": "(Distributions-Build)",
+    "noteSonicMaster": "Apache-2.0 — bedingt (hängt vom VAE von Stable Audio Open ab)",
+    "videoAnime": "Videoverbesserung — Anime/Animation",
+    "videoReal": "Videoverbesserung — Realaufnahmen"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Suchen…"
   },
   "settings": {
-    "title": "Einstellungen",
+    "advancedDescription": "Diagnose und technische Angaben",
+    "advancedTitle": "Erweitert",
+    "animations": "Animationen aktivieren",
+    "animationsDescription": "Übergänge und Mikroanimationen der Oberfläche",
+    "appVersion": "App-Version",
+    "autoCleanup": "Automatische Bereinigung",
+    "autoCleanupDescription": "Entfernt Einträge, die älter sind als der Zeitraum unten",
+    "cacheRefreshFailed": "Der Cache konnte nicht aktualisiert werden.",
+    "cacheRefreshFailedWith": "Aktualisierung fehlgeschlagen: {error}",
+    "cacheRefreshed": "Komponenten-Cache über die API aktualisiert.",
+    "clearCache": "Cache leeren",
+    "clearCacheDescription": "Lädt die Modellliste direkt von der API neu",
+    "clearHistory": "Verlauf manuell leeren",
+    "clearHistoryAction": "Verlauf leeren",
+    "clearHistoryDescription": "Entfernt alle gespeicherten Einträge — die exportierten Dateien bleiben unberührt",
+    "collapse": "Einklappen",
+    "comfortable": "Großzügig",
+    "compact": "Kompakt",
+    "concurrentJobs": "Gleichzeitige Aufgaben",
+    "concurrentJobsDescription": "Durch die aktuelle Verarbeitungsarchitektur auf 1 festgelegt (serielle Warteschlange, ein Worker)",
+    "confirmClear": "Löschen bestätigen",
+    "creditsDescription": "Erforderliche Nennung der verwendeten Komponenten.",
+    "creditsTitle": "Danksagungen",
+    "days": "{n} Tag | {n} Tage",
+    "defaultScale": "Standardskalierung",
+    "defaultScaleDescription": "Vorausgewählter Faktor für neue Bilder",
+    "density": "Dichte der Oberfläche",
+    "densityDescription": "Abstand zwischen den Elementen",
+    "details": "Details",
+    "distributedUnder": "Vertrieben unter der Lizenz {license}.",
     "general": {
       "title": "Allgemein",
       "description": "Allgemeine Anwendungseinstellungen",
@@ -353,7 +394,30 @@
         "label": "Standard-Bildformat",
         "description": "Beim Öffnen des Exportbereichs vorausgewählt"
       }
-    }
+    },
+    "imageQuality": "Bildqualität",
+    "imageQualityDescription": "Vorgabe für den Export als .jpg/.webp",
+    "interfaceDescription": "Wie viel angezeigt wird, und wie dicht",
+    "interfaceTitle": "Oberfläche",
+    "keepAspect": "Seitenverhältnis automatisch beibehalten",
+    "keepAspectDescription": "Sperrt Breite/Höhe im benutzerdefinierten Modus",
+    "keepFor": "Aufbewahren für",
+    "keepForDescription": "Tage bis zur automatischen Entfernung",
+    "large": "Groß",
+    "medium": "Mittel",
+    "openSourceOnly": "Wir verwenden ausschließlich Open-Source-Komponenten mit kompatiblen Lizenzen.",
+    "processingDescription": "Vorgaben beim Einrichten eines neuen Bildes",
+    "processingTitle": "Verarbeitung",
+    "runtimeVersions": "Runtime-Versionen",
+    "showCommercial": "Hinweise zur kommerziellen Nutzung anzeigen",
+    "showCommercialDescription": "Lizenz-Badge an den Modellen",
+    "showDescriptions": "Modellbeschreibungen anzeigen",
+    "showDescriptionsDescription": "Zeigt den Zweck in einer Zeile auf den Karten im Tab „Modelle“",
+    "small": "Klein",
+    "standard": "Standard",
+    "thumbnailSize": "Größe der Miniaturbilder",
+    "thumbnailSizeDescription": "Warteschlange, Editor und Verlauf",
+    "title": "Einstellungen"
   },
   "sidebar": {
     "support": "Support",
@@ -401,6 +465,15 @@
     "pickFolder": "Ordner wählen",
     "subtitle": "oder nutzen Sie die Schaltflächen unten",
     "videoTitle": "Videos hier ablegen"
+  },
+  "validation": {
+    "exportFailed": "Export fehlgeschlagen.",
+    "maxSide": "Höchstens {max} px pro Seite.",
+    "minSide": "Mindestens {min} px pro Seite.",
+    "nameConflict": "Am Ziel gibt es bereits eine Datei mit diesem Namen.",
+    "outputTooLarge": "Die Ausgabe würde das Limit von {max} px pro Seite überschreiten.",
+    "tooLargeFile": "Datei größer als das Limit von {mb} MB.",
+    "tooSmall": "Auflösung zu niedrig (mindestens {min}×{min} px)."
   },
   "videoEditor": {
     "editor": {

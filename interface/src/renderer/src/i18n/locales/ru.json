@@ -55,6 +55,18 @@
     "real_video": "Реальное видео",
     "speech": "Речь"
   },
+  "credits": {
+    "audioMusic": "Улучшение звука — Музыка",
+    "audioSpeech": "Улучшение звука — Речь",
+    "faceEnhance": "Улучшение лиц (изображение)",
+    "imageAnime": "Улучшение изображений — Аниме/иллюстрация",
+    "imagePhoto": "Улучшение изображений — Фото",
+    "media": "Обработка медиа",
+    "noteFfmpeg": "(дистрибутивная сборка)",
+    "noteSonicMaster": "Apache-2.0 — условно (зависит от VAE Stable Audio Open)",
+    "videoAnime": "Улучшение видео — Аниме/анимация",
+    "videoReal": "Улучшение видео — Реальная съёмка"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Поиск…"
   },
   "settings": {
-    "title": "Настройки",
+    "advancedDescription": "Диагностика и технические сведения",
+    "advancedTitle": "Дополнительно",
+    "animations": "Включить анимации",
+    "animationsDescription": "Переходы и микроанимации интерфейса",
+    "appVersion": "Версия приложения",
+    "autoCleanup": "Автоматическая очистка",
+    "autoCleanupDescription": "Удаляет записи старше указанного ниже срока",
+    "cacheRefreshFailed": "Не удалось обновить кэш.",
+    "cacheRefreshFailedWith": "Не удалось обновить: {error}",
+    "cacheRefreshed": "Кэш компонентов обновлён из API.",
+    "clearCache": "Очистить кэш",
+    "clearCacheDescription": "Заново загружает список моделей прямо из API",
+    "clearHistory": "Очистить историю вручную",
+    "clearHistoryAction": "Очистить историю",
+    "clearHistoryDescription": "Удаляет все сохранённые записи — экспортированные файлы не затрагиваются",
+    "collapse": "Свернуть",
+    "comfortable": "Свободная",
+    "compact": "Плотная",
+    "concurrentJobs": "Одновременные задачи",
+    "concurrentJobsDescription": "Зафиксировано на 1 текущей архитектурой обработки (последовательная очередь, один worker)",
+    "confirmClear": "Подтвердить удаление",
+    "creditsDescription": "Обязательное указание используемых компонентов.",
+    "creditsTitle": "Благодарности",
+    "days": "{n} день | {n} дня | {n} дней",
+    "defaultScale": "Масштаб по умолчанию",
+    "defaultScaleDescription": "Предвыбранный множитель для новых изображений",
+    "density": "Плотность интерфейса",
+    "densityDescription": "Отступы между элементами",
+    "details": "Подробности",
+    "distributedUnder": "Распространяется по лицензии {license}.",
     "general": {
       "title": "Общие",
       "description": "Общие настройки приложения",
@@ -353,7 +394,30 @@
         "label": "Формат изображения по умолчанию",
         "description": "Выбирается по умолчанию при открытии панели экспорта"
       }
-    }
+    },
+    "imageQuality": "Качество изображения",
+    "imageQualityDescription": "Значение по умолчанию для экспорта в .jpg/.webp",
+    "interfaceDescription": "Сколько показывать и насколько плотно",
+    "interfaceTitle": "Интерфейс",
+    "keepAspect": "Автоматически сохранять пропорции",
+    "keepAspectDescription": "Закрепляет ширину и высоту в пользовательском режиме",
+    "keepFor": "Хранить",
+    "keepForDescription": "Дней до автоматического удаления",
+    "large": "Большие",
+    "medium": "Средние",
+    "openSourceOnly": "Мы используем только компоненты с открытым кодом и совместимыми лицензиями.",
+    "processingDescription": "Значения по умолчанию при настройке нового изображения",
+    "processingTitle": "Обработка",
+    "runtimeVersions": "Версии среды выполнения",
+    "showCommercial": "Показывать признаки коммерческого использования",
+    "showCommercialDescription": "Значок лицензии у моделей",
+    "showDescriptions": "Показывать описания моделей",
+    "showDescriptionsDescription": "Показывает краткое назначение на карточках вкладки «Модели»",
+    "small": "Маленькие",
+    "standard": "Обычная",
+    "thumbnailSize": "Размер миниатюр",
+    "thumbnailSizeDescription": "Очередь, редактор и история",
+    "title": "Настройки"
   },
   "sidebar": {
     "support": "Поддержка",
@@ -401,6 +465,15 @@
     "pickFolder": "Выбрать папку",
     "subtitle": "или воспользуйтесь кнопками ниже",
     "videoTitle": "Перетащите видео сюда"
+  },
+  "validation": {
+    "exportFailed": "Не удалось экспортировать.",
+    "maxSide": "Максимум {max} px по стороне.",
+    "minSide": "Минимум {min} px по стороне.",
+    "nameConflict": "В папке назначения уже есть файл с таким именем.",
+    "outputTooLarge": "Результат превысит предел {max} px по стороне.",
+    "tooLargeFile": "Файл больше предела в {mb} МБ.",
+    "tooSmall": "Слишком низкое разрешение (минимум {min}×{min} px)."
   },
   "videoEditor": {
     "editor": {

@@ -55,6 +55,18 @@
     "real_video": "Real video",
     "speech": "Speech"
   },
+  "credits": {
+    "audioMusic": "Audio enhancement — Music",
+    "audioSpeech": "Audio enhancement — Speech",
+    "faceEnhance": "Face enhancement (image)",
+    "imageAnime": "Image enhancement — Anime / illustration",
+    "imagePhoto": "Image enhancement — Photo",
+    "media": "Media processing",
+    "noteFfmpeg": "(distribution build)",
+    "noteSonicMaster": "Apache-2.0 — conditional (depends on the Stable Audio Open VAE)",
+    "videoAnime": "Video enhancement — Anime / animation",
+    "videoReal": "Video enhancement — Live action"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "Search…"
   },
   "settings": {
-    "title": "Settings",
+    "advancedDescription": "Diagnostics and technical details",
+    "advancedTitle": "Advanced",
+    "animations": "Enable animations",
+    "animationsDescription": "Interface transitions and micro-animations",
+    "appVersion": "App version",
+    "autoCleanup": "Automatic cleanup",
+    "autoCleanupDescription": "Drops entries older than the period below",
+    "cacheRefreshFailed": "Could not refresh the cache.",
+    "cacheRefreshFailedWith": "Could not refresh: {error}",
+    "cacheRefreshed": "Component cache refreshed from the API.",
+    "clearCache": "Clear cache",
+    "clearCacheDescription": "Reloads the model list straight from the API",
+    "clearHistory": "Clear the history manually",
+    "clearHistoryAction": "Clear history",
+    "clearHistoryDescription": "Removes every stored entry — does not touch the exported files",
+    "collapse": "Collapse",
+    "comfortable": "Comfortable",
+    "compact": "Compact",
+    "concurrentJobs": "Concurrent jobs",
+    "concurrentJobsDescription": "Fixed at 1 by the current processing architecture (serial queue, one worker)",
+    "confirmClear": "Confirm deletion",
+    "creditsDescription": "Required attribution for the components used.",
+    "creditsTitle": "Credits",
+    "days": "{n} day | {n} days",
+    "defaultScale": "Default scale",
+    "defaultScaleDescription": "Factor pre-selected for new images",
+    "density": "Interface density",
+    "densityDescription": "Spacing between elements",
+    "details": "Details",
+    "distributedUnder": "Distributed under the {license} licence.",
     "general": {
       "title": "General",
       "description": "General application preferences",
@@ -353,7 +394,30 @@
         "label": "Default image format",
         "description": "Pre-selected when opening the export panel"
       }
-    }
+    },
+    "imageQuality": "Image quality",
+    "imageQualityDescription": "Default for .jpg/.webp exports",
+    "interfaceDescription": "Tune how much is shown, and how densely",
+    "interfaceTitle": "Interface",
+    "keepAspect": "Keep the aspect ratio automatically",
+    "keepAspectDescription": "Locks width/height in custom mode",
+    "keepFor": "Keep for",
+    "keepForDescription": "Days before automatic removal",
+    "large": "Large",
+    "medium": "Medium",
+    "openSourceOnly": "We use only open-source components with compatible licences.",
+    "processingDescription": "Defaults used when setting up a new image",
+    "processingTitle": "Processing",
+    "runtimeVersions": "Runtime versions",
+    "showCommercial": "Show commercial-use indicators",
+    "showCommercialDescription": "Licence badge on the models",
+    "showDescriptions": "Show model descriptions",
+    "showDescriptionsDescription": "Shows a one-line purpose on the cards in the Models tab",
+    "small": "Small",
+    "standard": "Standard",
+    "thumbnailSize": "Thumbnail size",
+    "thumbnailSizeDescription": "Queue, editor and history",
+    "title": "Settings"
   },
   "sidebar": {
     "support": "Support",
@@ -401,6 +465,15 @@
     "pickFolder": "Choose folder",
     "subtitle": "or use the buttons below",
     "videoTitle": "Drop videos here"
+  },
+  "validation": {
+    "exportFailed": "Could not export.",
+    "maxSide": "Maximum {max}px per side.",
+    "minSide": "Minimum {min}px per side.",
+    "nameConflict": "A file with that name already exists at the destination.",
+    "outputTooLarge": "The output would exceed the {max}px per side limit.",
+    "tooLargeFile": "File larger than the {mb} MB limit.",
+    "tooSmall": "Resolution too low (minimum {min}×{min}px)."
   },
   "videoEditor": {
     "editor": {

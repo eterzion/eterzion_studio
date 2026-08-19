@@ -55,6 +55,18 @@
     "real_video": "实拍视频",
     "speech": "语音"
   },
+  "credits": {
+    "audioMusic": "音频增强 — 音乐",
+    "audioSpeech": "音频增强 — 语音",
+    "faceEnhance": "人脸增强（图片）",
+    "imageAnime": "图片增强 — 动漫/插画",
+    "imagePhoto": "图片增强 — 照片",
+    "media": "媒体处理",
+    "noteFfmpeg": "（发行版构建）",
+    "noteSonicMaster": "Apache-2.0 — 有条件（依赖 Stable Audio Open 的 VAE）",
+    "videoAnime": "视频增强 — 动画",
+    "videoReal": "视频增强 — 实拍"
+  },
   "errors": {
     "category": {
       "outOfMemory": {
@@ -325,7 +337,36 @@
     "search": "搜索…"
   },
   "settings": {
-    "title": "设置",
+    "advancedDescription": "诊断与技术信息",
+    "advancedTitle": "高级",
+    "animations": "启用动画",
+    "animationsDescription": "界面过渡与微动效",
+    "appVersion": "应用版本",
+    "autoCleanup": "自动清理",
+    "autoCleanupDescription": "删除早于下方期限的记录",
+    "cacheRefreshFailed": "无法刷新缓存。",
+    "cacheRefreshFailedWith": "刷新失败：{error}",
+    "cacheRefreshed": "已从 API 刷新组件缓存。",
+    "clearCache": "清除缓存",
+    "clearCacheDescription": "直接从 API 重新加载模型列表",
+    "clearHistory": "手动清空历史记录",
+    "clearHistoryAction": "清空历史记录",
+    "clearHistoryDescription": "删除所有已保存的记录，不影响已导出的文件",
+    "collapse": "收起",
+    "comfortable": "宽松",
+    "compact": "紧凑",
+    "concurrentJobs": "并发任务数",
+    "concurrentJobsDescription": "受当前处理架构限制固定为 1（串行队列，单个 worker）",
+    "confirmClear": "确认删除",
+    "creditsDescription": "所用组件的必要署名。",
+    "creditsTitle": "致谢",
+    "days": "{n} 天",
+    "defaultScale": "默认倍数",
+    "defaultScaleDescription": "新图片预先选中的放大倍数",
+    "density": "界面密度",
+    "densityDescription": "元素之间的间距",
+    "details": "详情",
+    "distributedUnder": "依据 {license} 许可证分发。",
     "general": {
       "title": "常规",
       "description": "应用程序的常规首选项",
@@ -353,7 +394,30 @@
         "label": "默认图像格式",
         "description": "打开导出面板时预先选择"
       }
-    }
+    },
+    "imageQuality": "图片质量",
+    "imageQualityDescription": "导出为 .jpg/.webp 时的默认值",
+    "interfaceDescription": "显示多少信息，以及排布得多紧凑",
+    "interfaceTitle": "界面",
+    "keepAspect": "自动保持比例",
+    "keepAspectDescription": "在自定义模式下联动宽高",
+    "keepFor": "保留时长",
+    "keepForDescription": "自动删除前保留的天数",
+    "large": "大",
+    "medium": "中",
+    "openSourceOnly": "我们只使用许可证兼容的开源组件。",
+    "processingDescription": "设置新图片时使用的默认值",
+    "processingTitle": "处理",
+    "runtimeVersions": "运行时版本",
+    "showCommercial": "显示商用标识",
+    "showCommercialDescription": "在模型上显示许可证徽章",
+    "showDescriptions": "显示模型说明",
+    "showDescriptionsDescription": "在「模型」标签页的卡片上用一行说明用途",
+    "small": "小",
+    "standard": "标准",
+    "thumbnailSize": "缩略图大小",
+    "thumbnailSizeDescription": "队列、编辑器与历史记录",
+    "title": "设置"
   },
   "sidebar": {
     "support": "支持",
@@ -401,6 +465,15 @@
     "pickFolder": "选择文件夹",
     "subtitle": "也可以使用下方按钮",
     "videoTitle": "将视频拖放到这里"
+  },
+  "validation": {
+    "exportFailed": "导出失败。",
+    "maxSide": "每边最多 {max}px。",
+    "minSide": "每边至少 {min}px。",
+    "nameConflict": "目标位置已存在同名文件。",
+    "outputTooLarge": "输出会超过每边 {max}px 的上限。",
+    "tooLargeFile": "文件超过 {mb} MB 的上限。",
+    "tooSmall": "分辨率过低（最小 {min}×{min}px）。"
   },
   "videoEditor": {
     "editor": {
