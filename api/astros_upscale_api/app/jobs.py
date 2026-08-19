@@ -599,6 +599,77 @@ def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dic
     }
 
 
+def has_meaningful_edits(edits: dict | None) -> bool:
+    """True when an edit set asks for something other than the neutral state.
+
+    A neutral set produces an empty filter chain, and a second encode pass that
+    changes nothing is pure cost — on an upscaled 4K frame, a very large one.
+    """
+    if not edits:
+        return False
+    from app import video_edits
+
+    if edits.get('trim'):
+        return True
+    if (edits.get('audio') or {}).get('mode', 'keep') != 'keep':
+        return True
+    if float((edits.get('audio') or {}).get('volume', 1.0)) != 1.0:
+        return True
+    # Dimensions do not matter here: the chain builder only emits `scale` when
+    # the requested output differs from the source, and the upscale already
+    # decided the size.
+    return bool(video_edits.build_filter_chain(edits, 0, 0))
+
+
+def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage) -> None:
+    """Apply the editor's settings to an upscaled video, as a second pass.
+
+    A separate pass rather than a change to the model pipeline: VideoUpscaler
+    owns frame generation and knows nothing about colour grading or trimming,
+    and teaching it would couple two things that change for different reasons.
+    The cost is one extra encode, which is small beside the model pass that
+    just ran.
+
+    The filters run on the UPSCALED frames, not the source. That is the right
+    order — sharpening or denoising before an upscale would feed the model an
+    altered picture, and the person adjusted against a preview of the result.
+    """
+    from app import video_edits
+
+    edits = params.get('edits')
+    if not has_meaningful_edits(edits):
+        return
+
+    width, height = _media_dimensions(output_path)
+    if not width or not height:
+        logger.warning('dimensões desconhecidas em %s — ajustes não aplicados', output_path)
+        return
+
+    if on_stage:
+        on_stage('Aplicando ajustes')
+
+    stem, extension = os.path.splitext(output_path)
+    temp_output = f'{stem}.edited{extension}'
+    job['partial_output'] = temp_output
+    try:
+        video_edits.export(
+            output_path, temp_output, edits,
+            # The upscale already produced an .mp4; keeping the container avoids
+            # a format change the person did not ask for. Profile follows the
+            # job's, so "quality" does not silently become "fast" here.
+            container='mp4', profile=params.get('profile') or 'balanced',
+            source_width=width, source_height=height,
+            has_audio=params.get('has_audio', True),
+        )
+        os.replace(temp_output, output_path)
+    finally:
+        if os.path.exists(temp_output):
+            try:
+                os.remove(temp_output)
+            except OSError:
+                pass
+
+
 def create_job(
         input_path: str, filename: str, params: dict,
         media_type: str = 'image', operation: str = 'enhance',
@@ -911,7 +982,7 @@ async def _process_job(job_id: str) -> None:
             output_path = _master_path(job_id)
         # Runs in the isolated worker process (Fase 1), not on this thread — this
         # call just relays the request over IPC and blocks for the reply.
-        return get_supervisor().process(
+        upscale_result = get_supervisor().process(
             job_id=job_id,
             media_type=job.get('media_type', 'image'),
             operation=job.get('operation', 'enhance'),
@@ -935,6 +1006,14 @@ async def _process_job(job_id: str) -> None:
             tile_threshold=pipeline.execution_params.get('tile_threshold'),
             tile_size=pipeline.execution_params.get('tile_size'),
         )
+
+        # The editor's settings, applied to the upscaled result (007 §Upscale
+        # com edição). Video only: the image path has its own adjustment
+        # pipeline inside the model pass, and a second one here would be two
+        # ways to do the same thing.
+        if is_video:
+            _apply_edits_to_upscaled(job, params, output_path, on_stage)
+        return upscale_result
 
     try:
         result_meta = await loop.run_in_executor(_executor, blocking_run)

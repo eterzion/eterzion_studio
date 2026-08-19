@@ -76,6 +76,12 @@ class MediaRequest(BaseModel):
     # omitted or 'enhance' means "exactly today's behaviour", byte for byte
     # (specs/006-audio-engine-masterizacao contracts/README.md).
     audio_mode: AudioMode | None = None
+    # specs/007-video-editor-player — the editor's settings, applied to the
+    # upscaled result as a second pass. Optional and neutral by default, so a
+    # request that omits it behaves exactly as before, byte for byte. Video
+    # only: the image path already applies its adjustments inside the model
+    # pass, and a second mechanism would be two ways to do one thing.
+    edits: 'VideoEditSet | None' = None
     ai_strength: int | None = Field(default=None, ge=0, le=100)
 
 
