@@ -910,11 +910,28 @@ async def _process_job(job_id: str) -> None:
 
             adjustments = params.get('adjustments', {})
             custom = params.get('custom_size')
+            resize = (int(custom['width']), int(custom['height'])) if custom else None
+
+            # A scale of 2x/4x has to be honoured here too, not only a
+            # custom size. Original mode always sends an explicit target,
+            # so this branch never needed to read `scale` -- and when
+            # pixel_art started arriving with '4x' and no custom size, the
+            # job completed and quietly returned the source at its own
+            # resolution. Silently doing nothing is the worst way to fail.
+            if resize is None:
+                factor = {'2x': 2, '4x': 4}.get(params.get('scale'))
+                if factor:
+                    import cv2
+
+                    probe = cv2.imread(job['input_path'], cv2.IMREAD_UNCHANGED)
+                    if probe is not None:
+                        resize = (probe.shape[1] * factor, probe.shape[0] * factor)
+
             return Upscaler.process_without_model(
                 job['input_path'],
                 _master_path(job_id),
                 settings.models_dir,
-                resize=(int(custom['width']), int(custom['height'])) if custom else None,
+                resize=resize,
                 on_progress=on_progress,
                 on_stage=on_stage,
                 sharpen_strength=adjustments.get('deblur', 0),

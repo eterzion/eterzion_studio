@@ -12,8 +12,19 @@ from __future__ import annotations
 
 import cv2
 import numpy as np
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
 
 from app.processing import Upscaler
+from app.routes import jobs_router
+
+
+@pytest.fixture
+def client():
+    app = FastAPI()
+    app.include_router(jobs_router, prefix='/jobs')
+    return TestClient(app)
 
 
 def checkerboard(size: int = 8) -> np.ndarray:
@@ -79,3 +90,48 @@ class TestTransparency:
         out = enlarge(source, None, tmp_path, 4)
         assert out.shape[2] == 4
         assert int((out[..., 3] == 0).sum()) == int((source[..., 3] == 0).sum()) * 16
+
+
+class TestScaleWithoutACustomSize:
+    """A 2x/4x request with no explicit target must still enlarge.
+
+    This shipped broken and no unit test saw it: the job completed, reported
+    done, and handed back the source at its own resolution. Original mode
+    always sends an explicit size, so this branch had never had to read
+    `scale` — and pixel_art arrives with '4x' and no custom size whenever the
+    person picks the Ampliar tab. Completing successfully while doing nothing
+    is the worst shape a failure can take.
+
+    Driven through the real route, because the missing step was in jobs.py and
+    a unit test of the resize would have passed either way.
+    """
+
+    @staticmethod
+    def _run(client, tmp_path, scale):
+        import asyncio
+
+        from app import jobs as job_manager
+
+        art = np.zeros((8, 8, 3), np.uint8)
+        art[2:6, 2:6] = 255
+        source = tmp_path / 'icone.png'
+        cv2.imwrite(str(source), art)
+
+        job_id = client.post('/jobs/local', json={'media_request': {
+            'media_type': 'image', 'operation': 'enhance', 'scale': scale,
+            'profile': 'quality', 'content_type_override': 'pixel_art',
+            'input_path': str(source),
+        }}).json()['id']
+        job_manager.jobs[job_id]['status'] = 'queued'
+        asyncio.run(job_manager._process_job(job_id))
+        return job_manager.get_job(job_id)
+
+    def test_four_x_actually_quadruples(self, client, tmp_path):
+        job = self._run(client, tmp_path, '4x')
+        assert job['status'] == 'done', job.get('error')
+        assert job['output_meta']['width'] == 32, 'saiu do mesmo tamanho da origem'
+
+    def test_two_x_actually_doubles(self, client, tmp_path):
+        job = self._run(client, tmp_path, '2x')
+        assert job['status'] == 'done', job.get('error')
+        assert job['output_meta']['width'] == 16

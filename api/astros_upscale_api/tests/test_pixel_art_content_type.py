@@ -11,6 +11,8 @@ pixel_art skips it even when it is.
 """
 from __future__ import annotations
 
+import pytest
+
 from app import licensing
 from app.schemas import ContentType
 
@@ -37,3 +39,49 @@ def test_every_other_image_type_still_resolves_a_model():
     for content_type in ('photo', 'anime_image', 'real_video', 'anime_video'):
         assert content_type in licensing._CONTENT_TYPE_IMPLEMENTATIONS, content_type
         assert content_type not in licensing.MODEL_FREE_CONTENT_TYPES, content_type
+
+
+class TestTheResolverAcceptsIt:
+    """The gap that shipped: the type existed, the pipeline knew what to do with
+    it, and the resolver rejected the request before either mattered with
+    "Tipo de conteúdo desconhecido: 'pixel_art'". Every test I had written
+    checked the pieces; none created a job.
+    """
+
+    @staticmethod
+    def _request(content_type):
+        from app.licensing import MediaRequest
+
+        return MediaRequest(
+            media_type='image', operation='enhance', content_type=content_type,
+            scale='4x', profile='quality',
+        )
+
+    def test_a_pixel_art_request_resolves(self):
+        from app.licensing import resolve
+
+        resolved = resolve(self._request('pixel_art'))
+        assert resolved.engine_ref == 'nearest-enlarge'
+
+    def test_it_resolves_without_naming_a_model(self):
+        """Whatever it resolves to must not be one of the AI engines."""
+        from app.licensing import resolve
+
+        engine = resolve(self._request('pixel_art')).engine_ref
+        model_engines = {
+            impl.engine_ref for impl in licensing._CONTENT_TYPE_IMPLEMENTATIONS.values()
+        }
+        assert engine not in model_engines
+
+    def test_it_carries_no_execution_params(self):
+        """No model means no profile knobs and no tile budget to compute."""
+        from app.licensing import resolve
+
+        assert resolve(self._request('pixel_art')).execution_params == {}
+
+    def test_an_unknown_type_is_still_rejected(self):
+        """The escape hatch must not swallow real mistakes."""
+        from app.licensing import UnresolvableRequestError, resolve
+
+        with pytest.raises(UnresolvableRequestError):
+            resolve(self._request('nao_existe'))

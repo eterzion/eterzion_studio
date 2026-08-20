@@ -504,6 +504,16 @@ def _resolve_engine(
 
     # operation == 'enhance'
     content_type = request.content_type
+
+    # Same shape as compress/convert above, and for the same reason: this
+    # resolves to a real implementation that is simply not an AI engine.
+    # pixel_art enlarges by repeating pixels, so there is no model to pick,
+    # no profile to tune it with and no VRAM to budget for -- and demanding
+    # an entry in _CONTENT_TYPE_IMPLEMENTATIONS made the resolver reject the
+    # request outright with "tipo de conteudo desconhecido".
+    if content_type in MODEL_FREE_CONTENT_TYPES:
+        return 'nearest-enlarge', {}, 'approved', None
+
     if content_type not in _CONTENT_TYPE_IMPLEMENTATIONS:
         raise UnresolvableRequestError(f"Tipo de conteúdo desconhecido: {content_type!r}.")
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS[content_type]
