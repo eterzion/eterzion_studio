@@ -23,7 +23,7 @@ import {
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
 import { useVideoProcessing, type VideoRequest } from '../composables/useVideoProcessing'
-import { registerMediaHandle, type VideoContainer } from '../services/api'
+import { detectContentType, registerMediaHandle, type VideoContainer } from '../services/api'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import { addVideo, removeVideo, videoQueue, type EditorVideo } from '../store/videoQueue'
 
@@ -76,6 +76,7 @@ function enhanceFor(handleId: string): EnhanceSettings {
       scale: 'none',
       customWidth: null,
       customHeight: null,
+      // Starting point only — addFile() detects and overwrites this.
       contentType: 'real_video',
       profile: 'balanced',
       device: 'auto'
@@ -105,6 +106,20 @@ async function addFile(file: DescribedFile): Promise<void> {
   try {
     const handle = await registerMediaHandle(file.path)
     addVideo({ handle, sourcePath: file.path })
+
+    // Detection runs after the card exists, not before it: the file appears in
+    // the list immediately and its type fills in when the answer arrives —
+    // about half a second, since it decodes five frames. Awaiting here would
+    // hold up every later file in a batch for each earlier one.
+    //
+    // A failure leaves the default in place, which is what the screen did for
+    // every video until now.
+    detectContentType(file.path, 'video')
+      .then((detected) => {
+        const settings = enhanceFor(handle.handle_id)
+        settings.contentType = detected
+      })
+      .catch(() => {})
   } catch (error) {
     importError.value =
       error instanceof Error ? error.message : t('videoEditor.editor.importFailed')

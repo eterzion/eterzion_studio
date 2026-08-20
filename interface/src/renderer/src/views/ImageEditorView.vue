@@ -196,7 +196,15 @@ const scaleModeOptions = computed(() => [
 
 const modeHintKey = computed(() => {
   const mode = job.value?.scaleConfig.mode ?? 'preset'
-  return { original: 'Original', preset: 'Preset', custom: 'Custom' }[mode] ?? 'Preset'
+  const key = { original: 'Original', preset: 'Preset', custom: 'Custom' }[mode] ?? 'Preset'
+  // Pixel art runs no model, so the generic hints about "the AI model" are
+  // simply false while it is selected — and they were, on screen, right under
+  // a Pixel art content type. The scale tabs still work the same way; what
+  // changes is what does the enlarging.
+  if (job.value?.scaleConfig.contentType === 'pixel_art' && key !== 'Original') {
+    return `${key}Pixel`
+  }
+  return key
 })
 
 function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original' | 'pixel'): void {

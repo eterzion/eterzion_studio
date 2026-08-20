@@ -95,10 +95,78 @@ def _detect_audio_content_type(input_path: str) -> str:
     return classify_audio(samples, sample_rate).content_type
 
 
+def _detect_video_content_type(input_path: str) -> str:
+    """Classify a video by looking at frames from it.
+
+    There was no automatic detection here at all: the route refused with a 422
+    and the Vídeo screen filled in 'real_video' as a fixed default, so an
+    anime clip arrived labelled live action and got the model meant for
+    photography. Nothing was misdetecting — nothing was detecting.
+
+    Frames are sampled across the whole duration rather than from the start,
+    because openings, title cards and fades are the least representative part
+    of a video and the first seconds are usually exactly that. Each frame goes
+    through the same classify_image() the Imagem screen uses, and the majority
+    wins: a single frame of a stylised live-action shot, or one live-action
+    still inside an animation, should not decide the whole file.
+
+    A frame that classifies as pixel art counts towards animation. Video is
+    never enlarged by repeating pixels here, so 'pixel_art' is not a video
+    content type — but a frame that looks like it is certainly not live action.
+    """
+    import subprocess
+    import tempfile
+
+    import cv2
+
+    from astros_upscale.media import ffmpeg_path, probe_streams
+    from astros_upscale.processing import classify_image
+
+    ffmpeg = ffmpeg_path()
+    if not ffmpeg:
+        raise HTTPException(503, 'FFmpeg não está disponível para analisar o vídeo.')
+
+    try:
+        info = probe_streams(input_path)
+        duration = float(info.get('duration_seconds') or 0)
+    except Exception:
+        duration = 0
+
+    # Five frames spread over the middle 80%: enough to outvote one odd shot,
+    # few enough that detection stays well under a second.
+    if duration > 1:
+        offsets = [duration * fraction for fraction in (0.1, 0.3, 0.5, 0.7, 0.9)]
+    else:
+        offsets = [0.0]
+
+    votes: list[str] = []
+    with tempfile.TemporaryDirectory() as workdir:
+        for index, offset in enumerate(offsets):
+            frame_path = os.path.join(workdir, f'f{index}.png')
+            result = subprocess.run(
+                [ffmpeg, '-v', 'error', '-ss', f'{offset:.3f}', '-i', input_path,
+                 '-frames:v', '1', '-y', frame_path],
+                capture_output=True, shell=False,
+            )
+            if result.returncode != 0 or not os.path.isfile(frame_path):
+                continue
+            frame = cv2.imread(frame_path, cv2.IMREAD_UNCHANGED)
+            if frame is None:
+                continue
+            votes.append(classify_image(frame).content_type)
+
+    if not votes:
+        # Refusing beats guessing: the person picks, as they always could.
+        raise HTTPException(
+            422, 'Não foi possível analisar quadros deste vídeo; informe content_type_override.')
+
+    drawn = sum(1 for vote in votes if vote in ('anime_image', 'pixel_art'))
+    return 'anime_video' if drawn * 2 > len(votes) else 'real_video'
+
+
 def _detect_content_type(media_type: str, input_path: str) -> str:
     """Real detection (T008/T056) — image and audio have a real classifier;
-    video content type (real_video/anime_video) has no automatic classifier
-    and always requires content_type_override. Shared by POST
+    video samples frames and reuses the image classifier. Shared by POST
     /content-type/detect (called by the UI before a Job exists, so its
     editable indicator, FR-096, shows a real default) and
     _resolve_content_type below (job creation)."""
@@ -106,6 +174,8 @@ def _detect_content_type(media_type: str, input_path: str) -> str:
         return _detect_image_content_type(input_path)
     if media_type == 'audio':
         return _detect_audio_content_type(input_path)
+    if media_type == 'video':
+        return _detect_video_content_type(input_path)
     raise HTTPException(
         422, f"Detecção automática de tipo de conteúdo ainda não existe para media_type={media_type!r}; "
              "informe content_type_override.")
