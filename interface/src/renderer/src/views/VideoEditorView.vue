@@ -73,7 +73,8 @@ function enhanceFor(handleId: string): EnhanceSettings {
   let settings = enhanceByHandle.get(handleId)
   if (!settings) {
     settings = {
-      scale: 'none',
+      scale: 'custom',
+      lockAspectRatio: true,
       customWidth: null,
       customHeight: null,
       // Starting point only — addFile() detects and overwrites this.
@@ -333,6 +334,7 @@ function remove(id: string): void {
             :settings="activeEnhance"
             :source-width="active?.handle.width ?? null"
             :source-height="active?.handle.height ?? null"
+            :source-bytes="active?.handle.size_bytes ?? null"
             :disabled="!active || processing.isBusy(activeId ?? '')"
             @update="setEnhance"
           />

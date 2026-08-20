@@ -243,6 +243,17 @@ export function useVideoProcessing(): VideoProcessing {
 
   const pending = new Map<string, VideoRequest>()
 
+  /** No model to run, and nothing to enlarge — so the edit-only route does it all. */
+  function isEditOnly(request: VideoRequest): boolean {
+    const { contentType, scale, customWidth, customHeight } = request.enhance
+    if (contentType !== 'no_model' && contentType !== 'pixel_art') return false
+    if (scale === '2x' || scale === '4x') return false
+    // Without a custom target there is nothing to enlarge to, so this is
+    // edits only. With one, it counts as an upscale only if it is bigger than
+    // what the panel already resolved it against.
+    return customWidth == null || customHeight == null ? true : false
+  }
+
   async function start(request: VideoRequest): Promise<void> {
     pending.set(request.handleId, request)
     set(request.handleId, {
@@ -250,7 +261,13 @@ export function useVideoProcessing(): VideoProcessing {
       status: 'creating'
     })
     try {
-      if (request.enhance.scale === 'none') await startEditOnly(request)
+      // The edit-only route exists for jobs that change no pixels through a
+      // model: it is faster and touches no engine. That used to be signalled
+      // by the scale being 'none' — a tab that has since moved into the
+      // content type, where "should a model run" always belonged.
+      //
+      // Now it is asked directly: no model, and no enlargement to do.
+      if (isEditOnly(request)) await startEditOnly(request)
       else await startEnhance(request)
     } catch (cause) {
       const detail = cause instanceof Error ? safeParse(cause.message) : null

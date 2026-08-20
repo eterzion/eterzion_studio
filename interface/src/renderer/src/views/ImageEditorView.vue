@@ -645,7 +645,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                '1x'), so none of them applies there. Ajustes below stays separate:
                its filters run in both modes. -->
           <CollapsiblePanel
-            v-if="usesModel"
             :title="t('imageEditor.processingTitle')"
             :description="t('imageEditor.processingDescription')"
             :icon="Cpu"
@@ -660,7 +659,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               />
             </div>
 
-            <div class="field">
+            <!-- Esforço e dispositivo descrevem COMO o modelo roda, e sem
+                 modelo não descrevem nada. O tipo de conteúdo continua aqui: é
+                 por ele que se sai de "Sem modelo", e escondê-lo junto deixava
+                 a escolha sem volta. -->
+            <div v-if="usesModel" class="field">
               <label class="field-label">{{ t('imageEditor.effort') }}</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
@@ -669,7 +672,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               />
             </div>
 
-            <div class="field">
+            <div v-if="usesModel" class="field">
               <label class="field-label">{{ t('imageEditor.whereToProcess') }}</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
@@ -705,7 +708,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
             <div v-else class="field">
               <div class="field-label-row">
-                <label class="field-label">{{ t('imageEditor.widthAndHeight') }}</label>
+                <label class="field-label">{{ t('imageEditor.sizeLabel') }}</label>
                 <button
                   class="link-btn"
                   type="button"
