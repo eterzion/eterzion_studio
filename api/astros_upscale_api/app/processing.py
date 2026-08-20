@@ -214,67 +214,71 @@ class Upscaler:
         return cv2.fastNlMeansDenoisingColored(img, None, h=h, hColor=h, templateWindowSize=7, searchWindowSize=21)
 
     @staticmethod
-    def _suppress_invented_chroma(result, source, soft: int = 6, hard: int = 14):
-        """Take the colour back out of pixels that had none to begin with.
+    def _suppress_invented_chroma(result, source, headroom: float = 1.25, floor: int = 8):
+        """Cap the output's colour at what the source had in the same place.
 
-        Measured on 2xHFA2kSPAN (the anime/illustration model): 73% of the
-        originally-neutral pixels of a 32x32 UI icon came out coloured, with
-        chroma up to 171 — the pink and green blotches that show up in white
-        areas of flat art. The same model leaves a smooth grey ramp almost
-        alone (1.45%), so this is not general colour drift: it invents chroma
-        at hard edges, which is what icons and line art are made of. Anime
-        training material comes from 4:2:0 video, where hard edges really do
-        carry colour fringing, so the model reproduces what it was shown.
+        Measured on 2xHFA2kSPAN (the anime/illustration model) with a UI icon:
+        21% of flat-area pixels and 82% of edge pixels came out coloured, chroma
+        up to 140 — the pink and green fringing in white shapes. The photo model
+        reaches 24 on the same picture and a plain nearest-neighbour enlargement
+        18, so ~140 is invention, not detail.
 
-        A grey pixel turning pink is invention, not recovered detail, and no
-        one asked for it. So the luminance the model produced is kept — that is
-        the actual upscaling work — and only the chroma is pulled back where
-        the source had none.
+        The rule is local, not global. An earlier version only corrected pixels
+        whose source was neutral, and it missed exactly the case that prompted
+        this: an icon on a dark blue background (chroma 18) counted as "coloured"
+        everywhere, so the fringing where white meets that background went
+        untouched. Comparing each pixel against the strongest colour actually
+        present in its own neighbourhood handles both — a flat white area allows
+        nothing, that blue background allows its own 18, and neither allows 140.
 
-        The two thresholds avoid trading one artefact for another: forcing a
-        hard boundary between corrected and untouched pixels would draw a new
-        edge of its own. Below `soft` the source is neutral and the correction
-        is full; above `hard` it had real colour and is left alone; in between
-        the correction fades.
-
-        Deliberately not a general desaturation: a pixel with colour in the
-        source keeps every bit of what the model did with it.
+        `headroom` lets real colour intensify a little, which is legitimate
+        upscaling; `floor` keeps very slight tints from being clamped to nothing
+        by rounding. Luminance is never touched: that is where the actual
+        upscaling work lives, and only chroma is pulled back.
         """
         if result.dtype != np.uint8 or result.ndim != 3 or result.shape[2] != 3:
             return result  # 16-bit and RGBA/greyscale go through untouched
         if source.ndim != 3 or source.shape[2] != 3:
             return result
 
-        # Chroma is measured on the SOURCE, at source resolution: an upscaled
-        # copy is several times the pixels for an answer that is identical per
-        # source pixel. On a 1024x1024 input that is 4x less work.
         source_chroma = (
             source.max(axis=2).astype(np.int16) - source.min(axis=2).astype(np.int16)
-        )
-        affected = source_chroma < hard
-        if not affected.any():
-            return result  # nothing neutral enough to correct — the usual case for photos
+        ).astype(np.uint8)
 
+        # The strongest colour in the neighbourhood, not in the single pixel:
+        # the model legitimately spreads a colour a little past where it started,
+        # and a per-pixel comparison would claw that back and leave halos.
+        local_max = cv2.dilate(source_chroma, np.ones((3, 3), np.uint8))
         if (source.shape[0], source.shape[1]) != (result.shape[0], result.shape[1]):
-            source_chroma = cv2.resize(
-                source_chroma, (result.shape[1], result.shape[0]),
-                interpolation=cv2.INTER_NEAREST,
+            local_max = cv2.resize(
+                local_max, (result.shape[1], result.shape[0]), interpolation=cv2.INTER_LINEAR
             )
-            affected = source_chroma < hard
 
-        # Only the affected pixels are converted and blended. Photographs
-        # barely touch this path; flat art, where the artefact lives, is also
-        # where the mask is dense — and even then it is one pass over a subset.
-        rows, cols = np.nonzero(affected)
+        # The floor applies only where there was some colour to begin with:
+        # it exists so rounding cannot clamp a faint tint to nothing. Where the
+        # neighbourhood was strictly neutral, nothing is allowed at all — a
+        # white icon has no colour to spread, however faint.
+        local_f = local_max.astype(np.float32)
+        allowed = np.where(local_f > 0, np.maximum(local_f * headroom, float(floor)), 0.0)
+
+        out_chroma = (
+            result.max(axis=2).astype(np.int16) - result.min(axis=2).astype(np.int16)
+        ).astype(np.float32)
+
+        over = out_chroma > allowed
+        if not over.any():
+            return result
+
+        # Scale each offending pixel's colour back toward its own grey, which
+        # keeps its hue and its luminance and only reduces how saturated it is.
+        rows, cols = np.nonzero(over)
         picked = result[rows, cols].astype(np.float32)
         grey = picked @ np.array([0.114, 0.587, 0.299], np.float32)  # BGR luma
-        weight = np.clip(
-            (hard - source_chroma[rows, cols]) / float(hard - soft), 0.0, 1.0
-        ).astype(np.float32)[:, None]
+        keep = (allowed[rows, cols] / np.maximum(out_chroma[rows, cols], 1e-6))[:, None]
 
-        blended = picked * (1.0 - weight) + grey[:, None] * weight
+        pulled = grey[:, None] + (picked - grey[:, None]) * keep
         result = result.copy()
-        result[rows, cols] = np.clip(blended, 0, 255).astype(np.uint8)
+        result[rows, cols] = np.clip(pulled, 0, 255).astype(np.uint8)
         return result
 
     def process(

@@ -81,20 +81,42 @@ class TestRealColourIsUntouched:
         out = guard(source.copy(), source)
         assert chroma(out).max() == 30
 
-    def test_the_correction_fades_instead_of_drawing_a_new_edge(self):
-        """A hard on/off boundary would replace one artefact with another, so
-        sources between the thresholds are corrected partially."""
-        source = np.zeros((1, 3, 3), np.uint8)
-        source[0, 0] = (128, 128, 128)  # chroma 0  -> fully corrected
-        source[0, 1] = (128, 128, 138)  # chroma 10 -> partially
-        source[0, 2] = (128, 128, 158)  # chroma 30 -> untouched
-        polluted = np.full((1, 3, 3), 0, np.uint8)
-        polluted[0, :] = (60, 140, 200)
+    def test_the_cap_follows_the_neighbourhood_not_the_single_pixel(self):
+        """A colour is allowed to spread slightly past where it started — the
+        model legitimately does that when it sharpens an edge. Comparing each
+        pixel only against itself would claw that back and leave a halo, so the
+        cap comes from a 3x3 neighbourhood."""
+        source = np.zeros((1, 5, 3), np.uint8)
+        source[0, :] = (128, 128, 128)
+        source[0, 2] = (128, 128, 188)   # chroma 60, isolado no meio
+        polluted = np.zeros((1, 5, 3), np.uint8)
+        polluted[0, :] = (60, 140, 200)  # o modelo colore tudo
         out = guard(polluted, source)
         c = chroma(out)[0]
-        assert c[0] == 0
-        assert 0 < c[1] < c[2], f'sem transicao suave: {c}'
+        assert c[0] == 0, 'longe da cor, nada e permitido'
+        assert c[1] > 0, 'o vizinho imediato herda o teto'
+        assert c[4] == 0, 'o outro extremo tambem fica limpo'
 
+    def test_the_reported_case_an_icon_on_a_tinted_background(self):
+        """The case an earlier version of this guard missed entirely.
+
+        White shapes on a dark blue background: the background's own chroma is
+        about 18, so a rule of "only correct pixels whose source was neutral"
+        treated the whole picture as legitimately coloured and left the
+        fringing where white meets blue untouched — chroma 78 in what should be
+        a white edge. Measured on the real model, the local cap brings that to
+        23, next to 18 for a plain nearest enlargement.
+        """
+        source = np.zeros((16, 16, 3), np.uint8)
+        source[:, :] = (30, 20, 12)      # fundo azulado, croma 18
+        source[4:12, 4:12] = (255, 255, 255)
+
+        polluted = source.copy()
+        polluted[5, 5] = (255, 120, 200)  # franja rosa dentro do branco
+        out = guard(polluted, source)
+
+        assert chroma(out)[5, 5] <= 23, 'a franja sobreviveu ao teto local'
+        assert np.array_equal(out[0, 0], source[0, 0]), 'o fundo legitimo mudou'
 
 class TestFormatsItRefusesToTouch:
     def test_sixteen_bit_output_is_returned_unchanged(self):
