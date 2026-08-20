@@ -49,7 +49,7 @@ export interface ScaleConfig {
   /** 'original' keeps the source resolution and never runs the model — the job
       becomes a plain re-encode, which is what the Exportar screen already does
       for files that only need a different format or a smaller size. */
-  mode: 'preset' | 'custom' | 'original' | 'pixel'
+  mode: 'preset' | 'custom'
   presetFactor: 2 | 4
   customWidth: number | null
   customHeight: number | null
@@ -343,9 +343,16 @@ export function ensureCustomSizeDefaults(job: Job): void {
  *  anything beyond it uses 4x, so the model always works at or above the size
  *  being asked for — never below, which would mean interpolating up afterwards.
  */
+/** Content types that run no model at all — the client-side mirror of the
+ *  backend's licensing.MODEL_FREE_CONTENT_TYPES. */
+const MODEL_FREE_CONTENT_TYPES = ['pixel_art', 'no_model']
+
 export function scaleForJob(job: Job): '1x' | '2x' | '4x' {
-  const { mode, presetFactor } = job.scaleConfig
-  if (mode === 'original' || mode === 'pixel') return '1x'
+  const { mode, presetFactor, contentType } = job.scaleConfig
+  // '1x' is what tells the backend to skip the model. It used to be decided by
+  // the scale mode, which put "should a model run" among the sizes; it is the
+  // content type's answer to give.
+  if (contentType && MODEL_FREE_CONTENT_TYPES.includes(contentType)) return '1x'
   if (mode !== 'custom') return `${presetFactor}x` as '2x' | '4x'
 
   const { width: srcW, height: srcH } = job.sourceMeta
@@ -356,7 +363,7 @@ export function scaleForJob(job: Job): '1x' | '2x' | '4x' {
   return factor <= 2 ? '2x' : '4x'
 }
 
-/** Entering 'pixel' proposes an exact doubling.
+/** Proposes an exact doubling for art drawn on a grid.
  *
  *  Whole multiples are what this mode is for: at 2x every source pixel becomes
  *  a clean 2x2 block. A fractional factor makes some pixels wider than others,
@@ -422,11 +429,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   // Original mode resolves no model (it travels as scale '1x'), so the content
   // type — which exists only to pick one — cannot block it. Requiring it here is
   // what left Processar disabled on the one mode that never needed it.
-  if (
-    job.scaleConfig.mode !== 'original' &&
-    job.scaleConfig.mode !== 'pixel' &&
-    !job.scaleConfig.contentType
-  )
+  if (!job.scaleConfig.contentType)
     return { valid: false, reason: t('errors.job.contentTypeMissing') }
 
   const { width: srcW, height: srcH } = job.sourceMeta
@@ -450,37 +453,6 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   const h = job.scaleConfig.customHeight
   if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: t('errors.job.sizeMissing') }
 
-  // 'pixel' enlarges without a model, by repeating pixels. It exists for art
-  // drawn pixel by pixel — icons, sprites — where every model here softens the
-  // edges it was authored to keep sharp. Measured on a real 32x32 icon, the
-  // models moved the shape by 2.4 to 6.5 mean luma levels; repeating pixels
-  // moves it by none. The only rule is the shared ceiling.
-  if (job.scaleConfig.mode === 'pixel') {
-    if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
-      return { valid: false, reason: t('validation.minSide', { min: MIN_DIMENSION }) }
-    }
-    if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
-      return { valid: false, reason: t('validation.maxSide', { max: MAX_OUTPUT_DIMENSION }) }
-    }
-    return { valid: true }
-  }
-
-  // 'original' is the mirror of 'custom': it exists precisely to NOT enlarge, so
-  // its target may only shrink. Everything else about the job — filters, face
-  // recovery, denoise — runs exactly the same way in both modes.
-  if (job.scaleConfig.mode === 'original') {
-    if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
-      return { valid: false, reason: t('validation.minSide', { min: MIN_DIMENSION }) }
-    }
-    if (srcW && srcH && (w > srcW || h > srcH)) {
-      return {
-        valid: false,
-        reason: t('errors.job.originalTooLarge')
-      }
-    }
-    return { valid: true }
-  }
-
   if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
     return { valid: false, reason: t('validation.maxSide', { max: MAX_OUTPUT_DIMENSION }) }
   }
@@ -496,7 +468,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 export function estimatedOutputSize(job: Job): { width: number; height: number } | null {
   const { width: srcW, height: srcH } = job.sourceMeta
   if (!srcW || !srcH) return null
-  if (job.scaleConfig.mode === 'original') {
+  if (job.scaleConfig.mode === 'custom') {
     const { customWidth, customHeight } = job.scaleConfig
     return customWidth && customHeight
       ? { width: customWidth, height: customHeight }

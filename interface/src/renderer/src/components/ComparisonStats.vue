@@ -30,10 +30,13 @@ const outputResolution = computed(
 // Original mode travels as scale '1x' and resolves no model at all, so the
 // profile — which only ever tunes how hard a model pass works — describes
 // nothing that ran. Naming it here claimed work the job never did.
-const usesModel = computed(() => props.job.scaleConfig.mode !== 'original')
+const usesModel = computed(() => {
+  const ct = props.job.scaleConfig.contentType
+  return ct !== 'pixel_art' && ct !== 'no_model'
+})
 
 // What actually ran, not what the panel offers: each of these only lands in the
-// output when it was switched on, and Original mode makes them the entire
+// output when it was switched on, and a model-free job makes them the entire
 // pipeline — so "nenhum" is a real, meaningful answer here.
 const adjustmentsSummary = computed(() => {
   const c = props.job.scaleConfig

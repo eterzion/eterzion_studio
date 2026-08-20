@@ -55,7 +55,6 @@ import {
   estimatedOutputSize,
   estimatedOutputBytes,
   ensureCustomSizeDefaults,
-  clampSizeToSource,
   syncCustomSizeToPreset,
   effectiveCustomScale,
   MAX_OUTPUT_DIMENSION,
@@ -63,7 +62,6 @@ import {
   startProcessing,
   cancelProcessing,
   removeJob,
-  proposePixelSize,
   type Job
 } from '../store/jobs'
 
@@ -113,7 +111,15 @@ const {
 const importError = ref<string | null>(null)
 
 const contentTypeOptions = computed<{ value: ContentType; label: string; description: string }[]>(
+  // "Sem modelo" leads the list because it is the choice that changes the most
+  // about what happens — everything below it runs a model, it does not. The
+  // selected value still comes from detection; only the order is fixed here.
   () => [
+    {
+      value: 'no_model',
+      label: t('imageEditor.noModelLabel'),
+      description: t('imageEditor.noModelDescription')
+    },
     {
       value: 'photo',
       label: t('imageEditor.photoLabel'),
@@ -124,10 +130,6 @@ const contentTypeOptions = computed<{ value: ContentType; label: string; descrip
       label: t('imageEditor.animeLabel'),
       description: t('imageEditor.animeDescription')
     },
-    // No model runs for this one. Measured over 40 of the owner's real icons,
-    // every approved model shifted the shape by 18-24 mean luma levels while
-    // repeating pixels shifted it by none — so the honest entry here is "this
-    // is pixel art", not "this is the model for pixel art".
     {
       value: 'pixel_art',
       label: t('imageEditor.pixelArtLabel'),
@@ -186,35 +188,25 @@ onUnmounted(() => {
 })
 
 // ------------------------------- scale config helpers ------------------------------- //
-type ScaleMode = 'original' | 'preset' | 'custom'
+type ScaleMode = 'preset' | 'custom'
 
 const scaleModeOptions = computed(() => [
-  { value: 'original', label: t('imageEditor.modeOriginal') },
   { value: 'preset', label: t('imageEditor.modePreset') },
   { value: 'custom', label: t('imageEditor.modeCustom') }
 ])
 
-const modeHintKey = computed(() => {
-  const mode = job.value?.scaleConfig.mode ?? 'preset'
-  const key = { original: 'Original', preset: 'Preset', custom: 'Custom' }[mode] ?? 'Preset'
-  // Pixel art runs no model, so the generic hints about "the AI model" are
-  // simply false while it is selected — and they were, on screen, right under
-  // a Pixel art content type. The scale tabs still work the same way; what
-  // changes is what does the enlarging.
-  if (job.value?.scaleConfig.contentType === 'pixel_art' && key !== 'Original') {
-    return `${key}Pixel`
-  }
-  return key
+/** Whether this job will run a model at all — the content type decides. */
+const usesModel = computed(() => {
+  const ct = job.value?.scaleConfig.contentType
+  return ct !== 'pixel_art' && ct !== 'no_model'
 })
 
-function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original' | 'pixel'): void {
+function switchScaleMode(j: Job, mode: 'preset' | 'custom'): void {
   j.scaleConfig.mode = mode
   if (mode === 'custom') ensureCustomSizeDefaults(j)
   // Coming from a 2x/4x preset, the custom target is still the enlarged one —
   // invalid the moment Original is entered, and it is what the size and scale
   // readouts are computed from, so it has to be brought back to the source.
-  if (mode === 'original') clampSizeToSource(j)
-  if (mode === 'pixel') proposePixelSize(j)
 }
 
 function setPresetFactor(j: Job, factor: 2 | 4): void {
@@ -269,6 +261,13 @@ const customBeyondNative = computed(() => {
   const j = job.value
   const factor = customFactor.value
   if (!j || factor == null) return false
+  // The warning is about asking a model for more than the factor it was
+  // trained at, so the surplus comes from interpolation. Pixel art runs no
+  // model and has no native factor: repeating pixels gives the same result at
+  // any whole multiple, and the sentence would be describing something that
+  // does not happen.
+  const ct = j.scaleConfig.contentType
+  if (ct === 'pixel_art' || ct === 'no_model') return false
   return factor > j.scaleConfig.presetFactor + 0.01
 })
 
@@ -646,7 +645,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                '1x'), so none of them applies there. Ajustes below stays separate:
                its filters run in both modes. -->
           <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original' && job.scaleConfig.mode !== 'pixel'"
+            v-if="usesModel"
             :title="t('imageEditor.processingTitle')"
             :description="t('imageEditor.processingDescription')"
             :icon="Cpu"
@@ -691,11 +690,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               @update:model-value="switchScaleMode(job!, $event as ScaleMode)"
             />
 
-            <!-- One line saying what the selected mode does. The names alone
-                 cannot carry "does a model run?", which is the difference that
-                 decides what happens to the picture. -->
-            <p class="field-hint">{{ t(`imageEditor.mode${modeHintKey}Hint`) }}</p>
-
             <div v-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
               <button
                 v-for="s in [2, 4]"
@@ -711,11 +705,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
             <div v-else class="field">
               <div class="field-label-row">
-                <label class="field-label">{{
-                  job.scaleConfig.mode === 'original'
-                    ? t('imageEditor.reduceTo')
-                    : t('imageEditor.widthAndHeight')
-                }}</label>
+                <label class="field-label">{{ t('imageEditor.widthAndHeight') }}</label>
                 <button
                   class="link-btn"
                   type="button"
@@ -739,31 +729,15 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 <NumberStepper
                   :label="t('imageEditor.width')"
                   :model-value="job.scaleConfig.customWidth ?? job.sourceMeta.width ?? 0"
-                  :min="
-                    job.scaleConfig.mode === 'original'
-                      ? MIN_DIMENSION
-                      : (job.sourceMeta.width ?? 1)
-                  "
-                  :max="
-                    job.scaleConfig.mode === 'original'
-                      ? (job.sourceMeta.width ?? MAX_OUTPUT_DIMENSION)
-                      : MAX_OUTPUT_DIMENSION
-                  "
+                  :min="MIN_DIMENSION"
+                  :max="MAX_OUTPUT_DIMENSION"
                   @update:model-value="(v) => onCustomWidthInput(job!, String(v))"
                 />
                 <NumberStepper
                   :label="t('imageEditor.height')"
                   :model-value="job.scaleConfig.customHeight ?? job.sourceMeta.height ?? 0"
-                  :min="
-                    job.scaleConfig.mode === 'original'
-                      ? MIN_DIMENSION
-                      : (job.sourceMeta.height ?? 1)
-                  "
-                  :max="
-                    job.scaleConfig.mode === 'original'
-                      ? (job.sourceMeta.height ?? MAX_OUTPUT_DIMENSION)
-                      : MAX_OUTPUT_DIMENSION
-                  "
+                  :min="MIN_DIMENSION"
+                  :max="MAX_OUTPUT_DIMENSION"
                   @update:model-value="(v) => onCustomHeightInput(job!, String(v))"
                 />
               </div>

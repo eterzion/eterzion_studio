@@ -6,6 +6,7 @@ import CollapsiblePanel from '../CollapsiblePanel.vue'
 import AppSelect from '../AppSelect.vue'
 import NumberStepper from '../NumberStepper.vue'
 import ModeTabs from '../ModeTabs.vue'
+import ImageInfoPanel from '../ImageInfoPanel.vue'
 import { profileOptions, deviceOptions } from '../../constants/processing'
 import type { ContentType, Profile } from '../../services/api'
 
@@ -47,18 +48,9 @@ const devices = computed(() => deviceOptions())
 // edit-only route. Without it, opening the editor to trim ten seconds would
 // silently run a neural network.
 const SCALE_MODE_OPTIONS = computed(() => [
-  { value: 'none', label: t('videoEditor.enhance.modeNone') },
   { value: 'preset', label: t('videoEditor.enhance.modePreset') },
   { value: 'custom', label: t('videoEditor.enhance.modeCustom') }
 ])
-
-const modeHintKey = computed(() => {
-  if (props.settings.scale === 'none') return 'None'
-  if (props.settings.scale === 'custom') return 'Custom'
-  // Pixel art runs no model at all, so the hint about "the AI model" would be
-  // plainly false here — and it was, on screen, next to a Pixel art selection.
-  return props.settings.contentType === 'pixel_art' ? 'PresetPixel' : 'Preset'
-})
 
 /** Entering the preset mode picks a factor, since 'preset' is not a scale the
  *  backend understands — 2x and 4x are. */
@@ -75,6 +67,14 @@ function onModeChange(mode: string): void {
 // a stylised music video or a rotoscoped short belongs to. Same reasoning, and
 // same wording, VideoView used.
 const CONTENT_TYPE_OPTIONS = computed(() => [
+  // "Sem modelo" leads for the same reason it does on the Imagem screen: it is
+  // the choice that changes the most about what happens. Detection still picks
+  // the selected value; this only fixes the order.
+  {
+    value: 'no_model',
+    label: t('videoEditor.enhance.noModel'),
+    description: t('videoEditor.enhance.noModelHint')
+  },
   {
     value: 'real_video',
     label: t('videoEditor.enhance.realVideo'),
@@ -159,16 +159,14 @@ const resultSize = computed(() => {
       @update:model-value="onModeChange($event)"
     />
 
-    <p class="field-hint">{{ t(`videoEditor.enhance.hint${modeHintKey}`) }}</p>
-
     <!-- The factor, only under the mode it belongs to — the same shape the
          Imagem screen uses, where 2x/4x live inside "Ampliar" rather than
          competing with it as siblings. -->
-    <div v-if="settings.scale === '2x' || settings.scale === '4x'" class="factor-row">
+    <div v-if="settings.scale === '2x' || settings.scale === '4x'" class="scale-buttons">
       <button
         v-for="factor in ['2x', '4x']"
         :key="factor"
-        class="factor-btn"
+        class="scale-btn"
         :class="{ active: settings.scale === factor }"
         type="button"
         :disabled="disabled"
@@ -195,16 +193,16 @@ const resultSize = computed(() => {
       </div>
     </template>
 
-    <div v-if="sourceWidth && sourceHeight" class="size-readout">
-      <span class="size-label">{{ t('videoEditor.enhance.sourceSize') }}</span>
-      <span class="size-value">{{ sourceWidth }} &times; {{ sourceHeight }} px</span>
-    </div>
-    <div v-if="upscaling && sourceWidth" class="size-readout">
-      <span class="size-label">{{ t('videoEditor.enhance.resultSize') }}</span>
-      <span class="size-value strong"
-        >{{ resultSize.width }} &times; {{ resultSize.height }} px</span
-      >
-    </div>
+    <!-- The same readout the Imagem screen shows, not a second one shaped
+         differently: original size, new size, the multiplier and the estimate
+         are the same four facts about the same operation. -->
+    <ImageInfoPanel
+      :original-width="sourceWidth"
+      :original-height="sourceHeight"
+      :new-width="upscaling ? resultSize.width : sourceWidth"
+      :new-height="upscaling ? resultSize.height : sourceHeight"
+      :estimated-bytes="null"
+    />
   </CollapsiblePanel>
 </template>
 
@@ -215,40 +213,30 @@ const resultSize = computed(() => {
   line-height: 1.4;
 }
 
-/* The factor sits under the mode it belongs to, so it is indented and lighter
-   than the tabs above — it is a detail of that choice, not a fourth option
-   competing with the three. */
-.factor-row {
+.scale-buttons {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--space-2);
 }
 
-.factor-btn {
-  padding: 8px;
+.scale-btn {
+  padding: 8px 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--surface-border);
   background: var(--surface-3);
   color: var(--text-secondary);
   font-family: inherit;
-  font-size: var(--fs-label);
   font-weight: var(--fw-semibold);
   cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    color var(--transition-fast);
 }
 
-.factor-btn:hover:not(:disabled) {
-  color: var(--text-primary);
-}
-
-.factor-btn.active {
+.scale-btn.active {
+  background: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--color-primary);
+  color: var(--on-primary);
 }
 
-.factor-btn:disabled {
+.scale-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -257,30 +245,6 @@ const resultSize = computed(() => {
   display: flex;
   align-items: flex-end;
   gap: var(--space-2);
-}
-
-.size-readout {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-2);
-  font-size: var(--fs-caption);
-}
-
-.size-label {
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.size-value {
-  font-family: var(--font-mono);
-  color: var(--text-secondary);
-}
-
-.size-value.strong {
-  color: var(--text-primary);
-  font-weight: var(--fw-semibold);
 }
 
 .field {

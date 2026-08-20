@@ -52,7 +52,14 @@ export type MediaType = 'image' | 'video' | 'audio'
 export type Operation = 'enhance' | 'compress' | 'convert'
 export type Profile = 'fast' | 'balanced' | 'quality'
 export type ContentType =
-  'photo' | 'pixel_art' | 'anime_image' | 'real_video' | 'anime_video' | 'speech' | 'music'
+  | 'photo'
+  | 'pixel_art'
+  | 'no_model'
+  | 'anime_image'
+  | 'real_video'
+  | 'anime_video'
+  | 'speech'
+  | 'music'
 
 export interface OutputTarget {
   format: string

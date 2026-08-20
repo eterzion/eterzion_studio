@@ -26,7 +26,27 @@ def test_it_is_treated_as_image_content():
 
 
 def test_it_is_declared_model_free():
-    assert licensing.MODEL_FREE_CONTENT_TYPES == {'pixel_art'}
+    assert 'pixel_art' in licensing.MODEL_FREE_CONTENT_TYPES
+
+
+def test_no_model_is_the_other_model_free_type():
+    """'no_model' is the person saying "run the filters, skip the AI". It was
+    the Escala tab called "Manter tamanho", which never belonged among the
+    sizes: whether a model runs is not a question about how big the output is,
+    and keeping it there meant each of the two menus answered half of the
+    other's question."""
+    assert licensing.MODEL_FREE_CONTENT_TYPES == {'pixel_art', 'no_model'}
+
+
+def test_no_model_resolves_without_a_model():
+    from app.licensing import MediaRequest, resolve
+
+    resolved = resolve(MediaRequest(
+        media_type='image', operation='enhance', content_type='no_model',
+        scale='4x', profile='quality',
+    ))
+    assert resolved.engine_ref == 'nearest-enlarge'
+    assert resolved.execution_params == {}
 
 
 def test_no_model_is_registered_for_it():

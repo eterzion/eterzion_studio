@@ -28,6 +28,7 @@ function job(overrides: Record<string, unknown> = {}): Job {
   const scale = {
     mode: 'custom',
     presetFactor: 4,
+    contentType: 'photo',
     customWidth: 128,
     customHeight: 128,
     ...((overrides.scaleConfig as Record<string, unknown>) ?? {})
@@ -39,12 +40,24 @@ function job(overrides: Record<string, unknown> = {}): Job {
 }
 
 describe('scaleForJob', () => {
-  it('asks for no model at all in Original', () => {
-    expect(scaleForJob(job({ scaleConfig: { mode: 'original' } }))).toBe('1x')
+  // '1x' is what tells the backend to skip the model, and it is the content
+  // type that decides — not the scale mode. Asking for a size and asking
+  // whether AI runs are different questions, and each menu used to answer half
+  // of the other's.
+  it('asks for no model at all when the content is pixel art', () => {
+    expect(scaleForJob(job({ scaleConfig: { contentType: 'pixel_art' } }))).toBe('1x')
   })
 
-  it('asks for no model at all in Pixel art', () => {
-    expect(scaleForJob(job({ scaleConfig: { mode: 'pixel' } }))).toBe('1x')
+  it('asks for no model at all when the person chose "no model"', () => {
+    expect(scaleForJob(job({ scaleConfig: { contentType: 'no_model' } }))).toBe('1x')
+  })
+
+  it('a model-free type wins over the scale mode, at any size', () => {
+    expect(
+      scaleForJob(
+        job({ scaleConfig: { contentType: 'no_model', mode: 'preset', presetFactor: 4 } })
+      )
+    ).toBe('1x')
   })
 
   it('uses the chosen factor in Preset', () => {

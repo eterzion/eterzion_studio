@@ -348,11 +348,11 @@ MediaType = Literal['image', 'video', 'audio']
 Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
 ContentType = Literal[
-    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
+    'photo', 'pixel_art', 'no_model', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
 ]
 
 _IMAGE_VIDEO_CONTENT_TYPES = {
-    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video'
+    'photo', 'pixel_art', 'no_model', 'anime_image', 'real_video', 'anime_video'
 }
 
 # The one content type that resolves no model at all.
@@ -366,7 +366,11 @@ _IMAGE_VIDEO_CONTENT_TYPES = {
 # So this is not 'the model we chose for pixel art' — it is the finding that
 # no model belongs here, recorded as a content type so the person can say so
 # and the pipeline can act on it.
-MODEL_FREE_CONTENT_TYPES = {'pixel_art'}
+# 'no_model' is the person saying "run the filters, skip the AI". It was the
+# Escala tab called "Manter tamanho", which never belonged there: whether a
+# model runs is not a question about size, and keeping it among the sizes
+# meant each of the two menus answered half of the other's question.
+MODEL_FREE_CONTENT_TYPES = {'pixel_art', 'no_model'}
 _AUDIO_CONTENT_TYPES = {'speech', 'music'}
 
 

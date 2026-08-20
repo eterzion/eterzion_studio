@@ -14,7 +14,7 @@ MediaType = Literal['image', 'video', 'audio']
 Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
 ContentType = Literal[
-    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
+    'photo', 'pixel_art', 'no_model', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
 ]
 InstallState = Literal['not_installed', 'installing', 'installed', 'update_available']
 LicenseState = Literal[
