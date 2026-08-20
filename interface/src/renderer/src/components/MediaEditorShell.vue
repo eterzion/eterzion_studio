@@ -110,8 +110,11 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
   position: relative;
   display: flex;
   flex-direction: column;
-  padding: var(--space-3);
-  gap: var(--space-3);
+  /* Tighter than the rest of the app on purpose: this pane exists to show the
+     picture as large as it can be, and every pixel of padding here is a pixel
+     the video does not get. */
+  padding: var(--space-2);
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -135,7 +138,7 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
 
 .thumb-card {
   position: relative;
-  width: 92px;
+  width: 72px;
   flex-shrink: 0;
   border-radius: var(--radius-sm);
   overflow: hidden;
@@ -162,7 +165,7 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
 .thumb-select img,
 .thumb-select video {
   width: 100%;
-  height: 60px;
+  height: 44px;
   object-fit: cover;
   display: block;
   background: var(--surface-3);
@@ -172,7 +175,7 @@ const KIND_ICON = { image: ImageIcon, video: Film, audio: AudioLines }
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 60px;
+  height: 44px;
   color: var(--text-tertiary);
   background: var(--surface-3);
 }

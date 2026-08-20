@@ -4,8 +4,8 @@ import { useI18n } from 'vue-i18n'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
 import SettingRow from '../SettingRow.vue'
 import AppSelect from '../AppSelect.vue'
-import SegmentedControl from '../SegmentedControl.vue'
 import NumberStepper from '../NumberStepper.vue'
+import ModeTabs from '../ModeTabs.vue'
 import { profileOptions, deviceOptions } from '../../constants/processing'
 import type { ContentType, Profile } from '../../services/api'
 
@@ -87,18 +87,19 @@ const resultSize = computed(() => {
 
 <template>
   <CollapsiblePanel :title="t('videoEditor.enhance.title')" open>
-    <SettingRow :label="t('videoEditor.enhance.scale')">
-      <!-- SegmentedControl takes no `disabled` prop; wrapping it is honest,
-           whereas adding one to a shared component for this call site alone
-           would be changing something else's contract to suit this panel. -->
-      <div :class="{ 'pointer-events-none opacity-50': disabled }">
-        <SegmentedControl
-          :model-value="settings.scale"
-          :options="SCALE_OPTIONS"
-          @update:model-value="emit('update', { scale: $event as ScaleChoice })"
-        />
-      </div>
-    </SettingRow>
+    <!-- Label above and full width, exactly as the Imagem screen lays it out.
+         Inside a SettingRow the tabs share the row with their own label and end
+         up about a fifth of the panel wide; the same control looking different
+         on the two screens is the thing this was meant to fix. -->
+    <div class="field">
+      <label class="field-label">{{ t('videoEditor.enhance.scale') }}</label>
+      <ModeTabs
+        :model-value="settings.scale"
+        :options="SCALE_OPTIONS"
+        :disabled="disabled"
+        @update:model-value="emit('update', { scale: $event as ScaleChoice })"
+      />
+    </div>
 
     <template v-if="settings.scale === 'custom'">
       <SettingRow :label="t('videoEditor.enhance.customSize')">
@@ -159,3 +160,17 @@ const resultSize = computed(() => {
     </SettingRow>
   </CollapsiblePanel>
 </template>
+
+<style scoped>
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.field-label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+</style>

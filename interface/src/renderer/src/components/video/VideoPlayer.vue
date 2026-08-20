@@ -179,7 +179,7 @@ function onKeydown(event: KeyboardEvent): void {
   width: 100%;
   height: 100%;
   min-height: 0;
-  gap: var(--space-2);
+  gap: var(--space-1);
 }
 .video-player:focus {
   outline: none;
@@ -204,7 +204,7 @@ function onKeydown(event: KeyboardEvent): void {
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-1-5) var(--space-2);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   background: var(--surface-2);

@@ -12,6 +12,7 @@ import BatchExportModal from '../components/BatchExportModal.vue'
 import AppSelect from '../components/AppSelect.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
 import NumberStepper from '../components/NumberStepper.vue'
+import ModeTabs from '../components/ModeTabs.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import ProgressBar from '../components/atoms/ProgressBar.vue'
@@ -185,6 +186,14 @@ onUnmounted(() => {
 })
 
 // ------------------------------- scale config helpers ------------------------------- //
+type ScaleMode = 'original' | 'preset' | 'custom'
+
+const scaleModeOptions = computed(() => [
+  { value: 'original', label: t('imageEditor.modeOriginal') },
+  { value: 'preset', label: t('imageEditor.modePreset') },
+  { value: 'custom', label: t('imageEditor.modeCustom') }
+])
+
 const modeHintKey = computed(() => {
   const mode = job.value?.scaleConfig.mode ?? 'preset'
   return { original: 'Original', preset: 'Preset', custom: 'Custom' }[mode] ?? 'Preset'
@@ -668,36 +677,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             :description="t('imageEditor.scaleDescription')"
             :icon="Expand"
           >
-            <!-- Top row: the two modes that run no model at all. Bottom row:
-                 the two that do. The grid groups them by that difference,
-                 which is the one that actually changes what happens to the
-                 picture. -->
-            <div class="scale-mode-tabs">
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'original' }"
-                type="button"
-                @click="switchScaleMode(job, 'original')"
-              >
-                {{ t('imageEditor.modeOriginal') }}
-              </button>
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'preset' }"
-                type="button"
-                @click="switchScaleMode(job, 'preset')"
-              >
-                {{ t('imageEditor.modePreset') }}
-              </button>
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'custom' }"
-                type="button"
-                @click="switchScaleMode(job, 'custom')"
-              >
-                {{ t('imageEditor.modeCustom') }}
-              </button>
-            </div>
+            <ModeTabs
+              :model-value="job.scaleConfig.mode"
+              :options="scaleModeOptions"
+              @update:model-value="switchScaleMode(job!, $event as ScaleMode)"
+            />
 
             <!-- One line saying what the selected mode does. The names alone
                  cannot carry "does a model run?", which is the difference that
@@ -1662,38 +1646,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   font-size: var(--fs-label);
-}
-
-/* 2x2 rather than a single row. A fourth tab did not fit the side panel's
-   width, and the longest label ("Pixel art", "Personalizado") was cut off — in
-   a control where the label IS the whole affordance, a clipped one is a broken
-   one. Two columns give every tab the same box and room for its full name. */
-.scale-mode-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  background: var(--surface-3);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-}
-
-.mode-tab {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-  padding: 7px 6px;
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.mode-tab.active {
-  background: var(--surface-1);
-  color: var(--text-primary);
 }
 
 .scale-buttons {
