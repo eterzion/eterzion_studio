@@ -101,7 +101,7 @@ class ExportRequest(BaseModel):
     format: Literal['png', 'jpg', 'jpeg', 'tiff', 'webp'] = 'png'
     quality: int = Field(default=90, ge=1, le=100)
     output_dir: str | None = None  # None = same folder as the original input
-    filename: str | None = None  # None = "{name}_upscaled_{scale}x.{ext}"
+    filename: str | None = None  # None = the source's own name, "{name}.{ext}"
     conflict: ConflictMode = 'rename'
 
 

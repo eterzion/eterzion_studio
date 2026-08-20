@@ -993,7 +993,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <input
                 class="select"
                 type="text"
-                :placeholder="`${job.fileName.replace(/\\.[^.]+$/, '')}_upscaled.${exportFormat}`"
+                :placeholder="`${job.fileName.replace(/\.[^.]+$/, '')}.${exportFormat}`"
                 :value="exportFilename ?? ''"
                 @input="exportFilename = ($event.target as HTMLInputElement).value || null"
               />
