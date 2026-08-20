@@ -17,6 +17,7 @@ import {
   Image as ImageIcon
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
+import { formatBytes } from '../utils/formatBytes'
 import NumberStepper from '../components/NumberStepper.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppBadge from '../components/atoms/AppBadge.vue'
@@ -165,7 +166,7 @@ function fmtDateTime(ts: number): string {
 }
 
 function fmtBytes(bytes: number | undefined): string {
-  return bytes == null ? '—' : (bytes / (1024 * 1024)).toFixed(2) + ' MB'
+  return formatBytes(bytes)
 }
 
 function toggleMenu(id: string): void {

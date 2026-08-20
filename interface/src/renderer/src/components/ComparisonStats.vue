@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatBytes } from '../utils/formatBytes'
 import type { Job } from '../store/jobs'
 
 const props = defineProps<{ job: Job }>()
-
-function fmtBytes(bytes: number | null | undefined): string {
-  if (bytes == null) return '—'
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-}
 
 function fmtDim(value: number | null | undefined): string {
   return value == null ? '—' : String(value)
@@ -80,8 +76,8 @@ const { t, te } = useI18n()
     <div class="stat">
       <span class="stat-label">{{ t('stats.fileSize') }}</span>
       <span class="stat-value">
-        <span>{{ fmtBytes(job.sourceMeta.sizeBytes) }}</span>
-        <span class="stat-after">→ {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span>
+        <span>{{ formatBytes(job.sourceMeta.sizeBytes) }}</span>
+        <span class="stat-after">→ {{ formatBytes(job.outputMeta?.sizeBytes) }}</span>
       </span>
     </div>
     <div class="stat">

@@ -426,7 +426,17 @@ _processing_job_id: str | None = None
 
 
 def _now_iso() -> str:
-    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    """ISO 8601 UTC, with milliseconds.
+
+    Second precision made the duration of any fast job unreportable: an image
+    that takes 0.5s starts and ends inside the same second, so the difference
+    came out as zero and the panel showed its 1ms floor. The stat was there to
+    say how long the work took and could not say it for exactly the jobs people
+    run most. Date.parse() in the renderer reads this form unchanged.
+    """
+    now = time.time()
+    millis = int((now % 1) * 1000)
+    return time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(now)) + f'.{millis:03d}Z'
 
 
 def _master_path(job_id: str) -> str:
