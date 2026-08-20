@@ -133,14 +133,21 @@ async function addFile(described: DescribedFile): Promise<void> {
     stage: null,
     createdAt: Date.now()
   })
-  try {
-    job.contentType = await detectContentType(described.path, 'audio')
-  } catch {
-    // Detection failure just leaves the default ('speech') — the person can
-    // still correct it manually (FR-096) before processing.
-  } finally {
-    job.status = 'configuring'
-  }
+  // Not awaited, matching store/jobs.ts: usePickFiles adds files one after
+  // another, so awaiting detection here made every later file wait for every
+  // earlier detection before it was even created. The card appears at once and
+  // fills in its detected type when the answer arrives.
+  //
+  // Detection failure just leaves the default ('speech') — the person can
+  // still correct it manually (FR-096) before processing.
+  detectContentType(described.path, 'audio')
+    .then((detected) => {
+      job.contentType = detected
+    })
+    .catch(() => {})
+    .finally(() => {
+      job.status = 'configuring'
+    })
 }
 
 const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(

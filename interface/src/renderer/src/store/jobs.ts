@@ -161,15 +161,30 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
   const duplicates: string[] = []
   const added: Job[] = []
 
+  // Two passes on purpose.
+  //
+  // The checks that depend on accumulated state — is this a duplicate of one
+  // already in the queue, or of an earlier file in this same batch — have to
+  // run in order, one after another. They are pure comparisons, so that costs
+  // nothing.
+  //
+  // Reading each image's dimensions does not. It decodes the file to ask how
+  // big it is, and doing that inside the sequential loop meant file N waited
+  // for all N-1 before it. Worse, content-type detection is fired right after,
+  // so the last file's detection could not even start until every earlier
+  // image had finished decoding — which is what made "Detectando…" sit there
+  // on a batch. The API answers detection in about 10ms; the waiting was all
+  // on this side.
+  const candidates: DescribedFile[] = []
   for (const f of described) {
     if (f.kind !== 'Imagem') {
-      rejected.push({
-        name: f.name,
-        reason: t('errors.job.unsupportedFormat')
-      })
+      rejected.push({ name: f.name, reason: t('errors.job.unsupportedFormat') })
       continue
     }
-    if (queueState.jobs.some((j) => j.sourcePath === f.path)) {
+    if (
+      queueState.jobs.some((j) => j.sourcePath === f.path) ||
+      candidates.some((c) => c.path === f.path)
+    ) {
       duplicates.push(f.name)
       continue
     }
@@ -180,21 +195,25 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       })
       continue
     }
+    candidates.push(f)
+  }
 
-    const thumbnail = hasNativeApi ? api.toFileUrl(f.path) : undefined
-    const dims = thumbnail ? await loadImageDimensions(thumbnail) : null
+  // All the decoding at once. Order is preserved because Promise.all resolves
+  // positionally, so the queue still lists files as the person picked them.
+  const measured = await Promise.all(
+    candidates.map(async (f) => {
+      const thumbnail = hasNativeApi ? api.toFileUrl(f.path) : undefined
+      return { f, thumbnail, dims: thumbnail ? await loadImageDimensions(thumbnail) : null }
+    })
+  )
+
+  for (const { f, thumbnail, dims } of measured) {
     if (dims && (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION)) {
-      rejected.push({
-        name: f.name,
-        reason: t('validation.tooSmall', { min: MIN_DIMENSION })
-      })
+      rejected.push({ name: f.name, reason: t('validation.tooSmall', { min: MIN_DIMENSION }) })
       continue
     }
     if (dims && (dims.width > 10000 || dims.height > 10000)) {
-      rejected.push({
-        name: f.name,
-        reason: t('errors.job.resolutionTooHigh')
-      })
+      rejected.push({ name: f.name, reason: t('errors.job.resolutionTooHigh') })
       continue
     }
 
