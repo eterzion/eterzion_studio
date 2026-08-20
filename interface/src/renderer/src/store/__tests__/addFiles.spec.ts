@@ -1,3 +1,4 @@
+import { nextTick, watch } from 'vue'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Importing files used to read each image's dimensions inside a sequential
@@ -23,10 +24,11 @@ vi.mock('../../services/native', () => ({
 }))
 
 const detectCalls: string[] = []
+let pendingDetection: Promise<string> | null = null
 vi.mock('../../services/api', () => ({
   detectContentType: (path: string) => {
     detectCalls.push(path)
-    return Promise.resolve('photo')
+    return pendingDetection ?? Promise.resolve('photo')
   },
   createJob: vi.fn(),
   processJob: vi.fn(),
@@ -126,5 +128,38 @@ describe('addFiles', () => {
 
     await addFiles([file('one.png'), file('two.png')])
     expect(detectCalls).toHaveLength(2)
+  })
+
+  it('a render effect runs when detection lands', async () => {
+    // The bug: queueState is reactive(), so the array holds Vue's proxy while
+    // the local `job` is the raw object underneath. Writing to the raw object
+    // updates the value — so merely reading it back proves nothing — but never
+    // runs the proxy's set trap, so nothing re-renders. The field stayed on
+    // "Detectando…" until an unrelated edit forced a redraw, which is how it
+    // was noticed.
+    //
+    // So this watches for the effect, not the value, and detection is held
+    // until after the watcher exists.
+    allStarted = Promise.resolve()
+    vi.stubGlobal('Image', BarrierImage)
+    let releaseDetection: (value: string) => void = () => {}
+    pendingDetection = new Promise<string>((r) => (releaseDetection = r))
+
+    const { addFiles, queueState } = await import('../jobs')
+    queueState.jobs.length = 0
+    await addFiles([file('um.png')])
+
+    let effects = 0
+    watch(
+      () => queueState.jobs[0]?.scaleConfig.contentType,
+      () => (effects += 1)
+    )
+
+    releaseDetection('photo')
+    await new Promise((r) => setTimeout(r, 10))
+    await nextTick()
+
+    expect(queueState.jobs[0].scaleConfig.contentType).toBe('photo')
+    expect(effects).toBe(1)
   })
 })

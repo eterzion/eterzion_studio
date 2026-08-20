@@ -237,14 +237,22 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       thumbnail
     }
     queueState.jobs.push(job)
-    added.push(job)
+    // Read the entry back out: queueState is reactive(), so what the array
+    // holds is Vue's proxy while `job` is still the raw object underneath.
+    // Writing to the raw object updates the value but never runs the proxy's
+    // set trap, so no watcher and no render effect ever learns it changed —
+    // the field sat on "Detectando…" until an unrelated edit forced a
+    // re-render, which is exactly how this was spotted. AudioView already
+    // carried this fix and the comment explaining it; the image queue did not.
+    const stored = queueState.jobs[queueState.jobs.length - 1]
+    added.push(stored)
 
     // FR-096: detect automatically, but leave it fully editable — a failed
     // detection just leaves contentType null, and the UI/validateScaleConfig
     // requires the person to pick one manually before processing.
     detectContentType(f.path, 'image')
       .then((detected) => {
-        job.scaleConfig.contentType = detected
+        stored.scaleConfig.contentType = detected
       })
       .catch(() => {
         // left null on purpose — see comment above
