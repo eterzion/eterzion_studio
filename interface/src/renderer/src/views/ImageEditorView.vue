@@ -62,6 +62,7 @@ import {
   startProcessing,
   cancelProcessing,
   removeJob,
+  proposePixelSize,
   type Job
 } from '../store/jobs'
 
@@ -175,13 +176,19 @@ onUnmounted(() => {
 })
 
 // ------------------------------- scale config helpers ------------------------------- //
-function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original'): void {
+const modeHintKey = computed(() => {
+  const mode = job.value?.scaleConfig.mode ?? 'preset'
+  return { original: 'Original', pixel: 'Pixel', preset: 'Preset', custom: 'Custom' }[mode]
+})
+
+function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original' | 'pixel'): void {
   j.scaleConfig.mode = mode
   if (mode === 'custom') ensureCustomSizeDefaults(j)
   // Coming from a 2x/4x preset, the custom target is still the enlarged one —
   // invalid the moment Original is entered, and it is what the size and scale
   // readouts are computed from, so it has to be brought back to the source.
   if (mode === 'original') clampSizeToSource(j)
+  if (mode === 'pixel') proposePixelSize(j)
 }
 
 function setPresetFactor(j: Job, factor: 2 | 4): void {
@@ -613,7 +620,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                '1x'), so none of them applies there. Ajustes below stays separate:
                its filters run in both modes. -->
           <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original'"
+            v-if="job.scaleConfig.mode !== 'original' && job.scaleConfig.mode !== 'pixel'"
             :title="t('imageEditor.processingTitle')"
             :description="t('imageEditor.processingDescription')"
             :icon="Cpu"
@@ -652,6 +659,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             :description="t('imageEditor.scaleDescription')"
             :icon="Expand"
           >
+            <!-- Top row: the two modes that run no model at all. Bottom row:
+                 the two that do. The grid groups them by that difference,
+                 which is the one that actually changes what happens to the
+                 picture. -->
             <div class="scale-mode-tabs">
               <button
                 class="mode-tab"
@@ -659,7 +670,15 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 type="button"
                 @click="switchScaleMode(job, 'original')"
               >
-                Original
+                {{ t('imageEditor.modeOriginal') }}
+              </button>
+              <button
+                class="mode-tab"
+                :class="{ active: job.scaleConfig.mode === 'pixel' }"
+                type="button"
+                @click="switchScaleMode(job, 'pixel')"
+              >
+                {{ t('imageEditor.modePixel') }}
               </button>
               <button
                 class="mode-tab"
@@ -667,7 +686,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 type="button"
                 @click="switchScaleMode(job, 'preset')"
               >
-                Predefinido
+                {{ t('imageEditor.modePreset') }}
               </button>
               <button
                 class="mode-tab"
@@ -675,9 +694,14 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 type="button"
                 @click="switchScaleMode(job, 'custom')"
               >
-                Custom
+                {{ t('imageEditor.modeCustom') }}
               </button>
             </div>
+
+            <!-- One line saying what the selected mode does. The names alone
+                 cannot carry "does a model run?", which is the difference that
+                 decides what happens to the picture. -->
+            <p class="field-hint">{{ t(`imageEditor.mode${modeHintKey}Hint`) }}</p>
 
             <div v-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
               <button
@@ -1639,8 +1663,13 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   font-size: var(--fs-label);
 }
 
+/* 2x2 rather than a single row. A fourth tab did not fit the side panel's
+   width, and the longest label ("Pixel art", "Personalizado") was cut off — in
+   a control where the label IS the whole affordance, a clipped one is a broken
+   one. Two columns give every tab the same box and room for its full name. */
 .scale-mode-tabs {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 4px;
   background: var(--surface-3);
   border-radius: var(--radius-sm);
@@ -1648,15 +1677,17 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 }
 
 .mode-tab {
-  flex: 1;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   font-size: var(--fs-caption);
   font-weight: var(--fw-medium);
-  padding: 6px;
+  padding: 7px 6px;
   border-radius: 6px;
   cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mode-tab.active {

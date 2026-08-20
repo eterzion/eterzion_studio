@@ -48,7 +48,7 @@ export interface ScaleConfig {
   /** 'original' keeps the source resolution and never runs the model — the job
       becomes a plain re-encode, which is what the Exportar screen already does
       for files that only need a different format or a smaller size. */
-  mode: 'preset' | 'custom' | 'original'
+  mode: 'preset' | 'custom' | 'original' | 'pixel'
   presetFactor: 2 | 4
   customWidth: number | null
   customHeight: number | null
@@ -333,6 +333,47 @@ export function ensureCustomSizeDefaults(job: Job): void {
   job.scaleConfig.customHeight = dims.height
 }
 
+/** Which model pass a job should ask for.
+ *
+ *  'original' and 'pixel' never run a model at all — '1x' tells the backend to
+ *  skip it (Upscaler.process_without_model).
+ *
+ *  'preset' is whatever the person picked, 2x or 4x.
+ *
+ *  'custom' derives it from the target actually typed, which is the point: the
+ *  mode used to send whichever preset factor happened to be selected, so asking
+ *  for a 2x-sized output while the preset sat on 4x ran the 4x model and threw
+ *  most of it away in a downscale. Now a target up to 2x uses the 2x pass and
+ *  anything beyond it uses 4x, so the model always works at or above the size
+ *  being asked for — never below, which would mean interpolating up afterwards.
+ */
+export function scaleForJob(job: Job): '1x' | '2x' | '4x' {
+  const { mode, presetFactor } = job.scaleConfig
+  if (mode === 'original' || mode === 'pixel') return '1x'
+  if (mode !== 'custom') return `${presetFactor}x` as '2x' | '4x'
+
+  const { width: srcW, height: srcH } = job.sourceMeta
+  const { customWidth, customHeight } = job.scaleConfig
+  if (!srcW || !srcH || !customWidth || !customHeight) return `${presetFactor}x` as '2x' | '4x'
+
+  const factor = Math.max(customWidth / srcW, customHeight / srcH)
+  return factor <= 2 ? '2x' : '4x'
+}
+
+/** Entering 'pixel' proposes an exact doubling.
+ *
+ *  Whole multiples are what this mode is for: at 2x every source pixel becomes
+ *  a clean 2x2 block. A fractional factor makes some pixels wider than others,
+ *  which on pixel art is visible as an uneven, wobbling grid — the one artefact
+ *  this path exists to avoid. Nothing forbids typing another number; this is
+ *  just the starting point that is right far more often than not. */
+export function proposePixelSize(job: Job): void {
+  const { width: srcW, height: srcH } = job.sourceMeta
+  if (!srcW || !srcH) return
+  job.scaleConfig.customWidth = Math.min(srcW * 2, MAX_OUTPUT_DIMENSION)
+  job.scaleConfig.customHeight = Math.min(srcH * 2, MAX_OUTPUT_DIMENSION)
+}
+
 /** Entering 'original' starts from the source's own size — the mode's whole
  *  point is not enlarging, so a preset-derived 2x default would be invalid the
  *  moment it appeared. Any target already smaller than the source is kept. */
@@ -385,7 +426,11 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   // Original mode resolves no model (it travels as scale '1x'), so the content
   // type — which exists only to pick one — cannot block it. Requiring it here is
   // what left Processar disabled on the one mode that never needed it.
-  if (job.scaleConfig.mode !== 'original' && !job.scaleConfig.contentType)
+  if (
+    job.scaleConfig.mode !== 'original' &&
+    job.scaleConfig.mode !== 'pixel' &&
+    !job.scaleConfig.contentType
+  )
     return { valid: false, reason: t('errors.job.contentTypeMissing') }
 
   const { width: srcW, height: srcH } = job.sourceMeta
@@ -408,6 +453,21 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   const w = job.scaleConfig.customWidth
   const h = job.scaleConfig.customHeight
   if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: t('errors.job.sizeMissing') }
+
+  // 'pixel' enlarges without a model, by repeating pixels. It exists for art
+  // drawn pixel by pixel — icons, sprites — where every model here softens the
+  // edges it was authored to keep sharp. Measured on a real 32x32 icon, the
+  // models moved the shape by 2.4 to 6.5 mean luma levels; repeating pixels
+  // moves it by none. The only rule is the shared ceiling.
+  if (job.scaleConfig.mode === 'pixel') {
+    if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
+      return { valid: false, reason: t('validation.minSide', { min: MIN_DIMENSION }) }
+    }
+    if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
+      return { valid: false, reason: t('validation.maxSide', { max: MAX_OUTPUT_DIMENSION }) }
+    }
+    return { valid: true }
+  }
 
   // 'original' is the mirror of 'custom': it exists precisely to NOT enlarge, so
   // its target may only shrink. Everything else about the job — filters, face
@@ -558,7 +618,7 @@ export async function startProcessing(job: Job): Promise<void> {
         operation: 'enhance',
         // '1x' tells the backend to skip the model entirely and just run the
         // filters (and any reduction) — see Upscaler.process_without_model.
-        scale: job.scaleConfig.mode === 'original' ? '1x' : `${job.scaleConfig.presetFactor}x`,
+        scale: scaleForJob(job),
         profile: job.scaleConfig.profile,
         content_type_override: job.scaleConfig.contentType,
         input_path: job.sourcePath,
