@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "Что вы хотите улучшить сегодня?",
-    "openAria": "Открыть {label}",
-    "status": {
-      "processing": "Обработка",
-      "done": "Готово",
-      "errors": "С ошибками",
-      "queued": "В очереди",
-      "configuring": "Настройка",
-      "empty": "Пусто"
-    }
+    "openAria": "Открыть {label}"
   },
   "imageEditor": {
     "adjustmentsDescription": "Тонкая настройка качества",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Очистить очередь",
-    "currentStatus": "Текущий статус",
     "dragToReorder": "Перетащите, чтобы изменить порядок",
     "empty": "Пусто",
-    "fileCount": "Файлов в очереди",
     "fileCountLabel": "{n} файл | {n} файла | {n} файлов",
     "kind": {
       "image": "Изображение",
       "video": "Видео",
       "audio": "Аудио"
     },
-    "quality": "Качество и детали",
-    "readyToEnhance": "Готово к улучшению",
-    "title": "Очередь обработки",
-    "totalSize": "Общий размер"
+    "title": "Очередь обработки"
   },
   "select": {
     "search": "Поиск…"

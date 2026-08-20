@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "O que gostaria de melhorar hoje?",
-    "openAria": "Abrir {label}",
-    "status": {
-      "processing": "A processar",
-      "done": "Concluído",
-      "errors": "Com erros",
-      "queued": "Em fila",
-      "configuring": "A configurar",
-      "empty": "Vazio"
-    }
+    "openAria": "Abrir {label}"
   },
   "imageEditor": {
     "adjustmentsDescription": "Ajustes finos de qualidade",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Limpar fila",
-    "currentStatus": "Estado atual",
     "dragToReorder": "Arraste para reordenar",
     "empty": "Vazia",
-    "fileCount": "Ficheiros na fila",
     "fileCountLabel": "{n} ficheiro | {n} ficheiros",
     "kind": {
       "image": "Imagem",
       "video": "Vídeo",
       "audio": "Áudio"
     },
-    "quality": "Qualidade e detalhe",
-    "readyToEnhance": "Pronto para melhorar",
-    "title": "Fila de processamento",
-    "totalSize": "Tamanho total"
+    "title": "Fila de processamento"
   },
   "select": {
     "search": "Pesquisar…"

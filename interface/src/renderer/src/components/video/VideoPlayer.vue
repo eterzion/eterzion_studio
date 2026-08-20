@@ -29,9 +29,6 @@ const props = defineProps<{
 }>()
 
 const element = ref<HTMLVideoElement | null>(null)
-/** Rendered width of the picture, reported by the surface. The controls match
- *  it so the timeline lines up with the frame instead of with the stage. */
-const pictureWidth = ref(0)
 const handleRef = computed(() => props.handle)
 
 const timeline = useVideoTimeline(handleRef)
@@ -108,14 +105,15 @@ function onKeydown(event: KeyboardEvent): void {
         :adjustments="adjustments ?? null"
         :recalculating="recalculating"
         @ready="onReady"
-        @picture-resize="pictureWidth = $event"
       />
     </div>
 
-    <!-- Width tied to the picture above it, so the timeline starts and ends
-         where the frame does. min-width keeps it usable under a very narrow
-         clip, where matching the picture exactly would crush the transport. -->
-    <div class="player-controls" :style="{ width: pictureWidth ? `${pictureWidth}px` : undefined }">
+    <!-- Full width, edge-aligned with the stage above it. Matching the
+         rendered picture instead was tried and looked wrong: a 4:3 clip in a
+         wider stage left the transport floating in the middle, narrower than
+         the frame it belongs to. The two boxes read as one control when their
+         edges line up. -->
+    <div class="player-controls">
       <VideoTimeline
         :progress="timeline.progressAt(playback.currentTime.value)"
         :duration="duration"
@@ -209,7 +207,6 @@ function onKeydown(event: KeyboardEvent): void {
   border-radius: var(--radius-md);
   background: var(--surface-2);
   flex: 0 0 auto;
-  max-width: 100%;
-  min-width: min(420px, 100%);
+  width: 100%;
 }
 </style>

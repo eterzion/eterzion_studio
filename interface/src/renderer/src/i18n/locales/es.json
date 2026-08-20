@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "¿Qué te gustaría mejorar hoy?",
-    "openAria": "Abrir {label}",
-    "status": {
-      "processing": "Procesando",
-      "done": "Completado",
-      "errors": "Con errores",
-      "queued": "En cola",
-      "configuring": "Configurando",
-      "empty": "Vacío"
-    }
+    "openAria": "Abrir {label}"
   },
   "imageEditor": {
     "adjustmentsDescription": "Ajustes finos de calidad",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Vaciar cola",
-    "currentStatus": "Estado actual",
     "dragToReorder": "Arrastra para reordenar",
     "empty": "Vacía",
-    "fileCount": "Archivos en cola",
     "fileCountLabel": "{n} archivo | {n} archivos",
     "kind": {
       "image": "Imagen",
       "video": "Vídeo",
       "audio": "Audio"
     },
-    "quality": "Calidad y detalle",
-    "readyToEnhance": "Listo para mejorar",
-    "title": "Cola de procesamiento",
-    "totalSize": "Tamaño total"
+    "title": "Cola de procesamiento"
   },
   "select": {
     "search": "Buscar…"

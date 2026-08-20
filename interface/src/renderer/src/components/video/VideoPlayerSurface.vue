@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { FileVideo, Loader2 } from '@lucide/vue'
 import { api, hasNativeApi } from '../../services/native'
@@ -29,7 +29,7 @@ const props = defineProps<{
   recalculating?: boolean
 }>()
 
-const emit = defineEmits<{ ready: [HTMLVideoElement]; 'picture-resize': [number] }>()
+const emit = defineEmits<{ ready: [HTMLVideoElement] }>()
 
 const { t } = useI18n()
 const video = ref<HTMLVideoElement | null>(null)
@@ -38,32 +38,6 @@ const failed = ref(false)
 
 const pipeline = useVideoPreviewPipeline()
 const sourceUrl = ref('')
-
-// The picture is letterboxed inside the surface: it keeps its aspect ratio and
-// grows until one edge runs out, so the surface is almost never the width of
-// what you actually see. The controls below are supposed to line up with the
-// picture, not with the box around it — which means measuring it.
-//
-// A ResizeObserver rather than a computed from videoWidth/videoHeight: the
-// rendered size depends on the surface's size too, so it changes when the
-// window resizes and when the side panel opens, not only when the file does.
-let pictureObserver: ResizeObserver | null = null
-
-function observePicture(): void {
-  pictureObserver?.disconnect()
-  const element = pipeline.supported.value ? canvas.value : video.value
-  if (!element) return
-  pictureObserver = new ResizeObserver(([entry]) => {
-    emit('picture-resize', Math.round(entry.contentRect.width))
-  })
-  pictureObserver.observe(element)
-}
-
-watch(
-  () => [pipeline.supported.value, sourceUrl.value],
-  () => queueMicrotask(observePicture)
-)
-onBeforeUnmount(() => pictureObserver?.disconnect())
 
 function refreshSource(): void {
   failed.value = false

@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "Que souhaitez-vous améliorer aujourd'hui ?",
-    "openAria": "Ouvrir {label}",
-    "status": {
-      "processing": "En cours",
-      "done": "Terminé",
-      "errors": "Avec erreurs",
-      "queued": "En file d'attente",
-      "configuring": "Configuration",
-      "empty": "Vide"
-    }
+    "openAria": "Ouvrir {label}"
   },
   "imageEditor": {
     "adjustmentsDescription": "Réglages fins de qualité",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Vider la file",
-    "currentStatus": "État actuel",
     "dragToReorder": "Glissez pour réordonner",
     "empty": "Vide",
-    "fileCount": "Fichiers en file",
     "fileCountLabel": "{n} fichier | {n} fichiers",
     "kind": {
       "image": "Image",
       "video": "Vidéo",
       "audio": "Audio"
     },
-    "quality": "Qualité et détail",
-    "readyToEnhance": "Prêt à améliorer",
-    "title": "File de traitement",
-    "totalSize": "Taille totale"
+    "title": "File de traitement"
   },
   "select": {
     "search": "Rechercher…"

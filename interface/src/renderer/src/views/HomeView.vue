@@ -4,7 +4,6 @@ import { useI18n } from 'vue-i18n'
 import { ArrowRight, FolderOpen, Trash2 } from '@lucide/vue'
 import CategoryIcon from '../components/CategoryIcon.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
-import SummaryCards from '../components/SummaryCards.vue'
 import { setActiveJob } from '../store/jobs'
 import {
   allEntries,
@@ -38,19 +37,6 @@ const CATEGORIES = computed<
 // images.
 const jobs = allEntries
 const fileCount = computed(() => jobs.value.length)
-const totalSizeLabel = computed(
-  () =>
-    `${(jobs.value.reduce((sum, entry) => sum + entry.sizeBytes, 0) / (1024 * 1024)).toFixed(2)} MB`
-)
-const statusLabel = computed(() => {
-  if (jobs.value.some((job) => job.status === 'processing')) return t('home.status.processing')
-  if (jobs.value.length && jobs.value.every((job) => job.status === 'done'))
-    return t('home.status.done')
-  if (jobs.value.some((job) => job.status === 'error')) return t('home.status.errors')
-  if (jobs.value.some((job) => job.status === 'queued')) return t('home.status.queued')
-  if (jobs.value.length) return t('home.status.configuring')
-  return t('home.status.empty')
-})
 function clearQueue(): void {
   clearAll()
 }
@@ -184,7 +170,7 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
               :entry="entry"
               :class="rowClass(group.kind, index)"
               :style="{ animationDelay: Math.min(index, 10) * 25 + 'ms' }"
-              :draggable="canReorder(entry)"
+              :allow-reorder="canReorder(entry)"
               @dragstart="onDragStart($event, group.kind, index)"
               @dragover="onDragOver($event, group.kind, index, entry)"
               @drop="onDrop(group.kind)"
@@ -195,12 +181,6 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
           </template>
         </div>
       </section>
-      <SummaryCards
-        :file-count="fileCount"
-        :total-size-label="totalSizeLabel"
-        :status-label="statusLabel"
-        :quality-label="t('queue.readyToEnhance')"
-      />
     </div>
   </main>
 </template>
@@ -332,7 +312,6 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
   overflow: hidden;
   border: 1px solid var(--surface-border);
   border-radius: 11px;

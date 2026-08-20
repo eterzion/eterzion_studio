@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "Cosa vuoi migliorare oggi?",
-    "openAria": "Apri {label}",
-    "status": {
-      "processing": "In elaborazione",
-      "done": "Completato",
-      "errors": "Con errori",
-      "queued": "In coda",
-      "configuring": "Configurazione",
-      "empty": "Vuoto"
-    }
+    "openAria": "Apri {label}"
   },
   "imageEditor": {
     "adjustmentsDescription": "Regolazioni fini di qualità",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Svuota la coda",
-    "currentStatus": "Stato attuale",
     "dragToReorder": "Trascina per riordinare",
     "empty": "Vuota",
-    "fileCount": "File in coda",
     "fileCountLabel": "{n} file | {n} file",
     "kind": {
       "image": "Immagine",
       "video": "Video",
       "audio": "Audio"
     },
-    "quality": "Qualità e dettaglio",
-    "readyToEnhance": "Pronto per migliorare",
-    "title": "Coda di elaborazione",
-    "totalSize": "Dimensione totale"
+    "title": "Coda di elaborazione"
   },
   "select": {
     "search": "Cerca…"

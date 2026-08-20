@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, Image, Film, AudioLines, GripVertical } from '@lucide/vue'
 import AppButton from './atoms/AppButton.vue'
@@ -11,7 +11,11 @@ import { canReorder, kindLabel, type QueueEntry } from '../store/mediaQueue'
 // audio, and those three keep very different state (see store/mediaQueue.ts).
 // The entry is the small set of fields the queue actually needs from all three.
 
-const props = defineProps<{ entry: QueueEntry; draggable?: boolean }>()
+// NOT named `draggable`: a prop by that name swallows the native attribute of
+// the same name, so Vue removes it from the fallthrough attrs and the root
+// element never becomes draggable. That is exactly what broke reordering — the
+// parent passed :draggable, it landed on the prop, and dragstart never fired.
+const props = defineProps<{ entry: QueueEntry; allowReorder?: boolean }>()
 
 defineEmits<{ remove: [entry: QueueEntry] }>()
 
@@ -22,7 +26,13 @@ const icon = computed(() => KIND_ICON[props.entry.kind])
 
 const sizeLabel = computed(() => `${(props.entry.sizeBytes / (1024 * 1024)).toFixed(1)} MB`)
 
-const reorderable = computed(() => props.draggable !== false && canReorder(props.entry))
+const reorderable = computed(() => props.allowReorder !== false && canReorder(props.entry))
+
+// The row carries the native draggable attribute, but only while the pointer is
+// holding the handle. Leaving it always on makes the whole row draggable, and
+// the row is also the click target that opens the file — every attempt to open
+// one would risk starting a drag instead.
+const handleHeld = ref(false)
 
 // StatusBadge owns the label/icon/tone for each state — this only supplies what
 // is specific to THIS item (queue position, progress, failure reason).
@@ -43,12 +53,24 @@ const statusDetail = computed(() => {
 </script>
 
 <template>
-  <div class="queue-item" :class="{ reorderable }">
+  <div
+    class="queue-item"
+    :class="{ reorderable }"
+    :draggable="handleHeld"
+    @dragend="handleHeld = false"
+  >
     <!-- A dedicated handle, not the whole row: the row is also a click target
          that opens the file, and a draggable row makes that click feel unsafe
          to press. The handle only appears where a drag would actually change
          the processing order. -->
-    <div v-if="reorderable" class="drag-handle" :title="t('queue.dragToReorder')">
+    <div
+      v-if="reorderable"
+      class="drag-handle"
+      :title="t('queue.dragToReorder')"
+      @mousedown="handleHeld = true"
+      @mouseup="handleHeld = false"
+      @click.stop
+    >
       <GripVertical :size="15" />
     </div>
     <div v-else class="drag-spacer" />

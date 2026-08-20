@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "오늘은 무엇을 개선하시겠습니까?",
-    "openAria": "{label} 열기",
-    "status": {
-      "processing": "처리 중",
-      "done": "완료",
-      "errors": "오류 있음",
-      "queued": "대기 중",
-      "configuring": "구성 중",
-      "empty": "비어 있음"
-    }
+    "openAria": "{label} 열기"
   },
   "imageEditor": {
     "adjustmentsDescription": "세밀한 품질 조정",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "대기열 비우기",
-    "currentStatus": "현재 상태",
     "dragToReorder": "끌어서 순서 변경",
     "empty": "비어 있음",
-    "fileCount": "대기열의 파일",
     "fileCountLabel": "파일 {n}개",
     "kind": {
       "image": "이미지",
       "video": "비디오",
       "audio": "오디오"
     },
-    "quality": "품질과 디테일",
-    "readyToEnhance": "개선 준비 완료",
-    "title": "처리 대기열",
-    "totalSize": "총 크기"
+    "title": "처리 대기열"
   },
   "select": {
     "search": "검색…"

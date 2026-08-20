@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "Was möchten Sie heute verbessern?",
-    "openAria": "{label} öffnen",
-    "status": {
-      "processing": "Wird verarbeitet",
-      "done": "Fertig",
-      "errors": "Mit Fehlern",
-      "queued": "In der Warteschlange",
-      "configuring": "Wird konfiguriert",
-      "empty": "Leer"
-    }
+    "openAria": "{label} öffnen"
   },
   "imageEditor": {
     "adjustmentsDescription": "Feine Qualitätsanpassungen",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "Warteschlange leeren",
-    "currentStatus": "Aktueller Status",
     "dragToReorder": "Zum Umsortieren ziehen",
     "empty": "Leer",
-    "fileCount": "Dateien in der Warteschlange",
     "fileCountLabel": "{n} Datei | {n} Dateien",
     "kind": {
       "image": "Bild",
       "video": "Video",
       "audio": "Audio"
     },
-    "quality": "Qualität und Details",
-    "readyToEnhance": "Bereit zur Verbesserung",
-    "title": "Verarbeitungswarteschlange",
-    "totalSize": "Gesamtgröße"
+    "title": "Verarbeitungswarteschlange"
   },
   "select": {
     "search": "Suchen…"

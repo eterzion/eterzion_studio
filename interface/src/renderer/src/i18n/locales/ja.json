@@ -152,15 +152,7 @@
   },
   "home": {
     "title": "今日は何を改善しますか？",
-    "openAria": "{label}を開く",
-    "status": {
-      "processing": "処理中",
-      "done": "完了",
-      "errors": "エラーあり",
-      "queued": "キュー待ち",
-      "configuring": "設定中",
-      "empty": "空"
-    }
+    "openAria": "{label}を開く"
   },
   "imageEditor": {
     "adjustmentsDescription": "画質の微調整",
@@ -333,20 +325,15 @@
   },
   "queue": {
     "clear": "キューを空にする",
-    "currentStatus": "現在の状態",
     "dragToReorder": "ドラッグして並べ替え",
     "empty": "空",
-    "fileCount": "キュー内のファイル",
     "fileCountLabel": "{n} 件のファイル",
     "kind": {
       "image": "画像",
       "video": "動画",
       "audio": "音声"
     },
-    "quality": "画質とディテール",
-    "readyToEnhance": "処理の準備完了",
-    "title": "処理キュー",
-    "totalSize": "合計サイズ"
+    "title": "処理キュー"
   },
   "select": {
     "search": "検索…"
