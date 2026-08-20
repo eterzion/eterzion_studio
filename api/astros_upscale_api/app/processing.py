@@ -236,10 +236,31 @@ class Upscaler:
         by rounding. Luminance is never touched: that is where the actual
         upscaling work lives, and only chroma is pulled back.
         """
-        if result.dtype != np.uint8 or result.ndim != 3 or result.shape[2] != 3:
-            return result  # 16-bit and RGBA/greyscale go through untouched
-        if source.ndim != 3 or source.shape[2] != 3:
+        if result.dtype != np.uint8 or result.ndim != 3 or result.shape[2] not in (3, 4):
+            return result  # 16-bit and greyscale go through untouched
+        if source.ndim != 3 or source.shape[2] not in (3, 4):
             return result
+
+        # Transparency is the normal case for the material this was written
+        # for: game and UI icons ship as RGBA with no background at all. An
+        # earlier version bailed out on any 4-channel image, which meant the
+        # correction never ran on precisely the files that motivated it.
+        #
+        # The alpha channel is carried through untouched — it is not colour and
+        # has no chroma to cap. Only the three colour channels are compared and
+        # corrected, and they are put back alongside the original alpha.
+        alpha = result[:, :, 3:] if result.shape[2] == 4 else None
+        colour = result[:, :, :3]
+        source_colour = source[:, :, :3]
+        corrected = Upscaler._cap_chroma(colour, source_colour, headroom, floor)
+        if alpha is None:
+            return corrected
+        return np.concatenate((corrected, alpha), axis=2)
+
+    @staticmethod
+    def _cap_chroma(result, source, headroom: float, floor: int):
+        """The cap itself, on three colour channels. Split out so the RGBA path
+        and the RGB path cannot drift apart."""
 
         source_chroma = (
             source.max(axis=2).astype(np.int16) - source.min(axis=2).astype(np.int16)

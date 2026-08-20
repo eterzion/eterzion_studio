@@ -118,16 +118,54 @@ class TestRealColourIsUntouched:
         assert chroma(out)[5, 5] <= 23, 'a franja sobreviveu ao teto local'
         assert np.array_equal(out[0, 0], source[0, 0]), 'o fundo legitimo mudou'
 
+class TestTransparency:
+    """Icons ship as RGBA with no background at all — the material this whole
+    guard was written for. An earlier version bailed out on any 4-channel
+    image, so the correction never ran on exactly those files: measured on a
+    transparent icon, the anime model reached chroma 204 across 63% of the
+    visible pixels and nothing touched it."""
+
+    @staticmethod
+    def _icon_with_alpha():
+        source = np.zeros((16, 16, 4), np.uint8)
+        source[..., 3] = 0                       # tudo transparente
+        source[4:12, 4:12] = (255, 255, 255, 255)  # um quadrado branco opaco
+        return source
+
+    def test_invented_colour_is_removed_from_the_visible_part(self):
+        source = self._icon_with_alpha()
+        polluted = source.copy()
+        polluted[6, 6, :3] = (40, 200, 180)
+        out = guard(polluted, source)
+        visible = out[..., 3] > 128
+        assert chroma(out[..., :3])[visible].max() == 0
+
+    def test_the_alpha_channel_is_carried_through_untouched(self):
+        source = self._icon_with_alpha()
+        polluted = source.copy()
+        polluted[6, 6, :3] = (40, 200, 180)
+        out = guard(polluted, source)
+        assert np.array_equal(out[..., 3], polluted[..., 3]), 'a transparencia foi alterada'
+
+    def test_the_result_keeps_its_four_channels(self):
+        source = self._icon_with_alpha()
+        assert guard(source.copy(), source).shape[2] == 4
+
+    def test_an_rgb_result_from_an_rgba_source_still_works(self):
+        """cv2 can hand back three channels even when the source had four."""
+        source = self._icon_with_alpha()
+        rgb_result = np.full((16, 16, 3), 128, np.uint8)
+        rgb_result[6, 6] = (40, 200, 180)
+        out = guard(rgb_result, source)
+        assert out.shape[2] == 3
+        assert chroma(out).max() == 0
+
+
 class TestFormatsItRefusesToTouch:
     def test_sixteen_bit_output_is_returned_unchanged(self):
         source = np.full((4, 4, 3), 128, np.uint8)
         deep = np.full((4, 4, 3), 30000, np.uint16)
         assert guard(deep, source) is deep
-
-    def test_four_channel_output_is_returned_unchanged(self):
-        source = np.full((4, 4, 3), 128, np.uint8)
-        rgba = np.full((4, 4, 4), 128, np.uint8)
-        assert guard(rgba, source) is rgba
 
     def test_a_greyscale_source_is_not_used_as_a_reference(self):
         grey_source = np.full((4, 4), 128, np.uint8)
