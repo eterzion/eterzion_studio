@@ -463,9 +463,20 @@ class Upscaler:
                 # rounded the corners, while nearest reproduces every pixel
                 # exactly as it was authored. For art drawn pixel by pixel,
                 # inventing nothing beats any amount of clever.
+                #
+                # Pixel-art scalers were tried here and dropped: EPX and a
+                # no-blend xBR both work (each output pixel is copied, so
+                # a 39-colour icon stays 39 colours), but shown side by
+                # side against plain nearest on real icons, plain nearest
+                # was preferred. They round diagonals, and on artwork built
+                # from deliberate blocks that reads as the filter second-
+                # guessing the artist. Worth re-testing only with material
+                # that is mostly diagonals and curves.
                 enlarging = target_w > w_input or target_h > h_input
                 interpolation = cv2.INTER_NEAREST if enlarging else cv2.INTER_AREA
-                result = cv2.resize(result, (target_w, target_h), interpolation=interpolation)
+                result = cv2.resize(
+                    result, (target_w, target_h), interpolation=interpolation
+                )
         if on_progress:
             on_progress(35)
 
