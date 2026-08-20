@@ -533,6 +533,7 @@
       "animeVideoHint": "Anime, dessins animés, motion design — traits nets et aplats de couleur",
       "aspectFree": "Proportions libres — cliquez pour verrouiller",
       "aspectLocked": "Proportions verrouillées — cliquez pour déverrouiller",
+      "beyondNative": "Cible au-dessus du facteur natif ({factor}x) — l’excédent est de l’interpolation, avec moins de détail gagné.",
       "contentType": "Type de contenu",
       "device": "Traitement",
       "free": "Libres",

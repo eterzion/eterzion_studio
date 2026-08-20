@@ -533,6 +533,7 @@
       "animeVideoHint": "Anime, Zeichentrick, Motion Graphics — klare Linien, flache Farben",
       "aspectFree": "Seitenverhältnis frei — zum Sperren klicken",
       "aspectLocked": "Seitenverhältnis gesperrt — zum Entsperren klicken",
+      "beyondNative": "Ziel über dem nativen Faktor ({factor}x) — der Überschuss ist Interpolation, mit weniger Detailgewinn.",
       "contentType": "Inhaltstyp",
       "device": "Verarbeitung",
       "free": "Frei",

@@ -533,6 +533,7 @@
       "animeVideoHint": "Anime, cartoons, motion graphics — defined lines and flat colour",
       "aspectFree": "Aspect ratio free — click to lock",
       "aspectLocked": "Aspect ratio locked — click to unlock",
+      "beyondNative": "Target above the native factor ({factor}x) — the excess is interpolation, with less detail gained.",
       "contentType": "Content type",
       "device": "Processing",
       "free": "Free",

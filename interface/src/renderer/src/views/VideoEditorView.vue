@@ -168,6 +168,8 @@ function requestFor(video: EditorVideo): VideoRequest {
     handleId: video.handle.handle_id,
     displayName: video.handle.display_name,
     sourcePath: video.sourcePath,
+    sourceWidth: video.handle.width,
+    sourceHeight: video.handle.height,
     edits: JSON.parse(JSON.stringify(edits.editsFor(video.handle.handle_id))),
     enhance: { ...enhanceFor(video.handle.handle_id) },
     container: container.value,

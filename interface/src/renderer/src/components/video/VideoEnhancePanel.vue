@@ -107,13 +107,55 @@ const SCALE_MODE_OPTIONS = computed(() => [
 
 /** Entering the preset mode picks a factor, since 'preset' is not a scale the
  *  backend understands — 2x and 4x are. */
+/** The factor of the model pass this target will actually get — the same rule
+ *  useVideoProcessing sends to the API. */
+const nativeFactor = computed(() => ((customFactor.value ?? 1) <= 2 ? 2 : 4))
+
+/** Whether the target asks for more than the model pass can give natively.
+ *
+ *  Past that point the surplus comes from interpolating the model's output, so
+ *  the extra pixels carry no extra detail. Silence here would let someone
+ *  choose 8x expecting eight times the detail.
+ *
+ *  Not shown for the model-free types: there is no model and no native factor,
+ *  so the sentence would describe something that does not happen. */
+const beyondNative = computed(() => {
+  const ct = props.settings.contentType
+  if (ct === 'pixel_art' || ct === 'no_model') return false
+  if (props.settings.scale !== 'custom') return false
+  return (customFactor.value ?? 1) > nativeFactor.value + 0.01
+})
+
+const resultSize = computed(() => {
+  const width = props.sourceWidth ?? 0
+  const height = props.sourceHeight ?? 0
+  if (props.settings.scale === 'custom') {
+    return {
+      width: props.settings.customWidth ?? width,
+      height: props.settings.customHeight ?? height
+    }
+  }
+  const factor = props.settings.scale === '2x' ? 2 : props.settings.scale === '4x' ? 4 : 1
+  return { width: width * factor, height: height * factor }
+})
+
 function onModeChange(mode: string): void {
   if (mode === 'preset') {
     const current = props.settings.scale
     emit('update', { scale: current === '2x' || current === '4x' ? current : '2x' })
     return
   }
-  emit('update', { scale: mode as ScaleChoice })
+  // Medida exata opens at the size Ampliar was about to produce — the very
+  // number the panel is already showing as the new resolution. Switching
+  // between two ways of saying "how big" should not change how big, and
+  // landing back on the source size would silently undo the factor just
+  // chosen. The Imagem screen does the same on the same transition.
+  const patch: Partial<EnhanceSettings> = { scale: mode as ScaleChoice }
+  if (mode === 'custom' && props.sourceWidth && props.sourceHeight) {
+    patch.customWidth = resultSize.value.width
+    patch.customHeight = resultSize.value.height
+  }
+  emit('update', patch)
 }
 
 // Described rather than bare labels: the name alone does not tell you which one
@@ -148,19 +190,6 @@ const upscaling = computed(() => {
   if (scale === '2x' || scale === '4x') return true
   if (!props.sourceWidth || !props.sourceHeight) return false
   return (customWidth ?? 0) > props.sourceWidth || (customHeight ?? 0) > props.sourceHeight
-})
-
-const resultSize = computed(() => {
-  const width = props.sourceWidth ?? 0
-  const height = props.sourceHeight ?? 0
-  if (props.settings.scale === 'custom') {
-    return {
-      width: props.settings.customWidth ?? width,
-      height: props.settings.customHeight ?? height
-    }
-  }
-  const factor = props.settings.scale === '2x' ? 2 : props.settings.scale === '4x' ? 4 : 1
-  return { width: width * factor, height: height * factor }
 })
 </script>
 
@@ -287,6 +316,10 @@ const resultSize = computed(() => {
         </span>
         <span class="scale-multiplier-value">{{ customFactor.toFixed(2) }}&times;</span>
       </div>
+
+      <p v-if="beyondNative" class="field-warning">
+        {{ t('videoEditor.enhance.beyondNative', { factor: nativeFactor }) }}
+      </p>
     </template>
 
     <!-- The same readout the Imagem screen shows, not a second one shaped
@@ -303,6 +336,12 @@ const resultSize = computed(() => {
 </template>
 
 <style scoped>
+.field-warning {
+  font-size: 11px;
+  color: var(--color-warning);
+  line-height: 1.4;
+}
+
 .field-label-row {
   display: flex;
   align-items: center;

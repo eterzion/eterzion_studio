@@ -533,6 +533,7 @@
       "animeVideoHint": "애니메이션, 만화, 모션 그래픽 — 뚜렷한 선과 단색 면",
       "aspectFree": "비율 자유 — 클릭하면 고정",
       "aspectLocked": "비율 고정됨 — 클릭하면 해제",
+      "beyondNative": "네이티브 배율({factor}x)을 넘었습니다. 초과분은 보간이라 디테일이 크게 늘지 않습니다.",
       "contentType": "콘텐츠 유형",
       "device": "처리",
       "free": "자유",

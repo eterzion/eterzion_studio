@@ -65,10 +65,32 @@ export interface VideoRequest {
   handleId: string
   displayName: string
   sourcePath: string
+  /** The source frame size. Needed to answer two questions the enhance settings
+   *  cannot answer alone: which model pass a custom target implies, and whether
+   *  a target enlarges at all. */
+  sourceWidth: number | null
+  sourceHeight: number | null
   edits: VideoEditSet
   enhance: EnhanceSettings
   container: VideoContainer
   directory: string | null
+}
+
+/** Which model pass a video job should ask for.
+ *
+ *  'custom' used to always send '2x' regardless of the size typed, so asking
+ *  for a 4x-sized frame ran the 2x model and then had to interpolate the rest
+ *  of the way up — paying for a model pass and throwing away what it was for.
+ *  The rule now matches the Imagem screen's: a target up to 2x uses the 2x
+ *  pass, anything beyond it uses 4x, so the model always works at or above the
+ *  size being asked for and never below it.
+ */
+function scaleForRequest(request: VideoRequest): '2x' | '4x' {
+  const { scale, customWidth, customHeight } = request.enhance
+  if (scale === '2x' || scale === '4x') return scale
+  const { sourceWidth, sourceHeight } = request
+  if (!sourceWidth || !sourceHeight || !customWidth || !customHeight) return '2x'
+  return Math.max(customWidth / sourceWidth, customHeight / sourceHeight) <= 2 ? '2x' : '4x'
 }
 
 const HISTORY_STATUS: Partial<
@@ -196,9 +218,10 @@ export function useVideoProcessing(): VideoProcessing {
         content_type_override: enhance.contentType,
         profile: enhance.profile,
         device: enhance.device,
-        // 'custom' still travels a preset: it decides how hard the model works,
-        // while custom_size names the exact frame size to land on.
-        scale: enhance.scale === 'custom' ? '2x' : (enhance.scale as '2x' | '4x'),
+        // 'custom' still travels a preset — it decides how hard the model
+        // works — while custom_size names the exact frame size to land on.
+        // Which preset comes from the target itself (see scaleForRequest).
+        scale: scaleForRequest(request),
         custom_size:
           enhance.scale === 'custom' && enhance.customWidth && enhance.customHeight
             ? { width: enhance.customWidth, height: enhance.customHeight }
@@ -248,10 +271,13 @@ export function useVideoProcessing(): VideoProcessing {
     const { contentType, scale, customWidth, customHeight } = request.enhance
     if (contentType !== 'no_model' && contentType !== 'pixel_art') return false
     if (scale === '2x' || scale === '4x') return false
-    // Without a custom target there is nothing to enlarge to, so this is
-    // edits only. With one, it counts as an upscale only if it is bigger than
-    // what the panel already resolved it against.
-    return customWidth == null || customHeight == null ? true : false
+    const { sourceWidth, sourceHeight } = request
+    if (!sourceWidth || !sourceHeight) return true
+    // Only an enlargement needs the enhance pipeline. A target at or below the
+    // source is a resize the edit route already does.
+    return (
+      (customWidth ?? sourceWidth) <= sourceWidth && (customHeight ?? sourceHeight) <= sourceHeight
+    )
   }
 
   async function start(request: VideoRequest): Promise<void> {

@@ -533,6 +533,7 @@
       "animeVideoHint": "Anime, cartoni, motion graphics — linee definite e colori piatti",
       "aspectFree": "Proporzioni libere — fai clic per bloccare",
       "aspectLocked": "Proporzioni bloccate — fai clic per sbloccare",
+      "beyondNative": "Obiettivo oltre il fattore nativo ({factor}x): l’eccesso è interpolazione, con meno dettaglio guadagnato.",
       "contentType": "Tipo di contenuto",
       "device": "Elaborazione",
       "free": "Libere",
