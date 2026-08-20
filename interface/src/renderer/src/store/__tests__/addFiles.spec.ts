@@ -53,7 +53,13 @@ class BarrierImage {
   }
 }
 
-function file(name: string) {
+function file(name: string): {
+  path: string
+  name: string
+  ext: string
+  kind: 'Imagem'
+  size: number
+} {
   return { path: `D:/fake/${name}`, name, ext: '.png', kind: 'Imagem' as const, size: 1024 }
 }
 
