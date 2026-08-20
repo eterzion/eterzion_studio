@@ -202,11 +202,15 @@ const usesModel = computed(() => {
 })
 
 function switchScaleMode(j: Job, mode: 'preset' | 'custom'): void {
+  const from = j.scaleConfig.mode
   j.scaleConfig.mode = mode
-  if (mode === 'custom') ensureCustomSizeDefaults(j)
-  // Coming from a 2x/4x preset, the custom target is still the enlarged one —
-  // invalid the moment Original is entered, and it is what the size and scale
-  // readouts are computed from, so it has to be brought back to the source.
+  // Arriving at Medida exata from Ampliar starts at the size Ampliar was going
+  // to produce: switching between two ways of saying "how big" should not
+  // change how big. ensureCustomSizeDefaults alone did not do it — it returns
+  // early once the fields hold anything at all, so a value left from an
+  // earlier visit survived and the 4x the person had just chosen was ignored.
+  if (mode === 'custom' && from === 'preset') syncCustomSizeToPreset(j)
+  else if (mode === 'custom') ensureCustomSizeDefaults(j)
 }
 
 function setPresetFactor(j: Job, factor: 2 | 4): void {
