@@ -1,4 +1,6 @@
 import { reactive } from 'vue'
+
+import { pushReactive } from './reactiveInsert'
 import type { ContentType, Profile } from '../services/api'
 import type { DescribedFile } from '../services/native'
 
@@ -30,11 +32,10 @@ export const audioQueue = reactive<{ jobs: AudioJob[]; activeId: string | null }
 })
 
 export function addAudioJob(job: AudioJob): AudioJob {
-  audioQueue.jobs.push(job)
   audioQueue.activeId = job.id
-  // Read it back out: reactive() proxies on the way in, and callers that keep
-  // the object they passed would be mutating a copy nothing is watching.
-  return audioQueue.jobs[audioQueue.jobs.length - 1]
+  // pushReactive: callers mutate what comes back (status, progress), and the
+  // raw object they handed in is not what anything is watching.
+  return pushReactive(audioQueue.jobs, job)
 }
 
 export function removeAudioJob(id: string): void {

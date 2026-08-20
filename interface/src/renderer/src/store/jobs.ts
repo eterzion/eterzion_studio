@@ -16,6 +16,7 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
+import { pushReactive } from './reactiveInsert'
 import { i18n } from '../i18n'
 
 // A store has no component instance, so useI18n() does not apply here.
@@ -236,15 +237,10 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       createdAt: Date.now(),
       thumbnail
     }
-    queueState.jobs.push(job)
-    // Read the entry back out: queueState is reactive(), so what the array
-    // holds is Vue's proxy while `job` is still the raw object underneath.
-    // Writing to the raw object updates the value but never runs the proxy's
-    // set trap, so no watcher and no render effect ever learns it changed —
-    // the field sat on "Detectando…" until an unrelated edit forced a
-    // re-render, which is exactly how this was spotted. AudioView already
-    // carried this fix and the comment explaining it; the image queue did not.
-    const stored = queueState.jobs[queueState.jobs.length - 1]
+    // pushReactive, not push: the array holds Vue's proxy and `job` is the raw
+    // object underneath, so the detection callback below has to write through
+    // the proxy or nothing re-renders. See store/reactiveInsert.ts.
+    const stored = pushReactive(queueState.jobs, job)
     added.push(stored)
 
     // FR-096: detect automatically, but leave it fully editable — a failed

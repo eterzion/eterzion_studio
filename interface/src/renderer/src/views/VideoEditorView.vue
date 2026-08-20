@@ -13,6 +13,7 @@ import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
 import VideoTrimHandles from '../components/video/VideoTrimHandles.vue'
 import VideoExportPanel from '../components/video/VideoExportPanel.vue'
 import { usePickFiles } from '../composables/usePickFiles'
+import { setReactive } from '../store/reactiveInsert'
 import {
   useVideoEdits,
   type VideoAdjustments,
@@ -79,15 +80,9 @@ function enhanceFor(handleId: string): EnhanceSettings {
       profile: 'balanced',
       device: 'auto'
     }
-    enhanceByHandle.set(handleId, settings)
-    // Read it back out, do not return what was just put in. enhanceByHandle is
-    // reactive(), so the Map hands back Vue's proxy while `settings` is still
-    // the raw object underneath — and setEnhance() writes through this return
-    // value. Writing to the raw object updates it but never runs the proxy's
-    // set trap, so nothing re-renders: the scale changed underneath while the
-    // tabs kept showing the old one. Third time this exact shape has bitten
-    // this codebase; see store/jobs.ts and AudioView for the other two.
-    return enhanceByHandle.get(handleId) as EnhanceSettings
+    // setReactive: setEnhance() writes through this return value, and the raw
+    // object is not what the template watches. See store/reactiveInsert.ts.
+    return setReactive(enhanceByHandle, handleId, settings)
   }
   return settings
 }
