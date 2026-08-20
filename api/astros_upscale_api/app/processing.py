@@ -213,6 +213,70 @@ class Upscaler:
         h = max(1.0, strength / 100 * cls._DENOISE_MAX_H)
         return cv2.fastNlMeansDenoisingColored(img, None, h=h, hColor=h, templateWindowSize=7, searchWindowSize=21)
 
+    @staticmethod
+    def _suppress_invented_chroma(result, source, soft: int = 6, hard: int = 14):
+        """Take the colour back out of pixels that had none to begin with.
+
+        Measured on 2xHFA2kSPAN (the anime/illustration model): 73% of the
+        originally-neutral pixels of a 32x32 UI icon came out coloured, with
+        chroma up to 171 — the pink and green blotches that show up in white
+        areas of flat art. The same model leaves a smooth grey ramp almost
+        alone (1.45%), so this is not general colour drift: it invents chroma
+        at hard edges, which is what icons and line art are made of. Anime
+        training material comes from 4:2:0 video, where hard edges really do
+        carry colour fringing, so the model reproduces what it was shown.
+
+        A grey pixel turning pink is invention, not recovered detail, and no
+        one asked for it. So the luminance the model produced is kept — that is
+        the actual upscaling work — and only the chroma is pulled back where
+        the source had none.
+
+        The two thresholds avoid trading one artefact for another: forcing a
+        hard boundary between corrected and untouched pixels would draw a new
+        edge of its own. Below `soft` the source is neutral and the correction
+        is full; above `hard` it had real colour and is left alone; in between
+        the correction fades.
+
+        Deliberately not a general desaturation: a pixel with colour in the
+        source keeps every bit of what the model did with it.
+        """
+        if result.dtype != np.uint8 or result.ndim != 3 or result.shape[2] != 3:
+            return result  # 16-bit and RGBA/greyscale go through untouched
+        if source.ndim != 3 or source.shape[2] != 3:
+            return result
+
+        # Chroma is measured on the SOURCE, at source resolution: an upscaled
+        # copy is several times the pixels for an answer that is identical per
+        # source pixel. On a 1024x1024 input that is 4x less work.
+        source_chroma = (
+            source.max(axis=2).astype(np.int16) - source.min(axis=2).astype(np.int16)
+        )
+        affected = source_chroma < hard
+        if not affected.any():
+            return result  # nothing neutral enough to correct — the usual case for photos
+
+        if (source.shape[0], source.shape[1]) != (result.shape[0], result.shape[1]):
+            source_chroma = cv2.resize(
+                source_chroma, (result.shape[1], result.shape[0]),
+                interpolation=cv2.INTER_NEAREST,
+            )
+            affected = source_chroma < hard
+
+        # Only the affected pixels are converted and blended. Photographs
+        # barely touch this path; flat art, where the artefact lives, is also
+        # where the mask is dense — and even then it is one pass over a subset.
+        rows, cols = np.nonzero(affected)
+        picked = result[rows, cols].astype(np.float32)
+        grey = picked @ np.array([0.114, 0.587, 0.299], np.float32)  # BGR luma
+        weight = np.clip(
+            (hard - source_chroma[rows, cols]) / float(hard - soft), 0.0, 1.0
+        ).astype(np.float32)[:, None]
+
+        blended = picked * (1.0 - weight) + grey[:, None] * weight
+        result = result.copy()
+        result[rows, cols] = np.clip(blended, 0, 255).astype(np.uint8)
+        return result
+
     def process(
         self,
         image_path: str,
@@ -255,6 +319,10 @@ class Upscaler:
 
         if target_w and target_h and (result.shape[1], result.shape[0]) != (target_w, target_h):
             result = cv2.resize(result, (int(target_w), int(target_h)), interpolation=cv2.INTER_LANCZOS4)
+
+        # Before the optional filters, so that sharpening cannot go on to
+        # emphasise colour the model invented.
+        result = self._suppress_invented_chroma(result, img)
 
         if face_recovery:
             # YuNet detection + local enhancement only operates on plain 3-channel 8-bit

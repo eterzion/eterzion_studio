@@ -99,8 +99,13 @@ class TestProcessRealInference:
         threshold — exercises the real tiling/merging logic (not just the
         single-pass path every other test here takes) without the minutes a
         genuinely >1600px CPU pass would cost."""
-        monkeypatch.setattr(Upscaler, '_TILE_THRESHOLD', 8)
-        monkeypatch.setattr(Upscaler, '_TILE_SIZE', 16)
+        # Instance attributes, not class ones: __init__ resolves the class-level
+        # _FALLBACK_* into self._tile_threshold/_tile_size, and process() reads
+        # those. Patching the class left the already-built upscaler untouched —
+        # and the constants were renamed to _FALLBACK_* since, so the patch was
+        # setting an attribute nothing had ever read.
+        monkeypatch.setattr(real_upscaler, '_tile_threshold', 8)
+        monkeypatch.setattr(real_upscaler, '_tile_size', 16)
         progress_values = []
         result = real_upscaler.process(
             tiny_image_path, scale=2, custom_size=None,
