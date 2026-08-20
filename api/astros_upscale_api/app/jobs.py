@@ -889,7 +889,17 @@ async def _process_job(job_id: str) -> None:
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
 
-        if job.get('media_type') == 'image' and params.get('scale') == '1x':
+        from app import licensing
+
+        # pixel_art resolves no model at any scale — see
+        # licensing.MODEL_FREE_CONTENT_TYPES for the measurements behind that.
+        model_free_content = (
+            job.get('content_type_detected') in licensing.MODEL_FREE_CONTENT_TYPES
+            or params.get('content_type_override') in licensing.MODEL_FREE_CONTENT_TYPES
+        )
+        if job.get('media_type') == 'image' and (
+            params.get('scale') == '1x' or model_free_content
+        ):
             # Imagem screen's Original mode: keep or reduce the size, run the
             # filters, never the model. No engine is resolved and the isolated
             # worker is not involved — that subprocess exists to contain model

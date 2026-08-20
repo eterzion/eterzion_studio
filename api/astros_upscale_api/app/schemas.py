@@ -13,7 +13,9 @@ ConflictMode = Literal['overwrite', 'rename', 'ask']
 MediaType = Literal['image', 'video', 'audio']
 Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
-ContentType = Literal['photo', 'anime_image', 'real_video', 'anime_video', 'speech', 'music']
+ContentType = Literal[
+    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
+]
 InstallState = Literal['not_installed', 'installing', 'installed', 'update_available']
 LicenseState = Literal[
     'active', 'offline_tolerance', 'offline_expiring', 'blocked', 'not_activated', 'not_configured'

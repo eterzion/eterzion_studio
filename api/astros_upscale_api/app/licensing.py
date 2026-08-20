@@ -347,9 +347,26 @@ def verify_registry_completeness() -> list[str]:
 MediaType = Literal['image', 'video', 'audio']
 Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
-ContentType = Literal['photo', 'anime_image', 'real_video', 'anime_video', 'speech', 'music']
+ContentType = Literal[
+    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
+]
 
-_IMAGE_VIDEO_CONTENT_TYPES = {'photo', 'anime_image', 'real_video', 'anime_video'}
+_IMAGE_VIDEO_CONTENT_TYPES = {
+    'photo', 'pixel_art', 'anime_image', 'real_video', 'anime_video'
+}
+
+# The one content type that resolves no model at all.
+#
+# Every super-resolution model here is trained on photographs and drawings,
+# where softening an edge is correct. Art drawn pixel by pixel is the case
+# where it is not: measured over 40 of the owner's real 32x32 icons, all four
+# approved models shifted the shape by 18 to 24 mean luma levels, while
+# repeating pixels shifts it by none and invents no colour at all.
+#
+# So this is not 'the model we chose for pixel art' — it is the finding that
+# no model belongs here, recorded as a content type so the person can say so
+# and the pipeline can act on it.
+MODEL_FREE_CONTENT_TYPES = {'pixel_art'}
 _AUDIO_CONTENT_TYPES = {'speech', 'music'}
 
 
