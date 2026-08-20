@@ -384,9 +384,13 @@ const resultSize = computed(() => {
   cursor: not-allowed;
 }
 
+/* Grid with two equal columns, the same the Imagem screen uses. With flex and
+   no basis on the children each stepper shrank to its content, and the value
+   field inside NumberStepper is `width: 0; flex: 1` by design — so it
+   collapsed and the number disappeared between the − and + buttons. */
 .steppers-row {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
 }
 
