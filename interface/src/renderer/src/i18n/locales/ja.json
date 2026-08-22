@@ -47,6 +47,21 @@
     "speechLabel": "音声・ナレーション",
     "unsupportedFormat": "未対応の形式: {name}"
   },
+  "compression": {
+    "comingSoon": "{media}の圧縮は次の段階で追加されます。",
+    "media": {
+      "image": "画像",
+      "video": "動画",
+      "audio": "音声",
+      "animation": "GIF / アニメーション"
+    },
+    "mode": {
+      "basic": "基本",
+      "advanced": "詳細"
+    },
+    "subtitle": "品質を自分で決めながらファイルを小さくします",
+    "title": "圧縮"
+  },
   "contentType": {
     "anime_image": "アニメ・イラスト",
     "anime_video": "アニメ映像",
@@ -288,12 +303,13 @@
     "selectCompleted": "書き出す完了済みの画像を選んでください:"
   },
   "nav": {
+    "audio": "音声",
+    "compression": "圧縮",
+    "history": "履歴",
     "home": "ホーム",
     "image": "画像",
-    "video": "動画",
-    "audio": "音声",
-    "history": "履歴",
-    "settings": "設定"
+    "settings": "設定",
+    "video": "動画"
   },
   "processing": {
     "device": {

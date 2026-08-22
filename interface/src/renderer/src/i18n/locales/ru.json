@@ -47,6 +47,21 @@
     "speechLabel": "Речь / голос",
     "unsupportedFormat": "Неподдерживаемый формат: {name}"
   },
+  "compression": {
+    "comingSoon": "Сжатие «{media}» появится на следующих этапах.",
+    "media": {
+      "image": "Изображение",
+      "video": "Видео",
+      "audio": "Аудио",
+      "animation": "GIF / Анимация"
+    },
+    "mode": {
+      "basic": "Базовый",
+      "advanced": "Расширенный"
+    },
+    "subtitle": "Уменьшайте файлы, сохраняя контроль над качеством",
+    "title": "Сжатие"
+  },
   "contentType": {
     "anime_image": "Аниме/иллюстрация",
     "anime_video": "Аниме-видео",
@@ -288,12 +303,13 @@
     "selectCompleted": "Выберите, какие готовые изображения экспортировать:"
   },
   "nav": {
+    "audio": "Аудио",
+    "compression": "Сжатие",
+    "history": "История",
     "home": "Главная",
     "image": "Изображение",
-    "video": "Видео",
-    "audio": "Аудио",
-    "history": "История",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "video": "Видео"
   },
   "processing": {
     "device": {

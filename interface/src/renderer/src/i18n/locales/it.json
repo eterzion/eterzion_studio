@@ -47,6 +47,21 @@
     "speechLabel": "Parlato / voce",
     "unsupportedFormat": "Formato non supportato: {name}"
   },
+  "compression": {
+    "comingSoon": "La compressione di {media} arriva nelle prossime fasi.",
+    "media": {
+      "image": "Immagine",
+      "video": "Video",
+      "audio": "Audio",
+      "animation": "GIF / Animazione"
+    },
+    "mode": {
+      "basic": "Base",
+      "advanced": "Avanzato"
+    },
+    "subtitle": "Riduci i file mantenendo il controllo sulla qualità",
+    "title": "Compressione"
+  },
   "contentType": {
     "anime_image": "Anime/Illustrazione",
     "anime_video": "Video anime",
@@ -288,12 +303,13 @@
     "selectCompleted": "Scegli quali immagini completate esportare:"
   },
   "nav": {
+    "audio": "Audio",
+    "compression": "Compressione",
+    "history": "Cronologia",
     "home": "Home",
     "image": "Immagine",
-    "video": "Video",
-    "audio": "Audio",
-    "history": "Cronologia",
-    "settings": "Impostazioni"
+    "settings": "Impostazioni",
+    "video": "Video"
   },
   "processing": {
     "device": {

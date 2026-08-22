@@ -13,18 +13,19 @@ história n. Toda tarefa tem resultado verificável.
 
 ## Fase 1 — Setup
 
-- [ ] T001 Criar `api/astros_upscale_api/app/compression/__init__.py` como fachada vazia, e
+- [X] T001 Criar `api/astros_upscale_api/app/compression/__init__.py` como fachada vazia, e
       confirmar que `pytest` continua verde — o esqueleto não pode quebrar nada
-- [ ] T002 [P] Criar `interface/src/renderer/src/constants/compression.ts` com os tipos de mídia e
+- [X] T002 [P] Criar `interface/src/renderer/src/constants/compression.ts` com os tipos de mídia e
       os modos, sem valores ainda
-- [ ] T003 [P] Registrar o acento laranja do módulo em `theme.css` (`[data-module='compression']`),
+- [X] T003 [P] Registrar o acento laranja do módulo em `theme.css` (`[data-module='compression']`),
       seguindo o mecanismo que image/video/audio já usam
-- [ ] T004 [P] Acrescentar a entrada "Compressão" em `AppSidebar.vue` e a rota correspondente, com
+- [X] T004 [P] Acrescentar a entrada "Compressão" em `AppSidebar.vue` e a rota correspondente, com
       a chave `nav.compression` nos 11 locales
-- [ ] T005 Escrever o teste de paridade de chaves rodando (já existe) e confirmar que os 11
+- [X] T005 Escrever o teste de paridade de chaves rodando (já existe) e confirmar que os 11
       locales continuam iguais depois da T004
 
-**Checkpoint**: a aba aparece, é laranja, abre uma tela vazia, e nada mais mudou.
+**Checkpoint**: ✅ **cumprido em 2026-08-21.** A aba aparece, é laranja, abre a tela com as quatro
+abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typecheck zerados.
 
 ---
 

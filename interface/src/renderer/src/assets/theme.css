@@ -74,6 +74,7 @@
   --accent-image: #1688ff;
   --accent-video: #bd24ff;
   --accent-audio: #1ee07a;
+  --accent-compression: #ff7a18;
 }
 
 :root[data-theme='dark'] {
@@ -105,6 +106,11 @@
   --color-primary-hover: color-mix(in srgb, var(--accent-audio) 82%, #000);
   --color-primary-soft: color-mix(in srgb, var(--accent-audio) 14%, transparent);
 }
+[data-module='compression'] {
+  --color-primary: var(--accent-compression);
+  --color-primary-hover: color-mix(in srgb, var(--accent-compression) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-compression) 14%, transparent);
+}
 
 /* Tailwind's theme aliases (styles/tailwind.css `@theme`) are declared once on
    :root as `--color-accent: var(--color-primary)`. A var() inside a custom
@@ -133,6 +139,11 @@
 }
 :root[data-theme='light'] [data-module='audio'] {
   --color-primary: color-mix(in srgb, var(--accent-audio) 56%, #000);
+}
+/* O laranja é o mais claro dos quatro acentos e precisa escurecer mais que os
+   outros para manter contraste sobre o fundo claro. */
+:root[data-theme='light'] [data-module='compression'] {
+  --color-primary: color-mix(in srgb, var(--accent-compression) 70%, #000);
 }
 
 :root {

@@ -47,6 +47,21 @@
     "speechLabel": "음성 / 목소리",
     "unsupportedFormat": "지원하지 않는 형식: {name}"
   },
+  "compression": {
+    "comingSoon": "{media} 압축은 다음 단계에서 추가됩니다.",
+    "media": {
+      "image": "이미지",
+      "video": "동영상",
+      "audio": "오디오",
+      "animation": "GIF / 애니메이션"
+    },
+    "mode": {
+      "basic": "기본",
+      "advanced": "고급"
+    },
+    "subtitle": "품질을 직접 조절하면서 파일 크기를 줄입니다",
+    "title": "압축"
+  },
   "contentType": {
     "anime_image": "애니메이션/일러스트",
     "anime_video": "애니메이션 영상",
@@ -288,12 +303,13 @@
     "selectCompleted": "내보낼 완료된 이미지를 선택하세요:"
   },
   "nav": {
+    "audio": "오디오",
+    "compression": "압축",
+    "history": "기록",
     "home": "홈",
     "image": "이미지",
-    "video": "동영상",
-    "audio": "오디오",
-    "history": "기록",
-    "settings": "설정"
+    "settings": "설정",
+    "video": "동영상"
   },
   "processing": {
     "device": {

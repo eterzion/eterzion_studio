@@ -10,6 +10,7 @@ import {
   Image,
   Film,
   Music,
+  Minimize2,
   History,
   Settings,
   Moon,
@@ -51,6 +52,7 @@ const items = computed<{ key: NavKey; label: string; icon: unknown; module?: str
   { key: 'imagem', label: t('nav.image'), icon: Image, module: 'image' },
   { key: 'video', label: t('nav.video'), icon: Film, module: 'video' },
   { key: 'audio', label: t('nav.audio'), icon: Music, module: 'audio' },
+  { key: 'compressao', label: t('nav.compression'), icon: Minimize2, module: 'compression' },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
 

@@ -12,6 +12,7 @@ import SettingsView from './views/SettingsView.vue'
 import VideoEditorView from './views/VideoEditorView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
+import CompressionView from './views/CompressionView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
@@ -89,6 +90,7 @@ const { t } = useI18n()
         <SettingsView v-else-if="active === 'configuracoes'" />
         <VideoEditorView v-else-if="active === 'video'" @back="active = 'home'" />
         <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
+        <CompressionView v-else-if="active === 'compressao'" @back="active = 'home'" />
         <div v-else class="placeholder-view">
           <p>{{ t('app.notImplemented') }}</p>
         </div>

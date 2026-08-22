@@ -3,4 +3,11 @@
 // here reaches the view switch without adding a nav item (FR-032 — the editor
 // coexists with the batch flow, it does not replace or outrank it).
 export type NavKey =
-  'home' | 'imagem' | 'video' | 'video-editor' | 'audio' | 'historico' | 'configuracoes'
+  | 'home'
+  | 'imagem'
+  | 'video'
+  | 'video-editor'
+  | 'audio'
+  | 'compressao'
+  | 'historico'
+  | 'configuracoes'
