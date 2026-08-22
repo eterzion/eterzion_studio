@@ -538,3 +538,40 @@ class CompressionEstimateResponse(BaseModel):
     assumptions: list[str]
     feasibility: Feasibility
     resolved_settings: dict[str, Any] | None = None
+
+
+PresetOrigin = Literal['builtin', 'platform', 'user']
+
+
+class CompressionPreset(BaseModel):
+    """`name_key` para os internos (traduzível) e `name` literal para os do
+    usuário — a pessoa escolheu aquela palavra e ela não se traduz."""
+    model_config = ConfigDict(extra='forbid')
+
+    id: str
+    media_kind: MediaKind
+    origin: PresetOrigin
+    settings: dict[str, Any]
+    name: str | None = None
+    name_key: str | None = None
+
+
+class CompressionPresetsResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    presets: list[CompressionPreset]
+
+
+class CompressionPresetCreateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    name: str = Field(min_length=1, max_length=80)
+    media_kind: MediaKind
+    settings: dict[str, Any] = Field(default_factory=dict)
+
+
+class CompressionPresetUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    settings: dict[str, Any] | None = None

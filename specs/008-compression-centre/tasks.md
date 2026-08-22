@@ -74,12 +74,12 @@ abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typ
 
 ### Presets
 
-- [ ] T018 Escrever `app/compression/presets.py`: internos e de plataforma da config, do usuário em
+- [X] T018 Escrever `app/compression/presets.py`: internos e de plataforma da config, do usuário em
       armazenamento local
-- [ ] T019 [P] Escrever `test_compression_presets.py`: preset de um tipo de mídia não é oferecido
+- [X] T019 [P] Escrever `test_compression_presets.py`: preset de um tipo de mídia não é oferecido
       para outro (FR-014); `builtin`/`platform` são somente leitura (409 `readonly_preset`);
       `settings` incompatível com `media_kind` é 422
-- [ ] T020 `GET/POST/PATCH/DELETE /compression/presets`
+- [X] T020 `GET/POST/PATCH/DELETE /compression/presets`
 
 ### Job e ciclo de vida
 

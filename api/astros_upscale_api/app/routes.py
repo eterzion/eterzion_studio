@@ -24,11 +24,14 @@ from pydantic import BaseModel, Field
 from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
 from app.compression import capabilities as compression_capabilities
 from app.compression import estimator as compression_estimator
+from app.compression import presets as compression_presets
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
                          CompressionCapabilitiesResponse, CompressionEstimateRequest,
-                         CompressionEstimateResponse, DetectContentTypeRequest,
+                         CompressionEstimateResponse, CompressionPreset,
+                         CompressionPresetCreateRequest, CompressionPresetsResponse,
+                         CompressionPresetUpdateRequest, DetectContentTypeRequest,
                          ExportFormat, ExportRequest,
                          ImageExportOptionsResponse, ImageFormatAvailability,
                          LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
@@ -877,6 +880,62 @@ def estimate_compression(payload: CompressionEstimateRequest) -> CompressionEsti
     resultado = compression_estimator.estimate_for_kind(
         payload.media_kind, source, info, payload.settings, alvo_bytes)
     return CompressionEstimateResponse(**resultado.as_dict())
+
+
+def _preset_error_status(reason: str) -> int:
+    return {'not_found': 404, 'readonly_preset': 409}.get(reason, 422)
+
+
+@compression_router.get('/presets', response_model=CompressionPresetsResponse)
+def list_compression_presets(media_kind: str | None = None) -> CompressionPresetsResponse:
+    """Internos, de plataforma e do usuário — filtrados por tipo de mídia quando
+    pedido, porque um preset pertence a um só (FR-014)."""
+    return CompressionPresetsResponse(
+        presets=[CompressionPreset(**p) for p in compression_presets.all_presets(media_kind)])
+
+
+@compression_router.post('/presets', response_model=CompressionPreset, status_code=201)
+def create_compression_preset(payload: CompressionPresetCreateRequest) -> CompressionPreset:
+    try:
+        criado = compression_presets.create(payload.name, payload.media_kind, payload.settings)
+    except compression_presets.PresetError as error:
+        raise HTTPException(_preset_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return CompressionPreset(**criado)
+
+
+@compression_router.patch('/presets/{preset_id}', response_model=CompressionPreset)
+def update_compression_preset(preset_id: str,
+                              payload: CompressionPresetUpdateRequest) -> CompressionPreset:
+    """Só `origin: user` aceita escrita. Um interno responde 409 em vez de
+    aceitar e ignorar — aceitar seria prometer uma alteração que não acontece."""
+    try:
+        atualizado = compression_presets.update(preset_id, name=payload.name,
+                                                settings=payload.settings)
+    except compression_presets.PresetError as error:
+        raise HTTPException(_preset_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return CompressionPreset(**atualizado)
+
+
+@compression_router.delete('/presets/{preset_id}', status_code=204)
+def delete_compression_preset(preset_id: str) -> None:
+    try:
+        compression_presets.delete(preset_id)
+    except compression_presets.PresetError as error:
+        raise HTTPException(_preset_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+
+
+@compression_router.post('/presets/{preset_id}/duplicate',
+                         response_model=CompressionPreset, status_code=201)
+def duplicate_compression_preset(preset_id: str, name: str) -> CompressionPreset:
+    try:
+        copia = compression_presets.duplicate(preset_id, name)
+    except compression_presets.PresetError as error:
+        raise HTTPException(_preset_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return CompressionPreset(**copia)
 
 
 image_router = APIRouter()

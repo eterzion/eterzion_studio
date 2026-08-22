@@ -16,7 +16,7 @@ Uma combinação só chega à interface quando passa nas duas.
 """
 from __future__ import annotations
 
-from typing import NamedTuple
+from typing import Any, NamedTuple
 
 # ------------------------------- vídeo ------------------------------- #
 
@@ -155,3 +155,66 @@ def video_bitrate_floor(height: int) -> int:
         if height >= limite:
             return VIDEO_BITRATE_FLOOR_BPS[limite]
     return VIDEO_BITRATE_FLOOR_BPS[0]
+
+
+# ------------------------------- presets ------------------------------- #
+
+# Os seis presets internos, por tipo de mídia. Valores aqui e em nenhum outro
+# lugar (FR-012): um preset "Balanceado" definido na interface e outro no
+# backend divergem no dia em que só um é ajustado, e a divergência não falha —
+# produz um resultado levemente diferente do prometido.
+#
+# O nome é chave de i18n, não texto: `compression.preset.<id>` (Princípio XIV).
+BUILTIN_PRESETS: dict[str, dict[str, dict[str, Any]]] = {
+    'image': {
+        'max_quality': {'quality': 98, 'lossless': False},
+        'high_quality': {'quality': 90, 'lossless': False},
+        'balanced': {'quality': 80, 'lossless': False},
+        'small_file': {'quality': 65, 'lossless': False},
+        'max_compression': {'quality': 45, 'lossless': False},
+    },
+    'video': {
+        'max_quality': {'crf': 18, 'encoding_preset': 'slow'},
+        'high_quality': {'crf': 22, 'encoding_preset': 'medium'},
+        'balanced': {'crf': 26, 'encoding_preset': 'medium'},
+        'small_file': {'crf': 32, 'encoding_preset': 'fast'},
+        'max_compression': {'crf': 38, 'encoding_preset': 'veryfast'},
+    },
+    'audio': {
+        'max_quality': {'bitrate_bps': 320_000},
+        'high_quality': {'bitrate_bps': 256_000},
+        'balanced': {'bitrate_bps': 192_000},
+        'small_file': {'bitrate_bps': 128_000},
+        'max_compression': {'bitrate_bps': 96_000},
+    },
+    'animation': {
+        'max_quality': {'max_colors': 256, 'dither': 'sierra2_4a'},
+        'high_quality': {'max_colors': 192, 'dither': 'sierra2_4a'},
+        'balanced': {'max_colors': 128, 'dither': 'bayer'},
+        'small_file': {'max_colors': 64, 'dither': 'bayer'},
+        'max_compression': {'max_colors': 32, 'dither': 'none'},
+    },
+}
+
+# `custom` não está acima porque não tem valores: ele **é** o que a pessoa
+# ajustou. Listá-lo com números seria um sexto preset disfarçado.
+PRESET_IDS = ('max_quality', 'high_quality', 'balanced', 'small_file',
+              'max_compression', 'custom')
+
+DEFAULT_PRESET_ID = 'balanced'
+
+
+# Presets de plataforma (§64). Guardam limite de tamanho, não configuração —
+# o limite é o fato durável, e as configurações que o atingem dependem do
+# arquivo. Um preset "Discord" com bitrate fixo estaria errado para metade dos
+# vídeos; com o limite, o resolvedor de alvo acerta os dois casos.
+PLATFORM_PRESETS: dict[str, dict[str, Any]] = {
+    'discord': {'media_kinds': ('video', 'image', 'animation'),
+                'target_bytes': 10 * 1000 * 1000},
+    'whatsapp': {'media_kinds': ('video', 'image'), 'target_bytes': 16 * 1000 * 1000},
+    'telegram': {'media_kinds': ('video', 'image', 'animation'),
+                 'target_bytes': 50 * 1000 * 1000},
+    'email': {'media_kinds': ('image', 'video', 'audio', 'animation'),
+              'target_bytes': 20 * 1000 * 1000},
+    'web': {'media_kinds': ('image', 'animation'), 'target_bytes': 500 * 1000},
+}
