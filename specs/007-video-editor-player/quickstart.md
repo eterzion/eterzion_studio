@@ -195,35 +195,110 @@ aprovados.
 | 10 | Áudio | ✅ trilha removida na saída; `sem_audio.mp4` reporta `has_audio: false` |
 | 11 | Taxa de quadros variável | ✅ `frame_rate_is_variable: true` |
 | 12 | Cache invalidado por conteúdo | ✅ preview recusa com 409, chave de conteúdo muda |
+| 3 | Paridade preview × exportação | ⚠️ **medida** em 2026-08-21 (seção abaixo): cada ajuste isolado concorda; os cinco combinados divergem até 22 níveis |
 
 ### Não executados
-
-Os cinco dependem do diálogo nativo de arquivos ou de renderização por GPU, e
-nenhum dos dois existe fora da janela do Electron. Um navegador comum tem
-`hasNativeApi` falso, então a superfície cai no estado "não é possível exibir" —
-que é o comportamento correto do FR-011, e não evidência de reprodução.
 
 | # | Cenário | Por que não rodou |
 |---|---------|-------------------|
 | 1 | Reproduzir, pausar, navegar quadro a quadro | Exige importar arquivo pelo diálogo nativo |
-| 2 | Ajuste refletido no preview | Exige o shader rodando na GPU do renderer |
-| 3 | Paridade preview × exportação | Parcialmente coberto: `test_video_edits.py` mede a fórmula contra o FFmpeg real; falta a conferência visual |
+| 2 | Ajuste refletido no preview | Exige o shader rodando na janela do Electron |
 | 13 | Troca de idioma | Exige percorrer a interface |
 | 14 | Fluxo em lote intacto | Verificado por diff (só adições em `VideoView.vue`); falta a conferência na tela |
 
-### Medição do SC-002 — parcial
+Os quatro dependem do diálogo nativo de arquivos ou da janela do Electron. Um
+navegador comum tem `hasNativeApi` falso, então a superfície cai no estado "não
+é possível exibir" — que é o comportamento correto do FR-011, e não evidência de
+reprodução.
 
-O nível **sob demanda** do preview, medido em 1080p, 5 execuções por caso:
+---
+
+## Medição do SC-002 — completa (2026-08-21)
+
+### Nível sob demanda — 1080p, 5 execuções por caso
 
 | Caso | Mediana | Pior |
 |------|---------|------|
 | Quadro puro | 123 ms | 293 ms |
-| Ajustes (`eq`) | 122 ms | 127 ms |
+| Ajustes | 122 ms | 127 ms |
 | Redução de ruído | 132 ms | 134 ms |
 | Ruído + desfoque + granulação | 146 ms | 150 ms |
 
-Folgadamente dentro dos 2 s. Note que empilhar três efeitos custa 24 ms a mais
-que o quadro puro — o custo está em decodificar e escrever, não nos filtros.
+Folgadamente dentro dos 2 s. Empilhar três efeitos custa 24 ms a mais que o
+quadro puro — o custo está em decodificar e escrever, não nos filtros.
 
-O nível **interativo** (o shader) não está medido: roda na GPU do renderer e
-exige a janela do Electron. É metade do SC-002.
+### Nível interativo (o shader) — 1080p, 60 quadros
+
+Medido com os shaders **extraídos** de `useVideoPreviewPipeline.ts`, não
+transcritos, sobre um quadro 1920×1080 decodificado de VP9, com todos os
+parâmetros fora do neutro (no neutro o driver pode otimizar o shader para nada):
+
+| | |
+|---|---|
+| GPU | ANGLE / NVIDIA RTX 4060 / Direct3D11 |
+| Mediana | **0,100 ms** |
+| p95 | 0,200 ms |
+| Pior | 0,300 ms |
+| Só GPU (`EXT_disjoint_timer_query_webgl2`) | **0,073 ms** |
+
+**Teto do SC-002: 2000 ms. Passa com quatro ordens de grandeza de folga** — a
+30 fps o orçamento por quadro é 33 ms, e o shader usa 0,3% disso.
+
+Ressalva de método: medido no Chromium do painel de navegação, não dentro da
+janela do Electron. É a mesma pilha (Chromium + ANGLE + D3D11) e o mesmo shader,
+mas não é literalmente a janela do produto. Uma máquina, uma GPU.
+
+---
+
+## Cenário 3 — paridade preview × exportação, medida
+
+Em vez da conferência visual, o mesmo quadro passou pelos dois caminhos de
+produção — o shader WebGL e a cadeia que `build_filter_chain` monta — e os
+pixels foram comparados. Diferença em níveis de 0–255, por canal RGB:
+
+| Ajuste isolado | Média | p99 | Pior |
+|----------------|------:|----:|-----:|
+| Brilho 0,2 | 0,54 | 2 | 5 |
+| Contraste 1,35 | 0,72 | 3 | 5 |
+| Gama 1,4 | 1,14 | 3 | 6 |
+| Saturação 1,25 | 0,43 | 3 | 6 |
+| Matiz 25° | 0,84 | 3 | 6 |
+| **Os cinco juntos** | **5,68** | **22** | **22** |
+
+**Cada parâmetro sozinho concorda.** Todos ficam dentro da tolerância que o
+próprio projeto adotou (`abs=0.02` ≈ 5 níveis), com média em torno de 1.
+
+**Combinados, não.** A divergência salta para 5,68 de média e 22 de pior caso —
+maior que qualquer contribuição individual e maior que a soma delas. Isso não é
+ruído de quantização; é diferença de **composição**. A suspeita mais provável é
+o ponto de clamp: `lutyuv` grava numa tabela de 8 bits e satura cada plano
+*entre* os passos, enquanto o shader mantém tudo em float até o clamp final. Com
+brilho, contraste e gama empurrando a luma contra os limites e a saturação
+empurrando o croma, um satura antes do outro.
+
+**Isso é exatamente o que o FR-015 proíbe acontecer em silêncio, e continua em
+aberto.** Registrado, não corrigido.
+
+Duas coisas que não dá para afirmar daqui:
+- **Se o `eq` se comportava igual.** A build LGPL empacotada não tem `eq`, então
+  não há como medir o comportamento anterior nesta máquina. O teste de paridade
+  original só exercitava cinza com brilho e contraste — nunca croma, nunca
+  parâmetros combinados —, então também não teria pego isto.
+- **Se 22 níveis são visíveis** no material real do usuário. É 8,6% da faixa;
+  num gradiente liso, provavelmente sim.
+
+### Método, e por que ele foi refeito três vezes
+
+Cada passo abaixo mudou o resultado, e nenhum deles era defeito do produto —
+vale registrar para que a próxima medição não repita:
+
+1. **`readPixels` devolve de baixo para cima.** O flip de `v_uv` no shader
+   conserta a orientação na tela, não no buffer lido de volta. Comparar sem
+   inverter mede espelhamento: pior caso 255.
+2. **Quadro desalinhado.** O `<video>` busca por PTS, o `-ss` do ffmpeg por
+   keyframe. Com `testsrc2` em movimento, os dois lados comparavam quadros
+   diferentes: p99 saltava para ~150. Resolvido congelando a origem.
+3. **Bordas com croma subamostrado.** Em `yuv420p`, navegador e ffmpeg
+   reconstroem a subamostragem de formas diferentes; numa borda dura isso
+   sozinho dá dezenas de níveis. Origem lisa (gradiente) isola a fórmula do
+   formato.
