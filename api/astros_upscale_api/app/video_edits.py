@@ -38,7 +38,7 @@ from app.config import (
     VIDEO_REMUX_CEILINGS,
     VideoCeilings,
 )
-from astros_upscale.media import first_available_encoder, run_ffmpeg
+from astros_upscale.media import first_available_audio_encoder, first_available_encoder, run_ffmpeg
 
 
 class EditError(ValueError):
@@ -214,7 +214,11 @@ def resolve_encoder(container: str, profile: str, *, want_audio: bool = True) ->
     if video_encoder is None:
         raise EncoderUnavailable(container)
 
-    audio_encoder = first_available_encoder(spec.audio_encoders) if want_audio else None
+    # Probed as audio, not as video. `first_available_encoder` encodes a video
+    # frame to decide, so every name in `spec.audio_encoders` came back
+    # unavailable and this was always None — the allowlist decided nothing and
+    # ffmpeg's container default silently took over.
+    audio_encoder = first_available_audio_encoder(spec.audio_encoders) if want_audio else None
 
     return EncoderChoice(
         video_encoder=video_encoder,
@@ -311,22 +315,67 @@ def build_filter_chain(edits: dict[str, Any], source_width: int, source_height: 
 
 # Neutral values, from data-model.md. A parameter at its neutral value is
 # omitted from the graph rather than written as a no-op: a shorter graph is a
-# faster graph, and `eq=contrast=1` costs a pass for nothing.
+# faster graph, and a lut pass costs one for nothing.
 _EQ_NEUTRAL = {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0, 'gamma': 1.0}
 
 
+def _lut_luma(brightness: float, contrast: float, gamma: float) -> str:
+    """`eq`'s luma arithmetic, written as a lut expression.
+
+    Same formula as before, in stored-plane units (0..255) instead of the 0..1
+    the shader uses: contrast pivots about mid-grey, brightness is additive,
+    gamma applies last, and the clamp sits BEFORE the power — a negative base
+    with a fractional exponent is NaN, not a dark pixel.
+
+    The clamp after the power is left to the filter: lut writes into an 8-bit
+    table and clips to the component depth on its own.
+    """
+    inner = f'clip({_num(contrast)}*(val-127.5)+127.5+{_num(brightness * 255.0)},0,255)'
+    if gamma == 1.0:
+        return inner
+    return f'255*pow({inner}/255,{_num(1.0 / max(0.1, gamma))})'
+
+
+def _lut_chroma(saturation: float) -> str:
+    """`eq`'s saturation: the chroma planes scale about their 128 neutral."""
+    return f'clip((val-128)*{_num(saturation)}+128,0,255)'
+
+
 def _colour_filters(adjustments: dict[str, Any]) -> list[str]:
-    """The `eq` and `hue` filters. This is the FFmpeg side of the parity the
-    renderer's WebGL shader must reproduce (research.md Decisão 1) — the two
-    implement the same formula, and test_video_edits.py pins the mapping."""
+    """The colour side of the parity the renderer's WebGL shader must reproduce
+    (research.md Decisão 1) — the two implement the same formula, and
+    test_video_edits.py pins the mapping by rendering THIS chain.
+
+    Built on `lutyuv`, not on `eq`. `eq` is GPL and is simply absent from the
+    LGPL FFmpeg the installer ships (fetch-ffmpeg.mjs), so every adjustment died
+    with `No such filter: 'eq'` in the packaged app while working fine against a
+    developer's GPL binary — see docs/technical-debt/gpl-filters-in-video-edits.md.
+    `lutyuv` is LGPL, operates on the same stored YUV planes, and resolves to a
+    256-entry table per plane, so it is exact for 8-bit and cheaper than eq's
+    per-pixel arithmetic.
+
+    Expressions are single-quoted because they contain commas, which the
+    filtergraph parser would otherwise read as the end of the filter.
+    """
     filters = []
-    eq_parts = [
-        f'{name}={_num(adjustments[name])}'
-        for name, neutral in _EQ_NEUTRAL.items()
-        if adjustments.get(name) is not None and float(adjustments[name]) != neutral
-    ]
-    if eq_parts:
-        filters.append('eq=' + ':'.join(eq_parts))
+    brightness = float(adjustments.get('brightness') or _EQ_NEUTRAL['brightness'])
+    contrast = float(adjustments.get('contrast') if adjustments.get('contrast') is not None
+                     else _EQ_NEUTRAL['contrast'])
+    gamma = float(adjustments.get('gamma') if adjustments.get('gamma') is not None
+                  else _EQ_NEUTRAL['gamma'])
+    saturation = float(adjustments.get('saturation') if adjustments.get('saturation') is not None
+                       else _EQ_NEUTRAL['saturation'])
+
+    lut_parts = []
+    if (brightness, contrast, gamma) != (_EQ_NEUTRAL['brightness'], _EQ_NEUTRAL['contrast'],
+                                         _EQ_NEUTRAL['gamma']):
+        lut_parts.append(f"y='{_lut_luma(brightness, contrast, gamma)}'")
+    if saturation != _EQ_NEUTRAL['saturation']:
+        chroma = _lut_chroma(saturation)
+        lut_parts.append(f"u='{chroma}'")
+        lut_parts.append(f"v='{chroma}'")
+    if lut_parts:
+        filters.append('lutyuv=' + ':'.join(lut_parts))
 
     hue = adjustments.get('hue_degrees')
     if hue:
@@ -344,13 +393,23 @@ def _effect_filters(effects: dict[str, Any]) -> list[str]:
     FR-015's disclosure necessary, and why the on-demand preview exists."""
     filters = []
     if effects.get('denoise_enabled') and effects.get('denoise_strength'):
-        # hqdn3d's four parameters are luma/chroma spatial and temporal. Scaled
-        # from one 0-100 control so a person tunes one thing, not four.
+        # `fftdnoiz`, not `hqdn3d`: hqdn3d is GPL and absent from the LGPL
+        # FFmpeg the installer ships, so this effect never ran in the packaged
+        # app (docs/technical-debt/gpl-filters-in-video-edits.md).
+        #
+        # Chosen by measurement, per the Development Workflow, over every LGPL
+        # denoiser the shipped build actually has — 1080p, 30 frames, PSNR
+        # against a clean source (docs/benchmarks/video-denoise-filters.md):
+        #
+        #   fftdnoiz sigma=6   40.98 dB   40.6 fps   <- +6.7 dB for ~12% cost
+        #   nlmeans  s=3.0     43.19 dB    1.2 fps   <- +2.2 dB more, 34x slower
+        #   dctdnoiz/bm3d      ~35 dB     3-6 fps
+        #   removegrain/atadenoise ~34.6 dB (the no-denoise floor is 34.26)
+        #
+        # sigma maps 0-100 onto 0-12: 50 lands on 6, the measured peak, and 100
+        # on 12, where the measurement shows quality starting to fall again.
         strength = float(effects['denoise_strength']) / 100.0
-        filters.append(
-            f'hqdn3d={_num(4 * strength)}:{_num(3 * strength)}'
-            f':{_num(6 * strength)}:{_num(4.5 * strength)}'
-        )
+        filters.append(f'fftdnoiz=sigma={_num(12 * strength)}')
     if effects.get('blur_enabled') and effects.get('blur_strength'):
         filters.append(f'gblur=sigma={_num(float(effects["blur_strength"]) / 10.0)}')
     if effects.get('grain_enabled') and effects.get('grain_strength'):

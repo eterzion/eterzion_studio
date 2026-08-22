@@ -217,9 +217,12 @@ RotationDegrees = Literal[0, 90, 180, 270]
 
 
 class VideoAdjustments(BaseModel):
-    """FR-013a. Ranges mirror FFmpeg's `eq` filter, which is the source of truth
-    the renderer's preview shader reproduces (research.md Decisão 1). Changing a
-    bound here without changing the shader makes the preview lie."""
+    """FR-013a. Ranges mirror the colour formula the renderer's preview shader
+    reproduces (research.md Decisão 1) — originally FFmpeg's `eq` filter, now the
+    equivalent `lutyuv` expression that replaced it when `eq` proved to be GPL
+    and absent from the shipped build. The arithmetic did not change; the filter
+    did. Changing a bound here without changing the shader makes the preview
+    lie."""
     model_config = ConfigDict(extra='forbid')
 
     brightness: float = Field(default=0.0, ge=-1.0, le=1.0)  # additive, not multiplicative

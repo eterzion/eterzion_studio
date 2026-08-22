@@ -44,11 +44,41 @@ logger = logging.getLogger(__name__)
 # AV1 encoders (libsvtav1, librav1e) are not in this set — they're LGPL-safe.
 GPL_ENCODERS = frozenset({'libx264', 'libx264rgb', 'libx265', 'libxvid'})
 
+# Filters that are GPL for the same reason, and that the shipped LGPL binary
+# therefore does not contain at all: a graph naming one fails outright with
+# `No such filter`. This existed only as a comment next to the temporal filters
+# below until 2026-08-21, when the video-editor path was found to be using two
+# of them — a comment cannot be asserted against
+# (docs/technical-debt/gpl-filters-in-video-edits.md).
+#
+# Verified by running each against the LGPL build the installer fetches, not
+# read off documentation. The LGPL substitutes in use: `lutyuv` for eq,
+# `fftdnoiz` for hqdn3d, `atadenoise`/`deflicker` for temporal work.
+GPL_FILTERS = frozenset({
+    'eq', 'hqdn3d', 'owdenoise', 'smartblur', 'vaguedenoiser', 'geq', 'pp', 'pp7',
+    'spp', 'uspp', 'stereo3d', 'tinterlace', 'sab', 'boxblur', 'delogo',
+})
+
+
+def graph_has_gpl_filter(chain: 'Sequence[str]') -> str | None:
+    """The name of the first GPL filter in a filter chain, or None.
+
+    Takes the chain as the list of `name=args` entries the callers build, and
+    looks only at the name before the first `=` — an argument that happens to
+    contain the word `eq` is not a filter called eq.
+    """
+    for entry in chain:
+        name = entry.split('=', 1)[0].strip()
+        if name in GPL_FILTERS:
+            return name
+    return None
+
+
 _warned_this_process = False
 
 
-def _bundled_ffmpeg_path() -> str | None:
-    """Path to the ffmpeg binary electron-builder packages alongside the app.
+def _bundled_tool_path(tool: str) -> str | None:
+    """Path to one of the binaries electron-builder packages alongside the app.
 
     The Electron main process (interface/src/main/apiProcess.ts)
     sets ASTROS_FFMPEG_DIR to the extraResources 'ffmpeg' folder when a bundled
@@ -59,14 +89,27 @@ def _bundled_ffmpeg_path() -> str | None:
     bundled_dir = os.environ.get('ASTROS_FFMPEG_DIR')
     if not bundled_dir:
         return None
-    binary_name = 'ffmpeg.exe' if os.name == 'nt' else 'ffmpeg'
+    binary_name = f'{tool}.exe' if os.name == 'nt' else tool
     bundled_path = os.path.join(bundled_dir, binary_name)
     return bundled_path if os.path.isfile(bundled_path) else None
 
 
 def ffmpeg_path() -> str | None:
     """Return the ffmpeg binary to use: the bundled build if present, else PATH."""
-    return _bundled_ffmpeg_path() or shutil.which('ffmpeg')
+    return _bundled_tool_path('ffmpeg') or shutil.which('ffmpeg')
+
+
+def ffprobe_path() -> str | None:
+    """Return the ffprobe binary to use, resolved exactly like `ffmpeg_path()`.
+
+    This used to be a bare `shutil.which('ffprobe')`, which is PATH and nothing
+    else — while the packaged build deliberately excluded ffprobe.exe as "not
+    needed". On an end-user machine with no system FFmpeg, that combination made
+    every probe raise: duration, frame rate, resolution, audio-track presence,
+    variable-frame-rate detection — most of what video import asks. The bundle
+    now carries ffprobe, and this looks there first.
+    """
+    return _bundled_tool_path('ffprobe') or shutil.which('ffprobe')
 
 
 def has_ffmpeg() -> bool:
@@ -170,7 +213,7 @@ def encoder_works(name: str) -> bool:
 
 def first_available_encoder(candidates: 'Sequence[str]') -> str | None:
     """First candidate that actually works here, in the caller's preference
-    order.
+    order. **Video encoders only** — see `first_available_audio_encoder`.
 
     Rejects GPL encoders unconditionally, even when present and even when a
     caller asks for one: the developer machine's ffmpeg may well have libx264,
@@ -179,6 +222,43 @@ def first_available_encoder(candidates: 'Sequence[str]') -> str | None:
     than of each call site is the point — a caller cannot forget it.
     """
     return next((c for c in candidates if encoder_works(c)), None)
+
+
+@functools.lru_cache(maxsize=64)
+def audio_encoder_works(name: str) -> bool:
+    """Whether this AUDIO encoder can encode a frame here, right now.
+
+    `encoder_works()` cannot answer this. It probes by encoding a *video* frame
+    (`-c:v <name>`), so every audio encoder name handed to it comes back False —
+    which silently emptied the audio half of every container's allowlist. The
+    symptom was invisible: with no `-c:a`, ffmpeg quietly falls back to the
+    container's default encoder, so exports kept their audio and nothing looked
+    broken while the allowlist decided nothing at all.
+
+    Same shape as the video probe: encode one frame of silence to null.
+    """
+    if name in GPL_ENCODERS:
+        return False
+    if name not in available_encoders():
+        return False
+    ffmpeg_bin = ffmpeg_path()
+    if not ffmpeg_bin:
+        return False
+    try:
+        result = subprocess.run(
+            [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
+             '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo:d=0.1',
+             '-c:a', name, '-frames:a', '1', '-f', 'null', '-'],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
+def first_available_audio_encoder(candidates: 'Sequence[str]') -> str | None:
+    """`first_available_encoder`'s counterpart for audio, probed as audio."""
+    return next((c for c in candidates if audio_encoder_works(c)), None)
 
 
 def _warn_once_if_gpl_build() -> None:
@@ -224,7 +304,7 @@ def ffprobe_json(path: str) -> dict:
     """Runs `ffprobe -show_format -show_streams -show_chapters -of json` and
     returns the parsed result. Real subprocess call, no parsing of a
     synthetic/mocked shape."""
-    ffprobe_bin = shutil.which('ffprobe')
+    ffprobe_bin = ffprobe_path()
     if not ffprobe_bin:
         raise ProbeError('ffprobe não encontrado no sistema.')
     try:

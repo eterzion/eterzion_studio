@@ -867,8 +867,8 @@ def preview_video_frame(handle_id: str, payload: VideoPreviewFrameRequest):
     """One frame at a position, rendered through the real filter graph (FR-015,
     research.md Decisão 2).
 
-    This is the second preview tier: the renderer's shader reproduces eq and hue
-    exactly, but not denoise, blur, grain or unsharp. Rather than approximate
+    This is the second preview tier: the renderer's shader reproduces the colour
+    and hue passes exactly, but not denoise, blur, grain or unsharp. Rather than approximate
     those on the GPU — which would produce a convincing and wrong picture — the
     frame is rendered here by the same FFmpeg that will perform the export, and
     returned as a before/after pair.

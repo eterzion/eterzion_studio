@@ -25,7 +25,10 @@ FORBIDDEN = (
     'nvenc', 'qsv', 'amf', 'vaapi', 'videotoolbox',
     'libvpx', 'libaom', 'libsvtav1', 'librav1e',
     'x264', 'x265', 'libx264', 'libx265',
-    'hqdn3d', 'unsharp', 'gblur', 'transpose', 'ffmpeg',
+    # Filter names, including the two the graph switched to when `eq` and
+    # `hqdn3d` turned out to be GPL — a rename must not quietly drop a name
+    # from this list.
+    'hqdn3d', 'fftdnoiz', 'lutyuv', 'unsharp', 'gblur', 'transpose', 'ffmpeg',
 )
 
 

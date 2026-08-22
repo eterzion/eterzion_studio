@@ -12,8 +12,10 @@ import pytest
 from app.config import VIDEO_CONTAINER_ALLOWLIST
 from astros_upscale.media import (
     GPL_ENCODERS,
+    audio_encoder_works,
     available_encoders,
     encoder_works,
+    first_available_audio_encoder,
     first_available_encoder,
     has_ffmpeg,
 )
@@ -110,3 +112,40 @@ def test_gpl_encoder_is_refused_even_when_installed():
     if 'libx264' not in available_encoders():
         pytest.skip('libx264 não instalado nesta máquina')
     assert first_available_encoder(['libx264']) is None
+
+
+# ------------------------------- audio encoders ------------------------------- #
+#
+# The video probe encodes a video frame (`-c:v <name>`), so every audio encoder
+# name handed to it came back unavailable. `resolve_encoder()` used it for the
+# audio side too, which made `spec.audio_encoders` dead: the choice was always
+# None and ffmpeg's container default silently took over. Nothing looked broken —
+# exports kept their audio — so only a test that pins the DIFFERENCE between the
+# two probes catches it.
+
+
+@needs_ffmpeg
+def test_the_video_probe_cannot_answer_for_an_audio_encoder():
+    """`aac` is in every ffmpeg build, and it is not a video encoder. If this
+    ever starts returning True, the two probes have been merged and the audio
+    one is no longer doing its own job."""
+    assert 'aac' in available_encoders()
+    assert not encoder_works('aac')
+
+
+@needs_ffmpeg
+def test_the_audio_probe_does():
+    assert audio_encoder_works('aac')
+
+
+@needs_ffmpeg
+def test_every_container_has_a_usable_audio_encoder():
+    """Unlike the video side — where a machine with no hardware H.264 legitimately
+    cannot serve mp4 — the permitted audio encoders are software and ubiquitous.
+    A container with none working means the probe is broken, not the machine."""
+    for container, spec in VIDEO_CONTAINER_ALLOWLIST.items():
+        assert first_available_audio_encoder(spec.audio_encoders) is not None, container
+
+
+def test_audio_probe_returns_none_when_nothing_matches():
+    assert first_available_audio_encoder(['__nao_existe__']) is None

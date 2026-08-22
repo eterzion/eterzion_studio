@@ -120,7 +120,7 @@ def test_geometry_comes_before_colour():
     }
     chain = video_edits.build_filter_chain(edits, 1920, 1080)
     assert chain.index([c for c in chain if c.startswith('scale')][0]) < \
-        chain.index([c for c in chain if c.startswith('eq')][0])
+        chain.index([c for c in chain if c.startswith('lutyuv')][0])
 
 
 def test_odd_dimensions_are_rounded_to_even():
@@ -145,13 +145,35 @@ def test_unsupported_rotation_is_refused():
         video_edits.build_filter_chain({'transform': {'rotation_degrees': 45}}, 1920, 1080)
 
 
-def test_eq_maps_adjustments_by_name():
+def test_adjustments_become_one_lut_pass():
     """The FFmpeg half of the parity the renderer's shader must reproduce
     (research.md Decisão 1). If this mapping changes, the shader changes with
-    it or the preview starts lying."""
+    it or the preview starts lying.
+
+    Asserting on the shape, not on the exact expression text: the arithmetic is
+    pinned where it belongs, by rendering it and comparing against eqLuma()
+    below. Brightness, contrast, saturation and gamma collapse into a single
+    `lutyuv` — one table lookup instead of eq's per-pixel work."""
     edits = {'adjustments': {'brightness': 0.2, 'contrast': 1.3, 'saturation': 0.8, 'gamma': 1.1}}
     chain = video_edits.build_filter_chain(edits, 1920, 1080)
-    assert chain == ['eq=brightness=0.2:contrast=1.3:saturation=0.8:gamma=1.1']
+    assert len(chain) == 1
+    assert chain[0].startswith('lutyuv=')
+    # Luma carries brightness/contrast/gamma; both chroma planes carry saturation.
+    for plane in ('y=', 'u=', 'v='):
+        assert plane in chain[0]
+
+
+def test_a_neutral_adjustment_adds_no_pass():
+    """A no-op filter is a wasted pass over every frame."""
+    assert video_edits.build_filter_chain(
+        {'adjustments': {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0, 'gamma': 1.0}},
+        1920, 1080) == []
+
+
+def test_saturation_alone_leaves_luma_untouched():
+    edits = {'adjustments': {'saturation': 0.5}}
+    chain = video_edits.build_filter_chain(edits, 1920, 1080)
+    assert len(chain) == 1 and 'y=' not in chain[0] and 'u=' in chain[0]
 
 
 def test_non_finite_values_never_reach_the_graph():
@@ -167,7 +189,8 @@ def test_effects_are_separate_from_adjustments():
     disclosure exists — they must be distinguishable in the graph."""
     edits = {'effects': {'denoise_enabled': True, 'denoise_strength': 50}}
     chain = video_edits.build_filter_chain(edits, 1920, 1080)
-    assert len(chain) == 1 and chain[0].startswith('hqdn3d=')
+    # Mid-strength lands on the sigma the benchmark measured as the peak.
+    assert chain == ['fftdnoiz=sigma=6']
 
 
 # ---------------------------- encoder resolution ---------------------------- #
@@ -247,19 +270,23 @@ def test_export_produces_a_file_and_leaves_the_source_untouched(tmp_path):
 # than asserted in a comment.
 #
 # Comparing two copies of the same formula would prove nothing — both could be
-# wrong together. So this runs FFmpeg's real `eq` filter over a known colour and
-# checks the resulting pixel against the formula the shader implements
+# wrong together. So this runs the colour chain THIS MODULE BUILDS over a known
+# colour and checks the resulting pixel against the formula the shader implements
 # (interface/src/renderer/src/composables/useVideoPreviewPipeline.ts, eqLuma).
 # If FFmpeg's behaviour ever diverges from that formula, this fails and the
 # shader is the thing that must change.
+#
+# It used to hand-write `eq=...` here instead of calling `_colour_filters`. That
+# tested FFmpeg's eq filter, not the graph the product emits — so when eq turned
+# out to be GPL and missing from the shipped LGPL build, this test could not have
+# noticed. Rendering the real chain is what closes that gap.
 
 
 def _eq_luma(value: float, brightness: float = 0.0, contrast: float = 1.0, gamma: float = 1.0) -> float:
-    """libavfilter/vf_eq.c's luma path — the same arithmetic eqLuma() implements
-    in the renderer, transcribed here so the two can be compared against FFmpeg
-    rather than against each other.
+    """The luma arithmetic eqLuma() implements in the renderer, transcribed here
+    so the two can be compared against FFmpeg rather than against each other.
 
-    `value` is full-range luma in 0..1. The limited-range hop matters: eq
+    `value` is full-range luma in 0..1. The limited-range hop matters: the filter
     operates on the STORED plane, which video carries in 16..235, so applying it
     to full-range luma makes brightness land 255/219 too weak. The first version
     of this test omitted it and failed against real FFmpeg by exactly that
@@ -272,13 +299,16 @@ def _eq_luma(value: float, brightness: float = 0.0, contrast: float = 1.0, gamma
 
 
 def _render_gray_through_eq(tmp_path, level: float, **eq_params) -> float:
-    """Render one solid grey frame through `eq` and read back its luma."""
+    """Render one solid grey frame through the module's own colour chain and
+    read back its luma."""
     import subprocess
 
     from astros_upscale.media import ffmpeg_path
 
     value = int(round(level * 255))
-    graph = 'eq=' + ':'.join(f'{k}={v}' for k, v in eq_params.items())
+    # An all-neutral request builds no filter at all, and that case still has to
+    # come out at the value it went in — `null` keeps the graph shape identical.
+    graph = ','.join(video_edits._colour_filters(eq_params)) or 'null'
     output = tmp_path / 'out.png'
     subprocess.run(
         [ffmpeg_path() or 'ffmpeg', '-y', '-v', 'error',
@@ -311,6 +341,53 @@ def test_ffmpeg_eq_matches_the_formula_the_shader_implements(tmp_path, level, pa
     assert measured == pytest.approx(expected, abs=0.02), (
         f'FFmpeg produziu {measured:.4f}, a fórmula do shader prevê {expected:.4f}'
     )
+
+
+def test_no_adjustment_or_effect_emits_a_gpl_filter():
+    """`eq` and `hqdn3d` are GPL and are simply not in the LGPL binary the
+    installer ships, so a graph naming one dies with `No such filter` in the
+    packaged app while working on a developer's GPL build. That asymmetry hid
+    the defect for the whole of 007; the rule was a comment in media.py and a
+    comment cannot fail a build."""
+    from astros_upscale.media import graph_has_gpl_filter
+
+    every_control = {
+        'adjustments': {'brightness': 0.2, 'contrast': 1.4, 'saturation': 1.3, 'gamma': 1.6,
+                        'hue_degrees': 20, 'sharpness': 1.5},
+        'effects': {'denoise_enabled': True, 'denoise_strength': 60,
+                    'blur_enabled': True, 'blur_strength': 30,
+                    'grain_enabled': True, 'grain_strength': 20},
+        'transform': {'rotation': 90, 'flip_horizontal': True},
+    }
+    chain = video_edits.build_filter_chain(every_control, 1920, 1080)
+    offending = graph_has_gpl_filter(chain)
+    assert offending is None, f'filtro GPL na cadeia: {offending}'
+
+
+@needs_ffmpeg
+def test_the_whole_control_surface_runs_on_the_local_ffmpeg(tmp_path):
+    """Every filter the product can emit, in one graph, actually executed. A
+    name that does not exist here fails at graph-open time — which is exactly
+    how `eq` and `hqdn3d` would have been caught."""
+    import subprocess
+
+    from astros_upscale.media import ffmpeg_path
+
+    every_control = {
+        'adjustments': {'brightness': 0.2, 'contrast': 1.4, 'saturation': 1.3, 'gamma': 1.6,
+                        'hue_degrees': 20, 'sharpness': 1.5},
+        'effects': {'denoise_enabled': True, 'denoise_strength': 60,
+                    'blur_enabled': True, 'blur_strength': 30,
+                    'grain_enabled': True, 'grain_strength': 20},
+    }
+    graph = ','.join(video_edits.build_filter_chain(every_control, 64, 64))
+    result = subprocess.run(
+        [ffmpeg_path() or 'ffmpeg', '-y', '-v', 'error',
+         '-f', 'lavfi', '-i', 'testsrc2=s=64x64:d=0.1:rate=1',
+         '-vf', graph, '-frames:v', '1', '-f', 'null', '-'],
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, f'a cadeia não roda aqui: {result.stderr.strip()}'
 
 
 @needs_ffmpeg
