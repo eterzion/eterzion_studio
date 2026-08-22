@@ -419,3 +419,76 @@ class ImageExportOptionsResponse(BaseModel):
     model_config = ConfigDict(extra='forbid')
 
     formats: list[ImageFormatAvailability]
+
+# --- Central de Compressão (specs/008-compression-centre) ---
+
+MediaKind = Literal['image', 'video', 'audio', 'animation']
+
+# Motivo pelo qual algo não está disponível. **Chave, nunca frase e nunca nome
+# de biblioteca**: a interface traduz (Princípio XIV) e o Princípio V mantém
+# `nvenc`, `libx264` e afins fora do fio.
+UnavailableReason = Literal[
+    'no_encoder_available', 'requires_hardware_encoder', 'unsupported_build'
+]
+
+
+class CapabilityEntry(BaseModel):
+    """Uma opção e se esta máquina consegue produzi-la.
+
+    `requires_hardware` existe para a interface poder explicar por que H.264 está
+    indisponível **sem nomear encoder** — a diferença entre uma recusa acionável
+    e uma opaca.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    value: str
+    available: bool
+    unavailable_reason: UnavailableReason | None = None
+    requires_hardware: bool = False
+
+
+class HardwareCapability(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    available: bool
+    reason: Literal['no_working_hardware_encoder'] | None = None
+
+
+class ImageCapabilities(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    formats: list[CapabilityEntry]
+
+
+class VideoCapabilities(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    containers: list[CapabilityEntry]
+    video_codecs: list[CapabilityEntry]
+    audio_codecs: list[CapabilityEntry]
+    # Já filtrada pela sonda: a interface recebe só o que é permitido pelo
+    # container E presente na máquina, sem precisar conhecer as duas perguntas.
+    compatibility: dict[str, dict[str, list[str]]]
+    hardware: HardwareCapability
+
+
+class AudioCapabilities(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    formats: list[CapabilityEntry]
+    codecs: list[CapabilityEntry]
+
+
+class AnimationCapabilities(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    formats: list[CapabilityEntry]
+
+
+class CompressionCapabilitiesResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    image: ImageCapabilities
+    video: VideoCapabilities
+    audio: AudioCapabilities
+    animation: AnimationCapabilities

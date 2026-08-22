@@ -22,10 +22,12 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
+from app.compression import capabilities as compression_capabilities
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
-                         DetectContentTypeRequest, ExportFormat, ExportRequest,
+                         CompressionCapabilitiesResponse, DetectContentTypeRequest,
+                         ExportFormat, ExportRequest,
                          ImageExportOptionsResponse, ImageFormatAvailability,
                          LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
                          MediaHandleResponse, MediaRequest, VideoCeilingsResponse,
@@ -826,6 +828,22 @@ def get_video_export_options() -> VideoExportOptionsResponse:
         profiles=['fast', 'balanced', 'quality'],
         ceilings=VideoCeilingsResponse(**VIDEO_EDIT_CEILINGS._asdict()),
     )
+
+
+compression_router = APIRouter()
+
+
+@compression_router.get('/capabilities', response_model=CompressionCapabilitiesResponse)
+def get_compression_capabilities() -> CompressionCapabilitiesResponse:
+    """O que esta máquina consegue produzir, por tipo de mídia.
+
+    É a rota que torna FR-043 e FR-044 possíveis: a interface desabilita antes
+    de a pessoa escolher, em vez de falhar depois. `available` sempre vem de
+    sonda funcional — nesta máquina os três encoders H.264 de hardware estão
+    listados pelo binário e nenhum codifica um quadro, e uma verificação por
+    listagem ofereceria MP4/H.264 para morrer no meio da exportação.
+    """
+    return CompressionCapabilitiesResponse(**compression_capabilities.snapshot())
 
 
 image_router = APIRouter()

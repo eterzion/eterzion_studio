@@ -261,6 +261,50 @@ def first_available_audio_encoder(candidates: 'Sequence[str]') -> str | None:
     return next((c for c in candidates if audio_encoder_works(c)), None)
 
 
+# Filters that take more than one input, or produce more than one output, and
+# therefore cannot be probed with a bare `-vf <name>`. `paletteuse` needs the
+# frame AND the palette; `split` produces two streams for a filter_complex.
+#
+# This list exists because probing them the simple way reported them as ABSENT
+# on a build that runs them perfectly — a false negative that would have
+# disabled GIF compression entirely (research.md, Decisão 2). A capability probe
+# that lies in the direction of "unavailable" is not the safe failure it looks
+# like: it removes a feature the machine can do.
+_MULTI_ARITY_FILTER_GRAPHS: dict[str, str] = {
+    'paletteuse': 'split[a][b];[a]palettegen[p];[b][p]paletteuse',
+    'palettegen': 'palettegen',
+    'split': 'split[a][b];[a]null[x];[b]null[y];[x][y]hstack',
+}
+
+
+@functools.lru_cache(maxsize=64)
+def filter_works(name: str) -> bool:
+    """Whether this ffmpeg build can actually run `name`, right now.
+
+    Filters are where the LGPL build differs most from a developer's GPL one:
+    `eq` and `hqdn3d` are GPL and simply absent, and a graph naming one dies at
+    open time with `No such filter` (docs/technical-debt/gpl-filters-in-video-edits.md).
+
+    Multi-input and multi-output filters go through `filter_complex` with their
+    real arity — see the note above `_MULTI_ARITY_FILTER_GRAPHS`.
+    """
+    ffmpeg_bin = ffmpeg_path()
+    if not ffmpeg_bin:
+        return False
+    graph = _MULTI_ARITY_FILTER_GRAPHS.get(name)
+    shape = ['-filter_complex', graph] if graph else ['-vf', name]
+    try:
+        result = subprocess.run(
+            [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
+             '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
+             *shape, '-frames:v', '1', '-f', 'null', '-'],
+            capture_output=True, text=True, timeout=30, check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    return result.returncode == 0
+
+
 def _warn_once_if_gpl_build() -> None:
     global _warned_this_process
     if _warned_this_process:

@@ -41,18 +41,21 @@ abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typ
 
 ### Capacidades
 
-- [ ] T008 Escrever `app/compression/config.py` com a matriz declarada container × codec de vídeo
+- [X] T008 Escrever `app/compression/config.py` com a matriz declarada container × codec de vídeo
       × codec de áudio, os presets internos, os presets de plataforma e os pisos de bitrate por
       resolução — **nenhum valor mágico fora daqui** (FR-012, §66)
-- [ ] T009 Escrever `app/compression/capabilities.py`: cruza a matriz declarada com as sondas
-      funcionais existentes (`encoder_works`, `audio_encoder_works`, `image_format_works`)
-- [ ] T010 Acrescentar sonda de **filtro** em `media.py`, respeitando a aridade real do filtro —
+- [X] T009 Escrever `app/compression/capabilities.py`: cruza a matriz declarada com as sondas
+      funcionais. **Correção durante a implementação:** a sonda de imagem usava `image_format_works`
+      (OpenCV) e reprovava AVIF, que o Pillow grava — a Decisão 1 leva a imagem para o Pillow, e
+      uma sonda que não interroga quem faz o trabalho responde sobre outra coisa. Passou a usar
+      `pillow_format_works`
+- [X] T010 Acrescentar sonda de **filtro** em `media.py`, respeitando a aridade real do filtro —
       a pesquisa registrou que sondar `paletteuse` como filtro de uma entrada dá falso negativo
-- [ ] T011 [P] Escrever `test_compression_capabilities.py`: toda opção reportada como disponível é
+- [X] T011 [P] Escrever `test_compression_capabilities.py`: toda opção reportada como disponível é
       confirmada por sonda; motivo é chave, nunca nome de biblioteca; nenhum encoder GPL aparece
       disponível em nenhuma circunstância
-- [ ] T012 `GET /compression/capabilities` em `routes.py` + schemas, conforme contracts/api.md
-- [ ] T013 [P] Escrever `test_no_codec_leak_compression.py`: resposta a pedido do modo Básico não
+- [X] T012 `GET /compression/capabilities` em `routes.py` + schemas, conforme contracts/api.md
+- [X] T013 [P] Escrever `test_no_codec_leak_compression.py`: resposta a pedido do modo Básico não
       contém nome de codec ou encoder (SC-006), espelhando o teste que já existe para vídeo
 
 ### Estimativa
