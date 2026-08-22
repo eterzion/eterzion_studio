@@ -110,24 +110,24 @@ usar a tela.
       (FR-010)
 - [X] T025d [P] Escrever `test_metadata_absent_is_none.py`: bitrate não sondado é `None`, não `0` —
       a diferença entre uma afirmação sobre a mídia e uma sobre a sondagem
-- [ ] T025e `MediaDropzone` na Central reusando `UploadZone`: arrastar-e-soltar, clicar para
+- [X] T025e `MediaDropzone` na Central reusando `UploadZone`: arrastar-e-soltar, clicar para
       selecionar, múltiplos arquivos, acrescentar à fila sem substituí-la (FR-005, FR-006)
-- [ ] T025f Painel de informações do arquivo antes de processar: nome, extensão, tamanho,
+- [X] T025f Painel de informações do arquivo antes de processar: nome, extensão, tamanho,
       resolução, duração, codec, bitrate, FPS, canais, sample rate — cada um só quando aplicável
       e só quando sondado (FR-008, FR-010)
-- [ ] T025g Gerenciamento da fila de entrada: remover arquivo, limpar todos, acrescentar novos
+- [X] T025g Gerenciamento da fila de entrada: remover arquivo, limpar todos, acrescentar novos
       (FR-009)
-- [ ] T025h [P] i18n do bloco de importação nos 11 locales
+- [X] T025h [P] i18n do bloco de importação nos 11 locales
 
 ### Casca da interface
 
-- [ ] T026 `CompressionView.vue` — layout de duas colunas conforme §75, usando `MediaEditorShell`
-- [ ] T027 [P] `CompressionMediaTabs.vue` — Imagem · Vídeo · Áudio · GIF, com registro extensível
+- [X] T026 `CompressionView.vue` — layout de duas colunas conforme §75, usando `MediaEditorShell`
+- [X] T027 [P] `CompressionMediaTabs.vue` — Imagem · Vídeo · Áudio · GIF, com registro extensível
       (FR-004): acrescentar um tipo não toca os existentes
-- [ ] T028 [P] `CompressionModeToggle.vue` — Básico ⇄ Avançado, **Básico é o padrão** (FR-038)
-- [ ] T029 [P] `useCompressionSettings.ts` — estado por tipo de mídia, com `auto`/`original` como
+- [X] T028 [P] `CompressionModeToggle.vue` — Básico ⇄ Avançado, **Básico é o padrão** (FR-038)
+- [X] T029 [P] `useCompressionSettings.ts` — estado por tipo de mídia, com `auto`/`original` como
       padrão de todo campo técnico (FR-039)
-- [ ] T030 [P] `useCompressionEstimate.ts` — chama a estimativa com supressão de rajada, para
+- [X] T030 [P] `useCompressionEstimate.ts` — chama a estimativa com supressão de rajada, para
       digitar num campo não disparar uma chamada por tecla
 
 **Checkpoint**: as rotas respondem, a tela abre com as abas e o alternador de modo, nada comprime

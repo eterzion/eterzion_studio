@@ -48,19 +48,69 @@
     "unsupportedFormat": "지원하지 않는 형식: {name}"
   },
   "compression": {
+    "back": "뒤로",
     "comingSoon": "{media} 압축은 다음 단계에서 추가됩니다.",
+    "estimate": {
+      "loading": "계산 중…"
+    },
+    "info": {
+      "alpha": "투명도",
+      "alphaYes": "있음",
+      "audioBitrate": "오디오 비트레이트",
+      "audioCodec": "오디오",
+      "channels": "채널",
+      "channelsCount": "{count}채널",
+      "channelsMono": "모노",
+      "channelsStereo": "스테레오",
+      "duration": "길이",
+      "frameRate": "프레임 레이트",
+      "frameRateVariable": "약 {value} fps (가변)",
+      "resolution": "해상도",
+      "sampleRate": "샘플 레이트",
+      "size": "크기",
+      "videoBitrate": "영상 비트레이트",
+      "videoCodec": "영상"
+    },
     "media": {
-      "image": "이미지",
-      "video": "동영상",
+      "animation": "GIF / 애니메이션",
       "audio": "오디오",
-      "animation": "GIF / 애니메이션"
+      "image": "이미지",
+      "video": "동영상"
     },
     "mode": {
-      "basic": "기본",
-      "advanced": "고급"
+      "advanced": "고급",
+      "basic": "기본"
+    },
+    "queue": {
+      "add": "추가",
+      "clearAll": "모두 지우기",
+      "count": "파일 없음 | {count}개",
+      "remove": "{name} 제거",
+      "status": {
+        "importing": "읽는 중…",
+        "rejected": "거부됨"
+      },
+      "title": "가져온 파일"
+    },
+    "refusal": {
+      "ceiling_exceeded": "이 작업의 한계를 넘었습니다",
+      "encoder_unavailable": "이 컴퓨터에서는 이 형식을 만들 수 없습니다",
+      "incompatible_combination": "호환되지 않는 조합입니다",
+      "insufficient_disk": "디스크 공간이 부족합니다",
+      "invalid_settings": "잘못된 설정입니다",
+      "not_found": "파일을 찾을 수 없습니다",
+      "target_below_floor": "목표 크기가 너무 작습니다",
+      "unknown": "실패했습니다",
+      "unreadable": "읽을 수 없습니다",
+      "unsupported_media": "인식할 수 없는 미디어 파일입니다"
     },
     "subtitle": "품질을 직접 조절하면서 파일 크기를 줄입니다",
-    "title": "압축"
+    "title": "압축",
+    "upload": {
+      "selectPrompt": "대기열에서 파일을 선택하세요",
+      "subtitle": "이미지·동영상·오디오·GIF — 종류는 내용으로 판별합니다",
+      "title": "압축할 파일을 놓으세요"
+    }
   },
   "contentType": {
     "anime_image": "애니메이션/일러스트",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "이 출력 크기에는 메모리가 부족합니다.",
-        "action": "배율을 낮추거나 사용자 지정 크기를 줄여 보세요."
-      },
       "corruptedInput": {
-        "message": "원본 파일을 읽을 수 없습니다.",
-        "action": "이 항목을 대기열에서 제거하고 파일을 다시 가져오세요."
-      },
-      "modelFailure": {
-        "message": "처리 중 오류가 발생했습니다.",
-        "action": "다시 시도하세요. 계속되면 다른 모델이나 장치를 사용해 보세요."
+        "action": "이 항목을 대기열에서 제거하고 파일을 다시 가져오세요.",
+        "message": "원본 파일을 읽을 수 없습니다."
       },
       "diskFull": {
-        "message": "디스크 공간이 부족합니다.",
-        "action": "여유 공간이 더 많은 다른 폴더를 선택하세요."
+        "action": "여유 공간이 더 많은 다른 폴더를 선택하세요.",
+        "message": "디스크 공간이 부족합니다."
       },
       "hardwareInsufficient": {
-        "message": "이 컴퓨터로는 이 처리를 할 수 없습니다.",
-        "action": "출력 크기를 줄이거나 빠름 프로필을 사용해 보세요."
+        "action": "출력 크기를 줄이거나 빠름 프로필을 사용해 보세요.",
+        "message": "이 컴퓨터로는 이 처리를 할 수 없습니다."
       },
       "licenseInvalid": {
-        "message": "라이선스가 활성화되어 있지 않습니다.",
-        "action": "설정에서 라이선스 상태를 확인하세요."
+        "action": "설정에서 라이선스 상태를 확인하세요.",
+        "message": "라이선스가 활성화되어 있지 않습니다."
+      },
+      "modelFailure": {
+        "action": "다시 시도하세요. 계속되면 다른 모델이나 장치를 사용해 보세요.",
+        "message": "처리 중 오류가 발생했습니다."
+      },
+      "outOfMemory": {
+        "action": "배율을 낮추거나 사용자 지정 크기를 줄여 보세요.",
+        "message": "이 출력 크기에는 메모리가 부족합니다."
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "보기"
   },
   "home": {
-    "title": "오늘은 무엇을 개선하시겠습니까?",
-    "openAria": "{label} 열기"
+    "openAria": "{label} 열기",
+    "title": "오늘은 무엇을 개선하시겠습니까?"
   },
   "imageEditor": {
     "adjustmentsDescription": "세밀한 품질 조정",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "자동",
-        "description": "GPU가 있으면 GPU, 없으면 CPU."
+        "description": "GPU가 있으면 GPU, 없으면 CPU.",
+        "label": "자동"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "느리지만 어떤 기기에서도 작동합니다."
+        "description": "느리지만 어떤 기기에서도 작동합니다.",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "빠르지만 NVIDIA 드라이버가 필요합니다."
+        "description": "빠르지만 NVIDIA 드라이버가 필요합니다.",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "빠르게",
-        "description": "디테일은 적고 더 빨리 끝납니다"
-      },
       "balanced": {
-        "label": "균형",
-        "description": "디테일과 시간의 절충"
+        "description": "디테일과 시간의 절충",
+        "label": "균형"
+      },
+      "fast": {
+        "description": "디테일은 적고 더 빨리 끝납니다",
+        "label": "빠르게"
       },
       "quality": {
-        "label": "품질",
-        "description": "디테일이 많고 시간이 더 걸립니다"
+        "description": "디테일이 많고 시간이 더 걸립니다",
+        "label": "품질"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "비어 있음",
     "fileCountLabel": "파일 {n}개",
     "kind": {
+      "audio": "오디오",
       "image": "이미지",
-      "video": "비디오",
-      "audio": "오디오"
+      "video": "비디오"
     },
     "title": "처리 대기열"
   },
@@ -388,32 +438,32 @@
     "details": "자세히",
     "distributedUnder": "{license} 라이선스로 배포됩니다.",
     "general": {
-      "title": "일반",
-      "description": "앱의 일반 환경설정",
-      "language": {
-        "label": "언어",
-        "description": "처음 실행 시 Windows에서 자동으로 감지됩니다"
-      },
-      "theme": {
-        "label": "테마",
-        "description": "라이트, 다크 또는 Windows 설정을 따름",
-        "light": "라이트",
-        "dark": "다크",
-        "auto": "자동"
-      },
       "autoUpdate": {
-        "label": "자동 업데이트",
-        "description": "시작 시 새 버전 확인 (출시 예정)"
+        "description": "시작 시 새 버전 확인 (출시 예정)",
+        "label": "자동 업데이트"
+      },
+      "description": "앱의 일반 환경설정",
+      "exportFormat": {
+        "description": "내보내기 패널을 열 때 미리 선택됩니다",
+        "label": "기본 이미지 형식"
+      },
+      "language": {
+        "description": "처음 실행 시 Windows에서 자동으로 감지됩니다",
+        "label": "언어"
       },
       "outputFolder": {
-        "label": "기본 출력 폴더",
         "description": "내보낼 때 초기 제안으로 사용됩니다",
+        "label": "기본 출력 폴더",
         "same": "원본 이미지와 같은 폴더"
       },
-      "exportFormat": {
-        "label": "기본 이미지 형식",
-        "description": "내보내기 패널을 열 때 미리 선택됩니다"
-      }
+      "theme": {
+        "auto": "자동",
+        "dark": "다크",
+        "description": "라이트, 다크 또는 Windows 설정을 따름",
+        "label": "테마",
+        "light": "라이트"
+      },
+      "title": "일반"
     },
     "imageQuality": "이미지 품질",
     "imageQualityDescription": ".jpg/.webp로 내보낼 때의 기본값",
@@ -440,19 +490,19 @@
     "title": "설정"
   },
   "sidebar": {
-    "support": "지원",
     "collapse": "사이드바 접기",
-    "expand": "사이드바 펼치기",
     "darkMode": "다크 모드",
+    "expand": "사이드바 펼치기",
     "lightMode": "라이트 모드",
-    "toggleTheme": "라이트/다크 테마 전환",
     "links": {
-      "site": "공식 사이트",
       "discord": "Discord",
+      "email": "지원 이메일",
       "faq": "자주 묻는 질문",
       "help": "도움말 센터",
-      "email": "지원 이메일"
-    }
+      "site": "공식 사이트"
+    },
+    "support": "지원",
+    "toggleTheme": "라이트/다크 테마 전환"
   },
   "stats": {
     "adjustmentsApplied": "적용된 조정",

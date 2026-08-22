@@ -595,6 +595,56 @@ class CompressionExportConfig(BaseModel):
     apply_to_all: bool = False
 
 
+class CompressionMediaRequest(BaseModel):
+    """Importar um arquivo para a Central, de qualquer tipo (FR-007).
+
+    Separada de `MediaHandleRequest` porque a resposta é outra: aquela descreve
+    vídeo e tem `extra='forbid'` com campos fixos, e alargá-la para caber áudio,
+    imagem e animação quebraria os clientes que ela já serve.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    path: str
+
+
+class CompressionMediaResponse(BaseModel):
+    """O que a interface mostra antes de processar.
+
+    **Todo campo além dos três primeiros é opcional, e isso é o ponto** (FR-010):
+    um campo que a sondagem não obteve chega ausente, nunca zerado. `None` fala
+    da sondagem; `0` falaria da mídia, e a interface que exibisse "0 kbps" estaria
+    afirmando algo que ninguém mediu.
+
+    Não há campo de caminho aqui, e nunca pode haver.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    handle_id: str
+    display_name: str
+    media_kind: MediaKind
+    content_key: str
+    size_bytes: int = 0
+
+    width: int | None = None
+    height: int | None = None
+    duration_seconds: float | None = None
+    frame_rate: float | None = None
+    frame_rate_is_variable: bool | None = None
+    has_audio: bool | None = None
+    has_alpha: bool | None = None
+    has_metadata: bool | None = None
+    sample_rate: int | None = None
+    channels: int | None = None
+    # Codecs do contêiner (`h264`, `opus`), nunca encoders: o Princípio V mantém
+    # `libx264` e `nvenc` fora do fio, e o que o arquivo **é** fica num nível
+    # acima do que o produziu.
+    video_codec: str | None = None
+    audio_codec: str | None = None
+    video_bitrate_bps: int | None = None
+    audio_bitrate_bps: int | None = None
+    container_bitrate_bps: int | None = None
+
+
 class CompressionJobRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 

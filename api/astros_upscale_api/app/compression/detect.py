@@ -144,6 +144,8 @@ def probe_metadata(path: str, media_kind: str) -> dict[str, Any]:
     except ProbeError:
         return _sem_nulos(dados)
 
+    dados.update(_codec_and_bitrate(path, media_kind))
+
     if media_kind in ('video', 'animation'):
         dados.update({
             'width': probe.get('width'),
@@ -193,3 +195,64 @@ def _size(path: str) -> int | None:
         return os.path.getsize(path)
     except OSError:
         return None
+
+
+# Codecs de contêiner, nunca encoders. `h264` é o que o arquivo é; `libx264` e
+# `h264_nvenc` são com o que ele **poderia** ter sido feito, e nenhum dos dois
+# pode atravessar a API (Princípio V). O ffprobe devolve o primeiro nível, e é
+# por isso que ler `codec_name` aqui é seguro enquanto ler o nome de um encoder
+# nunca seria.
+def _codec_and_bitrate(path: str, media_kind: str) -> dict[str, Any]:
+    """Codec e bitrate por trilha, quando a sondagem os obtém (FR-008).
+
+    Fica fora de `probe_streams` de propósito: aquela função é lida pelo fluxo de
+    elementos secundários da spec 007 e pelo editor, e acrescentar chaves ali
+    para uso da Central alargaria um contrato que já tem dois clientes.
+    """
+    from astros_upscale.media import ffprobe_json
+
+    try:
+        dados = ffprobe_json(path)
+    except Exception:  # noqa: BLE001
+        return {}
+
+    streams = dados.get('streams', [])
+    saida: dict[str, Any] = {}
+
+    video = next((s for s in streams if s.get('codec_type') == 'video'), None)
+    audio = next((s for s in streams if s.get('codec_type') == 'audio'), None)
+
+    if video is not None and media_kind in ('video', 'animation'):
+        saida['video_codec'] = video.get('codec_name')
+        saida['video_bitrate_bps'] = _inteiro(video.get('bit_rate'))
+    if audio is not None:
+        saida['audio_codec'] = audio.get('codec_name')
+        saida['audio_bitrate_bps'] = _inteiro(audio.get('bit_rate'))
+
+    # O bitrate do contêiner. Vale para áudio puro, e serve de aproximação
+    # quando a trilha não declara o seu — mas só quando não declara: sobrescrever
+    # um bitrate medido por trilha com a média do arquivo pioraria o número.
+    formato = dados.get('format', {})
+    total = _inteiro(formato.get('bit_rate'))
+    if total is not None:
+        saida.setdefault('container_bitrate_bps', total)
+        if media_kind == 'audio' and saida.get('audio_bitrate_bps') is None:
+            saida['audio_bitrate_bps'] = total
+
+    return {k: v for k, v in saida.items() if v is not None}
+
+
+def _inteiro(valor: Any) -> int | None:
+    """`None` quando o campo não veio ou não é número — nunca `0`.
+
+    Um bitrate zerado seria uma afirmação sobre a mídia; o que aconteceu foi uma
+    afirmação sobre a sondagem, e confundir as duas faz a estimativa mentir com
+    confiança (FR-010).
+    """
+    if valor in (None, '', 'N/A'):
+        return None
+    try:
+        numero = int(float(valor))
+    except (TypeError, ValueError):
+        return None
+    return numero if numero > 0 else None

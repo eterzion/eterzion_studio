@@ -48,19 +48,69 @@
     "unsupportedFormat": "Unsupported format: {name}"
   },
   "compression": {
+    "back": "Back",
     "comingSoon": "{media} compression arrives in the next stages.",
+    "estimate": {
+      "loading": "Estimating…"
+    },
+    "info": {
+      "alpha": "Transparency",
+      "alphaYes": "Yes",
+      "audioBitrate": "Audio bitrate",
+      "audioCodec": "Audio",
+      "channels": "Channels",
+      "channelsCount": "{count} channels",
+      "channelsMono": "Mono",
+      "channelsStereo": "Stereo",
+      "duration": "Duration",
+      "frameRate": "Frame rate",
+      "frameRateVariable": "~{value} fps (variable)",
+      "resolution": "Resolution",
+      "sampleRate": "Sample rate",
+      "size": "Size",
+      "videoBitrate": "Video bitrate",
+      "videoCodec": "Video"
+    },
     "media": {
-      "image": "Image",
-      "video": "Video",
+      "animation": "GIF / Animation",
       "audio": "Audio",
-      "animation": "GIF / Animation"
+      "image": "Image",
+      "video": "Video"
     },
     "mode": {
-      "basic": "Basic",
-      "advanced": "Advanced"
+      "advanced": "Advanced",
+      "basic": "Basic"
+    },
+    "queue": {
+      "add": "Add",
+      "clearAll": "Clear all",
+      "count": "no files | 1 file | {count} files",
+      "remove": "Remove {name}",
+      "status": {
+        "importing": "Reading…",
+        "rejected": "Refused"
+      },
+      "title": "Imported files"
+    },
+    "refusal": {
+      "ceiling_exceeded": "above this operation’s limit",
+      "encoder_unavailable": "this computer cannot produce this format",
+      "incompatible_combination": "incompatible combination",
+      "insufficient_disk": "not enough disk space",
+      "invalid_settings": "invalid settings",
+      "not_found": "file not found",
+      "target_below_floor": "target size too small",
+      "unknown": "failed",
+      "unreadable": "could not be read",
+      "unsupported_media": "not a recognised media file"
     },
     "subtitle": "Make files smaller while keeping control of quality",
-    "title": "Compression"
+    "title": "Compression",
+    "upload": {
+      "selectPrompt": "Select a file from the queue",
+      "subtitle": "Images, video, audio and GIFs — the kind is read from the content",
+      "title": "Drop files to compress"
+    }
   },
   "contentType": {
     "anime_image": "Anime / illustration",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "Not enough memory for this output size.",
-        "action": "Try a smaller scale factor or a smaller custom size."
-      },
       "corruptedInput": {
-        "message": "The source file could not be read.",
-        "action": "Remove this item from the queue and import the file again."
-      },
-      "modelFailure": {
-        "message": "Processing error.",
-        "action": "Try again — if it persists, try another model or device."
+        "action": "Remove this item from the queue and import the file again.",
+        "message": "The source file could not be read."
       },
       "diskFull": {
-        "message": "Not enough disk space.",
-        "action": "Choose another destination folder with more free space."
+        "action": "Choose another destination folder with more free space.",
+        "message": "Not enough disk space."
       },
       "hardwareInsufficient": {
-        "message": "This machine cannot handle this processing.",
-        "action": "Try a smaller output size or the Fast profile."
+        "action": "Try a smaller output size or the Fast profile.",
+        "message": "This machine cannot handle this processing."
       },
       "licenseInvalid": {
-        "message": "Your licence is not active.",
-        "action": "Check your licence status in Settings."
+        "action": "Check your licence status in Settings.",
+        "message": "Your licence is not active."
+      },
+      "modelFailure": {
+        "action": "Try again — if it persists, try another model or device.",
+        "message": "Processing error."
+      },
+      "outOfMemory": {
+        "action": "Try a smaller scale factor or a smaller custom size.",
+        "message": "Not enough memory for this output size."
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "View"
   },
   "home": {
-    "title": "What would you like to improve today?",
-    "openAria": "Open {label}"
+    "openAria": "Open {label}",
+    "title": "What would you like to improve today?"
   },
   "imageEditor": {
     "adjustmentsDescription": "Fine quality adjustments",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "Automatic",
-        "description": "GPU where there is one, CPU otherwise."
+        "description": "GPU where there is one, CPU otherwise.",
+        "label": "Automatic"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "Slower, works on any machine."
+        "description": "Slower, works on any machine.",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "Faster, needs an NVIDIA driver."
+        "description": "Faster, needs an NVIDIA driver.",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "Fast",
-        "description": "Less detail, finishes sooner"
-      },
       "balanced": {
-        "label": "Balanced",
-        "description": "Between detail and time"
+        "description": "Between detail and time",
+        "label": "Balanced"
+      },
+      "fast": {
+        "description": "Less detail, finishes sooner",
+        "label": "Fast"
       },
       "quality": {
-        "label": "Quality",
-        "description": "More detail, takes longer"
+        "description": "More detail, takes longer",
+        "label": "Quality"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "Empty",
     "fileCountLabel": "{n} file | {n} files",
     "kind": {
+      "audio": "Audio",
       "image": "Image",
-      "video": "Video",
-      "audio": "Audio"
+      "video": "Video"
     },
     "title": "Processing queue"
   },
@@ -388,32 +438,32 @@
     "details": "Details",
     "distributedUnder": "Distributed under the {license} licence.",
     "general": {
-      "title": "General",
-      "description": "General application preferences",
-      "language": {
-        "label": "Language",
-        "description": "Automatically detected from Windows on first launch"
-      },
-      "theme": {
-        "label": "Theme",
-        "description": "Light, dark, or follow Windows",
-        "light": "Light",
-        "dark": "Dark",
-        "auto": "Automatic"
-      },
       "autoUpdate": {
-        "label": "Automatic updates",
-        "description": "Check for new versions on startup (coming soon)"
+        "description": "Check for new versions on startup (coming soon)",
+        "label": "Automatic updates"
+      },
+      "description": "General application preferences",
+      "exportFormat": {
+        "description": "Pre-selected when opening the export panel",
+        "label": "Default image format"
+      },
+      "language": {
+        "description": "Automatically detected from Windows on first launch",
+        "label": "Language"
       },
       "outputFolder": {
-        "label": "Default output folder",
         "description": "Used as the initial suggestion when exporting",
+        "label": "Default output folder",
         "same": "Same folder as the original image"
       },
-      "exportFormat": {
-        "label": "Default image format",
-        "description": "Pre-selected when opening the export panel"
-      }
+      "theme": {
+        "auto": "Automatic",
+        "dark": "Dark",
+        "description": "Light, dark, or follow Windows",
+        "label": "Theme",
+        "light": "Light"
+      },
+      "title": "General"
     },
     "imageQuality": "Image quality",
     "imageQualityDescription": "Default for .jpg/.webp exports",
@@ -440,19 +490,19 @@
     "title": "Settings"
   },
   "sidebar": {
-    "support": "Support",
     "collapse": "Collapse sidebar",
-    "expand": "Expand sidebar",
     "darkMode": "Dark mode",
+    "expand": "Expand sidebar",
     "lightMode": "Light mode",
-    "toggleTheme": "Toggle light/dark theme",
     "links": {
-      "site": "Official website",
       "discord": "Discord",
+      "email": "Support email",
       "faq": "FAQ",
       "help": "Help center",
-      "email": "Support email"
-    }
+      "site": "Official website"
+    },
+    "support": "Support",
+    "toggleTheme": "Toggle light/dark theme"
   },
   "stats": {
     "adjustmentsApplied": "Adjustments applied",

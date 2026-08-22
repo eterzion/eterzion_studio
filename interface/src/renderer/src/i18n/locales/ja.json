@@ -48,19 +48,69 @@
     "unsupportedFormat": "未対応の形式: {name}"
   },
   "compression": {
+    "back": "戻る",
     "comingSoon": "{media}の圧縮は次の段階で追加されます。",
+    "estimate": {
+      "loading": "計算中…"
+    },
+    "info": {
+      "alpha": "透過",
+      "alphaYes": "あり",
+      "audioBitrate": "音声ビットレート",
+      "audioCodec": "音声",
+      "channels": "チャンネル",
+      "channelsCount": "{count} チャンネル",
+      "channelsMono": "モノラル",
+      "channelsStereo": "ステレオ",
+      "duration": "長さ",
+      "frameRate": "フレームレート",
+      "frameRateVariable": "約 {value} fps（可変）",
+      "resolution": "解像度",
+      "sampleRate": "サンプリング周波数",
+      "size": "サイズ",
+      "videoBitrate": "映像ビットレート",
+      "videoCodec": "映像"
+    },
     "media": {
-      "image": "画像",
-      "video": "動画",
+      "animation": "GIF / アニメーション",
       "audio": "音声",
-      "animation": "GIF / アニメーション"
+      "image": "画像",
+      "video": "動画"
     },
     "mode": {
-      "basic": "基本",
-      "advanced": "詳細"
+      "advanced": "詳細",
+      "basic": "基本"
+    },
+    "queue": {
+      "add": "追加",
+      "clearAll": "すべて消去",
+      "count": "ファイルなし | {count} 件",
+      "remove": "{name} を削除",
+      "status": {
+        "importing": "読み込み中…",
+        "rejected": "不可"
+      },
+      "title": "読み込んだファイル"
+    },
+    "refusal": {
+      "ceiling_exceeded": "この処理の上限を超えています",
+      "encoder_unavailable": "このコンピューターではこの形式を作成できません",
+      "incompatible_combination": "組み合わせに互換性がありません",
+      "insufficient_disk": "ディスク空き容量が不足しています",
+      "invalid_settings": "設定が正しくありません",
+      "not_found": "ファイルが見つかりません",
+      "target_below_floor": "目標サイズが小さすぎます",
+      "unknown": "失敗しました",
+      "unreadable": "読み込めませんでした",
+      "unsupported_media": "メディアファイルとして認識できません"
     },
     "subtitle": "品質を自分で決めながらファイルを小さくします",
-    "title": "圧縮"
+    "title": "圧縮",
+    "upload": {
+      "selectPrompt": "キューからファイルを選択してください",
+      "subtitle": "画像・動画・音声・GIF — 種類は中身から判定します",
+      "title": "圧縮するファイルをドロップ"
+    }
   },
   "contentType": {
     "anime_image": "アニメ・イラスト",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "この出力サイズにはメモリが足りません。",
-        "action": "拡大率を下げるか、カスタムサイズを小さくしてください。"
-      },
       "corruptedInput": {
-        "message": "元のファイルを読み込めませんでした。",
-        "action": "この項目をキューから削除し、もう一度読み込んでください。"
-      },
-      "modelFailure": {
-        "message": "処理でエラーが発生しました。",
-        "action": "もう一度お試しください。続く場合は別のモデルかデバイスをお試しください。"
+        "action": "この項目をキューから削除し、もう一度読み込んでください。",
+        "message": "元のファイルを読み込めませんでした。"
       },
       "diskFull": {
-        "message": "ディスクの空き容量が足りません。",
-        "action": "空き容量の多い別の保存先を選んでください。"
+        "action": "空き容量の多い別の保存先を選んでください。",
+        "message": "ディスクの空き容量が足りません。"
       },
       "hardwareInsufficient": {
-        "message": "この環境ではこの処理を実行できません。",
-        "action": "出力サイズを小さくするか、「高速」プロファイルをお試しください。"
+        "action": "出力サイズを小さくするか、「高速」プロファイルをお試しください。",
+        "message": "この環境ではこの処理を実行できません。"
       },
       "licenseInvalid": {
-        "message": "ライセンスが有効ではありません。",
-        "action": "設定でライセンスの状態を確認してください。"
+        "action": "設定でライセンスの状態を確認してください。",
+        "message": "ライセンスが有効ではありません。"
+      },
+      "modelFailure": {
+        "action": "もう一度お試しください。続く場合は別のモデルかデバイスをお試しください。",
+        "message": "処理でエラーが発生しました。"
+      },
+      "outOfMemory": {
+        "action": "拡大率を下げるか、カスタムサイズを小さくしてください。",
+        "message": "この出力サイズにはメモリが足りません。"
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "表示"
   },
   "home": {
-    "title": "今日は何を改善しますか？",
-    "openAria": "{label}を開く"
+    "openAria": "{label}を開く",
+    "title": "今日は何を改善しますか？"
   },
   "imageEditor": {
     "adjustmentsDescription": "画質の微調整",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "自動",
-        "description": "GPU があれば GPU、なければ CPU。"
+        "description": "GPU があれば GPU、なければ CPU。",
+        "label": "自動"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "低速ですが、どの環境でも動きます。"
+        "description": "低速ですが、どの環境でも動きます。",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "高速ですが NVIDIA ドライバーが必要です。"
+        "description": "高速ですが NVIDIA ドライバーが必要です。",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "高速",
-        "description": "ディテールは控えめ、早く終わります"
-      },
       "balanced": {
-        "label": "バランス",
-        "description": "ディテールと時間の中間"
+        "description": "ディテールと時間の中間",
+        "label": "バランス"
+      },
+      "fast": {
+        "description": "ディテールは控えめ、早く終わります",
+        "label": "高速"
       },
       "quality": {
-        "label": "高品質",
-        "description": "ディテール重視、時間がかかります"
+        "description": "ディテール重視、時間がかかります",
+        "label": "高品質"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "空",
     "fileCountLabel": "{n} 件のファイル",
     "kind": {
+      "audio": "音声",
       "image": "画像",
-      "video": "動画",
-      "audio": "音声"
+      "video": "動画"
     },
     "title": "処理キュー"
   },
@@ -388,32 +438,32 @@
     "details": "詳細",
     "distributedUnder": "{license} ライセンスで配布されています。",
     "general": {
-      "title": "一般",
-      "description": "アプリケーションの一般設定",
-      "language": {
-        "label": "言語",
-        "description": "初回起動時にWindowsから自動検出"
-      },
-      "theme": {
-        "label": "テーマ",
-        "description": "ライト、ダーク、またはWindowsに合わせる",
-        "light": "ライト",
-        "dark": "ダーク",
-        "auto": "自動"
-      },
       "autoUpdate": {
-        "label": "自動更新",
-        "description": "起動時に新しいバージョンを確認する（近日公開）"
+        "description": "起動時に新しいバージョンを確認する（近日公開）",
+        "label": "自動更新"
+      },
+      "description": "アプリケーションの一般設定",
+      "exportFormat": {
+        "description": "エクスポートパネルを開いたときに事前選択されます",
+        "label": "既定の画像形式"
+      },
+      "language": {
+        "description": "初回起動時にWindowsから自動検出",
+        "label": "言語"
       },
       "outputFolder": {
-        "label": "既定の出力フォルダー",
         "description": "エクスポート時の初期候補として使用",
+        "label": "既定の出力フォルダー",
         "same": "元の画像と同じフォルダー"
       },
-      "exportFormat": {
-        "label": "既定の画像形式",
-        "description": "エクスポートパネルを開いたときに事前選択されます"
-      }
+      "theme": {
+        "auto": "自動",
+        "dark": "ダーク",
+        "description": "ライト、ダーク、またはWindowsに合わせる",
+        "label": "テーマ",
+        "light": "ライト"
+      },
+      "title": "一般"
     },
     "imageQuality": "画質",
     "imageQualityDescription": ".jpg/.webp で書き出すときの既定値",
@@ -440,19 +490,19 @@
     "title": "設定"
   },
   "sidebar": {
-    "support": "サポート",
     "collapse": "サイドバーを折りたたむ",
-    "expand": "サイドバーを展開する",
     "darkMode": "ダークモード",
+    "expand": "サイドバーを展開する",
     "lightMode": "ライトモード",
-    "toggleTheme": "ライト/ダークテーマを切り替え",
     "links": {
-      "site": "公式サイト",
       "discord": "Discord",
+      "email": "サポートメール",
       "faq": "よくある質問",
       "help": "ヘルプセンター",
-      "email": "サポートメール"
-    }
+      "site": "公式サイト"
+    },
+    "support": "サポート",
+    "toggleTheme": "ライト/ダークテーマを切り替え"
   },
   "stats": {
     "adjustmentsApplied": "適用した調整",

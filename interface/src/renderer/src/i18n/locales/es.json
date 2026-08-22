@@ -48,19 +48,69 @@
     "unsupportedFormat": "Formato no compatible: {name}"
   },
   "compression": {
+    "back": "Volver",
     "comingSoon": "La compresión de {media} llega en las próximas etapas.",
+    "estimate": {
+      "loading": "Calculando…"
+    },
+    "info": {
+      "alpha": "Transparencia",
+      "alphaYes": "Sí",
+      "audioBitrate": "Bitrate de audio",
+      "audioCodec": "Audio",
+      "channels": "Canales",
+      "channelsCount": "{count} canales",
+      "channelsMono": "Mono",
+      "channelsStereo": "Estéreo",
+      "duration": "Duración",
+      "frameRate": "Fotogramas por segundo",
+      "frameRateVariable": "~{value} fps (variable)",
+      "resolution": "Resolución",
+      "sampleRate": "Frecuencia de muestreo",
+      "size": "Tamaño",
+      "videoBitrate": "Bitrate de vídeo",
+      "videoCodec": "Vídeo"
+    },
     "media": {
-      "image": "Imagen",
-      "video": "Vídeo",
+      "animation": "GIF / Animación",
       "audio": "Audio",
-      "animation": "GIF / Animación"
+      "image": "Imagen",
+      "video": "Vídeo"
     },
     "mode": {
-      "basic": "Básico",
-      "advanced": "Avanzado"
+      "advanced": "Avanzado",
+      "basic": "Básico"
+    },
+    "queue": {
+      "add": "Añadir",
+      "clearAll": "Vaciar todo",
+      "count": "ningún archivo | 1 archivo | {count} archivos",
+      "remove": "Quitar {name}",
+      "status": {
+        "importing": "Leyendo…",
+        "rejected": "Rechazado"
+      },
+      "title": "Archivos importados"
+    },
+    "refusal": {
+      "ceiling_exceeded": "por encima del límite de esta operación",
+      "encoder_unavailable": "este equipo no puede producir este formato",
+      "incompatible_combination": "combinación incompatible",
+      "insufficient_disk": "espacio en disco insuficiente",
+      "invalid_settings": "ajustes no válidos",
+      "not_found": "archivo no encontrado",
+      "target_below_floor": "tamaño objetivo demasiado pequeño",
+      "unknown": "falló",
+      "unreadable": "no se pudo leer",
+      "unsupported_media": "no es un archivo multimedia reconocido"
     },
     "subtitle": "Reduce archivos manteniendo el control de la calidad",
-    "title": "Compresión"
+    "title": "Compresión",
+    "upload": {
+      "selectPrompt": "Selecciona un archivo de la cola",
+      "subtitle": "Imágenes, vídeo, audio y GIF — el tipo se reconoce por el contenido",
+      "title": "Suelta archivos para comprimir"
+    }
   },
   "contentType": {
     "anime_image": "Anime/Ilustración",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "Memoria insuficiente para este tamaño de salida.",
-        "action": "Prueba con un factor de escala o un tamaño personalizado menor."
-      },
       "corruptedInput": {
-        "message": "No se pudo leer el archivo de origen.",
-        "action": "Quita este elemento de la cola e importa el archivo de nuevo."
-      },
-      "modelFailure": {
-        "message": "Error en el procesamiento.",
-        "action": "Inténtalo de nuevo — si persiste, prueba otro modelo o dispositivo."
+        "action": "Quita este elemento de la cola e importa el archivo de nuevo.",
+        "message": "No se pudo leer el archivo de origen."
       },
       "diskFull": {
-        "message": "Espacio en disco insuficiente.",
-        "action": "Elige otra carpeta de destino con más espacio libre."
+        "action": "Elige otra carpeta de destino con más espacio libre.",
+        "message": "Espacio en disco insuficiente."
       },
       "hardwareInsufficient": {
-        "message": "Este equipo no tiene capacidad para este procesamiento.",
-        "action": "Prueba un tamaño de salida menor o el perfil Rápido."
+        "action": "Prueba un tamaño de salida menor o el perfil Rápido.",
+        "message": "Este equipo no tiene capacidad para este procesamiento."
       },
       "licenseInvalid": {
-        "message": "Tu licencia no está activa.",
-        "action": "Comprueba el estado de tu licencia en Ajustes."
+        "action": "Comprueba el estado de tu licencia en Ajustes.",
+        "message": "Tu licencia no está activa."
+      },
+      "modelFailure": {
+        "action": "Inténtalo de nuevo — si persiste, prueba otro modelo o dispositivo.",
+        "message": "Error en el procesamiento."
+      },
+      "outOfMemory": {
+        "action": "Prueba con un factor de escala o un tamaño personalizado menor.",
+        "message": "Memoria insuficiente para este tamaño de salida."
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "Ver"
   },
   "home": {
-    "title": "¿Qué te gustaría mejorar hoy?",
-    "openAria": "Abrir {label}"
+    "openAria": "Abrir {label}",
+    "title": "¿Qué te gustaría mejorar hoy?"
   },
   "imageEditor": {
     "adjustmentsDescription": "Ajustes finos de calidad",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "Automático",
-        "description": "GPU si la hay, CPU en caso contrario."
+        "description": "GPU si la hay, CPU en caso contrario.",
+        "label": "Automático"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "Más lento, funciona en cualquier equipo."
+        "description": "Más lento, funciona en cualquier equipo.",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "Más rápido, requiere driver NVIDIA."
+        "description": "Más rápido, requiere driver NVIDIA.",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "Rápido",
-        "description": "Menos detalle, termina antes"
-      },
       "balanced": {
-        "label": "Equilibrado",
-        "description": "Punto medio entre detalle y tiempo"
+        "description": "Punto medio entre detalle y tiempo",
+        "label": "Equilibrado"
+      },
+      "fast": {
+        "description": "Menos detalle, termina antes",
+        "label": "Rápido"
       },
       "quality": {
-        "label": "Calidad",
-        "description": "Más detalle, tarda más"
+        "description": "Más detalle, tarda más",
+        "label": "Calidad"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "Vacía",
     "fileCountLabel": "{n} archivo | {n} archivos",
     "kind": {
+      "audio": "Audio",
       "image": "Imagen",
-      "video": "Vídeo",
-      "audio": "Audio"
+      "video": "Vídeo"
     },
     "title": "Cola de procesamiento"
   },
@@ -388,32 +438,32 @@
     "details": "Detalles",
     "distributedUnder": "Distribuido bajo la licencia {license}.",
     "general": {
-      "title": "General",
-      "description": "Preferencias generales de la aplicación",
-      "language": {
-        "label": "Idioma",
-        "description": "Detectado automáticamente de Windows en el primer inicio"
-      },
-      "theme": {
-        "label": "Tema",
-        "description": "Apariencia clara, oscura, o siguiendo a Windows",
-        "light": "Claro",
-        "dark": "Oscuro",
-        "auto": "Automático"
-      },
       "autoUpdate": {
-        "label": "Actualizaciones automáticas",
-        "description": "Buscar nuevas versiones al iniciar (próximamente)"
+        "description": "Buscar nuevas versiones al iniciar (próximamente)",
+        "label": "Actualizaciones automáticas"
+      },
+      "description": "Preferencias generales de la aplicación",
+      "exportFormat": {
+        "description": "Preseleccionado al abrir el panel de exportación",
+        "label": "Formato de imagen predeterminado"
+      },
+      "language": {
+        "description": "Detectado automáticamente de Windows en el primer inicio",
+        "label": "Idioma"
       },
       "outputFolder": {
-        "label": "Carpeta de salida predeterminada",
         "description": "Usada como sugerencia inicial al exportar",
+        "label": "Carpeta de salida predeterminada",
         "same": "Misma carpeta que la imagen original"
       },
-      "exportFormat": {
-        "label": "Formato de imagen predeterminado",
-        "description": "Preseleccionado al abrir el panel de exportación"
-      }
+      "theme": {
+        "auto": "Automático",
+        "dark": "Oscuro",
+        "description": "Apariencia clara, oscura, o siguiendo a Windows",
+        "label": "Tema",
+        "light": "Claro"
+      },
+      "title": "General"
     },
     "imageQuality": "Calidad de imagen",
     "imageQualityDescription": "Valor por defecto al exportar a .jpg/.webp",
@@ -440,19 +490,19 @@
     "title": "Ajustes"
   },
   "sidebar": {
-    "support": "Soporte",
     "collapse": "Contraer barra lateral",
-    "expand": "Expandir barra lateral",
     "darkMode": "Modo oscuro",
+    "expand": "Expandir barra lateral",
     "lightMode": "Modo claro",
-    "toggleTheme": "Alternar tema claro/oscuro",
     "links": {
-      "site": "Sitio oficial",
       "discord": "Discord",
+      "email": "Correo de soporte",
       "faq": "Preguntas frecuentes",
       "help": "Centro de ayuda",
-      "email": "Correo de soporte"
-    }
+      "site": "Sitio oficial"
+    },
+    "support": "Soporte",
+    "toggleTheme": "Alternar tema claro/oscuro"
   },
   "stats": {
     "adjustmentsApplied": "Ajustes aplicados",

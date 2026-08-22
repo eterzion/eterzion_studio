@@ -48,19 +48,69 @@
     "unsupportedFormat": "不支持的格式：{name}"
   },
   "compression": {
+    "back": "返回",
     "comingSoon": "{media}压缩将在后续阶段加入。",
+    "estimate": {
+      "loading": "计算中…"
+    },
+    "info": {
+      "alpha": "透明度",
+      "alphaYes": "有",
+      "audioBitrate": "音频码率",
+      "audioCodec": "音频",
+      "channels": "声道",
+      "channelsCount": "{count} 声道",
+      "channelsMono": "单声道",
+      "channelsStereo": "立体声",
+      "duration": "时长",
+      "frameRate": "帧率",
+      "frameRateVariable": "约 {value} fps（可变）",
+      "resolution": "分辨率",
+      "sampleRate": "采样率",
+      "size": "大小",
+      "videoBitrate": "视频码率",
+      "videoCodec": "视频"
+    },
     "media": {
-      "image": "图像",
-      "video": "视频",
+      "animation": "GIF / 动画",
       "audio": "音频",
-      "animation": "GIF / 动画"
+      "image": "图像",
+      "video": "视频"
     },
     "mode": {
-      "basic": "基础",
-      "advanced": "高级"
+      "advanced": "高级",
+      "basic": "基础"
+    },
+    "queue": {
+      "add": "添加",
+      "clearAll": "全部清除",
+      "count": "没有文件 | {count} 个文件",
+      "remove": "移除 {name}",
+      "status": {
+        "importing": "读取中…",
+        "rejected": "已拒绝"
+      },
+      "title": "已导入的文件"
+    },
+    "refusal": {
+      "ceiling_exceeded": "超出本操作的上限",
+      "encoder_unavailable": "这台电脑无法生成该格式",
+      "incompatible_combination": "组合不兼容",
+      "insufficient_disk": "磁盘空间不足",
+      "invalid_settings": "设置无效",
+      "not_found": "找不到文件",
+      "target_below_floor": "目标体积过小",
+      "unknown": "失败",
+      "unreadable": "无法读取",
+      "unsupported_media": "不是可识别的媒体文件"
     },
     "subtitle": "在自己掌控画质的前提下减小文件",
-    "title": "压缩"
+    "title": "压缩",
+    "upload": {
+      "selectPrompt": "从队列中选择一个文件",
+      "subtitle": "图片、视频、音频和 GIF — 类型由内容判断",
+      "title": "拖入要压缩的文件"
+    }
   },
   "contentType": {
     "anime_image": "动漫/插画",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "内存不足，无法输出该尺寸。",
-        "action": "请尝试更小的放大倍数或更小的自定义尺寸。"
-      },
       "corruptedInput": {
-        "message": "无法读取源文件。",
-        "action": "请从队列中移除该项并重新导入文件。"
-      },
-      "modelFailure": {
-        "message": "处理出错。",
-        "action": "请重试；若仍然失败，请换一个模型或设备。"
+        "action": "请从队列中移除该项并重新导入文件。",
+        "message": "无法读取源文件。"
       },
       "diskFull": {
-        "message": "磁盘空间不足。",
-        "action": "请选择剩余空间更多的其他目标文件夹。"
+        "action": "请选择剩余空间更多的其他目标文件夹。",
+        "message": "磁盘空间不足。"
       },
       "hardwareInsufficient": {
-        "message": "此设备无法完成该处理。",
-        "action": "请尝试更小的输出尺寸或“快速”配置。"
+        "action": "请尝试更小的输出尺寸或“快速”配置。",
+        "message": "此设备无法完成该处理。"
       },
       "licenseInvalid": {
-        "message": "您的许可证未激活。",
-        "action": "请在设置中查看许可证状态。"
+        "action": "请在设置中查看许可证状态。",
+        "message": "您的许可证未激活。"
+      },
+      "modelFailure": {
+        "action": "请重试；若仍然失败，请换一个模型或设备。",
+        "message": "处理出错。"
+      },
+      "outOfMemory": {
+        "action": "请尝试更小的放大倍数或更小的自定义尺寸。",
+        "message": "内存不足，无法输出该尺寸。"
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "查看"
   },
   "home": {
-    "title": "今天您想改善什么？",
-    "openAria": "打开{label}"
+    "openAria": "打开{label}",
+    "title": "今天您想改善什么？"
   },
   "imageEditor": {
     "adjustmentsDescription": "画质微调",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "自动",
-        "description": "有 GPU 就用 GPU，否则用 CPU。"
+        "description": "有 GPU 就用 GPU，否则用 CPU。",
+        "label": "自动"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "较慢，但任何机器都能运行。"
+        "description": "较慢，但任何机器都能运行。",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "更快，需要 NVIDIA 驱动。"
+        "description": "更快，需要 NVIDIA 驱动。",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "快速",
-        "description": "细节较少，完成更快"
-      },
       "balanced": {
-        "label": "均衡",
-        "description": "在细节与耗时之间取中"
+        "description": "在细节与耗时之间取中",
+        "label": "均衡"
+      },
+      "fast": {
+        "description": "细节较少，完成更快",
+        "label": "快速"
       },
       "quality": {
-        "label": "高质量",
-        "description": "细节更多，耗时更长"
+        "description": "细节更多，耗时更长",
+        "label": "高质量"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "空",
     "fileCountLabel": "{n} 个文件",
     "kind": {
+      "audio": "音频",
       "image": "图片",
-      "video": "视频",
-      "audio": "音频"
+      "video": "视频"
     },
     "title": "处理队列"
   },
@@ -388,32 +438,32 @@
     "details": "详情",
     "distributedUnder": "依据 {license} 许可证分发。",
     "general": {
-      "title": "常规",
-      "description": "应用程序的常规首选项",
-      "language": {
-        "label": "语言",
-        "description": "首次启动时自动从 Windows 检测"
-      },
-      "theme": {
-        "label": "主题",
-        "description": "浅色、深色，或跟随 Windows",
-        "light": "浅色",
-        "dark": "深色",
-        "auto": "自动"
-      },
       "autoUpdate": {
-        "label": "自动更新",
-        "description": "启动时检查新版本（即将推出）"
+        "description": "启动时检查新版本（即将推出）",
+        "label": "自动更新"
+      },
+      "description": "应用程序的常规首选项",
+      "exportFormat": {
+        "description": "打开导出面板时预先选择",
+        "label": "默认图像格式"
+      },
+      "language": {
+        "description": "首次启动时自动从 Windows 检测",
+        "label": "语言"
       },
       "outputFolder": {
-        "label": "默认输出文件夹",
         "description": "导出时作为初始建议使用",
+        "label": "默认输出文件夹",
         "same": "与原始图像相同的文件夹"
       },
-      "exportFormat": {
-        "label": "默认图像格式",
-        "description": "打开导出面板时预先选择"
-      }
+      "theme": {
+        "auto": "自动",
+        "dark": "深色",
+        "description": "浅色、深色，或跟随 Windows",
+        "label": "主题",
+        "light": "浅色"
+      },
+      "title": "常规"
     },
     "imageQuality": "图片质量",
     "imageQualityDescription": "导出为 .jpg/.webp 时的默认值",
@@ -440,19 +490,19 @@
     "title": "设置"
   },
   "sidebar": {
-    "support": "支持",
     "collapse": "收起侧边栏",
-    "expand": "展开侧边栏",
     "darkMode": "深色模式",
+    "expand": "展开侧边栏",
     "lightMode": "浅色模式",
-    "toggleTheme": "切换浅色/深色主题",
     "links": {
-      "site": "官方网站",
       "discord": "Discord",
+      "email": "支持邮箱",
       "faq": "常见问题",
       "help": "帮助中心",
-      "email": "支持邮箱"
-    }
+      "site": "官方网站"
+    },
+    "support": "支持",
+    "toggleTheme": "切换浅色/深色主题"
   },
   "stats": {
     "adjustmentsApplied": "已应用的调整",

@@ -31,6 +31,7 @@ from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
                          CompressionCapabilitiesResponse, CompressionEstimateRequest,
                          CompressionEstimateResponse, CompressionJobRequest,
+                         CompressionMediaRequest, CompressionMediaResponse,
                          CompressionJobResponse, CompressionPreset,
                          CompressionPresetCreateRequest, CompressionPresetsResponse,
                          CompressionPresetUpdateRequest, DetectContentTypeRequest,
@@ -838,6 +839,28 @@ def get_video_export_options() -> VideoExportOptionsResponse:
 
 
 compression_router = APIRouter()
+
+
+@compression_router.post('/media', response_model=CompressionMediaResponse, status_code=201)
+def register_compression_media(payload: CompressionMediaRequest) -> CompressionMediaResponse:
+    """Importa um arquivo de qualquer tipo e devolve o que a sondagem obteve.
+
+    O tipo vem do **conteúdo**, nunca da extensão (FR-007): um `.png` com bytes
+    JPEG, um `.mp4` sem trilha de vídeo, um `.gif` de um quadro só — em cada um a
+    extensão afirma uma coisa e o arquivo é outra. Confiar nela ofereceria
+    controles de vídeo para um arquivo de áudio e falharia depois, que é
+    exatamente a falha tardia que o Princípio XIII existe para evitar.
+
+    Como em `POST /media/handles`, o caminho vem do diálogo do sistema operacional
+    aberto pelo processo principal do Electron, é validado antes de qualquer outra
+    coisa, e não volta na resposta.
+    """
+    try:
+        handle_id = media_handles.register_media(payload.path)
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    return CompressionMediaResponse(handle_id=handle_id, **media_handles.describe(handle_id))
 
 
 @compression_router.get('/capabilities', response_model=CompressionCapabilitiesResponse)

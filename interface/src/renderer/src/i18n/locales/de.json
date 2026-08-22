@@ -48,19 +48,69 @@
     "unsupportedFormat": "Nicht unterstütztes Format: {name}"
   },
   "compression": {
+    "back": "Zurück",
     "comingSoon": "Die {media}-Komprimierung kommt in den nächsten Schritten.",
+    "estimate": {
+      "loading": "Wird berechnet…"
+    },
+    "info": {
+      "alpha": "Transparenz",
+      "alphaYes": "Ja",
+      "audioBitrate": "Audiobitrate",
+      "audioCodec": "Audio",
+      "channels": "Kanäle",
+      "channelsCount": "{count} Kanäle",
+      "channelsMono": "Mono",
+      "channelsStereo": "Stereo",
+      "duration": "Dauer",
+      "frameRate": "Bildrate",
+      "frameRateVariable": "~{value} fps (variabel)",
+      "resolution": "Auflösung",
+      "sampleRate": "Abtastrate",
+      "size": "Größe",
+      "videoBitrate": "Videobitrate",
+      "videoCodec": "Video"
+    },
     "media": {
-      "image": "Bild",
-      "video": "Video",
+      "animation": "GIF / Animation",
       "audio": "Audio",
-      "animation": "GIF / Animation"
+      "image": "Bild",
+      "video": "Video"
     },
     "mode": {
-      "basic": "Einfach",
-      "advanced": "Erweitert"
+      "advanced": "Erweitert",
+      "basic": "Einfach"
+    },
+    "queue": {
+      "add": "Hinzufügen",
+      "clearAll": "Alle entfernen",
+      "count": "keine Dateien | 1 Datei | {count} Dateien",
+      "remove": "{name} entfernen",
+      "status": {
+        "importing": "Wird gelesen…",
+        "rejected": "Abgelehnt"
+      },
+      "title": "Importierte Dateien"
+    },
+    "refusal": {
+      "ceiling_exceeded": "über dem Limit dieses Vorgangs",
+      "encoder_unavailable": "dieser Computer kann dieses Format nicht erzeugen",
+      "incompatible_combination": "unvereinbare Kombination",
+      "insufficient_disk": "zu wenig Speicherplatz",
+      "invalid_settings": "ungültige Einstellungen",
+      "not_found": "Datei nicht gefunden",
+      "target_below_floor": "Zielgröße zu klein",
+      "unknown": "fehlgeschlagen",
+      "unreadable": "nicht lesbar",
+      "unsupported_media": "keine erkannte Mediendatei"
     },
     "subtitle": "Dateien verkleinern, ohne die Qualität aus der Hand zu geben",
-    "title": "Komprimierung"
+    "title": "Komprimierung",
+    "upload": {
+      "selectPrompt": "Wähle eine Datei aus der Warteschlange",
+      "subtitle": "Bilder, Video, Audio und GIFs — der Typ wird aus dem Inhalt gelesen",
+      "title": "Dateien zum Komprimieren ablegen"
+    }
   },
   "contentType": {
     "anime_image": "Anime/Illustration",
@@ -87,29 +137,29 @@
   },
   "errors": {
     "category": {
-      "outOfMemory": {
-        "message": "Nicht genug Speicher für diese Ausgabegröße.",
-        "action": "Versuchen Sie einen kleineren Skalierungsfaktor oder eine kleinere eigene Größe."
-      },
       "corruptedInput": {
-        "message": "Die Quelldatei konnte nicht gelesen werden.",
-        "action": "Entfernen Sie diesen Eintrag aus der Warteschlange und importieren Sie die Datei erneut."
-      },
-      "modelFailure": {
-        "message": "Fehler bei der Verarbeitung.",
-        "action": "Versuchen Sie es erneut — bei anhaltendem Fehler ein anderes Modell oder Gerät."
+        "action": "Entfernen Sie diesen Eintrag aus der Warteschlange und importieren Sie die Datei erneut.",
+        "message": "Die Quelldatei konnte nicht gelesen werden."
       },
       "diskFull": {
-        "message": "Nicht genug Speicherplatz.",
-        "action": "Wählen Sie einen anderen Zielordner mit mehr freiem Speicher."
+        "action": "Wählen Sie einen anderen Zielordner mit mehr freiem Speicher.",
+        "message": "Nicht genug Speicherplatz."
       },
       "hardwareInsufficient": {
-        "message": "Dieses Gerät kann diese Verarbeitung nicht ausführen.",
-        "action": "Versuchen Sie eine kleinere Ausgabegröße oder das Profil Schnell."
+        "action": "Versuchen Sie eine kleinere Ausgabegröße oder das Profil Schnell.",
+        "message": "Dieses Gerät kann diese Verarbeitung nicht ausführen."
       },
       "licenseInvalid": {
-        "message": "Ihre Lizenz ist nicht aktiv.",
-        "action": "Prüfen Sie den Lizenzstatus in den Einstellungen."
+        "action": "Prüfen Sie den Lizenzstatus in den Einstellungen.",
+        "message": "Ihre Lizenz ist nicht aktiv."
+      },
+      "modelFailure": {
+        "action": "Versuchen Sie es erneut — bei anhaltendem Fehler ein anderes Modell oder Gerät.",
+        "message": "Fehler bei der Verarbeitung."
+      },
+      "outOfMemory": {
+        "action": "Versuchen Sie einen kleineren Skalierungsfaktor oder eine kleinere eigene Größe.",
+        "message": "Nicht genug Speicher für diese Ausgabegröße."
       }
     },
     "job": {
@@ -166,8 +216,8 @@
     "view": "Ansehen"
   },
   "home": {
-    "title": "Was möchten Sie heute verbessern?",
-    "openAria": "{label} öffnen"
+    "openAria": "{label} öffnen",
+    "title": "Was möchten Sie heute verbessern?"
   },
   "imageEditor": {
     "adjustmentsDescription": "Feine Qualitätsanpassungen",
@@ -314,30 +364,30 @@
   "processing": {
     "device": {
       "auto": {
-        "label": "Automatisch",
-        "description": "GPU, wenn vorhanden, sonst CPU."
+        "description": "GPU, wenn vorhanden, sonst CPU.",
+        "label": "Automatisch"
       },
       "cpu": {
-        "label": "CPU",
-        "description": "Langsamer, läuft auf jedem Rechner."
+        "description": "Langsamer, läuft auf jedem Rechner.",
+        "label": "CPU"
       },
       "cuda": {
-        "label": "GPU (CUDA)",
-        "description": "Schneller, erfordert NVIDIA-Treiber."
+        "description": "Schneller, erfordert NVIDIA-Treiber.",
+        "label": "GPU (CUDA)"
       }
     },
     "profile": {
-      "fast": {
-        "label": "Schnell",
-        "description": "Weniger Detail, früher fertig"
-      },
       "balanced": {
-        "label": "Ausgewogen",
-        "description": "Mittelweg aus Detail und Dauer"
+        "description": "Mittelweg aus Detail und Dauer",
+        "label": "Ausgewogen"
+      },
+      "fast": {
+        "description": "Weniger Detail, früher fertig",
+        "label": "Schnell"
       },
       "quality": {
-        "label": "Qualität",
-        "description": "Mehr Detail, dauert länger"
+        "description": "Mehr Detail, dauert länger",
+        "label": "Qualität"
       }
     }
   },
@@ -347,9 +397,9 @@
     "empty": "Leer",
     "fileCountLabel": "{n} Datei | {n} Dateien",
     "kind": {
+      "audio": "Audio",
       "image": "Bild",
-      "video": "Video",
-      "audio": "Audio"
+      "video": "Video"
     },
     "title": "Verarbeitungswarteschlange"
   },
@@ -388,32 +438,32 @@
     "details": "Details",
     "distributedUnder": "Vertrieben unter der Lizenz {license}.",
     "general": {
-      "title": "Allgemein",
-      "description": "Allgemeine Anwendungseinstellungen",
-      "language": {
-        "label": "Sprache",
-        "description": "Beim ersten Start automatisch von Windows erkannt"
-      },
-      "theme": {
-        "label": "Design",
-        "description": "Helles, dunkles oder an Windows angepasstes Erscheinungsbild",
-        "light": "Hell",
-        "dark": "Dunkel",
-        "auto": "Automatisch"
-      },
       "autoUpdate": {
-        "label": "Automatische Updates",
-        "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)"
+        "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)",
+        "label": "Automatische Updates"
+      },
+      "description": "Allgemeine Anwendungseinstellungen",
+      "exportFormat": {
+        "description": "Beim Öffnen des Exportbereichs vorausgewählt",
+        "label": "Standard-Bildformat"
+      },
+      "language": {
+        "description": "Beim ersten Start automatisch von Windows erkannt",
+        "label": "Sprache"
       },
       "outputFolder": {
-        "label": "Standard-Ausgabeordner",
         "description": "Wird als anfänglicher Vorschlag beim Exportieren verwendet",
+        "label": "Standard-Ausgabeordner",
         "same": "Gleicher Ordner wie das Originalbild"
       },
-      "exportFormat": {
-        "label": "Standard-Bildformat",
-        "description": "Beim Öffnen des Exportbereichs vorausgewählt"
-      }
+      "theme": {
+        "auto": "Automatisch",
+        "dark": "Dunkel",
+        "description": "Helles, dunkles oder an Windows angepasstes Erscheinungsbild",
+        "label": "Design",
+        "light": "Hell"
+      },
+      "title": "Allgemein"
     },
     "imageQuality": "Bildqualität",
     "imageQualityDescription": "Vorgabe für den Export als .jpg/.webp",
@@ -440,19 +490,19 @@
     "title": "Einstellungen"
   },
   "sidebar": {
-    "support": "Support",
     "collapse": "Seitenleiste einklappen",
-    "expand": "Seitenleiste ausklappen",
     "darkMode": "Dunkler Modus",
+    "expand": "Seitenleiste ausklappen",
     "lightMode": "Heller Modus",
-    "toggleTheme": "Hell/Dunkel-Modus umschalten",
     "links": {
-      "site": "Offizielle Website",
       "discord": "Discord",
+      "email": "Support-E-Mail",
       "faq": "FAQ",
       "help": "Hilfe-Center",
-      "email": "Support-E-Mail"
-    }
+      "site": "Offizielle Website"
+    },
+    "support": "Support",
+    "toggleTheme": "Hell/Dunkel-Modus umschalten"
   },
   "stats": {
     "adjustmentsApplied": "Angewandte Anpassungen",
