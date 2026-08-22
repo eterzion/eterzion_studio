@@ -9,15 +9,33 @@ import { join, resolve } from 'node:path'
 export const API_PORT = process.env.ASTROS_API_PORT || '8051'
 export const API_BASE_URL = `http://127.0.0.1:${API_PORT}`
 
-/** Locates the bundled FFmpeg binary's directory (electron-builder extraResources,
- *  see electron-builder.yml win/linux `extraResources: ... to: ffmpeg`), if one was
- *  packaged for this platform. Returns null in dev or on platforms without a
- *  bundled build (currently macOS — see docs/models/MODEL_LICENSES.md §5) so the
- *  Python backend falls back to a PATH-installed ffmpeg. */
-export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
+/** Locates the FFmpeg binary's directory: the packaged one first (electron-builder
+ *  extraResources, see electron-builder.yml win/linux `extraResources: ... to:
+ *  ffmpeg`), then the one `npm run fetch:ffmpeg` leaves in the repo for
+ *  development.
+ *
+ *  The dev fallback is not a convenience. Without it, a developer run resolved
+ *  ffmpeg from PATH — a different binary from the one users get, usually a GPL
+ *  build — and that gap is where three separate defects lived unnoticed: a GPL
+ *  encoder default, two GPL filters absent from the LGPL build, and an ffprobe
+ *  the bundle did not carry. On a machine with no system FFmpeg it was worse
+ *  than a gap: every import failed with `unreadable`, because nothing answered
+ *  the probe at all.
+ *
+ *  Still returns null on platforms without a bundled build (currently macOS —
+ *  see docs/models/MODEL_LICENSES.md §5), where PATH remains the only option. */
+export function resolveBundledFfmpegDir(resourcesPath: string, repoRoot?: string): string | null {
   const binaryName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
-  const dir = join(resourcesPath, 'ffmpeg')
-  return existsSync(join(dir, binaryName)) ? dir : null
+  const packaged = join(resourcesPath, 'ffmpeg')
+  if (existsSync(join(packaged, binaryName))) return packaged
+
+  if (repoRoot) {
+    // Same layout fetch-ffmpeg.mjs writes: resources/ffmpeg/<platform>/.
+    const platformDir = process.platform === 'win32' ? 'win32' : 'linux'
+    const dev = join(repoRoot, 'interface', 'resources', 'ffmpeg', platformDir)
+    if (existsSync(join(dev, binaryName))) return dev
+  }
+  return null
 }
 
 /** Locates the astros_upscale repo root — the directory that has both an `api/`
@@ -97,7 +115,7 @@ export async function ensureApiRunning(
   }
 
   const python = resolvePythonExecutable(repoRoot)
-  const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath)
+  const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath, repoRoot)
   // ASTROS_PORT is the API's own setting name (app/config.py, env_prefix
   // 'ASTROS_'). Passing it explicitly rather than relying on inheritance means
   // the child binds the port this process is already pointing at.
