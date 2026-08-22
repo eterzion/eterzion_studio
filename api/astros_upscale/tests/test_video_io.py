@@ -7,6 +7,8 @@ import pytest
 from astros_upscale.processing import resolve_model
 from astros_upscale.media import ImageOpenError, imread
 from astros_upscale.media import VideoOpenError, VideoReader, VideoWriter, copy_audio, has_ffmpeg
+from astros_upscale.media import ffprobe_path
+from astros_upscale.media import ffmpeg_path
 
 
 def _write_toy_video(path, frames=5, width=32, height=24, fps=10.0):
@@ -20,7 +22,7 @@ def _write_toy_video(path, frames=5, width=32, height=24, fps=10.0):
 
 def _probe_streams(path):
     result = subprocess.run(
-        ['ffprobe', '-v', 'error', '-show_streams', '-of', 'json', path], capture_output=True, text=True)
+        [ffprobe_path() or 'ffprobe', '-v', 'error', '-show_streams', '-of', 'json', path], capture_output=True, text=True)
     return [s['codec_type'] for s in json.loads(result.stdout)['streams']]
 
 
@@ -67,7 +69,7 @@ def test_copy_audio_preserves_audio_track(tmp_path):
 
     # build a source video WITH an audio track (sine wave)
     source_with_audio = str(tmp_path / 'source_audio.mp4')
-    (FFmpeg().option('y')
+    (FFmpeg(executable=ffmpeg_path() or 'ffmpeg').option('y')
      .input(silent_source)
      .input('sine=frequency=440:duration=1', f='lavfi')
      .output(source_with_audio, {'c:v': 'copy', 'c:a': 'aac'}, shortest=None)

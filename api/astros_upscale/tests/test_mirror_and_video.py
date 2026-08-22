@@ -10,6 +10,7 @@ from astros_upscale.processing import AUDIO_ENGINES, MissingAudioDependency, enh
 from astros_upscale.processing import canonical_name, model_download_status, model_local_paths, resolve_model
 from astros_upscale.media import DownloadError, download_with_fallback
 from astros_upscale.media import VideoWriter, even, extract_audio, has_ffmpeg, mux_audio_file
+from astros_upscale.media import ffmpeg_path
 
 
 def _write_source(tmp_path, name, content=b'weights'):
@@ -110,7 +111,7 @@ def test_extract_and_mux_audio_roundtrip(tmp_path):
     writer.close()
 
     source_with_audio = str(tmp_path / 'with_audio.mp4')
-    (FFmpeg().option('y')
+    (FFmpeg(executable=ffmpeg_path() or 'ffmpeg').option('y')
      .input(silent)
      .input('sine=frequency=440:duration=1', f='lavfi')
      .output(source_with_audio, {'c:v': 'copy', 'c:a': 'aac'}, shortest=None)

@@ -56,12 +56,32 @@ jobs:
           sparse-checkout: |
             api
             models
+            # fetch-ffmpeg.mjs only — it imports nothing but node builtins, so
+            # the rest of interface/ stays out of this Windows checkout.
+            interface/scripts
           sparse-checkout-cone-mode: true
-      # windows-latest ships no ffmpeg on PATH. Several non-`slow` tests
-      # (e.g. test_content_type_audio.py) shell out to a real `ffmpeg` to
-      # synthesize fixture audio/video, so without this they fail with
-      # WinError 2 rather than being skipped.
-      - uses: FedericoCarboni/setup-ffmpeg@v3.1
+      # Test against the binary the USER receives, not against whatever ffmpeg
+      # the runner happens to provide.
+      #
+      # This used to be `setup-ffmpeg`, which installs a GPL build on PATH.
+      # Development therefore exercised a different FFmpeg from the shipped one,
+      # and three separate defects lived in that gap without a single red test:
+      # a GPL encoder default, two GPL filters (`eq`, `hqdn3d`) that do not exist
+      # in an LGPL build at all, and an ffprobe the bundle did not carry. Each
+      # worked perfectly in CI and would have failed on a user's machine.
+      #
+      # fetch-ffmpeg.mjs downloads the same pinned LGPL build electron-builder
+      # packages; ASTROS_FFMPEG_DIR is the same variable the Electron main
+      # process sets at runtime, so the resolution path under test is the real
+      # one. No `setup-ffmpeg`: putting a GPL build on PATH would let a fallback
+      # hide exactly what this is here to catch.
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+      - run: node interface/scripts/fetch-ffmpeg.mjs win32
+        working-directory: ${{ github.workspace }}
+      - run: echo "ASTROS_FFMPEG_DIR=${{ github.workspace }}\interface\resources\ffmpeg\win32" >> $env:GITHUB_ENV
+        working-directory: ${{ github.workspace }}
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -90,7 +110,32 @@ jobs:
       # tight time budget. Run them locally or in a separate scheduled job
       # before release. `-n auto` (pytest-xdist) spreads the rest across the
       # runner's cores instead of running ~30 test files serially.
+      # Build the video fixtures before the suite instead of letting 52 tests
+      # skip themselves. They were skipping everywhere, CI included, because the
+      # generator encoded with libx264 — GPL, and absent from any LGPL ffmpeg —
+      # so it failed and nobody noticed: a skipped test reports success. It uses
+      # mpeg4 now and runs anywhere. ~15 s for the whole export path under test.
+      - run: python tests/fixtures/make_video_fixtures.py
+      # Deselect `slow` (real subprocess/model-inference) tests from the
+      # required CI run — they run real ffmpeg/model workloads unsuited to a
+      # tight time budget. Run them locally or in a separate scheduled job
+      # before release. `-n auto` (pytest-xdist) spreads the rest across the
+      # runner's cores instead of running ~30 test files serially.
+      #
+      # A note for local runs: the fixture-backed tests shell out to ffmpeg, and
+      # `-n auto` on a 16-core workstation starts 16 of them at once, which the
+      # machine loses. That shows up as a dozen unrelated-looking failures that
+      # vanish at `-n 4`. Runners have 4 cores, so `-n auto` is already `-n 4`
+      # here; cap it yourself locally.
       - run: pytest -m "not slow" -n auto --durations=20 --cov-report=xml
+      # The core library has its own suite (api/astros_upscale/tests, 81 tests)
+      # and the step above never reached it: pytest.ini here sets
+      # `testpaths = tests`, which is this package's tests and nothing else. It
+      # needs its own step run from api/, whose pyproject.toml points pytest at
+      # the other directory. Without this, the encoder/licensing guards in
+      # test_optimize.py only ever ran on a developer machine.
+      - run: pytest -p no:cacheprovider
+        working-directory: api
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -98,7 +143,7 @@ jobs:
           path: api/astros_upscale_api/coverage.xml
 
   frontend-lint-and-typecheck:
-    name: Desktop app — lint + typecheck
+    name: Desktop app — lint, typecheck + tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -116,3 +161,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run typecheck
+      # The renderer suite (vitest.config.ts, added by 007-video-editor-player)
+      # ran only on developer machines until here — including the locale-parity
+      # test, which is the only automated guard that the 11 translation files
+      # stay in step. `vitest run` needs no display and no Electron binary: the
+      # config points at renderer sources under happy-dom, so it belongs in this
+      # same ubuntu job rather than a runner of its own.
+      - run: pnpm run test

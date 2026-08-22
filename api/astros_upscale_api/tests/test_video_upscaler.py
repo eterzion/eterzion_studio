@@ -12,12 +12,13 @@ import pytest
 from app.config import settings
 from app.processing import VideoUpscaler
 from astros_upscale.media import ffprobe_json, has_ffmpeg
+from astros_upscale.media import ffmpeg_path
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 
 
 def _run_ffmpeg(args: list[str]) -> None:
-    result = subprocess.run(['ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
+    result = subprocess.run([ffmpeg_path() or ffmpeg_path() or 'ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
 
 

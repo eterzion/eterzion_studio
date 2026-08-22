@@ -7,6 +7,7 @@ import pytest
 
 from astros_upscale.media import apply_atadenoise, apply_deflicker, compute_tile_grid
 from astros_upscale.media import VideoWriter
+from astros_upscale.media import ffprobe_path
 
 
 def _write_toy_video(path, frames=8, width=64, height=48, fps=10.0):
@@ -23,7 +24,7 @@ def _write_toy_video(path, frames=8, width=64, height=48, fps=10.0):
 
 def _probe(path):
     result = subprocess.run(
-        ['ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', path],
+        [ffprobe_path() or 'ffprobe', '-v', 'error', '-show_streams', '-show_format', '-of', 'json', path],
         capture_output=True, text=True)
     return json.loads(result.stdout)
 

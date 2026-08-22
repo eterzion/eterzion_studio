@@ -20,6 +20,7 @@ import pytest
 from app.config import settings
 from app.jobs import WorkerCrashed, WorkerFailure, WorkerSupervisor
 from astros_upscale.media import has_ffmpeg
+from astros_upscale.media import ffmpeg_path
 
 pytestmark = [pytest.mark.slow, pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary')]
 
@@ -29,7 +30,7 @@ def _build_test_video(path: str, fps: int = 10, duration: float = 6.0) -> None:
     seconds — enough time for the cancelling thread to call terminate() while
     the worker is still mid-job, not before it starts or after it's done."""
     result = subprocess.run([
-        'ffmpeg', '-y', '-f', 'lavfi', '-i', f'color=c=blue:s=96x64:r={fps}:d={duration}',
+        ffmpeg_path() or 'ffmpeg', '-y', '-f', 'lavfi', '-i', f'color=c=blue:s=96x64:r={fps}:d={duration}',
         '-c:v', 'mpeg4', '-an', path,
     ], capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr

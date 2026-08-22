@@ -21,6 +21,7 @@ with probed metadata, which is what the ceiling actually reads.
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import sys
 from pathlib import Path
@@ -40,6 +41,12 @@ def _ffmpeg() -> str:
     try:
         from astros_upscale.media import ffmpeg_path
     except ImportError:
+        bundled_dir = os.environ.get('ASTROS_FFMPEG_DIR')
+        if bundled_dir:
+            name = 'ffmpeg.exe' if os.name == 'nt' else 'ffmpeg'
+            bundled = os.path.join(bundled_dir, name)
+            if os.path.isfile(bundled):
+                return bundled
         return shutil.which('ffmpeg') or 'ffmpeg'
     return ffmpeg_path() or 'ffmpeg'
 
@@ -62,17 +69,29 @@ def _sine(duration: int) -> list[str]:
     return ['-f', 'lavfi', '-i', f'sine=frequency=440:duration={duration}']
 
 
+# `mpeg4`, not `libx264`. libx264 is GPL and simply absent from an LGPL FFmpeg —
+# including the build the installer ships and the one a licence-conscious
+# developer installs — so this script died with `Unknown encoder 'libx264'` and
+# every test depending on these fixtures skipped itself, quietly, everywhere.
+# 57 of them, CI included.
+#
+# mpeg4 is LGPL, present in every build, and valid in an mp4 container. No test
+# asserts on the fixtures' codec: what they exercise is duration, frame rate,
+# resolution and the presence of an audio track, none of which mpeg4 changes.
+_FIXTURE_VIDEO_CODEC = ['-c:v', 'mpeg4', '-q:v', '3', '-pix_fmt', 'yuv420p']
+
+
 def build_curto(path: Path) -> None:
     """~10 s, 1080p, 30 fps constant frame rate, with an audio track. The
     default subject of most scenarios."""
     _run([*_testsrc(10, '1920x1080', 30), *_sine(10),
-          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-shortest', str(path)])
+          *_FIXTURE_VIDEO_CODEC, '-c:a', 'aac', '-shortest', str(path)])
 
 
 def build_sem_audio(path: Path) -> None:
     """No audio track — drives FR-009 (do not offer a control for a track that
     is not there)."""
-    _run([*_testsrc(5, '1280x720', 30), '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-an', str(path)])
+    _run([*_testsrc(5, '1280x720', 30), *_FIXTURE_VIDEO_CODEC, '-an', str(path)])
 
 
 def build_vfr(path: Path) -> None:
@@ -95,7 +114,7 @@ def build_vfr(path: Path) -> None:
     """
     _run([*_testsrc(6, '640x480', 30),
           '-vf', "select='if(eq(n,0),1,gt(random(0),0.45))'",
-          '-fps_mode', 'passthrough', '-c:v', 'libx264', '-pix_fmt', 'yuv420p', str(path)])
+          '-fps_mode', 'passthrough', *_FIXTURE_VIDEO_CODEC, str(path)])
 
 
 def build_longo(path: Path) -> None:
@@ -103,7 +122,7 @@ def build_longo(path: Path) -> None:
     source at a low frame rate and tiny resolution — what matters is the
     duration ffprobe reports, not the picture."""
     _run(['-f', 'lavfi', '-i', 'color=c=black:size=320x240:rate=1:duration=7500',
-          '-c:v', 'libx264', '-pix_fmt', 'yuv420p', str(path)])
+          *_FIXTURE_VIDEO_CODEC, str(path)])
 
 
 BUILDERS = {
