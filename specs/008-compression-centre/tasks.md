@@ -145,16 +145,16 @@ termo técnico.
 
 ### Backend
 
-- [ ] T031 [US1] Escrever `app/compression/image.py` sobre **Pillow** (Decisão 1 da pesquisa):
+- [X] T031 [US1] Escrever `app/compression/image.py` sobre **Pillow** (Decisão 1 da pesquisa):
       PNG, JPEG, WebP, AVIF, TIFF, BMP; qualidade; lossless; e as opções por formato (nível PNG,
       chroma e progressivo JPEG, effort WebP, speed/chroma AVIF)
-- [ ] T032 [US1] Implementar as sete políticas de metadados, com `essential_only` como padrão —
+- [X] T032 [US1] Implementar as sete políticas de metadados, com `essential_only` como padrão —
       preserva orientação e ICC, remove GPS e o resto (FR-028)
-- [ ] T033 [P] [US1] Escrever `test_image_metadata_policy.py`: cada política verificada **lendo os
+- [X] T033 [P] [US1] Escrever `test_image_metadata_policy.py`: cada política verificada **lendo os
       metadados do arquivo produzido**, nunca pela aparência
-- [ ] T034 [US1] Redimensionamento: largura, altura, percentual, proporção, impedir upscale
+- [X] T034 [US1] Redimensionamento: largura, altura, percentual, proporção, impedir upscale
       (padrão ligado) e os presets de resolução (FR-027)
-- [ ] T035 [P] [US1] Escrever `test_image_resize.py`, incluindo que impedir-upscale de fato impede
+- [X] T035 [P] [US1] Escrever `test_image_resize.py`, incluindo que impedir-upscale de fato impede
 - [ ] T036 [US2] Resolução de tamanho-alvo para imagem por busca sobre amostra reduzida
       (Decisão 5), disparada ao confirmar o alvo e não a cada dígito
 - [ ] T037 [P] [US2] Escrever `test_image_target_size.py`: alvo atingível é atingido; alvo abaixo
