@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, RotateCcw } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
-import RangeSlider from '../RangeSlider.vue'
+import SliderField from '../SliderField.vue'
 import SettingRow from '../SettingRow.vue'
 import SettingSwitch from '../SettingSwitch.vue'
 import AppButton from '../atoms/AppButton.vue'
@@ -52,19 +52,22 @@ const { t } = useI18n()
 // schemas.py. Step sizes are chosen for the control, not for the model: 0.01 is
 // fine enough that a drag feels continuous without producing values a person
 // cannot reason about.
+// `decimals` acompanha o `step`: um controle que anda de 0,01 precisa de duas
+// casas para o número mostrado mudar quando a pessoa arrasta. Mostrar 0 casas
+// num passo de 0,01 seria um número que fica parado enquanto o controle anda.
 const SLIDERS = [
-  { key: 'brightness', min: -1, max: 1, step: 0.01, neutral: 0 },
-  { key: 'contrast', min: 0, max: 4, step: 0.01, neutral: 1 },
-  { key: 'saturation', min: 0, max: 3, step: 0.01, neutral: 1 },
-  { key: 'gamma', min: 0.1, max: 10, step: 0.01, neutral: 1 },
-  { key: 'hue_degrees', min: -180, max: 180, step: 1, neutral: 0 },
-  { key: 'sharpness', min: 0, max: 2, step: 0.01, neutral: 0 }
+  { key: 'brightness', min: -1, max: 1, step: 0.01, neutral: 0, decimals: 2 },
+  { key: 'contrast', min: 0, max: 4, step: 0.01, neutral: 1, decimals: 2 },
+  { key: 'saturation', min: 0, max: 3, step: 0.01, neutral: 1, decimals: 2 },
+  { key: 'gamma', min: 0.1, max: 10, step: 0.01, neutral: 1, decimals: 2 },
+  { key: 'hue_degrees', min: -180, max: 180, step: 1, neutral: 0, decimals: 0, unit: '°' },
+  { key: 'sharpness', min: 0, max: 2, step: 0.01, neutral: 0, decimals: 2 }
 ] as const
 
 const EFFECTS = [
-  { toggle: 'denoise_enabled', strength: 'denoise_strength' },
-  { toggle: 'blur_enabled', strength: 'blur_strength' },
-  { toggle: 'grain_enabled', strength: 'grain_strength' }
+  { toggle: 'denoise_enabled', strength: 'denoise_strength', hint: 'denoiseHint' },
+  { toggle: 'blur_enabled', strength: 'blur_strength', hint: 'blurHint' },
+  { toggle: 'grain_enabled', strength: 'grain_strength', hint: 'grainHint' }
 ] as const
 
 /** Comparado contra o conjunto neutro em vez de contra os valores um a um: o
@@ -93,18 +96,21 @@ const effectsAreNeutral = computed(
             @update:model-value="emit('updateAdjustment', `${slider.key}_enabled`, $event)"
           />
         </SettingRow>
-        <SettingRow v-if="adjustments[`${slider.key}_enabled`]" :label="t('videoEditor.edits.strength')">
-          <RangeSlider
-            :model-value="adjustments[slider.key]"
-            :min="slider.min"
-            :max="slider.max"
-            :step="slider.step"
-            :default-value="slider.neutral"
-            :aria-label="`${t(`videoEditor.edits.${slider.key}`)} — ${t('videoEditor.edits.strength')}`"
-            :disabled="disabled"
-            @update:model-value="emit('updateAdjustment', slider.key, $event)"
-          />
-        </SettingRow>
+        <SliderField
+          v-if="adjustments[`${slider.key}_enabled`]"
+          :label="t('videoEditor.edits.strength')"
+          :model-value="adjustments[slider.key]"
+          :min="slider.min"
+          :max="slider.max"
+          :step="slider.step"
+          :default-value="slider.neutral"
+          :decimals="slider.decimals"
+          :unit="'unit' in slider ? slider.unit : undefined"
+          :hint="t(`videoEditor.edits.${slider.key}Hint`)"
+          :aria-label="`${t(`videoEditor.edits.${slider.key}`)} — ${t('videoEditor.edits.strength')}`"
+          :disabled="disabled"
+          @update:model-value="emit('updateAdjustment', slider.key, $event)"
+        />
       </template>
 
       <AppButton
@@ -132,17 +138,18 @@ const effectsAreNeutral = computed(
             @update:model-value="emit('updateEffect', effect.toggle, $event)"
           />
         </SettingRow>
-        <SettingRow v-if="effects[effect.toggle]" :label="t('videoEditor.edits.strength')">
-          <RangeSlider
-            :model-value="effects[effect.strength]"
-            :min="0"
-            :max="100"
-            :step="1"
-            :aria-label="`${t(`videoEditor.edits.${effect.toggle}`)} — ${t('videoEditor.edits.strength')}`"
-            :disabled="disabled"
-            @update:model-value="emit('updateEffect', effect.strength, $event)"
-          />
-        </SettingRow>
+        <SliderField
+          v-if="effects[effect.toggle]"
+          :label="t('videoEditor.edits.strength')"
+          :model-value="effects[effect.strength]"
+          :min="0"
+          :max="100"
+          :step="1"
+          :hint="t(`videoEditor.edits.${effect.hint}`)"
+          :aria-label="`${t(`videoEditor.edits.${effect.toggle}`)} — ${t('videoEditor.edits.strength')}`"
+          :disabled="disabled"
+          @update:model-value="emit('updateEffect', effect.strength, $event)"
+        />
       </template>
 
       <AppButton
