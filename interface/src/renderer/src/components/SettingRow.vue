@@ -35,9 +35,20 @@ withDefaults(
   flex-wrap: wrap;
 }
 
-.setting-row:last-child,
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+/* Tirar a régua não bastou: as duas linhas continuavam com o respiro de
+   controles vizinhos (16px de cada lado, 32px entre elas), e espaço demais
+   separa tanto quanto uma linha. Uma continuação encosta na anterior. */
 .setting-row.undivided {
   border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setting-row.undivided + .setting-row {
+  padding-top: var(--space-1-5);
 }
 
 .setting-text {
