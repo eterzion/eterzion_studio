@@ -60,16 +60,17 @@ abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typ
 
 ### Estimativa
 
-- [ ] T014 Escrever `app/compression/estimator.py` — estimativa por mídia e resolução de
+- [X] T014 Escrever `app/compression/estimator.py` — estimativa por mídia e resolução de
       tamanho-alvo, com `confidence` e `assumptions` (data-model.md)
-- [ ] T015 **Benchmark da estimativa**: medir a fórmula contra conteúdo liso e conteúdo detalhado,
-      nas quatro mídias, e registrar em `docs/benchmarks/compression-estimate.md`.
-      **Esta tarefa pode reprovar a fórmula** — é o que o SC-002 exige e o cenário 2 do quickstart
-      verifica
-- [ ] T016 [P] Escrever `test_compression_estimator.py`: alvo abaixo do piso responde
+- [X] T015 **Benchmark da estimativa** — registrado em `docs/benchmarks/compression-estimate.md`.
+      **Reprovou a fórmula duas vezes.** A primeira (reduzir e extrapolar): 0/25 dentro de ±20%,
+      erro médio 268%. A segunda (recorte nativo, dois pontos): 9/25, erro médio 32,6%. A terceira
+      (grade de cinco recortes): **22/25, erro médio 8,6% — SC-002 passa**. As duas reprovações
+      apontaram defeitos estruturais, não de calibração
+- [X] T016 [P] Escrever `test_compression_estimator.py`: alvo abaixo do piso responde
       `below_floor` e **não** cria job; estimativa recalcula ao mudar configuração; unidades
       KB/MB/GB
-- [ ] T017 `POST /compression/estimate` — idempotente, sem efeito colateral, sem temporário
+- [X] T017 `POST /compression/estimate` — idempotente, sem efeito colateral, sem temporário
 
 ### Presets
 
@@ -100,14 +101,14 @@ para importar arquivo. A §3 e a §39 inteiras — arrastar, múltiplos, detecç
 metadados antes de processar — não teriam sido implementadas, e a falta só apareceria ao tentar
 usar a tela.
 
-- [ ] T025a Detecção de tipo de mídia **pelo conteúdo**, não pela extensão (FR-007). Reusa
+- [X] T025a Detecção de tipo de mídia **pelo conteúdo**, não pela extensão (FR-007). Reusa
       `probe_streams`/`detect_secondary_elements`; acrescenta o que falta para distinguir
       `animation` de `image` (contagem de quadros)
-- [ ] T025b [P] Escrever `test_media_kind_detection.py`: um `.png` que é JPEG é detectado como
+- [X] T025b [P] Escrever `test_media_kind_detection.py`: um `.png` que é JPEG é detectado como
       JPEG; GIF de um quadro é `image`; extensão errada nunca decide
-- [ ] T025c Sondagem de metadados por tipo (FR-008), com **campo ausente ausente** e nunca zerado
+- [X] T025c Sondagem de metadados por tipo (FR-008), com **campo ausente ausente** e nunca zerado
       (FR-010)
-- [ ] T025d [P] Escrever `test_metadata_absent_is_none.py`: bitrate não sondado é `None`, não `0` —
+- [X] T025d [P] Escrever `test_metadata_absent_is_none.py`: bitrate não sondado é `None`, não `0` —
       a diferença entre uma afirmação sobre a mídia e uma sobre a sondagem
 - [ ] T025e `MediaDropzone` na Central reusando `UploadZone`: arrastar-e-soltar, clicar para
       selecionar, múltiplos arquivos, acrescentar à fila sem substituí-la (FR-005, FR-006)

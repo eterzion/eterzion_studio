@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -492,3 +492,49 @@ class CompressionCapabilitiesResponse(BaseModel):
     video: VideoCapabilities
     audio: AudioCapabilities
     animation: AnimationCapabilities
+
+
+SizeUnit = Literal['KB', 'MB', 'GB']
+EstimateConfidence = Literal['measured_sample', 'derived', 'rough']
+Feasibility = Literal['ok', 'below_floor', 'not_estimable']
+
+
+class CompressionTarget(BaseModel):
+    """O modo tamanho desejado (FR-016). Unidades decimais: "5 MB" num limite de
+    upload são 5.000.000 bytes, e usar 1024 faria o arquivo passar de um limite
+    que a pessoa acertou."""
+    model_config = ConfigDict(extra='forbid')
+
+    value: float = Field(gt=0)
+    unit: SizeUnit = 'MB'
+
+
+class CompressionEstimateRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    handle_id: str
+    media_kind: MediaKind
+    # Livre por tipo de mídia; validado pelo serviço da mídia correspondente.
+    # Um modelo fechado aqui duplicaria as quatro variantes de settings e seria
+    # o segundo lugar a divergir.
+    settings: dict[str, Any] = Field(default_factory=dict)
+    target: CompressionTarget | None = None
+
+
+class CompressionEstimateResponse(BaseModel):
+    """`confidence` e `assumptions` viajam sempre.
+
+    As mídias não são igualmente previsíveis, e apresentar as três com a mesma
+    cara seria mentir sobre duas. `estimated_bytes` nulo é resposta legítima —
+    "não sei" é verdade, e um chute com aparência de medição não é.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    original_bytes: int
+    estimated_bytes: int | None
+    estimated_saving_bytes: int | None
+    reduction_ratio: float | None
+    confidence: EstimateConfidence
+    assumptions: list[str]
+    feasibility: Feasibility
+    resolved_settings: dict[str, Any] | None = None

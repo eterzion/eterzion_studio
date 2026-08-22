@@ -61,6 +61,11 @@ def register(path: str) -> str:
 
     Validation happens before anything else is done with the string, and the
     path never leaves this module afterwards.
+
+    Video-only, and deliberately so: this is the video editor's registry, and
+    every route reading it expects `width`, `frame_rate` and the rest. The
+    Compression Centre works with four media kinds and uses `register_media`
+    below, which detects the kind from the content instead of the extension.
     """
     if not os.path.isfile(path):
         raise HandleError('not_found', f'Arquivo não encontrado: {path!r}')
@@ -80,6 +85,12 @@ def register(path: str) -> str:
             'path': path,
             'display_name': sanitise_display_name(os.path.basename(path)),
             'content_key': content_key(path),
+            # Sem `media_kind` aqui, de propósito. `MediaHandleResponse` é
+            # `extra='forbid'`, e acrescentar um campo ao registro do editor de
+            # vídeo faz `GET /media/handles/{id}` reprovar na validação da
+            # resposta. O tipo de mídia é assunto da Central, e vive no registro
+            # que `register_media` escreve — o contrato do editor não muda por
+            # causa de uma feature nova (FR-069).
             'duration_seconds': probe['duration_seconds'],
             'width': probe['width'],
             'height': probe['height'],
@@ -88,6 +99,42 @@ def register(path: str) -> str:
             'has_audio': probe['audio_stream_count'] > 0,
             'size_bytes': os.path.getsize(path),
         }
+    return handle_id
+
+
+def register_media(path: str) -> str:
+    """Register a file of ANY media kind, for the Compression Centre (FR-007).
+
+    The kind comes from the **content**, never the extension: a `.png` holding
+    JPEG bytes, a `.mp4` with no video track, a `.gif` of a single frame — in
+    each of those the extension asserts one thing and the file is another.
+    Trusting it would offer video controls for an audio file and fail later,
+    which is the late failure Princípio XIII exists to prevent.
+
+    The metadata written here is only what the probe actually obtained. A field
+    it could not read is **absent**, never zero — `None` is a statement about
+    the probe, `0` is a statement about the media, and confusing the two makes
+    the estimate lie with confidence (FR-010).
+    """
+    from app.compression import detect
+
+    if not os.path.isfile(path):
+        raise HandleError('not_found', f'Arquivo não encontrado: {path!r}')
+
+    media_kind = detect.detect_media_kind(path)
+    if media_kind == 'unknown':
+        raise HandleError('unsupported_media', 'O arquivo não é uma mídia que o produto saiba abrir.')
+
+    handle_id = _HANDLE_PREFIX + secrets.token_urlsafe(_HANDLE_ENTROPY_BYTES)
+    entrada = {
+        'path': path,
+        'display_name': sanitise_display_name(os.path.basename(path)),
+        'content_key': content_key(path),
+        'media_kind': media_kind,
+    }
+    entrada.update(detect.probe_metadata(path, media_kind))
+    with _lock:
+        _registry[handle_id] = entrada
     return handle_id
 
 

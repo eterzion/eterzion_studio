@@ -23,10 +23,12 @@ from pydantic import BaseModel, Field
 
 from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
 from app.compression import capabilities as compression_capabilities
+from app.compression import estimator as compression_estimator
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
-                         CompressionCapabilitiesResponse, DetectContentTypeRequest,
+                         CompressionCapabilitiesResponse, CompressionEstimateRequest,
+                         CompressionEstimateResponse, DetectContentTypeRequest,
                          ExportFormat, ExportRequest,
                          ImageExportOptionsResponse, ImageFormatAvailability,
                          LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
@@ -844,6 +846,37 @@ def get_compression_capabilities() -> CompressionCapabilitiesResponse:
     listagem ofereceria MP4/H.264 para morrer no meio da exportação.
     """
     return CompressionCapabilitiesResponse(**compression_capabilities.snapshot())
+
+
+@compression_router.post('/estimate', response_model=CompressionEstimateResponse)
+def estimate_compression(payload: CompressionEstimateRequest) -> CompressionEstimateResponse:
+    """Quanto o arquivo vai pesar com estas configurações (FR-021).
+
+    **Idempotente e sem efeito colateral.** É chamada a cada mudança de
+    controle; criar job, escrever arquivo ou deixar temporário aqui seriam
+    dezenas de resíduos por sessão. A amostragem de imagem vive em memória.
+
+    `estimated_bytes` nulo é resposta legítima, não falha: modo de qualidade
+    constante sem tabela calibrada e formatos sem perda dependem do conteúdo de
+    um jeito que nenhum número único descreve. `confidence` e `assumptions`
+    dizem à interface o que ela pode afirmar.
+    """
+    try:
+        info = media_handles.describe(payload.handle_id)
+        # `resolve` é o acessor interno; o caminho nunca entra numa resposta.
+        source = media_handles.resolve(payload.handle_id)
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+
+    alvo_bytes = None
+    if payload.target is not None:
+        alvo_bytes = compression_estimator.target_to_bytes(payload.target.value,
+                                                           payload.target.unit)
+
+    resultado = compression_estimator.estimate_for_kind(
+        payload.media_kind, source, info, payload.settings, alvo_bytes)
+    return CompressionEstimateResponse(**resultado.as_dict())
 
 
 image_router = APIRouter()
