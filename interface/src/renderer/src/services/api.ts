@@ -434,6 +434,25 @@ export async function getVideoExportOptions(): Promise<VideoExportOptions> {
   return res.json()
 }
 
+/** The image counterpart. Same purpose as the video one: a format this
+ *  machine's OpenCV build cannot write is disabled before it is chosen, not
+ *  after the export fails. */
+export interface ImageFormatAvailability {
+  value: 'png' | 'jpg' | 'jpeg' | 'tiff' | 'webp'
+  available: boolean
+  unavailable_reason: 'unsupported_build' | null
+}
+
+export interface ImageExportOptions {
+  formats: ImageFormatAvailability[]
+}
+
+export async function getImageExportOptions(): Promise<ImageExportOptions> {
+  const res = await fetch(`${BASE_URL}/image/export-options`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
 export interface VideoEditSetPayload {
   adjustments: Record<string, number>
   effects: Record<string, number | boolean>

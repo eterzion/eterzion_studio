@@ -96,11 +96,17 @@ class LocalJobRequest(BaseModel):
     adjustments: Adjustments = Adjustments()
 
 
+# A lista permitida de formatos, num lugar só: o pedido e a resposta de
+# disponibilidade têm que falar do mesmo conjunto, ou a interface oferece o que
+# a rota recusa.
+ExportFormat = Literal['png', 'jpg', 'jpeg', 'tiff', 'webp']
+
+
 class ExportRequest(BaseModel):
     """Body for POST /jobs/{id}/export. Only re-encodes the already-upscaled master
     result (see job_manager._process_job) — never re-runs the model, so switching
     format/quality/destination after a job is done is always fast."""
-    format: Literal['png', 'jpg', 'jpeg', 'tiff', 'webp'] = 'png'
+    format: ExportFormat = 'png'
     quality: int = Field(default=90, ge=1, le=100)
     output_dir: str | None = None  # None = same folder as the original input
     filename: str | None = None  # None = the source's own name, "{name}.{ext}"
@@ -392,3 +398,24 @@ class VideoExportOptionsResponse(BaseModel):
     containers: list[ContainerAvailability]
     profiles: list[Profile]
     ceilings: VideoCeilingsResponse
+
+
+class ImageFormatAvailability(BaseModel):
+    """The image half of the same question `ContainerAvailability` answers for
+    video: what this machine can actually write, not what the list permits.
+
+    `unsupported_build` rather than a library name — the interface translates
+    the key (Princípio XIV), and naming OpenCV to the client would be the same
+    leak Princípio V keeps encoder names out for.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    value: ExportFormat
+    available: bool
+    unavailable_reason: Literal['unsupported_build'] | None = None
+
+
+class ImageExportOptionsResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    formats: list[ImageFormatAvailability]

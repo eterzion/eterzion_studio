@@ -14,6 +14,7 @@ import os
 import shutil
 import tempfile
 import urllib.error
+from typing import get_args
 
 import cv2
 from fastapi import APIRouter, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
@@ -24,10 +25,13 @@ from app import jobs, licensing, media_handles, processing, security, video_edit
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
-                         DetectContentTypeRequest, ExportRequest, LicenseStatusResponse,
-                         LocalJobRequest, MediaHandleRequest, MediaHandleResponse, MediaRequest,
-                         VideoCeilingsResponse, VideoExportOptionsResponse,
-                         VideoExportRequest, VideoPreviewFrameRequest)
+                         DetectContentTypeRequest, ExportFormat, ExportRequest,
+                         ImageExportOptionsResponse, ImageFormatAvailability,
+                         LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
+                         MediaHandleResponse, MediaRequest, VideoCeilingsResponse,
+                         VideoExportOptionsResponse, VideoExportRequest,
+                         VideoPreviewFrameRequest)
+from astros_upscale.media import image_format_works
 
 # ------------------------------- /jobs ------------------------------- #
 
@@ -822,6 +826,34 @@ def get_video_export_options() -> VideoExportOptionsResponse:
         profiles=['fast', 'balanced', 'quality'],
         ceilings=VideoCeilingsResponse(**VIDEO_EDIT_CEILINGS._asdict()),
     )
+
+
+image_router = APIRouter()
+
+
+@image_router.get('/export-options', response_model=ImageExportOptionsResponse)
+def get_image_export_options() -> ImageExportOptionsResponse:
+    """What this machine can actually write, for the image export panel.
+
+    The mirror of `GET /video/export-options`, and it exists for the same
+    reason: an allowed format is not a present one. Image export re-encodes
+    through OpenCV, and OpenCV builds differ in which codecs they carry — WebP
+    and TIFF are optional, and headless is not the same build as full. Offering
+    one the build cannot write means failing after the person chose, which is
+    what Princípio XIII forbids.
+
+    `available` is a functional probe — a real 4×4 image encoded — not a claim
+    read off a table.
+    """
+    formats = []
+    for value in get_args(ExportFormat):
+        usable = image_format_works(f'.{value}')
+        formats.append(ImageFormatAvailability(
+            value=value,
+            available=usable,
+            unavailable_reason=None if usable else 'unsupported_build',
+        ))
+    return ImageExportOptionsResponse(formats=formats)
 
 
 @media_router.get('/handles/{handle_id}/thumbnails')

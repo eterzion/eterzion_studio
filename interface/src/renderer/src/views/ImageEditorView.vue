@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
@@ -41,7 +41,7 @@ import {
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../services/native'
 import { type ContentType, type Profile } from '../services/api'
-import { errorCategoryCopy } from '../services/api'
+import { errorCategoryCopy, getImageExportOptions, type ImageExportOptions } from '../services/api'
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
@@ -141,11 +141,53 @@ const contentTypeOptions = computed<{ value: ContentType; label: string; descrip
 // The descriptions carry what the field hints used to say, so removing those
 // lines costs no information — they are read while choosing instead of after.
 
-const exportFormatOptions = [
-  { value: 'png', label: '.png' },
-  { value: 'jpg', label: '.jpg' },
-  { value: 'webp', label: '.webp' }
-]
+// Quais formatos a tela oferece. Quais deles a MÁQUINA consegue escrever é
+// outra pergunta, e quem responde é GET /image/export-options — a exportação
+// re-codifica pelo OpenCV, e builds de OpenCV diferem em quais codecs carregam
+// (WebP e TIFF são opcionais; headless não é a mesma build que a completa).
+// Oferecer um que a build não escreve faz a exportação falhar depois da escolha,
+// que é o que o Princípio XIII proíbe. Mesmo desenho do painel de vídeo.
+const OFFERED_EXPORT_FORMATS = ['png', 'jpg', 'webp'] as const
+
+const imageExportOptions = ref<ImageExportOptions | null>(null)
+
+onMounted(async () => {
+  try {
+    imageExportOptions.value = await getImageExportOptions()
+  } catch {
+    // Null quer dizer "ainda não sei", e aí nada é desabilitado: bloquear a
+    // exportação porque a consulta falhou seria pior do que deixar tentar.
+    imageExportOptions.value = null
+  }
+})
+
+function formatIsAvailable(value: string): boolean {
+  const known = imageExportOptions.value?.formats.find((f) => f.value === value)
+  return known ? known.available : true
+}
+
+const exportFormatOptions = computed(() =>
+  OFFERED_EXPORT_FORMATS.map((value) => ({
+    value,
+    label: `.${value}`,
+    disabled: !formatIsAvailable(value),
+    // Chave, nunca o nome da biblioteca — o Princípio V vale nesta superfície
+    // como em qualquer outra.
+    description: formatIsAvailable(value) ? undefined : t('imageEditor.formatUnavailable')
+  }))
+)
+
+const noExportFormatAvailable = computed(() =>
+  OFFERED_EXPORT_FORMATS.every((value) => !formatIsAvailable(value))
+)
+
+// Se o formato escolhido não pode ser escrito aqui, cair num que pode em vez de
+// deixar o botão pronto para falhar.
+watch(exportFormatOptions, (options) => {
+  if (formatIsAvailable(exportFormat.value)) return
+  const usable = options.find((option) => !option.disabled)
+  if (usable) exportFormat.value = usable.value
+})
 const conflictOptions = [
   { value: 'rename', label: 'Renomear automaticamente' },
   { value: 'overwrite', label: 'Sobrescrever' },
@@ -959,9 +1001,16 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <AppSelect
                 :model-value="exportFormat"
                 :options="exportFormatOptions"
+                :disabled="noExportFormatAvailable"
                 @update:model-value="(v) => (exportFormat = v as 'png' | 'jpg' | 'webp')"
               />
             </div>
+
+            <!-- No momento em que ajuda: antes de escolher, não depois de
+                 falhar. Mesmo desenho do painel de vídeo. -->
+            <p v-if="noExportFormatAvailable" class="banner-error">
+              <AlertCircle :size="14" /> {{ t('imageEditor.noFormatAvailable') }}
+            </p>
 
             <div v-if="exportFormat !== 'png'" class="field">
               <div class="slider-head">
@@ -1037,7 +1086,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               variant="primary"
               size="lg"
               class="w-full"
-              :disabled="job.exportState === 'exporting'"
+              :disabled="job.exportState === 'exporting' || noExportFormatAvailable"
               @click="runExport(job)"
             >
               <template #icon>

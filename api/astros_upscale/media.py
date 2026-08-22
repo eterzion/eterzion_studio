@@ -637,6 +637,30 @@ def imwrite(path: str, img: np.ndarray) -> None:
     buffer.tofile(path)
 
 
+@functools.lru_cache(maxsize=16)
+def image_format_works(ext: str) -> bool:
+    """Whether this OpenCV build can actually encode `ext` here, right now.
+
+    The image counterpart of `encoder_works()`, and it exists for the same
+    reason: what a format list permits is not what a machine provides. OpenCV
+    builds differ in which codecs they were compiled with — WebP and TIFF in
+    particular are optional, and `opencv-python-headless` is not the same build
+    as `opencv-python`. Offering a format the build cannot write means the
+    export fails after the person chose it, which is what Princípio XIII forbids.
+
+    Encodes a real 4×4 image rather than reading a capability table, because a
+    table is the claim and this is the answer. Cached: the answer cannot change
+    without the build changing.
+    """
+    if not ext.startswith('.'):
+        ext = '.' + ext
+    try:
+        ok, _ = cv2.imencode(ext, np.zeros((4, 4, 3), dtype=np.uint8))
+    except cv2.error:
+        return False
+    return bool(ok)
+
+
 def img2tensor(img: np.ndarray, bgr2rgb: bool = True, add_batch: bool = True) -> torch.Tensor:
     """Convert an HWC numpy image (uint8/uint16/float) to a float32 CHW tensor in [0, 1]."""
     img = img.astype(np.float32)

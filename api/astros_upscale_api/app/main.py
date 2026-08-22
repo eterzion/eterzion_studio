@@ -4,7 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app import jobs, security
 from app.config import settings
 from app.routes import (components_router, files_router, identity_router, jobs_router, license_router,
-                        media_router, preview_router, video_router, ws_router)
+                        image_router, media_router, preview_router, video_router,
+                        ws_router)
 
 app = FastAPI(title='Astros Upscale API')
 
@@ -21,6 +22,7 @@ app.include_router(files_router, tags=['files'])
 app.include_router(identity_router, prefix='/identity', tags=['identity'])
 app.include_router(preview_router, prefix='/preview', tags=['preview'])
 app.include_router(license_router, prefix='/license', tags=['license'])
+app.include_router(image_router, prefix='/image', tags=['image'])
 app.include_router(media_router, prefix='/media', tags=['media'])
 app.include_router(video_router, prefix='/video', tags=['video'])
 app.include_router(ws_router, tags=['ws'])
