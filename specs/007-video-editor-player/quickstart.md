@@ -195,7 +195,7 @@ aprovados.
 | 10 | Áudio | ✅ trilha removida na saída; `sem_audio.mp4` reporta `has_audio: false` |
 | 11 | Taxa de quadros variável | ✅ `frame_rate_is_variable: true` |
 | 12 | Cache invalidado por conteúdo | ✅ preview recusa com 409, chave de conteúdo muda |
-| 3 | Paridade preview × exportação | ⚠️ **medida** em 2026-08-21 (seção abaixo): cada ajuste isolado concorda; os cinco combinados divergem até 22 níveis |
+| 3 | Paridade preview × exportação | ✅ **medida** em 2026-08-21 (seção abaixo), não olhada. Encontrou uma divergência real no croma; corrigida e re-medida |
 
 ### Não executados
 
@@ -254,38 +254,34 @@ mas não é literalmente a janela do produto. Uma máquina, uma GPU.
 
 Em vez da conferência visual, o mesmo quadro passou pelos dois caminhos de
 produção — o shader WebGL e a cadeia que `build_filter_chain` monta — e os
-pixels foram comparados. Diferença em níveis de 0–255, por canal RGB:
+pixels foram comparados. Diferença em níveis de 0–255, por canal RGB, num quadro
+1920×1080.
 
-| Ajuste isolado | Média | p99 | Pior |
-|----------------|------:|----:|-----:|
-| Brilho 0,2 | 0,54 | 2 | 5 |
-| Contraste 1,35 | 0,72 | 3 | 5 |
-| Gama 1,4 | 1,14 | 3 | 6 |
-| Saturação 1,25 | 0,43 | 3 | 6 |
-| Matiz 25° | 0,84 | 3 | 6 |
-| **Os cinco juntos** | **5,68** | **22** | **22** |
+A medição **encontrou uma divergência e ela foi corrigida**. Os números abaixo
+são os de depois; o antes, a causa e o recorte que a isolou estão em
+[preview-export-parity-combined.md](../../docs/technical-debt/preview-export-parity-combined.md).
 
-**Cada parâmetro sozinho concorda.** Todos ficam dentro da tolerância que o
-próprio projeto adotou (`abs=0.02` ≈ 5 níveis), com média em torno de 1.
+| Caso | Média | p99 | Pior |
+|------|------:|----:|-----:|
+| Combinado suave | 0,73 | 4 | 6 |
+| Combinado médio | 1,05 | 4 | 7 |
+| Combinado forte | 1,51 | 7 | 7 |
+| Luma forte, sem croma | 1,03 | 3 | 6 |
+| Croma forte, sem luma | 0,86 | 3 | 6 |
 
-**Combinados, não.** A divergência salta para 5,68 de média e 22 de pior caso —
-maior que qualquer contribuição individual e maior que a soma delas. Isso não é
-ruído de quantização; é diferença de **composição**. A suspeita mais provável é
-o ponto de clamp: `lutyuv` grava numa tabela de 8 bits e satura cada plano
-*entre* os passos, enquanto o shader mantém tudo em float até o clamp final. Com
-brilho, contraste e gama empurrando a luma contra os limites e a saturação
-empurrando o croma, um satura antes do outro.
+A tolerância adotada pelo projeto é `abs=0.02`, ≈5 níveis. **Todos os casos
+passam na média, e o pior caso da tabela inteira é 7.**
 
-**Isso é exatamente o que o FR-015 proíbe acontecer em silêncio, e continua em
-aberto.** Registrado, não corrigido.
+Antes da correção, croma forte divergia 5,95 de média e 21 no pior caso: a
+saturação passava por uma tabela de 8 bits e era clampeada antes de o `hue`
+ler, enquanto o shader escala e rotaciona em float e clampeia uma vez. Saturação
+e matiz agora viajam num único `hue=h=..:s=..` — escalar e rotação comutam, a
+aritmética é a mesma, e some uma ida a 8 bits.
 
-Duas coisas que não dá para afirmar daqui:
-- **Se o `eq` se comportava igual.** A build LGPL empacotada não tem `eq`, então
-  não há como medir o comportamento anterior nesta máquina. O teste de paridade
-  original só exercitava cinza com brilho e contraste — nunca croma, nunca
-  parâmetros combinados —, então também não teria pego isto.
-- **Se 22 níveis são visíveis** no material real do usuário. É 8,6% da faixa;
-  num gradiente liso, provavelmente sim.
+**O que a medição ensinou sobre o teste:** cada parâmetro isolado sempre
+concordou, inclusive antes da correção. A divergência só existia na combinação
+de dois. Um teste de paridade que exercita um parâmetro por vez, em cinza, não
+podia ter visto isso — e era exatamente o que existia.
 
 ### Método, e por que ele foi refeito três vezes
 

@@ -145,35 +145,45 @@ def test_unsupported_rotation_is_refused():
         video_edits.build_filter_chain({'transform': {'rotation_degrees': 45}}, 1920, 1080)
 
 
-def test_adjustments_become_one_lut_pass():
+def test_adjustments_split_between_luma_and_chroma():
     """The FFmpeg half of the parity the renderer's shader must reproduce
     (research.md Decisão 1). If this mapping changes, the shader changes with
     it or the preview starts lying.
 
     Asserting on the shape, not on the exact expression text: the arithmetic is
     pinned where it belongs, by rendering it and comparing against eqLuma()
-    below. Brightness, contrast, saturation and gamma collapse into a single
-    `lutyuv` — one table lookup instead of eq's per-pixel work."""
-    edits = {'adjustments': {'brightness': 0.2, 'contrast': 1.3, 'saturation': 0.8, 'gamma': 1.1}}
+    below. Two passes, and only two: luma through `lutyuv`, chroma through
+    `hue`."""
+    edits = {'adjustments': {'brightness': 0.2, 'contrast': 1.3, 'saturation': 0.8,
+                             'gamma': 1.1, 'hue_degrees': 15}}
     chain = video_edits.build_filter_chain(edits, 1920, 1080)
-    assert len(chain) == 1
-    assert chain[0].startswith('lutyuv=')
-    # Luma carries brightness/contrast/gamma; both chroma planes carry saturation.
-    for plane in ('y=', 'u=', 'v='):
-        assert plane in chain[0]
+    assert len(chain) == 2
+    assert chain[0].startswith('lutyuv=y=')
+    assert chain[1] == 'hue=h=15:s=0.8'
+
+
+def test_saturation_never_goes_through_a_chroma_lut():
+    """It used to, as `lutyuv=u=..:v=..` before `hue`. That pass writes 8-bit
+    chroma and saturates it before `hue` reads it, while the shader scales and
+    rotates in float and clamps once — measured at 5,95 levels of average
+    divergence against 0,93 when merged into a single `hue` pass
+    (docs/technical-debt/preview-export-parity-combined.md)."""
+    chain = video_edits.build_filter_chain({'adjustments': {'saturation': 1.25}}, 1920, 1080)
+    assert chain == ['hue=s=1.25']
+    assert not any('u=' in f or 'v=' in f for f in chain)
 
 
 def test_a_neutral_adjustment_adds_no_pass():
     """A no-op filter is a wasted pass over every frame."""
     assert video_edits.build_filter_chain(
-        {'adjustments': {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0, 'gamma': 1.0}},
+        {'adjustments': {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0,
+                         'gamma': 1.0, 'hue_degrees': 0}},
         1920, 1080) == []
 
 
-def test_saturation_alone_leaves_luma_untouched():
-    edits = {'adjustments': {'saturation': 0.5}}
-    chain = video_edits.build_filter_chain(edits, 1920, 1080)
-    assert len(chain) == 1 and 'y=' not in chain[0] and 'u=' in chain[0]
+def test_hue_alone_still_works():
+    assert video_edits.build_filter_chain(
+        {'adjustments': {'hue_degrees': 20}}, 1920, 1080) == ['hue=h=20']
 
 
 def test_non_finite_values_never_reach_the_graph():
