@@ -135,8 +135,13 @@ const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
 
 // The panels emit; the view applies. Keeping the writes here is what makes
 // useVideoEdits the single owner of edit state.
-function setAdjustment(key: keyof VideoAdjustments, value: number): void {
-  if (activeId.value) edits.editsFor(activeId.value).adjustments[key] = value
+function setAdjustment(key: keyof VideoAdjustments, value: number | boolean): void {
+  if (!activeId.value) return
+  const adjustments = edits.editsFor(activeId.value).adjustments
+  // Os `<key>_enabled` são booleanos e os valores são números; a chave decide
+  // qual, não o chamador.
+  if (typeof value === 'boolean') (adjustments[key] as boolean) = value
+  else (adjustments[key] as number) = value
 }
 
 function setEffect(key: keyof VideoEffects, value: number | boolean): void {
@@ -346,7 +351,8 @@ function remove(id: string): void {
             :effects="edits.current.value.effects"
             :shows-disclosure="edits.needsDisclosure.value"
             :disabled="!active"
-            @reset="activeId && edits.reset(activeId)"
+            @reset-adjustments="activeId && edits.resetAdjustments(activeId)"
+            @reset-effects="activeId && edits.resetEffects(activeId)"
             @update-adjustment="setAdjustment"
             @update-effect="setEffect"
           />

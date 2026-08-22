@@ -162,6 +162,34 @@ def test_adjustments_split_between_luma_and_chroma():
     assert chain[1] == 'hue=h=15:s=0.8'
 
 
+def test_a_disabled_adjustment_does_not_apply():
+    """Cada controle de cor tem seu interruptor, como os efeitos já tinham. Um
+    valor estacionado ao lado de um controle desligado é uma decisão guardada,
+    não uma decisão tomada — aplicá-lo seria fazer o oposto do que a tela diz."""
+    edits = {'adjustments': {'brightness': 0.5, 'brightness_enabled': False,
+                             'saturation': 1.4, 'saturation_enabled': False}}
+    assert video_edits.build_filter_chain(edits, 1920, 1080) == []
+
+
+def test_the_flag_gates_only_its_own_control():
+    edits = {'adjustments': {'brightness': 0.5, 'brightness_enabled': False,
+                             'saturation': 1.4, 'saturation_enabled': True}}
+    assert video_edits.build_filter_chain(edits, 1920, 1080) == ['hue=s=1.4']
+
+
+def test_an_omitted_flag_still_applies_its_value():
+    """Padrão True, não False. Um cliente que manda `{"brightness": 0.3}` quer
+    dizer isso; o contrário descartaria em silêncio tudo que foi escrito antes
+    de os interruptores existirem."""
+    chain = video_edits.build_filter_chain({'adjustments': {'brightness': 0.3}}, 1920, 1080)
+    assert len(chain) == 1 and chain[0].startswith('lutyuv=y=')
+
+
+def test_a_disabled_sharpness_does_not_reach_unsharp():
+    edits = {'adjustments': {'sharpness': 1.5, 'sharpness_enabled': False}}
+    assert video_edits.build_filter_chain(edits, 1920, 1080) == []
+
+
 def test_saturation_never_goes_through_a_chroma_lut():
     """It used to, as `lutyuv=u=..:v=..` before `hue`. That pass writes 8-bit
     chroma and saturates it before `hue` reads it, while the shader scales and

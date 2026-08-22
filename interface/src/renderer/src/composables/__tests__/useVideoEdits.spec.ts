@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
 import {
+  effectiveAdjustments,
+  neutralAdjustments,
+  neutralEffects,
+  neutralTransform,
   hasUnpreviewableEffects,
   neutralEdits,
   useVideoEdits,
@@ -103,6 +107,9 @@ describe('useVideoEdits', () => {
       // Its position next to brightness is not evidence that it is previewed.
       const edits = neutralEdits()
       edits.adjustments.sharpness = 0.5
+      // Ligado explicitamente: cada ajuste tem seu interruptor, e um valor sem
+      // interruptor ligado não é aplicado — nem, portanto, divulgado.
+      edits.adjustments.sharpness_enabled = true
       expect(hasUnpreviewableEffects(edits)).toBe(true)
     })
   })
@@ -180,5 +187,71 @@ describe('eq parity with FFmpeg', () => {
 
   it('never divides by zero on gamma', () => {
     expect(Number.isFinite(eqLuma(0.5, { brightness: 0, contrast: 1, gamma: 0 }))).toBe(true)
+  })
+})
+
+describe('interruptor por ajuste', () => {
+  it('lê como neutro o controle desligado, preservando o valor', () => {
+    const a = { ...neutralAdjustments(), brightness: 0.5, brightness_enabled: false }
+    // O valor continua lá — desligar guarda a escolha em vez de jogá-la fora.
+    expect(a.brightness).toBe(0.5)
+    expect(effectiveAdjustments(a).brightness).toBe(0)
+  })
+
+  it('aplica o valor quando ligado', () => {
+    const a = { ...neutralAdjustments(), brightness: 0.5, brightness_enabled: true }
+    expect(effectiveAdjustments(a).brightness).toBe(0.5)
+  })
+
+  it('cada interruptor governa só o seu controle', () => {
+    const a = {
+      ...neutralAdjustments(),
+      brightness: 0.5,
+      brightness_enabled: false,
+      contrast: 1.6,
+      contrast_enabled: true
+    }
+    const e = effectiveAdjustments(a)
+    expect(e.brightness).toBe(0)
+    expect(e.contrast).toBe(1.6)
+  })
+
+  it('não avisa sobre nitidez que está desligada', () => {
+    // A divulgação do FR-015 anunciaria algo que a exportação não vai fazer.
+    const edits = {
+      adjustments: { ...neutralAdjustments(), sharpness: 1.2, sharpness_enabled: false },
+      effects: neutralEffects(),
+      transform: neutralTransform(),
+      trim: null,
+      audio: { mode: 'keep' as const, volume: 1 }
+    }
+    expect(hasUnpreviewableEffects(edits)).toBe(false)
+    edits.adjustments.sharpness_enabled = true
+    expect(hasUnpreviewableEffects(edits)).toBe(true)
+  })
+})
+
+describe('reset por painel', () => {
+  it('zera só os ajustes, deixando os efeitos', () => {
+    const store = useVideoEdits(ref('a'))
+    const edits = store.editsFor('a')
+    edits.adjustments.brightness = 0.4
+    edits.adjustments.brightness_enabled = true
+    edits.effects.denoise_enabled = true
+
+    store.resetAdjustments('a')
+    expect(edits.adjustments).toEqual(neutralAdjustments())
+    expect(edits.effects.denoise_enabled).toBe(true)
+  })
+
+  it('zera só os efeitos, deixando os ajustes', () => {
+    const store = useVideoEdits(ref('a'))
+    const edits = store.editsFor('a')
+    edits.adjustments.brightness_enabled = true
+    edits.effects.blur_enabled = true
+
+    store.resetEffects('a')
+    expect(edits.effects).toEqual(neutralEffects())
+    expect(edits.adjustments.brightness_enabled).toBe(true)
   })
 })

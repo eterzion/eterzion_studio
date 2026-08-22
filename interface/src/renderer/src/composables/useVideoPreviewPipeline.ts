@@ -1,5 +1,5 @@
 import { onBeforeUnmount, ref, type Ref } from 'vue'
-import type { VideoAdjustments } from './useVideoEdits'
+import { effectiveAdjustments, type VideoAdjustments } from './useVideoEdits'
 
 // T044 (specs/007-video-editor-player) — the interactive preview.
 //
@@ -153,14 +153,13 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
       return
     }
 
-    const a = current ?? {
-      brightness: 0,
-      contrast: 1,
-      saturation: 1,
-      gamma: 1,
-      hue_degrees: 0,
-      sharpness: 0
-    }
+    // Através de effectiveAdjustments, não dos valores crus: um controle
+    // desligado tem que ler como neutro aqui exatamente como lê na exportação.
+    // Ler o valor cru mostraria na prévia um ajuste que o arquivo não teria —
+    // a divergência silenciosa que o FR-015 proíbe.
+    const a = current
+      ? effectiveAdjustments(current)
+      : { brightness: 0, contrast: 1, saturation: 1, gamma: 1, hue_degrees: 0, sharpness: 0 }
     const radians = (a.hue_degrees * Math.PI) / 180
     gl.uniform1f(gl.getUniformLocation(program, 'u_brightness'), a.brightness)
     gl.uniform1f(gl.getUniformLocation(program, 'u_contrast'), a.contrast)

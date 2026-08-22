@@ -316,7 +316,26 @@ def build_filter_chain(edits: dict[str, Any], source_width: int, source_height: 
 # Neutral values, from data-model.md. A parameter at its neutral value is
 # omitted from the graph rather than written as a no-op: a shorter graph is a
 # faster graph, and a lut pass costs one for nothing.
-_EQ_NEUTRAL = {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0, 'gamma': 1.0}
+_EQ_NEUTRAL = {'brightness': 0.0, 'contrast': 1.0, 'saturation': 1.0, 'gamma': 1.0,
+               'hue_degrees': 0.0, 'sharpness': 0.0}
+
+
+def _adjustment(adjustments: dict[str, Any], name: str) -> float:
+    """One adjustment's effective value: its neutral when the control is off.
+
+    The editor puts each colour control behind a toggle, and a control that is
+    off must not apply whatever value is parked beside it. Deciding that here,
+    rather than expecting the client to send neutral values, keeps the rule in
+    one place — and the preview shader applies the identical rule through
+    `effectiveAdjustments()`, so the two cannot drift.
+
+    `<name>_enabled` missing reads as True: the schema defaults it that way so a
+    payload written before the flags existed keeps applying what it sends.
+    """
+    if not adjustments.get(f'{name}_enabled', True):
+        return _EQ_NEUTRAL[name]
+    value = adjustments.get(name)
+    return _EQ_NEUTRAL[name] if value is None else float(value)
 
 
 def _lut_luma(brightness: float, contrast: float, gamma: float) -> str:
@@ -362,19 +381,16 @@ def _colour_filters(adjustments: dict[str, Any]) -> list[str]:
     filtergraph parser would otherwise read as the end of the filter.
     """
     filters = []
-    brightness = float(adjustments.get('brightness') or _EQ_NEUTRAL['brightness'])
-    contrast = float(adjustments.get('contrast') if adjustments.get('contrast') is not None
-                     else _EQ_NEUTRAL['contrast'])
-    gamma = float(adjustments.get('gamma') if adjustments.get('gamma') is not None
-                  else _EQ_NEUTRAL['gamma'])
-    saturation = float(adjustments.get('saturation') if adjustments.get('saturation') is not None
-                       else _EQ_NEUTRAL['saturation'])
+    brightness = _adjustment(adjustments, 'brightness')
+    contrast = _adjustment(adjustments, 'contrast')
+    gamma = _adjustment(adjustments, 'gamma')
+    saturation = _adjustment(adjustments, 'saturation')
 
     if (brightness, contrast, gamma) != (_EQ_NEUTRAL['brightness'], _EQ_NEUTRAL['contrast'],
                                          _EQ_NEUTRAL['gamma']):
         filters.append(f"lutyuv=y='{_lut_luma(brightness, contrast, gamma)}'")
 
-    hue = float(adjustments.get('hue_degrees') or 0.0)
+    hue = _adjustment(adjustments, 'hue_degrees')
     hue_parts = []
     if hue:
         hue_parts.append(f'h={_num(hue)}')
@@ -383,7 +399,7 @@ def _colour_filters(adjustments: dict[str, Any]) -> list[str]:
     if hue_parts:
         filters.append('hue=' + ':'.join(hue_parts))
 
-    sharpness = adjustments.get('sharpness')
+    sharpness = _adjustment(adjustments, 'sharpness')
     if sharpness:
         # unsharp's amount is the last field; 5:5 is the default kernel size.
         filters.append(f'unsharp=5:5:{_num(sharpness)}')

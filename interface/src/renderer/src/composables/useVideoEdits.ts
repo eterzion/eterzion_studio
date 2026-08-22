@@ -7,13 +7,59 @@ import { computed, reactive, ref, type Ref } from 'vue'
 // validates, the filter graph applies, and the shader previews. A bound changed
 // in one place and not the others makes the preview lie (FR-015).
 
+/** The six colour controls, each with its own on/off — the same shape the image
+ *  editor uses for its filters, and for the same reason: a value parked at 0.6
+ *  while the control is off is a decision the person made and can come back to,
+ *  which a slider dragged back to neutral throws away.
+ *
+ *  `<key>_enabled` is mechanical on purpose: the panel derives the flag from the
+ *  slider key, so adding a control cannot leave a flag behind. */
 export interface VideoAdjustments {
   brightness: number
+  brightness_enabled: boolean
   contrast: number
+  contrast_enabled: boolean
   saturation: number
+  saturation_enabled: boolean
   gamma: number
+  gamma_enabled: boolean
   hue_degrees: number
+  hue_degrees_enabled: boolean
   sharpness: number
+  sharpness_enabled: boolean
+}
+
+export type AdjustmentKey =
+  | 'brightness'
+  | 'contrast'
+  | 'saturation'
+  | 'gamma'
+  | 'hue_degrees'
+  | 'sharpness'
+
+export const ADJUSTMENT_NEUTRAL: Record<AdjustmentKey, number> = {
+  brightness: 0,
+  contrast: 1,
+  saturation: 1,
+  gamma: 1,
+  hue_degrees: 0,
+  sharpness: 0
+}
+
+/** The adjustments as they should actually be applied: a control that is off
+ *  reads as its neutral value.
+ *
+ *  Every consumer must go through this — the shader, the disclosure check, and
+ *  anything else that asks "what will this look like". The API honours the flags
+ *  on its own side; if the preview read the raw values instead, a disabled
+ *  control would show in the preview and not in the export, which is precisely
+ *  what FR-015 forbids. */
+export function effectiveAdjustments(a: VideoAdjustments): Record<AdjustmentKey, number> {
+  const out = {} as Record<AdjustmentKey, number>
+  for (const key of Object.keys(ADJUSTMENT_NEUTRAL) as AdjustmentKey[]) {
+    out[key] = a[`${key}_enabled`] ? a[key] : ADJUSTMENT_NEUTRAL[key]
+  }
+  return out
 }
 
 export interface VideoEffects {
@@ -60,7 +106,23 @@ export interface VideoEditSet {
 }
 
 export function neutralAdjustments(): VideoAdjustments {
-  return { brightness: 0, contrast: 1, saturation: 1, gamma: 1, hue_degrees: 0, sharpness: 0 }
+  // Todos desligados, como os filtros do editor de imagem começam. Um vídeo
+  // recém-aberto não tem ajuste nenhum aplicado, que é o que já acontecia
+  // quando os seis nasciam no valor neutro.
+  return {
+    brightness: 0,
+    brightness_enabled: false,
+    contrast: 1,
+    contrast_enabled: false,
+    saturation: 1,
+    saturation_enabled: false,
+    gamma: 1,
+    gamma_enabled: false,
+    hue_degrees: 0,
+    hue_degrees_enabled: false,
+    sharpness: 0,
+    sharpness_enabled: false
+  }
 }
 
 export function neutralEffects(): VideoEffects {
@@ -111,7 +173,7 @@ export function hasUnpreviewableEffects(edits: VideoEditSet): boolean {
     (e.denoise_enabled && e.denoise_strength > 0) ||
     (e.blur_enabled && e.blur_strength > 0) ||
     (e.grain_enabled && e.grain_strength > 0) ||
-    edits.adjustments.sharpness > 0
+    effectiveAdjustments(edits.adjustments).sharpness > 0
   )
 }
 
@@ -121,6 +183,11 @@ export interface VideoEditsStore {
   editsFor: (handleId: string) => VideoEditSet
   /** FR-004: discards ALL five families, not only the image adjustments. */
   reset: (handleId: string) => void
+  /** Só os ajustes de cor. Um botão por painel: quem mexeu no brilho e quer
+   *  recomeçar não deveria perder o corte e o áudio junto. */
+  resetAdjustments: (handleId: string) => void
+  /** Só os efeitos. Mesmo motivo. */
+  resetEffects: (handleId: string) => void
   forget: (handleId: string) => void
   isNeutral: Ref<boolean>
   needsDisclosure: Ref<boolean>
@@ -152,6 +219,14 @@ export function useVideoEdits(activeHandleId: Ref<string | null>): VideoEditsSto
     byHandle.set(handleId, neutralEdits())
   }
 
+  function resetAdjustments(handleId: string): void {
+    Object.assign(editsFor(handleId).adjustments, neutralAdjustments())
+  }
+
+  function resetEffects(handleId: string): void {
+    Object.assign(editsFor(handleId).effects, neutralEffects())
+  }
+
   function forget(handleId: string): void {
     byHandle.delete(handleId)
   }
@@ -164,6 +239,8 @@ export function useVideoEdits(activeHandleId: Ref<string | null>): VideoEditsSto
     current: current as Ref<VideoEditSet>,
     editsFor,
     reset,
+    resetAdjustments,
+    resetEffects,
     forget,
     isNeutral,
     needsDisclosure

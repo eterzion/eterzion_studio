@@ -7,7 +7,12 @@ import RangeSlider from '../RangeSlider.vue'
 import SettingRow from '../SettingRow.vue'
 import SettingSwitch from '../SettingSwitch.vue'
 import AppButton from '../atoms/AppButton.vue'
-import type { VideoAdjustments, VideoEffects } from '../../composables/useVideoEdits'
+import {
+  neutralAdjustments,
+  neutralEffects,
+  type VideoAdjustments,
+  type VideoEffects
+} from '../../composables/useVideoEdits'
 
 // T046/T049 (specs/007-video-editor-player) — FR-013a, FR-013b.
 //
@@ -15,6 +20,11 @@ import type { VideoAdjustments, VideoEffects } from '../../composables/useVideoE
 // which mirrors FFmpeg's eq. Repeating the numbers here would create a fourth
 // place to keep in sync, and the first one to drift would make the preview
 // disagree with the export without anything failing.
+//
+// Cada ajuste fica atrás de um interruptor, como os filtros do editor de
+// imagem. O motivo não é simetria visual: desligar preserva o valor, enquanto
+// arrastar o controle de volta ao neutro joga fora a escolha da pessoa. E o
+// painel fica curto — seis controles abertos ao mesmo tempo é uma parede.
 
 const props = defineProps<{
   adjustments: VideoAdjustments
@@ -30,8 +40,9 @@ const props = defineProps<{
 // the objects are reactive — while making the flow of ownership unreadable, and
 // eslint's vue/no-mutating-props is right to refuse it.
 const emit = defineEmits<{
-  reset: []
-  updateAdjustment: [key: keyof VideoAdjustments, value: number]
+  resetAdjustments: []
+  resetEffects: []
+  updateAdjustment: [key: keyof VideoAdjustments, value: number | boolean]
   updateEffect: [key: keyof VideoEffects, value: number | boolean]
 }>()
 
@@ -56,35 +67,49 @@ const EFFECTS = [
   { toggle: 'grain_enabled', strength: 'grain_strength' }
 ] as const
 
-const isNeutral = computed(() => SLIDERS.every((s) => props.adjustments[s.key] === s.neutral))
+/** Comparado contra o conjunto neutro em vez de contra os valores um a um: o
+ *  neutro é definido num lugar só, e uma comparação escrita à mão aqui seria a
+ *  segunda definição a divergir. */
+const adjustmentsAreNeutral = computed(
+  () => JSON.stringify(props.adjustments) === JSON.stringify(neutralAdjustments())
+)
+const effectsAreNeutral = computed(
+  () => JSON.stringify(props.effects) === JSON.stringify(neutralEffects())
+)
 </script>
 
 <template>
   <div class="flex flex-col gap-2">
     <CollapsiblePanel :title="t('videoEditor.edits.adjustments')" open>
-      <SettingRow
-        v-for="slider in SLIDERS"
-        :key="slider.key"
-        :label="t(`videoEditor.edits.${slider.key}`)"
-      >
-        <RangeSlider
-          :model-value="adjustments[slider.key]"
-          :min="slider.min"
-          :max="slider.max"
-          :step="slider.step"
-          :default-value="slider.neutral"
-          :aria-label="t(`videoEditor.edits.${slider.key}`)"
-          :disabled="disabled"
-          @update:model-value="emit('updateAdjustment', slider.key, $event)"
-        />
-      </SettingRow>
+      <template v-for="slider in SLIDERS" :key="slider.key">
+        <SettingRow :label="t(`videoEditor.edits.${slider.key}`)">
+          <SettingSwitch
+            :model-value="adjustments[`${slider.key}_enabled`]"
+            :disabled="disabled"
+            :aria-label="t(`videoEditor.edits.${slider.key}`)"
+            @update:model-value="emit('updateAdjustment', `${slider.key}_enabled`, $event)"
+          />
+        </SettingRow>
+        <SettingRow v-if="adjustments[`${slider.key}_enabled`]" :label="t('videoEditor.edits.strength')">
+          <RangeSlider
+            :model-value="adjustments[slider.key]"
+            :min="slider.min"
+            :max="slider.max"
+            :step="slider.step"
+            :default-value="slider.neutral"
+            :aria-label="`${t(`videoEditor.edits.${slider.key}`)} — ${t('videoEditor.edits.strength')}`"
+            :disabled="disabled"
+            @update:model-value="emit('updateAdjustment', slider.key, $event)"
+          />
+        </SettingRow>
+      </template>
 
       <AppButton
         variant="ghost"
         size="sm"
-        :disabled="disabled || isNeutral"
+        :disabled="disabled || adjustmentsAreNeutral"
         class="self-start"
-        @click="emit('reset')"
+        @click="emit('resetAdjustments')"
       >
         <template #icon><RotateCcw :size="14" /></template>
         {{ t('videoEditor.edits.reset') }}
@@ -97,6 +122,7 @@ const isNeutral = computed(() => SLIDERS.every((s) => props.adjustments[s.key] =
           <SettingSwitch
             :model-value="effects[effect.toggle]"
             :disabled="disabled"
+            :aria-label="t(`videoEditor.edits.${effect.toggle}`)"
             @update:model-value="emit('updateEffect', effect.toggle, $event)"
           />
         </SettingRow>
@@ -112,6 +138,17 @@ const isNeutral = computed(() => SLIDERS.every((s) => props.adjustments[s.key] =
           />
         </SettingRow>
       </template>
+
+      <AppButton
+        variant="ghost"
+        size="sm"
+        :disabled="disabled || effectsAreNeutral"
+        class="self-start"
+        @click="emit('resetEffects')"
+      >
+        <template #icon><RotateCcw :size="14" /></template>
+        {{ t('videoEditor.edits.reset') }}
+      </AppButton>
     </CollapsiblePanel>
 
     <!-- FR-015. Not a warning about something being wrong — a statement that

@@ -222,15 +222,32 @@ class VideoAdjustments(BaseModel):
     equivalent `lutyuv` expression that replaced it when `eq` proved to be GPL
     and absent from the shipped build. The arithmetic did not change; the filter
     did. Changing a bound here without changing the shader makes the preview
-    lie."""
+    lie.
+
+    Each control carries its own `<name>_enabled`, mirroring the toggles the
+    editor shows — the same shape `VideoEffects` below already had. A control
+    that is off does not apply, whatever value sits next to it: that is what
+    lets a person park a setting and come back to it instead of dragging the
+    slider to neutral and losing the number.
+
+    The flags default to **True**, not False. A client that sends only
+    `{"brightness": 0.3}` means it, and a default of False would silently
+    discard every adjustment sent by anything written before the flags existed.
+    """
     model_config = ConfigDict(extra='forbid')
 
     brightness: float = Field(default=0.0, ge=-1.0, le=1.0)  # additive, not multiplicative
+    brightness_enabled: bool = True
     contrast: float = Field(default=1.0, ge=0.0, le=4.0)
+    contrast_enabled: bool = True
     saturation: float = Field(default=1.0, ge=0.0, le=3.0)
+    saturation_enabled: bool = True
     gamma: float = Field(default=1.0, ge=0.1, le=10.0)
+    gamma_enabled: bool = True
     hue_degrees: float = Field(default=0.0, ge=-180.0, le=180.0)
+    hue_degrees_enabled: bool = True
     sharpness: float = Field(default=0.0, ge=0.0, le=2.0)
+    sharpness_enabled: bool = True
 
 
 class VideoEffects(BaseModel):
