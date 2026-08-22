@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { mount, type VueWrapper } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import FileQueueItem from '../FileQueueItem.vue'
 import type { QueueEntry } from '../../store/mediaQueue'
@@ -25,7 +25,13 @@ function entry(overrides: Partial<QueueEntry> = {}): QueueEntry {
   } as QueueEntry
 }
 
-function render(props: Record<string, unknown>) {
+// Os props vão tipados, não como `Record<string, unknown>`: o typecheck do CI
+// recusa o segundo (`entry` some da assinatura), e uma chave errada aqui passaria
+// despercebida até o teste falhar por um motivo que não é o que ele investiga.
+function render(props: {
+  entry: QueueEntry
+  allowReorder?: boolean
+}): VueWrapper<InstanceType<typeof FileQueueItem>> {
   return mount(FileQueueItem, { props, global: { plugins: [i18n] } })
 }
 
