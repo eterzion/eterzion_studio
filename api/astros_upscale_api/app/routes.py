@@ -25,11 +25,13 @@ from app import jobs, licensing, media_handles, processing, security, video_edit
 from app.compression import capabilities as compression_capabilities
 from app.compression import estimator as compression_estimator
 from app.compression import presets as compression_presets
+from app.compression import runner as compression_runner
 from app.config import VIDEO_EDIT_CEILINGS, settings
 from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
                          CompressionCapabilitiesResponse, CompressionEstimateRequest,
-                         CompressionEstimateResponse, CompressionPreset,
+                         CompressionEstimateResponse, CompressionJobRequest,
+                         CompressionJobResponse, CompressionPreset,
                          CompressionPresetCreateRequest, CompressionPresetsResponse,
                          CompressionPresetUpdateRequest, DetectContentTypeRequest,
                          ExportFormat, ExportRequest,
@@ -936,6 +938,109 @@ def duplicate_compression_preset(preset_id: str, name: str) -> CompressionPreset
         raise HTTPException(_preset_error_status(error.reason),
                             {'reason': error.reason, 'message': str(error)}) from error
     return CompressionPreset(**copia)
+
+
+_COMPRESSION_REFUSAL_STATUS = {
+    'unsupported_media': 415,
+    'unreadable': 415,
+}
+
+
+@compression_router.post('/jobs', response_model=CompressionJobResponse, status_code=202)
+async def create_compression_job(payload: CompressionJobRequest) -> CompressionJobResponse:
+    """Enfileira uma compressão — **depois** de recusar tudo que é recusável.
+
+    Toda verificação aqui acontece antes de qualquer processamento (FR-064).
+    Uma recusa que chega depois de a barra começar já custou o tempo da pessoa,
+    e uma que chega no meio pode deixar um arquivo pela metade.
+    """
+    _enforce_license_gate()
+
+    try:
+        info = media_handles.describe(payload.handle_id)
+        source = media_handles.resolve(payload.handle_id)
+    except media_handles.HandleError as error:
+        raise HTTPException(_handle_error_status(error.reason),
+                            {'reason': error.reason, 'message': str(error)}) from error
+    if source is None or not os.path.isfile(source):
+        raise HTTPException(404, {'reason': 'not_found', 'message': 'Arquivo não encontrado.'})
+
+    settings = dict(payload.settings)
+    estimativa = None
+
+    try:
+        compression_runner.validate(payload.media_kind, settings, advanced=payload.advanced)
+
+        if payload.target is not None:
+            alvo = compression_estimator.target_to_bytes(payload.target.value,
+                                                         payload.target.unit)
+            estimativa = compression_estimator.estimate_for_kind(
+                payload.media_kind, source, info, settings, alvo)
+            if estimativa.feasibility == 'below_floor':
+                raise compression_runner.CompressionRefused(
+                    'target_below_floor',
+                    'O tamanho pedido não é atingível sem destruir a mídia.')
+            # As configurações derivadas do alvo entram de fato — sem isto o
+            # alvo seria decoração, e o arquivo sairia com a qualidade padrão.
+            settings.update(estimativa.resolved_settings or {})
+
+        destino = _compression_output_path(source, payload)
+        compression_runner.check_disk(source, os.path.dirname(destino))
+    except compression_runner.CompressionRefused as error:
+        raise HTTPException(
+            _COMPRESSION_REFUSAL_STATUS.get(error.reason, 422),
+            {'reason': error.reason, 'message': str(error), **error.detail}) from error
+
+    job_id = jobs.create_job(
+        source, info.get('display_name') or os.path.basename(source),
+        {'media_kind': payload.media_kind, 'settings': settings,
+         'output_path': destino, 'preset_id': payload.preset_id,
+         'advanced': payload.advanced},
+        media_type='image' if payload.media_kind == 'image' else 'video',
+        operation='compression')
+    await jobs.enqueue(job_id)
+
+    return CompressionJobResponse(
+        job_id=job_id, status=jobs.get_job(job_id)['status'],
+        estimate=CompressionEstimateResponse(**estimativa.as_dict()) if estimativa else None)
+
+
+def _compression_output_path(source: str, payload: CompressionJobRequest) -> str:
+    """Onde o resultado vai, aplicando o padrão de nome (FR-060).
+
+    **Nunca a origem** (Princípio XV/FR-059). A decisão é aqui e não confiada ao
+    cliente: mesmo com `conflict_policy: overwrite`, sobrescrever o arquivo de
+    onde a pessoa está partindo não é o que "substituir" significa.
+    """
+    diretorio = payload.export.directory or os.path.dirname(source) or settings.outputs_dir
+    base = os.path.splitext(os.path.basename(source))[0]
+    formato = (payload.settings.get('output_format') or '').lower()
+    if not formato or formato == 'keep':
+        extensao = os.path.splitext(source)[1].lstrip('.').lower()
+    else:
+        extensao = 'jpg' if formato == 'jpeg' else formato
+
+    nome = payload.export.naming_pattern.format(
+        filename=base,
+        quality=payload.settings.get('quality', ''),
+        resolution=_resolution_token(payload.settings),
+        codec=payload.settings.get('video_codec') or payload.settings.get('codec') or '',
+    ).strip('_- ') or f'{base}_compressed'
+
+    destino = os.path.join(diretorio, f'{nome}.{extensao}')
+
+    if os.path.abspath(destino) == os.path.abspath(source):
+        destino = os.path.join(diretorio, f'{nome}_compressed.{extensao}')
+    if os.path.exists(destino) and payload.export.conflict_policy != 'overwrite':
+        destino = _free_path(destino)
+    return destino
+
+
+def _resolution_token(settings: dict) -> str:
+    largura, altura = settings.get('width'), settings.get('height')
+    if largura and altura:
+        return f'{largura}x{altura}'
+    return str(largura or altura or '')
 
 
 image_router = APIRouter()

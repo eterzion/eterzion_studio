@@ -33,10 +33,10 @@ abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typ
 
 ### Status e fila
 
-- [ ] T006 Acrescentar `analyzing` ao conjunto de status em `app/jobs.py` e no tipo do renderer,
+- [X] T006 Acrescentar `analyzing` ao conjunto de status em `app/jobs.py` e no tipo do renderer,
       **sem renomear** os existentes — a justificativa está em data-model.md e renomear tocaria
       histórico, API, WebSocket e renderer sem ganho
-- [ ] T007 Escrever `test_status_enum_is_single_source.py`: nenhuma string de status literal fora
+- [X] T007 Escrever `test_status_enum_is_single_source.py`: nenhuma string de status literal fora
       do enum, em toda a base
 
 ### Capacidades
@@ -83,15 +83,15 @@ abas de mídia, e nada mais mudou: 580 testes da API, 95 do renderer, lint e typ
 
 ### Job e ciclo de vida
 
-- [ ] T021 `POST /compression/jobs` com **todas** as recusas da tabela de contracts/api.md,
+- [X] T021 `POST /compression/jobs` com **todas** as recusas da tabela de contracts/api.md,
       verificadas antes de qualquer processamento (FR-064)
-- [ ] T022 Validação da condição 2 da exceção constitucional no backend: `advanced: false` com
+- [X] T022 Validação da condição 2 da exceção constitucional no backend: `advanced: false` com
       campo técnico em `settings` → 422 `invalid_settings`
-- [ ] T023 [P] Escrever `test_compression_job_refusals.py` cobrindo as sete linhas da tabela de
+- [X] T023 [P] Escrever `test_compression_job_refusals.py` cobrindo as sete linhas da tabela de
       recusas, uma a uma
-- [ ] T024 Gerenciamento de temporários: contexto que limpa em sucesso, erro, cancelamento **e**
+- [X] T024 Gerenciamento de temporários: contexto que limpa em sucesso, erro, cancelamento **e**
       no encerramento da aplicação (FR-053)
-- [ ] T025 [P] Escrever `test_compression_no_orphans.py`: depois de sucesso, erro e cancelamento,
+- [X] T025 [P] Escrever `test_compression_no_orphans.py`: depois de sucesso, erro e cancelamento,
       nenhum temporário e nenhum processo filho vivo (SC-005)
 
 ### Importação e detecção

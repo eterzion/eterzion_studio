@@ -2,7 +2,16 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
-JobStatusValue = Literal['pending', 'pending_confirmation', 'queued', 'processing', 'done', 'error', 'cancelled']
+# `analyzing` é a janela entre importar e poder estimar: sondagem de metadados
+# e, para imagem, a codificação da amostra. É estado próprio porque é o único em
+# que a interface pode mostrar progresso e não pode mostrar estimativa.
+#
+# Os nomes existentes NÃO foram renomeados para o conjunto que a solicitação
+# propunha (`completed`/`failed`): renomear tocaria histórico, API, WebSocket e
+# renderer inteiro sem ganhar nada além de outra palavra, e dois conjuntos
+# parecidos são piores que dois diferentes — a diferença passa despercebida até
+# alguém comparar contra a string errada.
+JobStatusValue = Literal['pending', 'pending_confirmation', 'analyzing', 'queued', 'processing', 'done', 'error', 'cancelled']
 ErrorCategory = Literal[
     'out_of_memory', 'corrupted_input', 'model_failure', 'disk_full',
     'hardware_insufficient', 'license_invalid',
@@ -575,3 +584,34 @@ class CompressionPresetUpdateRequest(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=80)
     settings: dict[str, Any] | None = None
+
+
+class CompressionExportConfig(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    directory: str | None = None
+    naming_pattern: str = '{filename}_compressed'
+    conflict_policy: ConflictMode = 'rename'
+    apply_to_all: bool = False
+
+
+class CompressionJobRequest(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    handle_id: str
+    media_kind: MediaKind
+    settings: dict[str, Any] = Field(default_factory=dict)
+    target: CompressionTarget | None = None
+    preset_id: str | None = None
+    # Falso por padrão, e o backend verifica: a condição 2 da exceção do
+    # Princípio V se perderia no dia em que alguém mexesse só na interface.
+    advanced: bool = False
+    export: CompressionExportConfig = Field(default_factory=CompressionExportConfig)
+
+
+class CompressionJobResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    job_id: str
+    status: JobStatusValue
+    estimate: CompressionEstimateResponse | None = None

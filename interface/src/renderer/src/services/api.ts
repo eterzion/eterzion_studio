@@ -87,8 +87,20 @@ export interface MediaRequest {
   edits?: unknown
 }
 
+/** Espelha `JobStatusValue` de `api/astros_upscale_api/app/schemas.py`. As duas
+    listas são verificadas uma contra a outra por `test_status_enum_is_single_source.py`
+    — um status novo no backend que não chegasse aqui viraria um estado que a
+    interface não sabe desenhar. */
 export type JobStatusValue =
-  'pending' | 'pending_confirmation' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
+  | 'pending'
+  | 'pending_confirmation'
+  /** specs/008 — entre importar e poder estimar: sondagem de metadados. */
+  | 'analyzing'
+  | 'queued'
+  | 'processing'
+  | 'done'
+  | 'error'
+  | 'cancelled'
 export type ErrorCategory =
   | 'out_of_memory'
   | 'corrupted_input'

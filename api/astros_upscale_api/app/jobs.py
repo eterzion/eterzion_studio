@@ -585,6 +585,30 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
     }
 
 
+def _run_compression(job: dict, params: dict, on_progress, on_stage) -> dict:
+    """Central de Compressão (specs/008-compression-centre).
+
+    Separado de `_run_compress_convert`, que serve o fluxo antigo e continua
+    funcionando: o Princípio II proíbe duplicar sem motivo, e o motivo aqui é
+    que os dois têm contratos diferentes — este devolve números medidos,
+    economia e o que de fato aplicou, e aquele devolve caminho e tamanho.
+    Fundi-los mudaria o contrato de um caminho que já está em uso (FR-069).
+    """
+    from app.compression import runner
+
+    resultado = runner.run(
+        params['media_kind'], job['input_path'], params['output_path'],
+        params.get('settings') or {},
+        on_progress=on_progress, on_stage=on_stage)
+    # `output_meta` é o que a fila e o histórico leem; `compression` carrega o
+    # que só esta tela usa, sem alargar o contrato compartilhado.
+    return {
+        'output_path': resultado['output_path'],
+        'size_bytes': resultado['output_size_bytes'],
+        'compression': resultado,
+    }
+
+
 def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dict:
     """FR-025 to FR-030: real ffmpeg/OpenCV transcoding, never an AI model —
     this never touches app.licensing's profile resolver or WorkerSupervisor,
@@ -886,6 +910,9 @@ async def _process_job(job_id: str) -> None:
         if job.get('operation') == 'video_edit':
             return _run_video_edit(job, params, on_progress, on_stage)
 
+        if job.get('operation') == 'compression':
+            return _run_compression(job, params, on_progress, on_stage)
+
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
 
@@ -1061,9 +1088,10 @@ async def _process_job(job_id: str) -> None:
         job['progress'] = 100
         job['stage'] = None
         job['processing_ended_at'] = _now_iso()
-        if job.get('operation') in ('compress', 'convert', 'video_edit'):
-            # No lossless "master" here (unlike enhance) — optimize_file() and
-            # video_edits.export() already wrote the real, final result.
+        if job.get('operation') in ('compress', 'convert', 'video_edit', 'compression'):
+            # No lossless "master" here (unlike enhance) — optimize_file(),
+            # video_edits.export() and the Compression Centre's runner already
+            # wrote the real, final result.
             #
             # video_edit belongs in THIS branch, not the media_type == 'video'
             # one below: that branch is the upscale path, which reads
@@ -1083,6 +1111,11 @@ async def _process_job(job_id: str) -> None:
             job['output_meta'] = {
                 'width': output_w, 'height': output_h, 'size_bytes': result_meta['size_bytes'],
             }
+            # Os números medidos da Central — economia, redução, tempo, e se o
+            # arquivo cresceu. Ficam num campo próprio para não alargar
+            # `output_meta`, que é contrato compartilhado com telas antigas.
+            if 'compression' in result_meta:
+                job['compression'] = result_meta['compression']
         elif job.get('media_type') == 'video':
             # No separate "master" for video (unlike image) — VideoUpscaler
             # already wrote the real, final, audio-muxed file.
