@@ -82,7 +82,10 @@ const effectsAreNeutral = computed(
   <div class="flex flex-col gap-2">
     <CollapsiblePanel :title="t('videoEditor.edits.adjustments')" open>
       <template v-for="slider in SLIDERS" :key="slider.key">
-        <SettingRow :label="t(`videoEditor.edits.${slider.key}`)">
+        <SettingRow
+          :label="t(`videoEditor.edits.${slider.key}`)"
+          :divided="!adjustments[`${slider.key}_enabled`]"
+        >
           <SettingSwitch
             :model-value="adjustments[`${slider.key}_enabled`]"
             :disabled="disabled"
@@ -118,7 +121,10 @@ const effectsAreNeutral = computed(
 
     <CollapsiblePanel :title="t('videoEditor.edits.effects')">
       <template v-for="effect in EFFECTS" :key="effect.toggle">
-        <SettingRow :label="t(`videoEditor.edits.${effect.toggle}`)">
+        <SettingRow
+          :label="t(`videoEditor.edits.${effect.toggle}`)"
+          :divided="!effects[effect.toggle]"
+        >
           <SettingSwitch
             :model-value="effects[effect.toggle]"
             :disabled="disabled"

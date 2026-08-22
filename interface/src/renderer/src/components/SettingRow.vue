@@ -1,12 +1,19 @@
 <script setup lang="ts">
-defineProps<{
-  label: string
-  description?: string
-}>()
+withDefaults(
+  defineProps<{
+    label: string
+    description?: string
+    /** A linha de baixo separa um controle do próximo. Quando uma linha é
+     *  continuação da anterior — um interruptor e a intensidade que ele revela —
+     *  a régua entre as duas divide o que é uma coisa só. */
+    divided?: boolean
+  }>(),
+  { divided: true }
+)
 </script>
 
 <template>
-  <div class="setting-row">
+  <div class="setting-row" :class="{ undivided: !divided }">
     <div class="setting-text">
       <span class="setting-label">{{ label }}</span>
       <span v-if="description" class="setting-description">{{ description }}</span>
@@ -28,7 +35,8 @@ defineProps<{
   flex-wrap: wrap;
 }
 
-.setting-row:last-child {
+.setting-row:last-child,
+.setting-row.undivided {
   border-bottom: none;
 }
 
