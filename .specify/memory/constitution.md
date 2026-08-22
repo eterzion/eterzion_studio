@@ -1,5 +1,37 @@
 <!--
 Sync Impact Report — constitution amendment
+Version change: 3.0.0 → 4.0.0 (MAJOR — a principle now permits what it previously forbade)
+
+MAJOR bump rationale: Principle V's technical-disclosure exception previously required the
+disclosed view to be "informational only" and forbade "any choice that changes processing
+results". It now permits exactly such choices, in exactly one place — the Compression Centre's
+Advanced mode — under five cumulative conditions. Redefining a principle so it permits what it
+previously forbade is MAJOR by this document's own versioning policy.
+
+Modified principles:
+  V. Models Are Internal — second bounded exception added, for user-controlled encoding
+     parameters in the Compression Centre. The AI path (upscale, audio restoration) is
+     explicitly excluded and remains under the unmodified rule.
+
+Added principles: none
+Renamed principles: none
+Removed sections: none
+
+Governance: review-gate list unchanged.
+
+Migration note: no existing code becomes non-compliant. The exception is additive and scoped to
+a feature that does not yet exist. `test_no_codec_leak.py` continues to hold for every video
+route it covers — those routes belong to the editor, not to the Compression Centre.
+
+Risk accepted, and by whom: the product owner (Eric Inácio), on 2026-08-21, accepts that the API
+surface grows and that parts of it become coupled to codec vocabulary that may later need to
+change. See the exception's own rationale for why the containment conditions bound that risk.
+
+Deferred / follow-up TODOs: none. No placeholder tokens remain in this document.
+
+---
+Previous report
+---------------
 Version change: 2.6.0 → 3.0.0 (MAJOR — a principle now permits what it previously forbade)
 
 MAJOR bump rationale: Principle XIII previously forbade, without exception, a client supplying a
@@ -375,12 +407,46 @@ This exception is narrow and conditional:
   choice that changes processing results.
 - Where a licence requires attribution, this view MUST carry it.
 
+**Bounded exception — user-controlled encoding parameters.** The Compression Centre MAY expose
+codec, container, CRF/CQ, bitrate, encoder selection, encoding preset, pixel format, sample rate
+and channel layout as controls that DO change the result. This exception is narrow and
+cumulative — all five conditions MUST hold:
+
+1. **Compression only.** It applies to transcoding and re-encoding. It does NOT apply to the AI
+   path: upscale, audio restoration and every other operation that runs a model stay under the
+   unmodified rule above, where the user names intent and the backend resolves everything else.
+2. **Advanced mode is opt-in.** The default (Basic) presentation MUST offer only preset, quality,
+   format, resolution and target size. A person who never opens Advanced MUST never meet a codec
+   name.
+3. **Only what the machine has.** Every technical option offered MUST be gated on a functional
+   probe, per Principle XIII. Offering an encoder this machine cannot run is the same defect
+   whether the user chose it or the backend did.
+4. **Intent still resolves without it.** Every technical control MUST have a working automatic
+   value. "Automático" is not a placeholder; it is the path Basic mode uses, and Advanced mode
+   MUST remain fully usable while every control is left on it.
+5. **Licensing is not a user choice.** The Licensing and Distribution Constraints below are NOT
+   subject to this exception. A GPL encoder MUST NOT become available because a person asked for
+   it in Advanced mode.
+
 **Rationale:** the harm this principle prevents is forcing an engineering decision onto someone who
 cannot evaluate it, and welding the product to an implementation detail that must stay free to
 change. Neither harm occurs when a user deliberately opens a details panel to read what is
 installed and under what licence. Without this exception the principle would also contradict
 Principle IV, which requires attribution to be visible in the shipped product — and attribution is
 impossible without naming what is being attributed.
+
+The second exception rests on the same reading. Compression is not a place where the product knows
+better: a person targeting an 8 MB upload limit, a specific player's codec support, or an archival
+master has a constraint the backend cannot infer. Refusing them CRF is not protecting them from an
+engineering decision — it is withholding the only control that answers their question. The harm the
+principle names returns only if that vocabulary reaches someone who did not ask for it, which is
+what condition 2 prevents, or if it becomes the only way to get a result, which is what condition 4
+prevents.
+
+The risk being accepted is real and is recorded in the amendment log: the API surface grows, and
+part of it becomes coupled to codec names that may later need to change. It is bounded by
+conditions 1 and 3 — the AI path, where implementation churn is highest, is untouched, and no
+option outlives the runtime's ability to serve it.
 
 ### VI. No AI Without Benefit
 
@@ -902,6 +968,34 @@ preferred to a more capable one that exceeds it.
 
 ### Amendment log
 
+**v4.0.0 — 2026-08-21 — Principle V: bounded exception for user-controlled encoding parameters**
+
+*What changed:* Principle V's technical-disclosure exception required the disclosed view to be
+"informational only" and forbade "any choice that changes processing results". A second bounded
+exception now permits exactly such choices — codec, container, CRF/CQ, bitrate, encoder, encoding
+preset, pixel format, sample rate, channels — in the Compression Centre's Advanced mode, under
+five cumulative conditions.
+
+*Why:* compression is the one place where the product does not know better. A person targeting an
+8 MB upload limit, a device's codec support, or an archival master holds a constraint the backend
+cannot infer, and refusing them CRF withholds the only control that answers it. The principle's
+stated harm — forcing an engineering decision onto someone who cannot evaluate it — is prevented
+by conditions 2 and 4 instead: Basic mode never shows a codec name, and every technical control
+has a working "Automático" that Basic mode itself uses.
+
+*Risk accepted, by whom:* the product owner (Eric Inácio) accepts that the API surface grows and
+that part of it becomes coupled to codec vocabulary that may later have to change. Conditions 1
+and 3 bound it — the AI path, where implementation churn is highest, is explicitly excluded, and
+no option may be offered that a functional probe does not confirm.
+
+*Migration note:* no existing code becomes non-compliant. The exception is additive and scoped to
+a feature that does not yet exist. `test_no_codec_leak.py` continues to hold unchanged for the
+video-editor routes it covers; those routes are not the Compression Centre.
+
+*What did NOT change:* the AI path. Upscale and audio restoration remain under the unmodified
+rule — intent in, backend resolves. The Licensing and Distribution Constraints are explicitly
+not subject to this exception: no GPL encoder becomes available because someone asked for it.
+
 **v3.0.0 — 2026-08-14 — Principle XIII: bounded exception for file registration by the desktop shell**
 
 *What changed:* Principle XIII's "Files are addressed by internal identifier" clause previously
@@ -1184,4 +1278,4 @@ itself move, merge, or delete any files.
 *Risk accepted:* none — this principle only adds structure/constraints the codebase did not
 previously have codified; it does not permit anything previously forbidden.
 
-**Version**: 3.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-14
+**Version**: 4.0.0 | **Ratified**: 2026-08-08 | **Last Amended**: 2026-08-21
