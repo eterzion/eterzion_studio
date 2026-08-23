@@ -794,19 +794,52 @@ def _handle_error_status(reason: str) -> int:
 
 @media_router.post('/handles', response_model=MediaHandleResponse, status_code=201)
 def register_media_handle(payload: MediaHandleRequest) -> MediaHandleResponse:
-    """The one route permitted to accept a filesystem path.
+    """The one route permitted to accept a filesystem path — for every media kind.
 
     Conditions of the v3.0.0 exception enforced here: the path is validated
     before anything else is done with it (inside media_handles.register), and
     the response carries no path — MediaHandleResponse has no such field, so
     it cannot leak by accident.
+
+    **Despacha pelo conteúdo, e o vídeo continua indo pelo caminho de sempre.**
+    A Central de Compressão (specs/008) trabalha com quatro tipos de mídia e
+    precisava registrar todos; abrir uma segunda rota de caminho para ela teria
+    quebrado a terceira condição da exceção, que é justamente a que erode
+    primeiro. Registrar tudo aqui mantém uma porta só.
+
+    Um vídeo passa por `register`, que é o registro do editor, e a resposta sai
+    byte a byte igual à de antes — o contrato da spec 007 não muda por causa de
+    uma feature nova (FR-069). O resto passa por `register_media`, que detecta o
+    tipo pelo conteúdo.
     """
     try:
-        handle_id = media_handles.register(payload.path)
+        if _is_video(payload.path):
+            handle_id = media_handles.register(payload.path)
+        else:
+            handle_id = media_handles.register_media(payload.path)
     except media_handles.HandleError as error:
         raise HTTPException(_handle_error_status(error.reason),
                             {'reason': error.reason, 'message': str(error)}) from error
-    return MediaHandleResponse(handle_id=handle_id, **media_handles.describe(handle_id))
+    info = media_handles.describe(handle_id)
+    # Só os campos que esta resposta declara: o registro da Central guarda mais
+    # (bitrate, codec, canais), e é `GET /compression/media/{id}` que os entrega.
+    conhecidos = MediaHandleResponse.model_fields
+    return MediaHandleResponse(handle_id=handle_id,
+                               **{k: v for k, v in info.items() if k in conhecidos})
+
+
+def _is_video(path: str) -> bool:
+    """Pelo **conteúdo**, não pela extensão.
+
+    Um `.mp4` sem trilha de vídeo e um `.png` com bytes de vídeo existem, e é o
+    que está dentro do arquivo que decide qual registro o descreve corretamente.
+    """
+    from app.compression import detect
+
+    try:
+        return detect.detect_media_kind(path) == 'video'
+    except Exception:  # noqa: BLE001 — indecidível aqui vira recusa no registro
+        return False
 
 
 @media_router.get('/handles/{handle_id}', response_model=MediaHandleResponse)
@@ -841,26 +874,25 @@ def get_video_export_options() -> VideoExportOptionsResponse:
 compression_router = APIRouter()
 
 
-@compression_router.post('/media', response_model=CompressionMediaResponse, status_code=201)
-def register_compression_media(payload: CompressionMediaRequest) -> CompressionMediaResponse:
-    """Importa um arquivo de qualquer tipo e devolve o que a sondagem obteve.
+@compression_router.get('/media/{handle_id}', response_model=CompressionMediaResponse)
+def describe_compression_media(handle_id: str) -> CompressionMediaResponse:
+    """O que a sondagem obteve sobre um arquivo já registrado (FR-008).
 
-    O tipo vem do **conteúdo**, nunca da extensão (FR-007): um `.png` com bytes
-    JPEG, um `.mp4` sem trilha de vídeo, um `.gif` de um quadro só — em cada um a
-    extensão afirma uma coisa e o arquivo é outra. Confiar nela ofereceria
-    controles de vídeo para um arquivo de áudio e falharia depois, que é
-    exatamente a falha tardia que o Princípio XIII existe para evitar.
+    **Não aceita caminho, e é por isso que existe separada.** A terceira condição
+    da exceção do Princípio XIII (constituição v3.0.0) diz que só uma rota pode
+    receber um caminho de disco, e ela é `POST /media/handles`. Uma segunda seria
+    a erosão que a condição existe para impedir — sempre parece razoável deixar
+    "só mais uma" receber um caminho.
 
-    Como em `POST /media/handles`, o caminho vem do diálogo do sistema operacional
-    aberto pelo processo principal do Electron, é validado antes de qualquer outra
-    coisa, e não volta na resposta.
+    A Central então importa em dois passos: registra pela rota única e pergunta
+    aqui o que precisa saber.
     """
     try:
-        handle_id = media_handles.register_media(payload.path)
+        info = media_handles.describe(handle_id)
     except media_handles.HandleError as error:
         raise HTTPException(_handle_error_status(error.reason),
                             {'reason': error.reason, 'message': str(error)}) from error
-    return CompressionMediaResponse(handle_id=handle_id, **media_handles.describe(handle_id))
+    return CompressionMediaResponse(handle_id=handle_id, **info)
 
 
 @compression_router.get('/capabilities', response_model=CompressionCapabilitiesResponse)

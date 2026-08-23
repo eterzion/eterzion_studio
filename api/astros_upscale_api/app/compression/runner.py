@@ -13,7 +13,7 @@ import shutil
 import time
 from typing import Any, Callable
 
-from . import capabilities, config, image, workspace
+from . import capabilities, config, image, video, workspace
 
 
 class CompressionRefused(ValueError):
@@ -31,7 +31,7 @@ class CompressionRefused(ValueError):
 # condição de se perder no dia em que alguém mexer só na interface.
 _ADVANCED_ONLY_FIELDS = frozenset({
     'video_codec', 'audio_codec', 'container', 'crf', 'rate_mode',
-    'video_bitrate_bps', 'max_bitrate_bps', 'cbr', 'encoding_preset',
+    'video_bitrate_bps', 'max_bitrate_bps', 'audio_bitrate_bps', 'cbr', 'encoding_preset',
     'encoder_preference', 'codec', 'bitrate_mode', 'sample_rate', 'channels',
     'png_compress_level', 'chroma_subsampling', 'progressive', 'effort', 'speed',
     'dither', 'max_colors',
@@ -179,15 +179,28 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
     inicio = time.monotonic()
     original_bytes = os.path.getsize(source_path)
 
+    # Uma barra de progresso nunca anda para trás. O vídeo reporta progresso
+    # real e chega perto de 99; a imagem não reporta nada e salta de uma vez. Sem
+    # esta trava, o marco fixo pós-compressão puxaria a barra do vídeo de 99 de
+    # volta para 90 — e uma barra que recua é lida como "algo deu errado e está
+    # refazendo".
+    ultimo = 0
+
+    def avancar(valor: int) -> None:
+        nonlocal ultimo
+        if on_progress and valor > ultimo:
+            ultimo = valor
+            on_progress(valor)
+
     if on_stage:
         on_stage('Comprimindo')
 
     with workspace.workspace() as trabalho:
         temporario = os.path.join(trabalho, 'saida' + os.path.splitext(output_path)[1])
-        aplicado = _compress(media_kind, source_path, temporario, settings)
+        aplicado = _compress(media_kind, source_path, temporario, settings,
+                             on_progress=avancar, on_stage=on_stage)
 
-        if on_progress:
-            on_progress(90)
+        avancar(90)
 
         os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
         # `move` e não `copy`: o resultado atravessa o limite do temporário uma
@@ -195,8 +208,7 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
         shutil.move(temporario, output_path)
 
     tamanho_final = os.path.getsize(output_path)
-    if on_progress:
-        on_progress(100)
+    avancar(100)
 
     return {
         'output_path': output_path,
@@ -213,12 +225,24 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
     }
 
 
-def _compress(media_kind: str, source_path: str, output_path: str,
-              settings: dict[str, Any]) -> dict[str, Any]:
+def _compress(media_kind: str, source_path: str, output_path: str, settings: dict[str, Any],
+              *, on_progress: Callable[[int], None] | None = None,
+              on_stage: Callable[[str], None] | None = None) -> dict[str, Any]:
     if media_kind == 'image':
         return image.compress(source_path, output_path,
                               image.ImageSettings.from_dict(settings))
-    # Vídeo, áudio e animação chegam nas Fases 4, 5 e 6. Levantar aqui é melhor
-    # que uma implementação parcial que produza arquivo errado em silêncio.
+    if media_kind == 'video':
+        try:
+            return video.compress(source_path, output_path,
+                                  video.VideoSettings.from_dict(settings),
+                                  on_progress=on_progress, on_stage=on_stage)
+        except video.VideoCompressionError as error:
+            # Traduzida para a recusa da Central em vez de vazar um tipo da
+            # camada de baixo: quem trata `CompressionRefused` já sabe o que
+            # fazer com `reason`, e um segundo tipo de erro com a mesma forma
+            # seria dois caminhos para a mesma coisa.
+            raise CompressionRefused(error.reason, str(error), error.detail) from error
+    # Áudio e animação chegam nas Fases 5 e 6. Levantar aqui é melhor que uma
+    # implementação parcial que produza arquivo errado em silêncio.
     raise CompressionRefused(
         'unsupported_media', f'A compressão de {media_kind} ainda não está disponível.')

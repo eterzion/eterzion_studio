@@ -192,17 +192,17 @@ já resolve o caso mais comum.
 
 ## Fase 4 — US3: Vídeo (P2)
 
-- [ ] T052 [US3] `app/compression/video.py`: codec, container, CRF/CQ ou bitrate, resolução, FPS,
+- [X] T052 [US3] `app/compression/video.py`: codec, container, CRF/CQ ou bitrate, resolução, FPS,
       preset de velocidade, preferência de encoder — argumentos **estruturados**, todo número por
       validador (Princípio XIII)
-- [ ] T053 [US3] Progresso real por `-progress pipe:1`, com `speed` e tempo restante (FR-051)
-- [ ] T054 [P] [US3] Escrever `test_video_progress_is_real.py`: o percentual acompanha a posição
+- [X] T053 [US3] Progresso real por `-progress pipe:1`, com `speed` e tempo restante (FR-051)
+- [X] T054 [P] [US3] Escrever `test_video_progress_is_real.py`: o percentual acompanha a posição
       de tempo que o FFmpeg reporta, não um relógio
-- [ ] T055 [US3] Áudio contido no vídeo: manter, recomprimir ou remover, com codec, bitrate,
+- [X] T055 [US3] Áudio contido no vídeo: manter, recomprimir ou remover, com codec, bitrate,
       sample rate e canais (FR-031)
-- [ ] T056 [US3] Aceleração por hardware com Automático/CPU/GPU e fallback por CPU (FR-047),
+- [X] T056 [US3] Aceleração por hardware com Automático/CPU/GPU e fallback por CPU (FR-047),
       com qualidade e compatibilidade acima de velocidade (FR-048)
-- [ ] T057 [P] [US3] Escrever `test_video_compatibility_matrix.py`: combinação incompatível nunca
+- [X] T057 [P] [US3] Escrever `test_video_compatibility_matrix.py`: combinação incompatível nunca
       é oferecida e nunca é aceita silenciosamente (FR-046)
 - [ ] T058 [US3] `VideoCompressionSettings.vue` — Básico e Avançado, com o CRF mostrando a
       interpretação visual do §16

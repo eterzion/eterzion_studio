@@ -140,6 +140,7 @@ export const ADVANCED_ONLY = new Set<string>([
   'rate_mode',
   'video_bitrate_bps',
   'max_bitrate_bps',
+  'audio_bitrate_bps',
   'cbr',
   'encoding_preset',
   'encoder_preference',

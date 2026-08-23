@@ -381,7 +381,10 @@ export type VideoContainer = 'mp4' | 'mov' | 'mkv' | 'webm'
 export interface MediaHandle {
   handle_id: string
   display_name: string
-  duration_seconds: number
+  /** Ausente quando a mídia não tem duração — uma imagem registrada pela mesma
+   *  rota (specs/008). Todo vídeo continua trazendo o campo. `0` seria uma
+   *  afirmação sobre a mídia onde a verdade é que a pergunta não se aplica. */
+  duration_seconds: number | null
   width: number | null
   height: number | null
   frame_rate: number | null

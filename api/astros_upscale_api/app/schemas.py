@@ -353,6 +353,13 @@ class VideoEditSet(BaseModel):
     audio: VideoAudioEdit = Field(default_factory=VideoAudioEdit)
 
 
+# Os quatro tipos que o produto sabe abrir. Definido aqui, e não junto do resto
+# da Central de Compressão, porque `MediaHandleResponse` o usa — e a rota de
+# registro é anterior à Central: passou a servir todos os tipos quando a Central
+# chegou, em vez de uma segunda rota de caminho ser aberta.
+MediaKind = Literal['image', 'video', 'audio', 'animation']
+
+
 class MediaHandleRequest(BaseModel):
     """The ONE route permitted to accept a filesystem path, under the bounded
     exception added to Princípio XIII in constitution v3.0.0. The path must come
@@ -364,12 +371,20 @@ class MediaHandleRequest(BaseModel):
 
 
 class MediaHandleResponse(BaseModel):
-    """Note what is absent: there is no path field, and there never may be."""
+    """Note what is absent: there is no path field, and there never may be.
+
+    `duration_seconds` deixou de ser obrigatório quando esta rota passou a
+    registrar qualquer tipo de mídia (specs/008). Uma imagem não tem duração, e
+    `0.0` seria uma afirmação sobre a mídia onde a verdade é que a pergunta não
+    se aplica. Todo vídeo continua trazendo o campo, então nada muda para quem
+    já lia esta resposta.
+    """
     model_config = ConfigDict(extra='forbid')
 
     handle_id: str
     display_name: str
-    duration_seconds: float
+    media_kind: MediaKind | None = None
+    duration_seconds: float | None = None
     width: int | None = None
     height: int | None = None
     frame_rate: float | None = None
@@ -452,7 +467,6 @@ class ImageExportOptionsResponse(BaseModel):
 
 # --- Central de Compressão (specs/008-compression-centre) ---
 
-MediaKind = Literal['image', 'video', 'audio', 'animation']
 
 # Motivo pelo qual algo não está disponível. **Chave, nunca frase e nunca nome
 # de biblioteca**: a interface traduz (Princípio XIV) e o Princípio V mantém

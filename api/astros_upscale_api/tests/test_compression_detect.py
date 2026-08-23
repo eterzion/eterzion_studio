@@ -140,14 +140,48 @@ def test_o_registro_guarda_o_tipo_detectado(tmp_path):
     assert media_handles.describe(handle)['media_kind'] == 'image'
 
 
-def test_o_registro_do_editor_nao_ganhou_campo_novo(tmp_path):
-    """`MediaHandleResponse` é `extra='forbid'`. Acrescentar um campo ao
-    registro do editor de vídeo faz a rota dele reprovar na validação da
-    resposta — foi o que aconteceu ao escrever isto, e é por isso que o teste
-    existe. Uma feature nova não muda o contrato de uma antiga (FR-069)."""
+def test_o_registro_do_editor_valida_sem_os_campos_novos(tmp_path):
+    """Uma feature nova não muda o contrato de uma antiga (FR-069).
+
+    `MediaHandleResponse` é `extra='forbid'`, e acrescentar um campo
+    **obrigatório** faria a rota do editor de vídeo reprovar na validação da
+    resposta — foi o que aconteceu ao escrever isto pela primeira vez.
+
+    A verificação mudou de forma quando a rota de registro passou a servir os
+    quatro tipos de mídia: proibir o campo deixou de ser possível, porque a
+    Central precisa dele. O que continua valendo, e é o que sempre importou, é
+    que **todo campo acrescentado depois é opcional** — o registro do editor não
+    os escreve, e a resposta dele tem que continuar validando exatamente como
+    antes.
+    """
     from app.schemas import MediaHandleResponse
 
-    assert 'media_kind' not in MediaHandleResponse.model_fields
+    do_editor = {'handle_id', 'display_name', 'content_key', 'duration_seconds',
+                 'width', 'height', 'frame_rate', 'frame_rate_is_variable',
+                 'has_audio', 'size_bytes'}
+    obrigatorios = {nome for nome, campo in MediaHandleResponse.model_fields.items()
+                    if campo.is_required()}
+    assert obrigatorios <= do_editor, (
+        f'campo obrigatório novo quebraria a rota do editor: {obrigatorios - do_editor}')
+
+
+def test_a_resposta_do_editor_valida_com_um_video_de_verdade():
+    """O mesmo, medido em vez de deduzido do schema."""
+    import pathlib as _pathlib
+
+    from app.schemas import MediaHandleResponse
+
+    fixture = _pathlib.Path(__file__).parent / 'fixtures' / 'curto.mp4'
+    if not fixture.is_file():
+        pytest.skip('fixture de vídeo ausente')
+
+    handle = media_handles.register(str(fixture))
+    info = media_handles.describe(handle)
+    conhecidos = MediaHandleResponse.model_fields
+    resposta = MediaHandleResponse(
+        handle_id=handle, **{k: v for k, v in info.items() if k in conhecidos})
+    assert resposta.duration_seconds is not None
+    assert resposta.media_kind is None, 'o registro do editor não escreve media_kind'
 
 
 def test_o_caminho_nunca_sai_no_describe(tmp_path):

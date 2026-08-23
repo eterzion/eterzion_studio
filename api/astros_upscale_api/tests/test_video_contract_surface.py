@@ -30,6 +30,19 @@ FIXTURES = Path(__file__).resolve().parent / 'fixtures'
 IMPLEMENTATION_FIELDS = ('codec', 'encoder', 'preset', 'crf', 'pix_fmt', 'pixel_format', 'bitrate')
 PATH_FIELDS = ('path',)
 
+# Campos cujo nome casa com a heurística acima e que **não** são escolha de
+# implementação. A lista é nominal e curta de propósito: afrouxar o padrão —
+# deixar de casar "preset", por exemplo — esconderia `encoding_preset` junto, e
+# é justamente ele que o Princípio V proíbe. Cada entrada precisa de uma razão
+# escrita.
+#
+# `preset_id` (specs/008, FR-014) identifica um **preset de configurações
+# salvas** — "Discord 8 MB", uma coisa que a pessoa nomeia e guarda. Não é o
+# `-preset` de encoder, não vira argumento de FFmpeg, e é o backend que resolve
+# o que ele significa. Um identificador opaco que o cliente recebeu da própria
+# API não fixa implementação nenhuma.
+ALLOWED_IMPLEMENTATION_LOOKALIKES = frozenset({'preset_id'})
+
 # Routes that predate this feature. They are outside its scope and are not made
 # non-compliant by it — POST /jobs/local in particular accepts a local path and
 # is explicitly NOT covered by the v3.0.0 exception (it is not a registration
@@ -99,11 +112,35 @@ def test_no_route_accepts_an_implementation_choice(client):
     anything calling the API directly — pin an implementation the backend is
     supposed to own."""
     offenders = {
-        (path, method, sorted(f for f in fields if any(bad in f.lower() for bad in IMPLEMENTATION_FIELDS)))
+        # Tupla, e não lista: o conjunto precisa de elementos hasháveis. A versão
+        # com `sorted(...)` levantava TypeError exatamente quando havia um
+        # infrator — o único momento em que a mensagem importava.
+        (path, method, tuple(sorted(_suspects(fields))))
         for path, method, fields in _routes_with_bodies(client)
-        if any(bad in f.lower() for f in fields for bad in IMPLEMENTATION_FIELDS)
+        if _suspects(fields)
     }
     assert not offenders, f'rotas aceitando escolha de implementação: {offenders}'
+
+
+def _suspects(fields) -> set[str]:
+    return {
+        f for f in fields
+        if f.lower() not in ALLOWED_IMPLEMENTATION_LOOKALIKES
+        and any(bad in f.lower() for bad in IMPLEMENTATION_FIELDS)
+    }
+
+
+def test_a_lista_de_excecoes_nao_cobre_o_que_o_principio_proibe():
+    """A guarda da guarda.
+
+    Uma lista de exceções é o lugar onde um princípio morre em silêncio: basta
+    alguém acrescentar `encoding_preset` a ela para o teste acima continuar
+    verde enquanto a API passa a aceitar escolha de encoder. Estes nomes nunca
+    podem ficar isentos.
+    """
+    proibidos = {'preset', 'encoding_preset', 'video_codec', 'audio_codec',
+                 'encoder', 'encoder_preference', 'crf', 'pix_fmt'}
+    assert not (ALLOWED_IMPLEMENTATION_LOOKALIKES & proibidos)
 
 
 def test_only_one_route_accepts_a_path(client):

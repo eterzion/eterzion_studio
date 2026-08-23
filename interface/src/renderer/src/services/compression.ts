@@ -179,11 +179,22 @@ export interface CompressionMedia {
   container_bitrate_bps?: number | null
 }
 
-export function registerMedia(path: string): Promise<CompressionMedia> {
-  return request<CompressionMedia>('/compression/media', {
+/** Importa em dois passos, e a divisão é constitucional, não estilística.
+ *
+ *  `POST /media/handles` é a **única** rota autorizada a receber um caminho de
+ *  disco (terceira condição da exceção do Princípio XIII). Abrir uma segunda
+ *  para a Central seria exatamente a erosão que a condição existe para impedir —
+ *  sempre parece razoável deixar "só mais uma" receber um caminho.
+ *
+ *  O segundo passo não carrega caminho nenhum: pergunta pelo identificador. */
+export async function registerMedia(path: string): Promise<CompressionMedia> {
+  const registrado = await request<{ handle_id: string }>('/media/handles', {
     method: 'POST',
     body: JSON.stringify({ path })
   })
+  return request<CompressionMedia>(
+    `/compression/media/${encodeURIComponent(registrado.handle_id)}`
+  )
 }
 
 export function getCapabilities(): Promise<CompressionCapabilities> {

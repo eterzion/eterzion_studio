@@ -88,9 +88,12 @@ export const videoEntries: ComputedRef<QueueEntry[]> = computed(() =>
     status: 'configuring' as JobStatus,
     progress: 0,
     queuePosition: null,
+    // Esta fila é do editor de vídeo, e todo vídeo tem duração — o `?? 0` está
+    // aqui porque a rota de registro passou a servir também imagens (specs/008)
+    // e o campo virou opcional no tipo, não porque um vídeo possa chegar sem ela.
     detail: video.handle.width
-      ? `${video.handle.width} × ${video.handle.height} · ${formatDuration(video.handle.duration_seconds)}`
-      : formatDuration(video.handle.duration_seconds)
+      ? `${video.handle.width} × ${video.handle.height} · ${formatDuration(video.handle.duration_seconds ?? 0)}`
+      : formatDuration(video.handle.duration_seconds ?? 0)
   }))
 )
 

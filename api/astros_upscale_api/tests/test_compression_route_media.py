@@ -1,10 +1,13 @@
 """T025e/T025f (lado do backend) — importar qualquer mídia, e só dizer o que se sabe.
 
-Duas propriedades:
+Três propriedades:
 
 - o tipo vem do conteúdo, nunca da extensão (FR-007);
 - o que a sondagem não obteve chega **ausente**, nunca zerado (FR-010) — `None`
-  fala da sondagem, `0` falaria da mídia.
+  fala da sondagem, `0` falaria da mídia;
+- a importação acontece em **dois passos**, e isso é constitucional: só
+  `POST /media/handles` pode receber um caminho de disco (terceira condição da
+  exceção do Princípio XIII), e a Central pergunta o resto pelo identificador.
 """
 from __future__ import annotations
 
@@ -33,9 +36,18 @@ def png(tmp_path):
     return caminho
 
 
+def _importar(client, caminho):
+    """Os dois passos que a interface dá: registrar pela rota única, perguntar
+    pelo identificador."""
+    registro = client.post('/media/handles', json={'path': str(caminho)})
+    if registro.status_code != 201:
+        return registro
+    return client.get(f"/compression/media/{registro.json()['handle_id']}")
+
+
 def test_importa_uma_imagem_e_descreve_o_que_sondou(client, png):
-    r = client.post('/compression/media', json={'path': str(png)})
-    assert r.status_code == 201, r.text
+    r = _importar(client, png)
+    assert r.status_code == 200, r.text
     corpo = r.json()
 
     assert corpo['media_kind'] == 'image'
@@ -47,7 +59,7 @@ def test_importa_uma_imagem_e_descreve_o_que_sondou(client, png):
 def test_o_caminho_nao_volta_na_resposta(client, png):
     """Não há campo de caminho no schema, e nunca pode haver. O teste existe
     porque acrescentar um seria fácil e passaria por revisão."""
-    corpo = client.post('/compression/media', json={'path': str(png)}).json()
+    corpo = _importar(client, png).json()
     assert 'path' not in corpo
     assert str(png) not in str(corpo)
 
@@ -61,7 +73,7 @@ def test_a_extensao_nao_decide(client, png, tmp_path):
     mentiroso = tmp_path / 'mentiroso.png'
     shutil.copyfile(jpeg, mentiroso)
 
-    corpo = client.post('/compression/media', json={'path': str(mentiroso)}).json()
+    corpo = _importar(client, mentiroso).json()
     assert corpo['media_kind'] == 'image'
     # A detecção olhou os bytes: um PNG de verdade daria as mesmas dimensões,
     # então o que prova a leitura do conteúdo é o arquivo ter sido aceito e
@@ -72,14 +84,14 @@ def test_a_extensao_nao_decide(client, png, tmp_path):
 def test_campo_nao_sondado_chega_ausente_e_nao_zerado(client, png):
     """Uma imagem não tem duração, bitrate, canais nem taxa de amostragem. A
     resposta tem que **omitir** os quatro, não devolvê-los como zero."""
-    corpo = client.post('/compression/media', json={'path': str(png)}).json()
+    corpo = _importar(client, png).json()
     for campo in ('duration_seconds', 'audio_bitrate_bps', 'channels', 'sample_rate',
                   'video_codec', 'frame_rate'):
         assert corpo.get(campo) is None, f'{campo} veio preenchido para uma imagem'
 
 
 def test_arquivo_inexistente_e_404(client, tmp_path):
-    r = client.post('/compression/media', json={'path': str(tmp_path / 'nada.png')})
+    r = _importar(client, tmp_path / 'nada.png')
     assert r.status_code == 404
     assert r.json()['detail']['reason'] == 'not_found'
 
@@ -87,11 +99,26 @@ def test_arquivo_inexistente_e_404(client, tmp_path):
 def test_arquivo_que_nao_e_midia_e_415(client, tmp_path):
     texto = tmp_path / 'leiame.txt'
     texto.write_text('isto não é mídia', encoding='utf-8')
-    r = client.post('/compression/media', json={'path': str(texto)})
+    r = _importar(client, texto)
     assert r.status_code == 415
     assert r.json()['detail']['reason'] == 'unsupported_media'
 
 
 def test_campo_desconhecido_e_recusado(client, png):
-    r = client.post('/compression/media', json={'path': str(png), 'media_kind': 'image'})
+    r = client.post('/media/handles', json={'path': str(png), 'media_kind': 'image'})
     assert r.status_code == 422
+
+
+def test_a_central_nao_tem_rota_que_aceite_caminho(client, png):
+    """A terceira condição da exceção, verificada de fora.
+
+    É a condição que erode primeiro numa superfície que cresce — sempre parece
+    razoável deixar "só mais uma" rota receber um caminho. Este teste existe
+    porque a Central já teve uma, e ela foi removida.
+    """
+    r = client.post('/compression/media', json={'path': str(png)})
+    assert r.status_code in (404, 405), 'a Central voltou a aceitar um caminho'
+
+
+def test_identificador_desconhecido_e_404(client):
+    assert client.get('/compression/media/vh_naoexiste').status_code == 404
