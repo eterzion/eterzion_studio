@@ -53,10 +53,13 @@
     "compare": {
       "after": "Komprimiert",
       "before": "Original",
+      "pause": "Pause",
       "pending": "Komprimiere, um zu vergleichen.",
+      "play": "Abspielen",
       "reset": "Einpassen",
       "sideBySide": "Nebeneinander",
       "slider": "Überlagert",
+      "synced": "Beide laufen synchron.",
       "view": "Ansicht",
       "zoom": "Zoom"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "Wähle eine Datei aus der Warteschlange",
       "subtitle": "Bilder, Video, Audio und GIFs — der Typ wird aus dem Inhalt gelesen",
       "title": "Dateien zum Komprimieren ablegen"
+    },
+    "video": {
+      "advanced": "Erweiterte Einstellungen",
+      "audio": {
+        "bitrate": "Audio-Bitrate",
+        "bitrateHint": "Über 192 kbps ist der Unterschied kaum hörbar.",
+        "codec": "Audio-Codec",
+        "keep": "So lassen",
+        "keepHint": "Kopiert die Spur ohne Neukodierung — schneller und verlustfrei.",
+        "label": "Tonspur",
+        "recompress": "Neu komprimieren",
+        "remove": "Entfernen",
+        "removeHint": "Das Video bleibt stumm."
+      },
+      "audioTitle": "Audio",
+      "auto": "Automatisch",
+      "codec": "Video-Codec",
+      "codecHint": "Hier stehen nur die, die dieses Format akzeptiert.",
+      "container": "Format",
+      "containerHint": "Bestimmt, welche Codecs möglich sind.",
+      "encoder": {
+        "auto": "Automatisch",
+        "autoHint": "Bevorzugt Qualität und Kompatibilität vor Tempo.",
+        "cpu": "Prozessor",
+        "gpu": "Grafikkarte",
+        "hint": "Wo kodiert wird.",
+        "label": "Verarbeitung",
+        "noHardware": "Keine nutzbare Beschleunigung vorhanden — es wird der Prozessor verwendet."
+      },
+      "fps": "Bildrate",
+      "fpsHint": "Senken bringt wenig und verändert die Bewegung.",
+      "noHardwareNote": "Dieser Computer hat keine nutzbare Videobeschleunigung, deshalb ist MP4 nicht verfügbar. WebM und MKV komprimieren genauso gut und öffnen sich in modernen Browsern und Playern.",
+      "output": "Ausgabe",
+      "quality": "Qualität",
+      "qualityHint": {
+        "balanced": "Ausgewogen zwischen Größe und Schärfe",
+        "high": "Gut zum Ansehen und Veröffentlichen; der Verlust fällt kaum auf",
+        "maximum": "Praktisch identisch mit dem Original; große Datei",
+        "minimum": "Sehr klein; der Verlust ist durchgehend sichtbar",
+        "small": "Kleine Datei; in bewegten Szenen zeigen sich Blöcke"
+      },
+      "resolution": "Auflösung",
+      "sameAsSource": "Wie im Original",
+      "size": "Größe",
+      "speed": {
+        "fast": "Schnell",
+        "fastHint": "Fertig früher, Datei etwas größer.",
+        "hint": "Wirkt auf Zeit und Größe, nicht auf die Auflösung.",
+        "label": "Kodiergeschwindigkeit",
+        "medium": "Mittel",
+        "slow": "Langsam",
+        "slowHint": "Kleinere Datei, dauert länger."
+      }
     }
   },
   "contentType": {

@@ -204,11 +204,11 @@ já resolve o caso mais comum.
       com qualidade e compatibilidade acima de velocidade (FR-048)
 - [X] T057 [P] [US3] Escrever `test_video_compatibility_matrix.py`: combinação incompatível nunca
       é oferecida e nunca é aceita silenciosamente (FR-046)
-- [ ] T058 [US3] `VideoCompressionSettings.vue` — Básico e Avançado, com o CRF mostrando a
+- [X] T058 [US3] `VideoCompressionSettings.vue` — Básico e Avançado, com o CRF mostrando a
       interpretação visual do §16
-- [ ] T059 [US3] Comparação de vídeo com o player existente, sincronizando os dois (FR-055)
-- [ ] T060 [P] [US3] Tooltips de todo parâmetro técnico (FR-042)
-- [ ] T061 [P] [US3] i18n nos 11 locales
+- [X] T059 [US3] Comparação de vídeo com o player existente, sincronizando os dois (FR-055)
+- [X] T060 [P] [US3] Tooltips de todo parâmetro técnico (FR-042)
+- [X] T061 [P] [US3] i18n nos 11 locales
 - [ ] T062 [US3] Rodar os cenários 5, 6, 7, 8, 9, 11 e 12 do quickstart — **o 5 é o que verifica a
       condição 4 da exceção constitucional, por hash**
 

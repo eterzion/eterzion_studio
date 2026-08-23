@@ -53,10 +53,13 @@
     "compare": {
       "after": "압축본",
       "before": "원본",
+      "pause": "일시정지",
       "pending": "압축하면 비교할 수 있습니다.",
+      "play": "재생",
       "reset": "맞춤",
       "sideBySide": "나란히 보기",
       "slider": "겹쳐 보기",
+      "synced": "둘이 같은 위치에서 함께 갑니다.",
       "view": "보기",
       "zoom": "확대"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "대기열에서 파일을 선택하세요",
       "subtitle": "이미지·동영상·오디오·GIF — 종류는 내용으로 판별합니다",
       "title": "압축할 파일을 놓으세요"
+    },
+    "video": {
+      "advanced": "고급 설정",
+      "audio": {
+        "bitrate": "오디오 비트레이트",
+        "bitrateHint": "192 kbps를 넘으면 차이를 듣기 어렵습니다.",
+        "codec": "오디오 코덱",
+        "keep": "그대로 두기",
+        "keepHint": "다시 인코딩하지 않고 복사합니다. 빠르고 손실이 없습니다.",
+        "label": "오디오 트랙",
+        "recompress": "다시 압축",
+        "remove": "제거",
+        "removeHint": "소리 없는 영상이 됩니다."
+      },
+      "audioTitle": "오디오",
+      "auto": "자동",
+      "codec": "영상 코덱",
+      "codecHint": "이 형식이 받아들이는 것만 표시됩니다.",
+      "container": "형식",
+      "containerHint": "사용할 수 있는 코덱이 정해집니다.",
+      "encoder": {
+        "auto": "자동",
+        "autoHint": "속도보다 품질과 호환성을 우선합니다.",
+        "cpu": "프로세서",
+        "gpu": "그래픽 카드",
+        "hint": "어디에서 인코딩할지.",
+        "label": "처리",
+        "noHardware": "사용할 수 있는 가속이 없어 프로세서를 사용합니다."
+      },
+      "fps": "프레임 레이트",
+      "fpsHint": "낮춰도 용량은 조금만 줄고 움직임이 달라집니다.",
+      "noHardwareNote": "이 컴퓨터에는 쓸 수 있는 영상 가속이 없어 MP4를 사용할 수 없습니다. WebM과 MKV도 그만큼 잘 압축되며 요즘 브라우저와 플레이어에서 열립니다.",
+      "output": "출력",
+      "quality": "품질",
+      "qualityHint": {
+        "balanced": "크기와 선명함의 균형",
+        "high": "감상과 게시에 적합하며 손실을 알아채기 어렵습니다",
+        "maximum": "원본과 사실상 같습니다. 파일이 큽니다",
+        "minimum": "매우 작고 손실이 계속 보입니다",
+        "small": "작은 파일. 움직임이 많은 장면에 블록이 보입니다"
+      },
+      "resolution": "해상도",
+      "sameAsSource": "원본과 동일",
+      "size": "크기",
+      "speed": {
+        "fast": "빠르게",
+        "fastHint": "더 빨리 끝나고 파일이 조금 커집니다.",
+        "hint": "시간과 크기에 영향을 주고 해상도는 그대로입니다.",
+        "label": "인코딩 속도",
+        "medium": "보통",
+        "slow": "느리게",
+        "slowHint": "파일이 작아지고 시간이 더 걸립니다."
+      }
     }
   },
   "contentType": {

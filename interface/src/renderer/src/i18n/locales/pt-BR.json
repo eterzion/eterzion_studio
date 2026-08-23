@@ -53,10 +53,13 @@
     "compare": {
       "after": "Comprimido",
       "before": "Original",
+      "pause": "Pausar",
       "pending": "Comprima para comparar.",
+      "play": "Reproduzir",
       "reset": "Ajustar",
       "sideBySide": "Lado a lado",
       "slider": "Sobreposto",
+      "synced": "Os dois avançam juntos.",
       "view": "Visualização",
       "zoom": "Zoom"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "Selecione um arquivo da fila",
       "subtitle": "Imagens, vídeos, áudios e GIFs — o tipo é reconhecido pelo conteúdo",
       "title": "Solte arquivos para comprimir"
+    },
+    "video": {
+      "advanced": "Ajustes avançados",
+      "audio": {
+        "bitrate": "Bitrate do áudio",
+        "bitrateHint": "Acima de 192 kbps a diferença é difícil de ouvir.",
+        "codec": "Codec de áudio",
+        "keep": "Manter como está",
+        "keepHint": "Copia a trilha sem recodificar — mais rápido e sem perda.",
+        "label": "Trilha de áudio",
+        "recompress": "Recomprimir",
+        "remove": "Remover",
+        "removeHint": "O vídeo fica sem som."
+      },
+      "audioTitle": "Áudio",
+      "auto": "Automático",
+      "codec": "Codec de vídeo",
+      "codecHint": "Só os que este formato aceita aparecem aqui.",
+      "container": "Formato",
+      "containerHint": "Decide quais codecs podem ser usados.",
+      "encoder": {
+        "auto": "Automático",
+        "autoHint": "Prefere qualidade e compatibilidade à velocidade.",
+        "cpu": "Processador",
+        "gpu": "Placa de vídeo",
+        "hint": "Onde a codificação acontece.",
+        "label": "Processamento",
+        "noHardware": "Não há aceleração utilizável nesta máquina — usará o processador."
+      },
+      "fps": "Quadros por segundo",
+      "fpsHint": "Reduzir ajuda pouco no tamanho e muda o movimento.",
+      "noHardwareNote": "Este computador não tem aceleração de vídeo utilizável, então MP4 não está disponível. WebM e MKV comprimem igualmente bem e abrem em navegadores e players modernos.",
+      "output": "Saída",
+      "quality": "Qualidade",
+      "qualityHint": {
+        "balanced": "Equilíbrio entre tamanho e nitidez",
+        "high": "Boa para assistir e publicar; a perda é difícil de notar",
+        "maximum": "Praticamente idêntico ao original; arquivo grande",
+        "minimum": "Muito pequeno; a perda é visível o tempo todo",
+        "small": "Arquivo pequeno; blocos aparecem em cenas com movimento"
+      },
+      "resolution": "Resolução",
+      "sameAsSource": "Como no original",
+      "size": "Tamanho",
+      "speed": {
+        "fast": "Rápida",
+        "fastHint": "Termina antes, arquivo um pouco maior.",
+        "hint": "Afeta o tempo e o tamanho, não a resolução.",
+        "label": "Velocidade de codificação",
+        "medium": "Média",
+        "slow": "Devagar",
+        "slowHint": "Arquivo menor, leva mais tempo."
+      }
     }
   },
   "contentType": {

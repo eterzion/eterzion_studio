@@ -53,10 +53,13 @@
     "compare": {
       "after": "Compresso",
       "before": "Originale",
+      "pause": "Pausa",
       "pending": "Comprimi per confrontare.",
+      "play": "Riproduci",
       "reset": "Adatta",
       "sideBySide": "Affiancato",
       "slider": "Sovrapposto",
+      "synced": "I due avanzano insieme.",
       "view": "Vista",
       "zoom": "Zoom"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "Seleziona un file dalla coda",
       "subtitle": "Immagini, video, audio e GIF — il tipo si legge dal contenuto",
       "title": "Trascina qui i file da comprimere"
+    },
+    "video": {
+      "advanced": "Impostazioni avanzate",
+      "audio": {
+        "bitrate": "Bitrate audio",
+        "bitrateHint": "Oltre 192 kbps la differenza è difficile da sentire.",
+        "codec": "Codec audio",
+        "keep": "Mantieni com’è",
+        "keepHint": "Copia la traccia senza ricodificare: più veloce e senza perdita.",
+        "label": "Traccia audio",
+        "recompress": "Ricomprimi",
+        "remove": "Rimuovi",
+        "removeHint": "Il video resta muto."
+      },
+      "audioTitle": "Audio",
+      "auto": "Automatico",
+      "codec": "Codec video",
+      "codecHint": "Compaiono solo quelli che questo formato accetta.",
+      "container": "Formato",
+      "containerHint": "Determina quali codec si possono usare.",
+      "encoder": {
+        "auto": "Automatico",
+        "autoHint": "Preferisce qualità e compatibilità alla velocità.",
+        "cpu": "Processore",
+        "gpu": "Scheda video",
+        "hint": "Dove avviene la codifica.",
+        "label": "Elaborazione",
+        "noHardware": "Nessuna accelerazione utilizzabile qui — verrà usato il processore."
+      },
+      "fps": "Fotogrammi al secondo",
+      "fpsHint": "Abbassarli guadagna poco e cambia il movimento.",
+      "noHardwareNote": "Questo computer non ha accelerazione video utilizzabile, quindi MP4 non è disponibile. WebM e MKV comprimono altrettanto bene e si aprono nei browser e nei player moderni.",
+      "output": "Output",
+      "quality": "Qualità",
+      "qualityHint": {
+        "balanced": "Equilibrio tra dimensione e nitidezza",
+        "high": "Buona per guardare e pubblicare; la perdita si nota a fatica",
+        "maximum": "Praticamente identico all’originale; file grande",
+        "minimum": "Molto piccolo; la perdita si vede sempre",
+        "small": "File piccolo; compaiono blocchi nelle scene in movimento"
+      },
+      "resolution": "Risoluzione",
+      "sameAsSource": "Come l’originale",
+      "size": "Dimensione",
+      "speed": {
+        "fast": "Veloce",
+        "fastHint": "Finisce prima, file un po’ più grande.",
+        "hint": "Incide su tempo e dimensione, non sulla risoluzione.",
+        "label": "Velocità di codifica",
+        "medium": "Media",
+        "slow": "Lenta",
+        "slowHint": "File più piccolo, ci mette di più."
+      }
     }
   },
   "contentType": {

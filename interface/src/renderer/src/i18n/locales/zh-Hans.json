@@ -53,10 +53,13 @@
     "compare": {
       "after": "压缩后",
       "before": "原图",
+      "pause": "暂停",
       "pending": "压缩后即可对比。",
+      "play": "播放",
       "reset": "适应",
       "sideBySide": "并排对比",
       "slider": "叠加对比",
+      "synced": "两边同步推进。",
       "view": "视图",
       "zoom": "缩放"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "从队列中选择一个文件",
       "subtitle": "图片、视频、音频和 GIF — 类型由内容判断",
       "title": "拖入要压缩的文件"
+    },
+    "video": {
+      "advanced": "高级设置",
+      "audio": {
+        "bitrate": "音频码率",
+        "bitrateHint": "超过 192 kbps 后差别很难听出来。",
+        "codec": "音频编解码器",
+        "keep": "保持原样",
+        "keepHint": "直接复制音轨，不重新编码——更快且无损。",
+        "label": "音轨",
+        "recompress": "重新压缩",
+        "remove": "移除",
+        "removeHint": "视频将没有声音。"
+      },
+      "audioTitle": "音频",
+      "auto": "自动",
+      "codec": "视频编解码器",
+      "codecHint": "这里只列出该格式接受的选项。",
+      "container": "格式",
+      "containerHint": "决定可以使用哪些编解码器。",
+      "encoder": {
+        "auto": "自动",
+        "autoHint": "优先保证质量与兼容性，而不是速度。",
+        "cpu": "处理器",
+        "gpu": "显卡",
+        "hint": "在哪里进行编码。",
+        "label": "处理方式",
+        "noHardware": "这台电脑没有可用的加速，将使用处理器。"
+      },
+      "fps": "帧率",
+      "fpsHint": "降低帧率省不了多少体积，还会改变动感。",
+      "noHardwareNote": "这台电脑没有可用的视频加速，因此无法使用 MP4。WebM 和 MKV 的压缩效果同样好，现代浏览器和播放器都能打开。",
+      "output": "输出",
+      "quality": "质量",
+      "qualityHint": {
+        "balanced": "体积与清晰度的平衡",
+        "high": "适合观看和发布，损失很难察觉",
+        "maximum": "与原片几乎一致；文件较大",
+        "minimum": "非常小；损失始终可见",
+        "small": "文件较小；运动画面会出现块状"
+      },
+      "resolution": "分辨率",
+      "sameAsSource": "与原文件相同",
+      "size": "尺寸",
+      "speed": {
+        "fast": "快",
+        "fastHint": "更快完成，文件略大。",
+        "hint": "影响耗时和体积，不影响分辨率。",
+        "label": "编码速度",
+        "medium": "中",
+        "slow": "慢",
+        "slowHint": "文件更小，耗时更久。"
+      }
     }
   },
   "contentType": {

@@ -53,10 +53,13 @@
     "compare": {
       "after": "Compressed",
       "before": "Original",
+      "pause": "Pause",
       "pending": "Compress to compare.",
+      "play": "Play",
       "reset": "Fit",
       "sideBySide": "Side by side",
       "slider": "Overlay",
+      "synced": "Both move together.",
       "view": "View",
       "zoom": "Zoom"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "Select a file from the queue",
       "subtitle": "Images, video, audio and GIFs — the kind is read from the content",
       "title": "Drop files to compress"
+    },
+    "video": {
+      "advanced": "Advanced settings",
+      "audio": {
+        "bitrate": "Audio bitrate",
+        "bitrateHint": "Above 192 kbps the difference is hard to hear.",
+        "codec": "Audio codec",
+        "keep": "Keep as is",
+        "keepHint": "Copies the track without re-encoding — faster and lossless.",
+        "label": "Audio track",
+        "recompress": "Re-compress",
+        "remove": "Remove",
+        "removeHint": "The video ends up silent."
+      },
+      "audioTitle": "Audio",
+      "auto": "Automatic",
+      "codec": "Video codec",
+      "codecHint": "Only the ones this format accepts appear here.",
+      "container": "Format",
+      "containerHint": "Decides which codecs can be used.",
+      "encoder": {
+        "auto": "Automatic",
+        "autoHint": "Prefers quality and compatibility over speed.",
+        "cpu": "Processor",
+        "gpu": "Graphics card",
+        "hint": "Where the encoding happens.",
+        "label": "Processing",
+        "noHardware": "No usable acceleration on this machine — the processor will be used."
+      },
+      "fps": "Frame rate",
+      "fpsHint": "Lowering it saves little and changes the motion.",
+      "noHardwareNote": "This computer has no usable video acceleration, so MP4 is not available. WebM and MKV compress just as well and open in modern browsers and players.",
+      "output": "Output",
+      "quality": "Quality",
+      "qualityHint": {
+        "balanced": "Balance between size and sharpness",
+        "high": "Good for watching and publishing; the loss is hard to spot",
+        "maximum": "Practically identical to the original; large file",
+        "minimum": "Very small; the loss is visible throughout",
+        "small": "Small file; blocks show up in scenes with motion"
+      },
+      "resolution": "Resolution",
+      "sameAsSource": "Same as source",
+      "size": "Size",
+      "speed": {
+        "fast": "Fast",
+        "fastHint": "Finishes sooner, file a little larger.",
+        "hint": "Affects time and size, not resolution.",
+        "label": "Encoding speed",
+        "medium": "Medium",
+        "slow": "Slow",
+        "slowHint": "Smaller file, takes longer."
+      }
     }
   },
   "contentType": {

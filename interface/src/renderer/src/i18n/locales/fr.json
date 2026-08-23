@@ -53,10 +53,13 @@
     "compare": {
       "after": "Compressé",
       "before": "Original",
+      "pause": "Pause",
       "pending": "Compressez pour comparer.",
+      "play": "Lire",
       "reset": "Ajuster",
       "sideBySide": "Côte à côte",
       "slider": "Superposé",
+      "synced": "Les deux avancent ensemble.",
       "view": "Affichage",
       "zoom": "Zoom"
     },
@@ -282,6 +285,59 @@
       "selectPrompt": "Sélectionnez un fichier dans la file",
       "subtitle": "Images, vidéo, audio et GIF — le type est lu dans le contenu",
       "title": "Déposez des fichiers à compresser"
+    },
+    "video": {
+      "advanced": "Réglages avancés",
+      "audio": {
+        "bitrate": "Débit audio",
+        "bitrateHint": "Au-delà de 192 kbps la différence s’entend à peine.",
+        "codec": "Codec audio",
+        "keep": "Conserver telle quelle",
+        "keepHint": "Copie la piste sans réencoder — plus rapide et sans perte.",
+        "label": "Piste audio",
+        "recompress": "Recompresser",
+        "remove": "Supprimer",
+        "removeHint": "La vidéo devient muette."
+      },
+      "audioTitle": "Audio",
+      "auto": "Automatique",
+      "codec": "Codec vidéo",
+      "codecHint": "Seuls ceux que ce format accepte apparaissent ici.",
+      "container": "Format",
+      "containerHint": "Détermine quels codecs sont utilisables.",
+      "encoder": {
+        "auto": "Automatique",
+        "autoHint": "Privilégie la qualité et la compatibilité à la vitesse.",
+        "cpu": "Processeur",
+        "gpu": "Carte graphique",
+        "hint": "Où l’encodage a lieu.",
+        "label": "Traitement",
+        "noHardware": "Aucune accélération utilisable ici — le processeur sera utilisé."
+      },
+      "fps": "Fréquence d’images",
+      "fpsHint": "La baisser gagne peu et change le mouvement.",
+      "noHardwareNote": "Cet ordinateur n’a pas d’accélération vidéo utilisable, donc MP4 n’est pas disponible. WebM et MKV compressent tout aussi bien et s’ouvrent dans les navigateurs et lecteurs modernes.",
+      "output": "Sortie",
+      "quality": "Qualité",
+      "qualityHint": {
+        "balanced": "Équilibre entre taille et netteté",
+        "high": "Bien pour regarder et publier ; la perte se voit à peine",
+        "maximum": "Pratiquement identique à l’original ; fichier volumineux",
+        "minimum": "Très léger ; la perte se voit en permanence",
+        "small": "Fichier léger ; des blocs apparaissent dans les scènes animées"
+      },
+      "resolution": "Résolution",
+      "sameAsSource": "Comme l’original",
+      "size": "Taille",
+      "speed": {
+        "fast": "Rapide",
+        "fastHint": "Termine plus tôt, fichier un peu plus gros.",
+        "hint": "Agit sur le temps et la taille, pas sur la résolution.",
+        "label": "Vitesse d’encodage",
+        "medium": "Moyenne",
+        "slow": "Lente",
+        "slowHint": "Fichier plus petit, plus long à produire."
+      }
     }
   },
   "contentType": {
