@@ -323,3 +323,45 @@ def test_png_ignora_qualidade_e_usa_nivel_de_compressao(ruidosa, tmp_path):
     compress(ruidosa, baixo, ImageSettings(output_format='png', png_compress_level=0))
     compress(ruidosa, alto, ImageSettings(output_format='png', png_compress_level=9))
     assert os.path.getsize(alto) < os.path.getsize(baixo)
+
+
+# --------------------- presets de resolução (FR-027) --------------------- #
+
+def test_o_preset_limita_o_lado_maior(tmp_path):
+    """"1080p" é um teto, não uma caixa fixa.
+
+    Aplicar 1920×1080 literalmente a um retrato o deitaria — o que a pessoa pede
+    ao escolher um degrau é "não passe disso", nos dois sentidos.
+    """
+    origem = str(tmp_path / 'retrato.png')
+    Image.new('RGB', (1080, 1920), (40, 40, 40)).save(origem)
+    saida = str(tmp_path / 'saida.png')
+
+    aplicado = compress(origem, saida,
+                        ImageSettings(output_format='png', resolution='720p'))
+    largura, altura = aplicado['output_size']
+    assert max(largura, altura) <= 1280
+    assert min(largura, altura) <= 720
+    assert altura > largura, 'o retrato foi deitado'
+
+
+def test_um_arquivo_que_ja_cabe_no_preset_nao_e_tocado(tmp_path):
+    """Reduzir o que já cabe custaria detalhe sem economizar nada — e a pessoa
+    escolheu um teto, não uma medida."""
+    origem = str(tmp_path / 'pequena.png')
+    Image.new('RGB', (800, 600), (10, 120, 200)).save(origem)
+    saida = str(tmp_path / 'saida.png')
+
+    aplicado = compress(origem, saida,
+                        ImageSettings(output_format='png', resolution='1080p'))
+    assert aplicado['output_size'] == (800, 600)
+
+
+def test_resolucao_original_nao_redimensiona(tmp_path):
+    origem = str(tmp_path / 'grande.png')
+    Image.new('RGB', (2400, 1200), (200, 30, 30)).save(origem)
+    saida = str(tmp_path / 'saida.png')
+
+    aplicado = compress(origem, saida,
+                        ImageSettings(output_format='png', resolution='original'))
+    assert aplicado['output_size'] == (2400, 1200)

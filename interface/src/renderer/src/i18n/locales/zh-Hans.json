@@ -50,8 +50,114 @@
   "compression": {
     "back": "返回",
     "comingSoon": "{media}压缩将在后续阶段加入。",
+    "compare": {
+      "after": "压缩后",
+      "before": "原图",
+      "pending": "压缩后即可对比。",
+      "reset": "适应",
+      "sideBySide": "并排对比",
+      "slider": "叠加对比",
+      "view": "视图",
+      "zoom": "缩放"
+    },
     "estimate": {
-      "loading": "计算中…"
+      "assumption": {
+        "audio_bitrate_fixed": "假设音频保持当前码率",
+        "constant_quality": "恒定质量下体积取决于内容",
+        "container_overhead": "包含容器开销的余量",
+        "lossless_content_dependent": "无损：体积取决于内容",
+        "sampled_crops": "按图像采样测量，而非整幅图像",
+        "source_bitrate_unknown": "未探测到源码率"
+      },
+      "belowFloor": "不破坏内容就无法达到这个体积。",
+      "confidence": {
+        "derived": "推算",
+        "measured": "实测",
+        "rough": "粗略"
+      },
+      "disclaimer": "这是预估值。最终体积在压缩后实测。",
+      "empty": "选择文件后显示预估。",
+      "estimated": "预计",
+      "growth": "增大",
+      "loading": "计算中…",
+      "original": "原始",
+      "saving": "节省",
+      "title": "预估",
+      "unknown": "无法预估",
+      "wouldGrow": "按当前设置，文件会比原来更大。"
+    },
+    "export": {
+      "applyToAll": "应用到全部",
+      "applyToAllHint": "整批都使用这个选择。",
+      "choose": "选择文件夹",
+      "conflict": {
+        "ask": "询问",
+        "overwrite": "替换",
+        "rename": "重命名"
+      },
+      "destination": "保存位置",
+      "onConflict": "如果已存在",
+      "pattern": "命名模式",
+      "patternHint": "{filename} 会替换为文件名。",
+      "sameFolder": "与原文件相同的文件夹",
+      "title": "导出"
+    },
+    "image": {
+      "advanced": "高级设置",
+      "chroma": "色度抽样",
+      "chromaHint": "4:4:4 保留更多色彩；4:2:0 文件更小。",
+      "effort": "压缩强度",
+      "effortHint": "强度越高文件越小，耗时越久。",
+      "format": {
+        "keep": "保持原格式",
+        "label": "格式"
+      },
+      "lossless": "无损",
+      "losslessHint": "保留每个像素，文件会更大。",
+      "metadata": {
+        "essential_only": "仅保留必要项",
+        "preserve_all": "全部保留",
+        "strip_all": "全部移除",
+        "strip_comments": "移除注释",
+        "strip_exif": "移除 EXIF",
+        "strip_gps": "移除位置信息",
+        "strip_icc": "移除色彩配置文件"
+      },
+      "metadataHint": {
+        "essential_only": "方向与色彩配置文件；移除 GPS 及其余",
+        "preserve_all": "包括位置信息和注释",
+        "strip_all": "什么都不保留",
+        "strip_comments": "说明与注释",
+        "strip_exif": "相机、日期和拍摄参数",
+        "strip_gps": "只移除位置",
+        "strip_icc": "颜色可能看起来不同"
+      },
+      "metadataPolicy": "保留哪些",
+      "metadataPolicyHint": "方向和色彩配置文件被移除后会改变画面。",
+      "metadataTitle": "元数据",
+      "noAdvanced": "该格式没有额外设置。",
+      "output": "输出",
+      "pngLevel": "压缩级别",
+      "pngLevelHint": "无损：级别越高耗时越久，画面不变。",
+      "preventUpscale": "不放大",
+      "preventUpscaleHint": "放大不会让文件变小。",
+      "progressive": "渐进式加载",
+      "progressiveHint": "先显示整幅图像，再逐渐清晰。",
+      "quality": "质量",
+      "qualityHint": {
+        "balanced": "体积与观感的平衡",
+        "high": "适合网页，差异很难察觉",
+        "maximum": "与原图几乎无法分辨",
+        "minimum": "非常小，损失明显",
+        "small": "体积小，损失开始显现"
+      },
+      "resolution": {
+        "label": "分辨率",
+        "original": "原始"
+      },
+      "size": "尺寸",
+      "speed": "速度",
+      "speedHint": "越快压缩率越低。"
     },
     "info": {
       "alpha": "透明度",
@@ -81,6 +187,21 @@
       "advanced": "高级",
       "basic": "基础"
     },
+    "preset": {
+      "archive": "存档",
+      "balanced": "均衡",
+      "custom": "自定义",
+      "maximum_quality": "最高质量",
+      "modified": "选择预设后已修改",
+      "origin": {
+        "builtin": "内置",
+        "platform": "平台",
+        "user": "你的"
+      },
+      "placeholder": "选择预设",
+      "smallest_file": "最小体积",
+      "web": "网页"
+    },
     "queue": {
       "add": "添加",
       "clearAll": "全部清除",
@@ -104,8 +225,59 @@
       "unreadable": "无法读取",
       "unsupported_media": "不是可识别的媒体文件"
     },
+    "result": {
+      "elapsed": "{seconds} 秒",
+      "grewBy": "文件比原来大了 {size}",
+      "reveal": "在文件夹中显示",
+      "saved": "节省 {size}（{percent}%）",
+      "title": "结果"
+    },
+    "run": "压缩",
     "subtitle": "在自己掌控画质的前提下减小文件",
+    "summary": {
+      "defaults": "未做更改 — 全部为默认值。",
+      "field": {
+        "audio_codec": "音频",
+        "bitrate_mode": "比特率模式",
+        "channels": "声道",
+        "chroma_subsampling": "色度",
+        "container": "容器",
+        "effort": "编码强度",
+        "fps": "帧率",
+        "height": "高度",
+        "lossless": "无损",
+        "max_colors": "颜色数",
+        "metadata_policy": "元数据",
+        "output_format": "格式",
+        "percent": "缩放",
+        "png_compress_level": "PNG 级别",
+        "preserve_aspect": "保持比例",
+        "prevent_upscale": "不放大",
+        "progressive": "渐进式",
+        "quality": "质量",
+        "rate_mode": "码率模式",
+        "resolution": "分辨率",
+        "sample_rate": "采样率",
+        "speed": "速度",
+        "video_codec": "视频",
+        "width": "宽度"
+      },
+      "on": "开启",
+      "title": "摘要"
+    },
+    "target": {
+      "hint": "确认数值时才开始搜索，而不是每敲一个字符。",
+      "label": "目标体积",
+      "size": "体积",
+      "unit": "单位"
+    },
     "title": "压缩",
+    "unavailable": {
+      "format_not_writable": "这台电脑无法写入该格式",
+      "no_encoder_available": "这台电脑无法写入该格式",
+      "not_supported_by_build": "此安装中不可用",
+      "requires_hardware_encoder": "需要这台机器没有的视频加速"
+    },
     "upload": {
       "selectPrompt": "从队列中选择一个文件",
       "subtitle": "图片、视频、音频和 GIF — 类型由内容判断",

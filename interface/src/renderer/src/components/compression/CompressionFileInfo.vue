@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { formatBytesDecimal } from '../../utils/formatBytes'
 import type { CompressionMedia } from '../../services/compression'
 
 // specs/008-compression-centre — T025f: o que se sabe do arquivo, antes de processar.
@@ -25,7 +26,7 @@ interface Row {
 
 const rows = computed<Row[]>(() => {
   const m = props.media
-  const linhas: Row[] = [{ key: 'size', value: bytes(m.size_bytes) }]
+  const linhas: Row[] = [{ key: 'size', value: formatBytesDecimal(m.size_bytes) }]
 
   push(linhas, 'resolution', m.width && m.height ? `${m.width} × ${m.height}` : null)
   push(linhas, 'duration', m.duration_seconds != null ? duration(m.duration_seconds) : null)
@@ -68,20 +69,6 @@ function push(linhas: Row[], key: string, value: string | null): void {
 function round(value: number, casas: number): number {
   const fator = 10 ** casas
   return Math.round(value * fator) / fator
-}
-
-/** Decimal (1 kB = 1000 B), igual ao que o sistema de arquivos e o alvo de
- *  tamanho usam — misturar as duas convenções faria "8 MB" significar coisas
- *  diferentes em dois pontos da mesma tela. */
-function bytes(valor: number): string {
-  const unidades = ['B', 'kB', 'MB', 'GB']
-  let n = valor
-  let i = 0
-  while (n >= 1000 && i < unidades.length - 1) {
-    n /= 1000
-    i++
-  }
-  return `${n.toFixed(i === 0 ? 0 : 1)} ${unidades[i]}`
 }
 
 function bitrate(bps: number): string {

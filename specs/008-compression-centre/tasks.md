@@ -155,29 +155,29 @@ termo técnico.
 - [X] T034 [US1] Redimensionamento: largura, altura, percentual, proporção, impedir upscale
       (padrão ligado) e os presets de resolução (FR-027)
 - [X] T035 [P] [US1] Escrever `test_image_resize.py`, incluindo que impedir-upscale de fato impede
-- [ ] T036 [US2] Resolução de tamanho-alvo para imagem por busca sobre amostra reduzida
+- [X] T036 [US2] Resolução de tamanho-alvo para imagem por busca sobre amostra reduzida
       (Decisão 5), disparada ao confirmar o alvo e não a cada dígito
-- [ ] T037 [P] [US2] Escrever `test_image_target_size.py`: alvo atingível é atingido; alvo abaixo
+- [X] T037 [P] [US2] Escrever `test_image_target_size.py`: alvo atingível é atingido; alvo abaixo
       do piso é recusado antes
 
 ### Interface
 
-- [ ] T038 [US1] `ImageCompressionSettings.vue` — Básico: preset, qualidade com descrição dinâmica
+- [X] T038 [US1] `ImageCompressionSettings.vue` — Básico: preset, qualidade com descrição dinâmica
       (FR-025), formato, resolução, tamanho alvo
-- [ ] T039 [US1] Modo Avançado da imagem: os controles por formato, **que mudam** conforme o
+- [X] T039 [US1] Modo Avançado da imagem: os controles por formato, **que mudam** conforme o
       formato escolhido em vez de ficarem presentes e desabilitados (FR-029)
-- [ ] T040 [P] [US1] `CompressionPresetSelector.vue`
-- [ ] T041 [P] [US2] `TargetSizeControl.vue` com KB/MB/GB
-- [ ] T042 [P] [US1] `CompressionEstimate.vue` — original, estimativa, economia, redução, e a
+- [X] T040 [P] [US1] `CompressionPresetSelector.vue`
+- [X] T041 [P] [US2] `TargetSizeControl.vue` com KB/MB/GB
+- [X] T042 [P] [US1] `CompressionEstimate.vue` — original, estimativa, economia, redução, e a
       declaração de que é estimativa (FR-019), com a `confidence` visível
-- [ ] T043 [P] [US1] `CompressionSummary.vue` — o resumo lateral do §61
+- [X] T043 [P] [US1] `CompressionSummary.vue` — o resumo lateral do §61
 - [ ] T044 [US1] `CompressionQueue.vue` + item, sobre a fila existente
-- [ ] T045 [US1] `CompressionComparison.vue` para imagem: lado a lado, slider, zoom sincronizado —
+- [X] T045 [US1] `CompressionComparison.vue` para imagem: lado a lado, slider, zoom sincronizado —
       reusando `CompareSlider` e `useViewportPanZoom`
-- [ ] T046 [US1] Resultado: tamanhos medidos, economia, redução, tempo, e `grew` quando o arquivo
+- [X] T046 [US1] Resultado: tamanhos medidos, economia, redução, tempo, e `grew` quando o arquivo
       cresceu (FR-023)
-- [ ] T047 [US1] Exportação com destino, padrão de nome e política de conflito
-- [ ] T048 [P] [US1] Chaves de i18n de tudo acima nos 11 locales
+- [X] T047 [US1] Exportação com destino, padrão de nome e política de conflito
+- [X] T048 [P] [US1] Chaves de i18n de tudo acima nos 11 locales
 
 ### Verificação da fatia
 

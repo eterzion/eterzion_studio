@@ -50,8 +50,114 @@
   "compression": {
     "back": "Voltar",
     "comingSoon": "A compressão de {media} chega nas próximas etapas.",
+    "compare": {
+      "after": "Comprimido",
+      "before": "Original",
+      "pending": "Comprima para comparar.",
+      "reset": "Ajustar",
+      "sideBySide": "Lado a lado",
+      "slider": "Sobreposto",
+      "view": "Visualização",
+      "zoom": "Zoom"
+    },
     "estimate": {
-      "loading": "A calcular…"
+      "assumption": {
+        "audio_bitrate_fixed": "assume o áudio no débito atual",
+        "constant_quality": "em qualidade constante o tamanho depende do conteúdo",
+        "container_overhead": "inclui uma margem para o contentor",
+        "lossless_content_dependent": "sem perdas: o tamanho depende do conteúdo",
+        "sampled_crops": "medida em amostras da imagem, não na imagem inteira",
+        "source_bitrate_unknown": "o débito de origem não foi sondado"
+      },
+      "belowFloor": "Este tamanho não é atingível sem destruir o suporte.",
+      "confidence": {
+        "derived": "derivada",
+        "measured": "medida",
+        "rough": "aproximada"
+      },
+      "disclaimer": "É uma estimativa. O tamanho final é medido depois de comprimir.",
+      "empty": "Escolha um ficheiro para ver a estimativa.",
+      "estimated": "Estimado",
+      "growth": "Aumento",
+      "loading": "A calcular…",
+      "original": "Original",
+      "saving": "Poupança",
+      "title": "Estimativa",
+      "unknown": "não estimável",
+      "wouldGrow": "Com estas definições o ficheiro ficaria maior que o original."
+    },
+    "export": {
+      "applyToAll": "Aplicar a todos",
+      "applyToAllHint": "Usa esta escolha para o lote inteiro.",
+      "choose": "Escolher pasta",
+      "conflict": {
+        "ask": "Perguntar",
+        "overwrite": "Substituir",
+        "rename": "Renomear"
+      },
+      "destination": "Destino",
+      "onConflict": "Se já existir",
+      "pattern": "Padrão de nome",
+      "patternHint": "{filename} é substituído pelo nome do ficheiro.",
+      "sameFolder": "Mesma pasta do ficheiro original",
+      "title": "Exportação"
+    },
+    "image": {
+      "advanced": "Definições avançadas",
+      "chroma": "Subamostragem de croma",
+      "chromaHint": "4:4:4 preserva mais cor; 4:2:0 gera ficheiros mais pequenos.",
+      "effort": "Esforço de compressão",
+      "effortHint": "Mais esforço, ficheiro mais pequeno, mais tempo.",
+      "format": {
+        "keep": "Manter o original",
+        "label": "Formato"
+      },
+      "lossless": "Sem perdas",
+      "losslessHint": "Preserva cada pixel; o ficheiro fica maior.",
+      "metadata": {
+        "essential_only": "Só o essencial",
+        "preserve_all": "Preservar tudo",
+        "strip_all": "Remover tudo",
+        "strip_comments": "Remover comentários",
+        "strip_exif": "Remover EXIF",
+        "strip_gps": "Remover localização",
+        "strip_icc": "Remover perfil de cor"
+      },
+      "metadataHint": {
+        "essential_only": "orientação e perfil de cor; remove GPS e o resto",
+        "preserve_all": "inclusive localização e comentários",
+        "strip_all": "nada é preservado",
+        "strip_comments": "descrições e comentários",
+        "strip_exif": "câmara, data e definições de disparo",
+        "strip_gps": "só a localização",
+        "strip_icc": "as cores podem mudar de aparência"
+      },
+      "metadataPolicy": "O que preservar",
+      "metadataPolicyHint": "Orientação e perfil de cor mudam a imagem quando removidos.",
+      "metadataTitle": "Metadados",
+      "noAdvanced": "Este formato não tem definições adicionais.",
+      "output": "Saída",
+      "pngLevel": "Nível de compressão",
+      "pngLevelHint": "Sem perdas: níveis maiores demoram mais e não mudam a imagem.",
+      "preventUpscale": "Não ampliar",
+      "preventUpscaleHint": "Ampliar não reduz ficheiro nenhum.",
+      "progressive": "Carregamento progressivo",
+      "progressiveHint": "A imagem aparece inteira e vai ficando nítida.",
+      "quality": "Qualidade",
+      "qualityHint": {
+        "balanced": "Equilíbrio entre tamanho e aparência",
+        "high": "Boa para web; a diferença é difícil de notar",
+        "maximum": "Praticamente indistinguível do original",
+        "minimum": "Muito pequeno; a perda é visível",
+        "small": "Ficheiro pequeno; a perda começa a aparecer"
+      },
+      "resolution": {
+        "label": "Resolução",
+        "original": "Original"
+      },
+      "size": "Tamanho",
+      "speed": "Velocidade",
+      "speedHint": "Mais rápido comprime menos."
     },
     "info": {
       "alpha": "Transparência",
@@ -81,6 +187,21 @@
       "advanced": "Avançado",
       "basic": "Básico"
     },
+    "preset": {
+      "archive": "Arquivo",
+      "balanced": "Equilibrado",
+      "custom": "Personalizado",
+      "maximum_quality": "Máxima qualidade",
+      "modified": "Alterado depois de escolher a predefinição",
+      "origin": {
+        "builtin": "Interna",
+        "platform": "Plataforma",
+        "user": "Sua"
+      },
+      "placeholder": "Escolha uma predefinição",
+      "smallest_file": "Ficheiro mais pequeno",
+      "web": "Web"
+    },
     "queue": {
       "add": "Adicionar",
       "clearAll": "Limpar tudo",
@@ -104,8 +225,59 @@
       "unreadable": "não foi possível ler",
       "unsupported_media": "não é um suporte reconhecido"
     },
+    "result": {
+      "elapsed": "{seconds} s",
+      "grewBy": "O ficheiro ficou {size} maior que o original",
+      "reveal": "Mostrar na pasta",
+      "saved": "Poupou {size} ({percent}%)",
+      "title": "Resultado"
+    },
+    "run": "Comprimir",
     "subtitle": "Reduza ficheiros mantendo controlo sobre a qualidade",
+    "summary": {
+      "defaults": "Nada alterado — tudo no padrão.",
+      "field": {
+        "audio_codec": "Áudio",
+        "bitrate_mode": "Modo de débito",
+        "channels": "Canais",
+        "chroma_subsampling": "Croma",
+        "container": "Contentor",
+        "effort": "Esforço",
+        "fps": "Fotogramas por segundo",
+        "height": "Altura",
+        "lossless": "Sem perdas",
+        "max_colors": "Cores",
+        "metadata_policy": "Metadados",
+        "output_format": "Formato",
+        "percent": "Escala",
+        "png_compress_level": "Nível PNG",
+        "preserve_aspect": "Manter proporção",
+        "prevent_upscale": "Não ampliar",
+        "progressive": "Progressivo",
+        "quality": "Qualidade",
+        "rate_mode": "Modo de taxa",
+        "resolution": "Resolução",
+        "sample_rate": "Amostragem",
+        "speed": "Velocidade",
+        "video_codec": "Vídeo",
+        "width": "Largura"
+      },
+      "on": "Ligado",
+      "title": "Resumo"
+    },
+    "target": {
+      "hint": "A procura acontece ao confirmar o valor, não a cada dígito.",
+      "label": "Tamanho alvo",
+      "size": "Tamanho",
+      "unit": "Unidade"
+    },
     "title": "Compressão",
+    "unavailable": {
+      "format_not_writable": "este computador não consegue gravar neste formato",
+      "no_encoder_available": "este computador não consegue gravar neste formato",
+      "not_supported_by_build": "não disponível nesta instalação",
+      "requires_hardware_encoder": "precisa de aceleração de vídeo que esta máquina não tem"
+    },
     "upload": {
       "selectPrompt": "Selecione um ficheiro da fila",
       "subtitle": "Imagens, vídeos, áudios e GIFs — o tipo é reconhecido pelo conteúdo",

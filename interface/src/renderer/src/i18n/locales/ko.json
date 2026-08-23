@@ -50,8 +50,114 @@
   "compression": {
     "back": "뒤로",
     "comingSoon": "{media} 압축은 다음 단계에서 추가됩니다.",
+    "compare": {
+      "after": "압축본",
+      "before": "원본",
+      "pending": "압축하면 비교할 수 있습니다.",
+      "reset": "맞춤",
+      "sideBySide": "나란히 보기",
+      "slider": "겹쳐 보기",
+      "view": "보기",
+      "zoom": "확대"
+    },
     "estimate": {
-      "loading": "계산 중…"
+      "assumption": {
+        "audio_bitrate_fixed": "오디오는 현재 비트레이트로 가정합니다",
+        "constant_quality": "고정 품질에서는 크기가 내용에 좌우됩니다",
+        "container_overhead": "컨테이너 여유분을 포함합니다",
+        "lossless_content_dependent": "무손실: 크기가 내용에 좌우됩니다",
+        "sampled_crops": "전체가 아니라 이미지 표본으로 측정했습니다",
+        "source_bitrate_unknown": "원본 비트레이트를 확인하지 못했습니다"
+      },
+      "belowFloor": "이 크기는 원본을 망가뜨리지 않고는 도달할 수 없습니다.",
+      "confidence": {
+        "derived": "유도됨",
+        "measured": "측정됨",
+        "rough": "대략"
+      },
+      "disclaimer": "예상값입니다. 최종 크기는 압축 후 측정됩니다.",
+      "empty": "파일을 선택하면 예상 크기가 표시됩니다.",
+      "estimated": "예상 크기",
+      "growth": "증가",
+      "loading": "계산 중…",
+      "original": "원본",
+      "saving": "절감",
+      "title": "예상",
+      "unknown": "예상할 수 없음",
+      "wouldGrow": "이 설정이면 파일이 원본보다 커집니다."
+    },
+    "export": {
+      "applyToAll": "전체에 적용",
+      "applyToAllHint": "이 선택을 전체 묶음에 적용합니다.",
+      "choose": "폴더 선택",
+      "conflict": {
+        "ask": "물어보기",
+        "overwrite": "덮어쓰기",
+        "rename": "이름 바꾸기"
+      },
+      "destination": "저장 위치",
+      "onConflict": "이미 있을 때",
+      "pattern": "이름 패턴",
+      "patternHint": "{filename}은 파일 이름으로 바뀝니다.",
+      "sameFolder": "원본과 같은 폴더",
+      "title": "내보내기"
+    },
+    "image": {
+      "advanced": "고급 설정",
+      "chroma": "크로마 서브샘플링",
+      "chromaHint": "4:4:4는 색을 더 남기고, 4:2:0은 파일이 더 작습니다.",
+      "effort": "압축 노력",
+      "effortHint": "노력을 올리면 더 작아지고 시간이 더 걸립니다.",
+      "format": {
+        "keep": "원본 형식 유지",
+        "label": "형식"
+      },
+      "lossless": "무손실",
+      "losslessHint": "모든 픽셀을 유지하며 파일이 커집니다.",
+      "metadata": {
+        "essential_only": "필수 항목만",
+        "preserve_all": "전부 유지",
+        "strip_all": "전부 제거",
+        "strip_comments": "주석 제거",
+        "strip_exif": "EXIF 제거",
+        "strip_gps": "위치 정보 제거",
+        "strip_icc": "색 프로파일 제거"
+      },
+      "metadataHint": {
+        "essential_only": "방향과 색 프로파일; GPS 등은 제거",
+        "preserve_all": "위치 정보와 주석 포함",
+        "strip_all": "아무것도 남기지 않습니다",
+        "strip_comments": "설명과 주석",
+        "strip_exif": "카메라, 날짜, 촬영 설정",
+        "strip_gps": "위치 정보만",
+        "strip_icc": "색이 달라 보일 수 있습니다"
+      },
+      "metadataPolicy": "남길 항목",
+      "metadataPolicyHint": "방향과 색 프로파일은 지우면 이미지가 달라집니다.",
+      "metadataTitle": "메타데이터",
+      "noAdvanced": "이 형식에는 추가 설정이 없습니다.",
+      "output": "출력",
+      "pngLevel": "압축 수준",
+      "pngLevelHint": "무손실: 수준이 높으면 오래 걸리고 이미지는 그대로입니다.",
+      "preventUpscale": "확대 안 함",
+      "preventUpscaleHint": "확대해도 파일이 작아지지 않습니다.",
+      "progressive": "점진적 로딩",
+      "progressiveHint": "전체가 먼저 보이고 점점 선명해집니다.",
+      "quality": "품질",
+      "qualityHint": {
+        "balanced": "크기와 화질의 균형",
+        "high": "웹에 적합하며 차이를 알아채기 어렵습니다",
+        "maximum": "원본과 사실상 구분되지 않습니다",
+        "minimum": "매우 작고 손실이 뚜렷합니다",
+        "small": "작은 파일; 손실이 보이기 시작합니다"
+      },
+      "resolution": {
+        "label": "해상도",
+        "original": "원본"
+      },
+      "size": "크기",
+      "speed": "속도",
+      "speedHint": "빠를수록 덜 압축합니다."
     },
     "info": {
       "alpha": "투명도",
@@ -81,6 +187,21 @@
       "advanced": "고급",
       "basic": "기본"
     },
+    "preset": {
+      "archive": "보관용",
+      "balanced": "균형",
+      "custom": "사용자 설정",
+      "maximum_quality": "최고 품질",
+      "modified": "프리셋을 고른 뒤 변경됨",
+      "origin": {
+        "builtin": "기본",
+        "platform": "플랫폼",
+        "user": "내 프리셋"
+      },
+      "placeholder": "프리셋 선택",
+      "smallest_file": "가장 작은 파일",
+      "web": "웹"
+    },
     "queue": {
       "add": "추가",
       "clearAll": "모두 지우기",
@@ -104,8 +225,59 @@
       "unreadable": "읽을 수 없습니다",
       "unsupported_media": "인식할 수 없는 미디어 파일입니다"
     },
+    "result": {
+      "elapsed": "{seconds}초",
+      "grewBy": "원본보다 {size} 커졌습니다",
+      "reveal": "폴더에서 보기",
+      "saved": "{size} 절감 ({percent}%)",
+      "title": "결과"
+    },
+    "run": "압축",
     "subtitle": "품질을 직접 조절하면서 파일 크기를 줄입니다",
+    "summary": {
+      "defaults": "변경 없음 — 모두 기본값입니다.",
+      "field": {
+        "audio_codec": "오디오",
+        "bitrate_mode": "비트레이트 모드",
+        "channels": "채널",
+        "chroma_subsampling": "크로마",
+        "container": "컨테이너",
+        "effort": "노력",
+        "fps": "프레임 레이트",
+        "height": "높이",
+        "lossless": "무손실",
+        "max_colors": "색상 수",
+        "metadata_policy": "메타데이터",
+        "output_format": "형식",
+        "percent": "배율",
+        "png_compress_level": "PNG 레벨",
+        "preserve_aspect": "비율 유지",
+        "prevent_upscale": "확대 안 함",
+        "progressive": "프로그레시브",
+        "quality": "품질",
+        "rate_mode": "레이트 모드",
+        "resolution": "해상도",
+        "sample_rate": "샘플 레이트",
+        "speed": "속도",
+        "video_codec": "영상",
+        "width": "너비"
+      },
+      "on": "켜짐",
+      "title": "요약"
+    },
+    "target": {
+      "hint": "값을 확정할 때 탐색하며, 한 글자마다 하지 않습니다.",
+      "label": "목표 크기",
+      "size": "크기",
+      "unit": "단위"
+    },
     "title": "압축",
+    "unavailable": {
+      "format_not_writable": "이 컴퓨터에서는 이 형식을 저장할 수 없습니다",
+      "no_encoder_available": "이 컴퓨터에서는 이 형식을 저장할 수 없습니다",
+      "not_supported_by_build": "이 설치본에서는 사용할 수 없습니다",
+      "requires_hardware_encoder": "이 컴퓨터에 없는 영상 가속이 필요합니다"
+    },
     "upload": {
       "selectPrompt": "대기열에서 파일을 선택하세요",
       "subtitle": "이미지·동영상·오디오·GIF — 종류는 내용으로 판별합니다",

@@ -1,61 +1,165 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft } from '@lucide/vue'
+import { ArrowLeft, Zap } from '@lucide/vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
 import UploadZone from '../components/UploadZone.vue'
+import AppButton from '../components/atoms/AppButton.vue'
+import ProgressBar from '../components/atoms/ProgressBar.vue'
+import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import CompressionMediaTabs from '../components/compression/CompressionMediaTabs.vue'
 import CompressionModeToggle from '../components/compression/CompressionModeToggle.vue'
 import CompressionFileInfo from '../components/compression/CompressionFileInfo.vue'
 import CompressionInputQueue from '../components/compression/CompressionInputQueue.vue'
+import CompressionPresetSelector from '../components/compression/CompressionPresetSelector.vue'
+import CompressionEstimatePanel from '../components/compression/CompressionEstimate.vue'
+import CompressionSummary from '../components/compression/CompressionSummary.vue'
+import CompressionComparison from '../components/compression/CompressionComparison.vue'
+import CompressionResult from '../components/compression/CompressionResult.vue'
+import CompressionExportPanel from '../components/compression/CompressionExportPanel.vue'
+import ImageCompressionSettings from '../components/compression/ImageCompressionSettings.vue'
 import { useCompressionQueue } from '../composables/useCompressionQueue'
 import { useCompressionSettings } from '../composables/useCompressionSettings'
 import { useCompressionEstimate } from '../composables/useCompressionEstimate'
+import { useCompressionJob } from '../composables/useCompressionJob'
+import {
+  getCapabilities,
+  listPresets,
+  type CapabilityEntry,
+  type CompressionCapabilities,
+  type CompressionExport,
+  type CompressionPreset
+} from '../services/compression'
 import { api, hasNativeApi } from '../services/native'
 import type { MediaKind } from '../constants/compression'
 
-// specs/008-compression-centre — T026: a casca em duas colunas.
+// specs/008-compression-centre — a Central, com Imagem funcionando ponta a ponta.
 //
-// À esquerda o que a pessoa trouxe (pré-visualização, fila, informações do
-// arquivo); à direita o que ela decide. É a mesma forma que as telas de Imagem e
-// Vídeo já estabeleceram, e reusar `MediaEditorShell` não é economia de código:
-// é o que impede a Central de virar uma tela com regras próprias dentro do mesmo
-// aplicativo.
+// À esquerda o que a pessoa trouxe; à direita o que ela decide. É a forma que as
+// telas de Imagem e Vídeo já estabeleceram, e reusar `MediaEditorShell` não é
+// economia de código: é o que impede a Central de virar uma tela com regras
+// próprias dentro do mesmo aplicativo.
 //
-// O que já vale aqui e não pode regredir: **o modo padrão é Básico** (FR-038), e
-// isso é constitucional — a condição 2 da exceção do Princípio V exige que quem
-// nunca abrir o Avançado jamais encontre um nome de codec.
+// Duas regras que não podem regredir:
 //
-// Os controles por tipo de mídia chegam na Fase 3. Enquanto não chegam, a tela
-// não finge tê-los: nenhum botão sem função.
+// **O modo padrão é Básico** (FR-038), e é constitucional — a condição 2 da
+// exceção do Princípio V exige que quem nunca abrir o Avançado jamais encontre
+// um nome de codec.
+//
+// **Vídeo, áudio e GIF ainda não comprimem**, e a tela diz isso em vez de
+// oferecer um botão que falha. Um botão sem função é pior que a sua ausência: a
+// pessoa monta as configurações inteiras antes de descobrir.
 
 defineEmits<{ back: [] }>()
 
 const { t } = useI18n()
 
 const queue = useCompressionQueue()
-const { mediaKind, mode, target, payload } = useCompressionSettings()
+const { mediaKind, mode, settings, target, payload, set, setTarget, applyPreset } =
+  useCompressionSettings()
+const job = useCompressionJob()
+
+const capabilities = ref<CompressionCapabilities | null>(null)
+const presets = ref<CompressionPreset[]>([])
+const selectedPreset = ref<string | null>(null)
+const presetModified = ref(false)
+
+const exportOptions = ref<CompressionExport>({
+  directory: null,
+  naming_pattern: '{filename}_compressed',
+  conflict_policy: 'rename',
+  apply_to_all: false
+})
 
 const activeHandle = computed(() => queue.active.value?.media?.handle_id ?? null)
+const activeMedia = computed(() => queue.active.value?.media ?? null)
 
-const { loading: estimating, stop: stopEstimating } = useCompressionEstimate({
+const {
+  estimate,
+  loading: estimating,
+  error: estimateError,
+  stop: stopEstimating
+} = useCompressionEstimate({
   handleId: activeHandle,
   mediaKind,
   settings: payload,
   target
 })
 
-onBeforeUnmount(stopEstimating)
+onMounted(async () => {
+  // As capacidades vêm de sonda funcional no backend. Sem elas a tela ofereceria
+  // formatos que esta máquina não grava, e a falha chegaria no meio da
+  // exportação em vez de antes da escolha (FR-043).
+  try {
+    capabilities.value = await getCapabilities()
+  } catch {
+    capabilities.value = null
+  }
+  try {
+    presets.value = (await listPresets()).presets
+  } catch {
+    presets.value = []
+  }
+})
 
-// Selecionar um arquivo troca a aba para o tipo que ele **é**, não o contrário.
-// O tipo veio do conteúdo (FR-007), e deixar a aba discordar do arquivo
-// selecionado ofereceria controles de vídeo para um MP3.
+onBeforeUnmount(() => {
+  stopEstimating()
+  job.stop()
+})
+
 watch(
   () => queue.active.value?.media?.media_kind,
   (kind) => {
+    // Selecionar um arquivo troca a aba para o tipo que ele **é**, não o
+    // contrário: deixar a aba discordar ofereceria controles de vídeo para um MP3.
     if (kind) mediaKind.value = kind as MediaKind
   }
 )
+
+// Mexer numa configuração desfaz a afirmação "isto é o preset X". Um preset que
+// continua selecionado enquanto os valores já são outros é falso sobre o que vai
+// acontecer.
+watch(payload, () => {
+  if (selectedPreset.value) presetModified.value = true
+})
+
+const presetsForKind = computed(() =>
+  presets.value.filter((p) => p.media_kind === mediaKind.value)
+)
+
+function choosePreset(id: string | null): void {
+  selectedPreset.value = id
+  presetModified.value = false
+  if (!id) return
+  const preset = presets.value.find((p) => p.id === id)
+  if (preset) applyPreset(mediaKind.value, preset.settings)
+}
+
+const imageFormats = computed<CapabilityEntry[]>(() => capabilities.value?.image.formats ?? [])
+
+/** Só Imagem comprime nesta fase. As demais chegam nas fases 4, 5 e 6. */
+const supported = computed(() => mediaKind.value === 'image')
+
+const canRun = computed(
+  () => Boolean(activeHandle.value) && supported.value && !job.running.value
+)
+
+async function run(): Promise<void> {
+  if (!activeHandle.value) return
+  await job.run({
+    handleId: activeHandle.value,
+    mediaKind: mediaKind.value,
+    settings: payload.value,
+    target: target.value,
+    mode: mode.value,
+    presetId: selectedPreset.value,
+    export: exportOptions.value
+  })
+}
+
+function reveal(path: string): void {
+  if (hasNativeApi) void api.showItemInFolder(path)
+}
 
 const shellItems = computed<EditorItem[]>(() =>
   queue.items.value.map((item) => ({
@@ -119,11 +223,12 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
       @add="queue.pick"
     >
       <template #preview>
-        <img
-          v-if="hasNativeApi && previewPath && previewKind !== 'video' && previewKind !== 'audio'"
-          :src="api.toFileUrl(previewPath)"
-          class="preview-media"
-          alt=""
+        <CompressionComparison
+          v-if="previewPath && previewKind === 'image'"
+          :source-path="previewPath"
+          :output-path="job.result.value?.outputPath ?? null"
+          :original-bytes="activeMedia?.size_bytes ?? 0"
+          :output-bytes="job.result.value?.outputSizeBytes ?? null"
         />
         <video
           v-else-if="hasNativeApi && previewPath && previewKind === 'video'"
@@ -151,12 +256,61 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
             @clear="queue.clear"
           />
 
-          <CompressionFileInfo v-if="queue.active.value?.media" :media="queue.active.value.media" />
+          <CompressionFileInfo v-if="activeMedia" :media="activeMedia" />
 
-          <p class="panel-pending">
+          <template v-if="supported">
+            <CompressionPresetSelector
+              :presets="presetsForKind"
+              :model-value="selectedPreset"
+              :modified="presetModified"
+              :disabled="job.running.value"
+              @update:model-value="choosePreset"
+            />
+
+            <ImageCompressionSettings
+              :settings="settings"
+              :target="target"
+              :mode="mode"
+              :formats="imageFormats"
+              :disabled="job.running.value"
+              @set="set"
+              @update:target="setTarget"
+            />
+
+            <CompressionEstimatePanel
+              :estimate="estimate"
+              :loading="estimating"
+              :error="estimateError"
+            />
+
+            <CompressionSummary :settings="payload" :media-kind="mediaKind" :mode="mode" />
+
+            <CollapsiblePanel :title="t('compression.export.title')" :default-open="false">
+              <CompressionExportPanel v-model="exportOptions" />
+            </CollapsiblePanel>
+
+            <AppButton
+              variant="primary"
+              :disabled="!canRun"
+              :loading="job.running.value"
+              @click="run"
+            >
+              <Zap :size="15" />
+              {{ t('compression.run') }}
+            </AppButton>
+
+            <ProgressBar v-if="job.running.value" :value="job.progress.value" />
+
+            <p v-if="job.error.value" class="panel-error">
+              {{ t(`compression.refusal.${job.error.value}`) }}
+            </p>
+
+            <CompressionResult v-if="job.result.value" :result="job.result.value" @reveal="reveal" />
+          </template>
+
+          <p v-else class="panel-pending">
             {{ t('compression.comingSoon', { media: t(`compression.media.${mediaKind}`) }) }}
           </p>
-          <p v-if="estimating" class="panel-pending">{{ t('compression.estimate.loading') }}</p>
         </div>
       </template>
     </MediaEditorShell>
@@ -236,6 +390,12 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
   margin: 0;
   font-size: var(--fs-body-sm);
   color: var(--text-tertiary);
+}
+
+.panel-error {
+  margin: 0;
+  font-size: var(--fs-label-sm);
+  color: var(--color-warning);
 }
 
 .panel-stack {

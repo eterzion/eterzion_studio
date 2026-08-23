@@ -120,6 +120,28 @@ def test_a_saida_nunca_e_a_origem(client, imagem):
     assert os.path.isfile(imagem)
 
 
+def test_os_numeros_medidos_chegam_na_consulta_do_job(client, imagem, tmp_path):
+    """A interface lê `GET /jobs/{id}`, não o dicionário interno.
+
+    Sem este teste, os números poderiam existir no job e ser filtrados na visão
+    pública — a tela mostraria um resultado vazio para uma compressão que deu
+    certo, e nada no backend estaria errado.
+    """
+    handle = media_handles.register_media(imagem)
+    destino = tmp_path / 'saida'
+    destino.mkdir()
+    job_id = client.post('/compression/jobs', json=_pedido(
+        handle, export={'directory': str(destino)})).json()['job_id']
+    _aguardar(job_id)
+
+    corpo = client.get(f'/jobs/{job_id}').json()
+    assert corpo['status'] == 'done', corpo.get('error')
+    medido = corpo['compression']
+    assert medido['output_size_bytes'] == os.path.getsize(corpo['output_path'])
+    assert set(medido) >= {'original_bytes', 'output_size_bytes', 'saving_bytes',
+                           'reduction_ratio', 'grew', 'elapsed_seconds'}
+
+
 # ------------------------------- recusas ------------------------------- #
 
 def test_modo_basico_com_campo_tecnico_e_recusado(client, imagem):

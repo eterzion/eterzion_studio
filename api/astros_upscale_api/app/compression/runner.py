@@ -138,6 +138,9 @@ def _validate_quality(settings: dict[str, Any]) -> None:
 
 
 def _validate_dimensions(settings: dict[str, Any]) -> None:
+    resolucao = settings.get('resolution')
+    if resolucao not in (None, 'original') and resolucao not in config.RESOLUTION_PRESETS:
+        raise CompressionRefused('invalid_settings', f'Resolução desconhecida: {resolucao!r}')
     for campo in ('width', 'height'):
         valor = settings.get(campo)
         if valor is not None and int(valor) <= 0:

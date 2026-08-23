@@ -57,6 +57,11 @@ class ImageSettings:
     width: int | None = None
     height: int | None = None
     percent: float | None = None
+    # Um dos degraus de `config.RESOLUTION_PRESETS` (FR-027). Existe além de
+    # `width`/`height` porque é a forma como a pessoa pensa — "1080p", não
+    # "1920 por 1080" — e porque a caixa do preset é um teto, não uma medida
+    # exata: um retrato 1080×1920 já cabe em 1080p e não deve ser tocado.
+    resolution: str | None = None
     preserve_aspect: bool = True
     # Ligado por padrão: compressão que aumenta a resolução é quase sempre
     # engano de digitação, e aumentar não reduz arquivo nenhum.
@@ -151,6 +156,18 @@ def _resize(img, settings: ImageSettings):
 def _target_size(atual: tuple[int, int], settings: ImageSettings) -> tuple[int, int] | None:
     largura, altura = atual
 
+    caixa = _preset_box(settings.resolution)
+    if caixa is not None:
+        # O preset é um teto pelo lado maior, e não uma caixa fixa: aplicar
+        # 1920×1080 literalmente a um retrato o deitaria. O que a pessoa pede ao
+        # escolher "1080p" é "não passe disso", nos dois sentidos.
+        limite_maior, limite_menor = max(caixa), min(caixa)
+        atual_maior, atual_menor = max(atual), min(atual)
+        escala = min(limite_maior / atual_maior, limite_menor / atual_menor, 1.0)
+        if escala >= 1.0:
+            return atual
+        return (max(1, round(largura * escala)), max(1, round(altura * escala)))
+
     if settings.percent:
         fator = settings.percent / 100
         alvo = (max(1, round(largura * fator)), max(1, round(altura * fator)))
@@ -172,6 +189,18 @@ def _target_size(atual: tuple[int, int], settings: ImageSettings) -> tuple[int, 
     if settings.prevent_upscale and (alvo[0] > largura or alvo[1] > altura):
         return atual
     return alvo
+
+
+def _preset_box(nome: str | None) -> tuple[int, int] | None:
+    """A caixa de um degrau nomeado, ou `None` quando não há degrau escolhido.
+
+    Um nome desconhecido devolve `None` em vez de levantar: a validação já
+    aconteceu na rota (FR-064), e levantar aqui trocaria uma recusa clara por uma
+    falha no meio do processamento.
+    """
+    if not nome or nome == 'original':
+        return None
+    return config.RESOLUTION_PRESETS.get(nome)
 
 
 def _prepare_mode(img, fmt: str):

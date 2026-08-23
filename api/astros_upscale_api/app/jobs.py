@@ -57,6 +57,26 @@ class WorkerCrashed(RuntimeError):
     pass
 
 
+# De quanto em quanto tempo se verifica se o filho ainda está vivo enquanto se
+# espera a conexão. Curto o bastante para a falha ser imediata na percepção de
+# quem espera, longo o bastante para não virar espera ocupada.
+_SPAWN_POLL_SECONDS = 0.25
+
+# Códigos de saída que o worker usa em `main()` antes de abrir o canal IPC.
+# Traduzi-los aqui é o que transforma "não respondeu" numa frase acionável.
+_SPAWN_EXIT_REASONS = {
+    2: 'O worker isolado foi iniciado sem os argumentos que precisa.',
+    3: ('O worker isolado recusou iniciar: os arquivos protegidos não conferem '
+        'com o manifesto de integridade. Rode `python -m app.security` para '
+        'regerá-lo depois de alterar um deles.'),
+}
+
+
+def _spawn_exit_message(codigo: int) -> str:
+    return _SPAWN_EXIT_REASONS.get(
+        codigo, f'O worker isolado encerrou ao iniciar (código {codigo}).')
+
+
 class WorkerFailure(RuntimeError):
     def __init__(self, message: str, error_class: str):
         super().__init__(message)
@@ -146,19 +166,46 @@ class WorkerSupervisor:
         assert self._listener is not None
         pool = ThreadPoolExecutor(max_workers=1)
         future = pool.submit(self._listener.accept)
+        limite = time.monotonic() + timeout
         try:
-            return future.result(timeout=timeout)
+            while True:
+                restante = limite - time.monotonic()
+                if restante <= 0:
+                    raise FutureTimeoutError()
+                try:
+                    # Espera em fatias em vez de uma só. A fatia não é
+                    # impaciência: é o que permite notar, **enquanto** se espera,
+                    # que o filho já morreu — e um filho que já morreu não é um
+                    # timeout. Esperar os 45 segundos inteiros por uma resposta
+                    # que já existe é metade do defeito, e foi o que escondeu
+                    # duas vezes um manifesto de integridade vencido atrás de
+                    # "não respondeu a tempo".
+                    return future.result(timeout=min(_SPAWN_POLL_SECONDS, restante))
+                except FutureTimeoutError:
+                    codigo = self._process.poll() if self._process is not None else None
+                    if codigo is not None:
+                        self._cleanup_failed_spawn(pool)
+                        raise WorkerCrashed(_spawn_exit_message(codigo)) from None
         except FutureTimeoutError as error:
             if self._process is not None:
                 self._process.kill()
-            try:
-                self._listener.close()  # unblocks the still-pending accept() in the background thread
-            except OSError:
-                pass
-            pool.shutdown(wait=False)
+            self._cleanup_failed_spawn(pool)
             raise WorkerCrashed('O worker isolado não respondeu a tempo ao iniciar.') from error
-        else:
-            pool.shutdown(wait=False)
+        finally:
+            if not future.running():
+                pool.shutdown(wait=False)
+
+    def _cleanup_failed_spawn(self, pool: ThreadPoolExecutor) -> None:
+        """Fecha o canal de um filho que já saiu.
+
+        Fechar o `Listener` é o que desbloqueia o `accept()` ainda pendente na
+        thread de fundo — sem isto ela ficaria viva até o processo terminar.
+        """
+        try:
+            self._listener.close()  # type: ignore[union-attr]
+        except OSError:
+            pass
+        pool.shutdown(wait=False)
 
     def ensure_started(self) -> None:
         with self._lock:

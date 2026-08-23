@@ -50,8 +50,114 @@
   "compression": {
     "back": "戻る",
     "comingSoon": "{media}の圧縮は次の段階で追加されます。",
+    "compare": {
+      "after": "圧縮後",
+      "before": "元の画像",
+      "pending": "圧縮すると比較できます。",
+      "reset": "全体表示",
+      "sideBySide": "並べて比較",
+      "slider": "重ねて比較",
+      "view": "表示",
+      "zoom": "ズーム"
+    },
     "estimate": {
-      "loading": "計算中…"
+      "assumption": {
+        "audio_bitrate_fixed": "音声は現在のビットレートのままと仮定します",
+        "constant_quality": "固定品質ではサイズは内容に依存します",
+        "container_overhead": "コンテナ分の余裕を含みます",
+        "lossless_content_dependent": "可逆圧縮：サイズは内容に依存します",
+        "sampled_crops": "画像全体ではなく一部のサンプルで計測しています",
+        "source_bitrate_unknown": "元のビットレートは取得できませんでした"
+      },
+      "belowFloor": "このサイズは内容を壊さずには到達できません。",
+      "confidence": {
+        "derived": "推定",
+        "measured": "実測",
+        "rough": "概算"
+      },
+      "disclaimer": "これは見積もりです。最終サイズは圧縮後に実測されます。",
+      "empty": "ファイルを選ぶと見積もりが表示されます。",
+      "estimated": "予想サイズ",
+      "growth": "増加",
+      "loading": "計算中…",
+      "original": "元のサイズ",
+      "saving": "削減",
+      "title": "見積もり",
+      "unknown": "見積もり不可",
+      "wouldGrow": "この設定では元のファイルより大きくなります。"
+    },
+    "export": {
+      "applyToAll": "すべてに適用",
+      "applyToAllHint": "この選択をまとめて適用します。",
+      "choose": "フォルダーを選択",
+      "conflict": {
+        "ask": "確認する",
+        "overwrite": "置き換える",
+        "rename": "名前を変える"
+      },
+      "destination": "保存先",
+      "onConflict": "同名のファイルがある場合",
+      "pattern": "名前のパターン",
+      "patternHint": "{filename} はファイル名に置き換わります。",
+      "sameFolder": "元のファイルと同じフォルダー",
+      "title": "書き出し"
+    },
+    "image": {
+      "advanced": "詳細設定",
+      "chroma": "クロマサブサンプリング",
+      "chromaHint": "4:4:4 は色を多く残し、4:2:0 はファイルが小さくなります。",
+      "effort": "圧縮エフォート",
+      "effortHint": "エフォートを上げるほど小さく、時間はかかります。",
+      "format": {
+        "keep": "元の形式のまま",
+        "label": "形式"
+      },
+      "lossless": "可逆圧縮",
+      "losslessHint": "画素を保持します。ファイルは大きくなります。",
+      "metadata": {
+        "essential_only": "必要なものだけ",
+        "preserve_all": "すべて残す",
+        "strip_all": "すべて削除",
+        "strip_comments": "コメントを削除",
+        "strip_exif": "EXIF を削除",
+        "strip_gps": "位置情報を削除",
+        "strip_icc": "カラープロファイルを削除"
+      },
+      "metadataHint": {
+        "essential_only": "向きとカラープロファイル。GPS などは削除します",
+        "preserve_all": "位置情報やコメントも含みます",
+        "strip_all": "何も残しません",
+        "strip_comments": "説明やコメント",
+        "strip_exif": "カメラ・日時・撮影設定",
+        "strip_gps": "位置情報だけ",
+        "strip_icc": "色の見え方が変わることがあります"
+      },
+      "metadataPolicy": "残すもの",
+      "metadataPolicyHint": "向きとカラープロファイルは削除すると見た目が変わります。",
+      "metadataTitle": "メタデータ",
+      "noAdvanced": "この形式に追加の設定はありません。",
+      "output": "出力",
+      "pngLevel": "圧縮レベル",
+      "pngLevelHint": "可逆圧縮：高いレベルは時間がかかり、画像は変わりません。",
+      "preventUpscale": "拡大しない",
+      "preventUpscaleHint": "拡大してもファイルは小さくなりません。",
+      "progressive": "プログレッシブ表示",
+      "progressiveHint": "全体が先に表示され、徐々に鮮明になります。",
+      "quality": "品質",
+      "qualityHint": {
+        "balanced": "サイズと見た目のバランス",
+        "high": "ウェブ向け。違いはほとんど分かりません",
+        "maximum": "元の画像とほぼ見分けがつきません",
+        "minimum": "とても小さく、劣化がはっきり分かります",
+        "small": "小さいファイル。劣化が見え始めます"
+      },
+      "resolution": {
+        "label": "解像度",
+        "original": "元のまま"
+      },
+      "size": "サイズ",
+      "speed": "速度",
+      "speedHint": "速いほど圧縮率は下がります。"
     },
     "info": {
       "alpha": "透過",
@@ -81,6 +187,21 @@
       "advanced": "詳細",
       "basic": "基本"
     },
+    "preset": {
+      "archive": "保存用",
+      "balanced": "バランス",
+      "custom": "カスタム",
+      "maximum_quality": "最高品質",
+      "modified": "プリセット選択後に変更されています",
+      "origin": {
+        "builtin": "標準",
+        "platform": "プラットフォーム",
+        "user": "自分の"
+      },
+      "placeholder": "プリセットを選択",
+      "smallest_file": "最小サイズ",
+      "web": "ウェブ"
+    },
     "queue": {
       "add": "追加",
       "clearAll": "すべて消去",
@@ -104,8 +225,59 @@
       "unreadable": "読み込めませんでした",
       "unsupported_media": "メディアファイルとして認識できません"
     },
+    "result": {
+      "elapsed": "{seconds} 秒",
+      "grewBy": "元のファイルより {size} 大きくなりました",
+      "reveal": "フォルダーで表示",
+      "saved": "{size} 削減（{percent}%）",
+      "title": "結果"
+    },
+    "run": "圧縮する",
     "subtitle": "品質を自分で決めながらファイルを小さくします",
+    "summary": {
+      "defaults": "変更なし — すべて既定値です。",
+      "field": {
+        "audio_codec": "音声",
+        "bitrate_mode": "ビットレートモード",
+        "channels": "チャンネル",
+        "chroma_subsampling": "クロマ",
+        "container": "コンテナ",
+        "effort": "エフォート",
+        "fps": "フレームレート",
+        "height": "高さ",
+        "lossless": "可逆圧縮",
+        "max_colors": "色数",
+        "metadata_policy": "メタデータ",
+        "output_format": "形式",
+        "percent": "倍率",
+        "png_compress_level": "PNG レベル",
+        "preserve_aspect": "縦横比を保つ",
+        "prevent_upscale": "拡大しない",
+        "progressive": "プログレッシブ",
+        "quality": "品質",
+        "rate_mode": "レートモード",
+        "resolution": "解像度",
+        "sample_rate": "サンプリング周波数",
+        "speed": "速度",
+        "video_codec": "映像",
+        "width": "幅"
+      },
+      "on": "オン",
+      "title": "設定の概要"
+    },
+    "target": {
+      "hint": "探索は値の確定時に実行され、1文字ごとには実行されません。",
+      "label": "目標サイズ",
+      "size": "サイズ",
+      "unit": "単位"
+    },
     "title": "圧縮",
+    "unavailable": {
+      "format_not_writable": "このコンピューターではこの形式を書き出せません",
+      "no_encoder_available": "このコンピューターではこの形式を書き出せません",
+      "not_supported_by_build": "このインストールでは利用できません",
+      "requires_hardware_encoder": "このマシンにない映像アクセラレーションが必要です"
+    },
     "upload": {
       "selectPrompt": "キューからファイルを選択してください",
       "subtitle": "画像・動画・音声・GIF — 種類は中身から判定します",

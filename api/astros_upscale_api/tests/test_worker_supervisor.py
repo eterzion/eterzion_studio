@@ -390,3 +390,45 @@ class TestAudioWorkerIdleWatchdog:
         monkeypatch.setattr(worker_supervisor, '_supervisor', None)
         monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
         monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
+
+
+class TestSpawnFailureIsNotCalledATimeout:
+    """Um filho que **já morreu** não é um timeout.
+
+    Chamá-lo assim custou duas depurações neste projeto: o worker recusava
+    iniciar com uma mensagem clara no stderr e código de saída 3, e o que
+    chegava a quem depurava era "não respondeu a tempo" — um apagão total com
+    máscara de intermitência. O que os testes abaixo verificam não é o
+    encerramento, que já funcionava, e sim **o que a mensagem diz**.
+    """
+
+    def _supervisor_que_sai_com(self, codigo: int):
+        return WorkerSupervisor(
+            spawn_args=['-c', f'import sys; sys.exit({codigo})'])
+
+    def test_a_recusa_por_integridade_e_nomeada(self):
+        supervisor = self._supervisor_que_sai_com(3)
+        with pytest.raises(WorkerCrashed) as erro:
+            supervisor.ensure_started()
+        mensagem = str(erro.value)
+        assert 'integridade' in mensagem
+        # A instrução acionável, e não só o diagnóstico: quem lê isto tem que
+        # saber o que fazer sem procurar no código.
+        assert 'app.security' in mensagem
+        assert 'não respondeu a tempo' not in mensagem
+
+    def test_um_codigo_desconhecido_ainda_diz_qual_foi(self):
+        supervisor = self._supervisor_que_sai_com(9)
+        with pytest.raises(WorkerCrashed) as erro:
+            supervisor.ensure_started()
+        assert '9' in str(erro.value)
+
+    def test_a_falha_e_rapida_e_nao_espera_o_timeout(self):
+        """Sem isto o teste passaria mesmo se a mensagem chegasse depois de 45
+        segundos — e esperar 45 segundos por uma resposta que já existe é
+        metade do defeito."""
+        supervisor = self._supervisor_que_sai_com(3)
+        inicio = time.monotonic()
+        with pytest.raises(WorkerCrashed):
+            supervisor.ensure_started()
+        assert time.monotonic() - inicio < 20.0

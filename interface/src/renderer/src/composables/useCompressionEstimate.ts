@@ -11,7 +11,7 @@
 // escreveria por cima do número certo com o errado. O contador de geração abaixo
 // é o que impede isso; um `AbortController` sozinho não impediria, porque
 // abortar não é instantâneo.
-import { readonly, ref, watch, type Ref } from 'vue'
+import { shallowReadonly, ref, watch, type Ref } from 'vue'
 import {
   CompressionError,
   estimate as requestEstimate,
@@ -102,10 +102,13 @@ export function useCompressionEstimate(source: EstimateSource) {
     loading.value = false
   }
 
+  // `shallowReadonly` e não `readonly`: a estimativa é **substituída** inteira a
+  // cada resposta, nunca alterada por dentro, então a profundidade extra só
+  // produziria tipos `DeepReadonly` que não encaixam no `prop` de quem exibe.
   return {
-    estimate: readonly(estimate),
-    loading: readonly(loading),
-    error: readonly(error),
+    estimate: shallowReadonly(estimate),
+    loading: shallowReadonly(loading),
+    error: shallowReadonly(error),
     refresh: run,
     stop
   }

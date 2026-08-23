@@ -152,6 +152,23 @@ class QualityVerdictSummary(BaseModel):
     reasons: list[str] = []
 
 
+class CompressionResultSummary(BaseModel):
+    """O que de fato saiu, medido no arquivo (FR-022).
+
+    Repetir a estimativa aqui seria a mentira mais fácil de cometer nesta spec:
+    ela já existe, tem o mesmo formato, e ninguém perceberia até o arquivo no
+    disco não bater com o que a tela afirma.
+    """
+    original_bytes: int
+    output_size_bytes: int
+    saving_bytes: int
+    reduction_ratio: float | None = None
+    # Campo, não cálculo do cliente (FR-023): uma redução negativa apresentada
+    # como economia é o tipo de defeito que passa por formatação.
+    grew: bool = False
+    elapsed_seconds: float = 0.0
+
+
 class JobStatus(BaseModel):
     id: str
     status: JobStatusValue
@@ -177,6 +194,10 @@ class JobStatus(BaseModel):
     # so their response payload is byte-for-byte unchanged (contracts/README.md).
     audio_analysis: AudioAnalysisSummary | None = None
     quality_verdict: QualityVerdictSummary | None = None
+    # specs/008 — os números **medidos** da Central. Ausente (não nulo) em todo
+    # job que não é de compressão, para que a resposta dos demais continue byte
+    # a byte a mesma.
+    compression: CompressionResultSummary | None = None
 
 
 class ModelInfo(BaseModel):

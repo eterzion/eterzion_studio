@@ -50,8 +50,114 @@
   "compression": {
     "back": "Back",
     "comingSoon": "{media} compression arrives in the next stages.",
+    "compare": {
+      "after": "Compressed",
+      "before": "Original",
+      "pending": "Compress to compare.",
+      "reset": "Fit",
+      "sideBySide": "Side by side",
+      "slider": "Overlay",
+      "view": "View",
+      "zoom": "Zoom"
+    },
     "estimate": {
-      "loading": "Estimating…"
+      "assumption": {
+        "audio_bitrate_fixed": "assumes audio stays at its current bitrate",
+        "constant_quality": "at constant quality the size depends on the content",
+        "container_overhead": "includes an allowance for the container",
+        "lossless_content_dependent": "lossless: the size depends on the content",
+        "sampled_crops": "measured on samples of the image, not the whole image",
+        "source_bitrate_unknown": "the source bitrate was not probed"
+      },
+      "belowFloor": "This size is not reachable without destroying the media.",
+      "confidence": {
+        "derived": "derived",
+        "measured": "measured",
+        "rough": "rough"
+      },
+      "disclaimer": "This is an estimate. The final size is measured after compressing.",
+      "empty": "Pick a file to see the estimate.",
+      "estimated": "Estimated",
+      "growth": "Growth",
+      "loading": "Estimating…",
+      "original": "Original",
+      "saving": "Saving",
+      "title": "Estimate",
+      "unknown": "not estimable",
+      "wouldGrow": "With these settings the file would end up larger than the original."
+    },
+    "export": {
+      "applyToAll": "Apply to all",
+      "applyToAllHint": "Use this choice for the whole batch.",
+      "choose": "Choose folder",
+      "conflict": {
+        "ask": "Ask",
+        "overwrite": "Replace",
+        "rename": "Rename"
+      },
+      "destination": "Destination",
+      "onConflict": "If it already exists",
+      "pattern": "Naming pattern",
+      "patternHint": "{filename} is replaced by the file’s name.",
+      "sameFolder": "Same folder as the original",
+      "title": "Export"
+    },
+    "image": {
+      "advanced": "Advanced settings",
+      "chroma": "Chroma subsampling",
+      "chromaHint": "4:4:4 keeps more colour; 4:2:0 makes smaller files.",
+      "effort": "Compression effort",
+      "effortHint": "More effort, smaller file, more time.",
+      "format": {
+        "keep": "Keep the original",
+        "label": "Format"
+      },
+      "lossless": "Lossless",
+      "losslessHint": "Keeps every pixel; the file gets larger.",
+      "metadata": {
+        "essential_only": "Essentials only",
+        "preserve_all": "Keep everything",
+        "strip_all": "Remove everything",
+        "strip_comments": "Remove comments",
+        "strip_exif": "Remove EXIF",
+        "strip_gps": "Remove location",
+        "strip_icc": "Remove colour profile"
+      },
+      "metadataHint": {
+        "essential_only": "orientation and colour profile; drops GPS and the rest",
+        "preserve_all": "including location and comments",
+        "strip_all": "nothing is kept",
+        "strip_comments": "descriptions and comments",
+        "strip_exif": "camera, date and capture settings",
+        "strip_gps": "the location only",
+        "strip_icc": "colours may look different"
+      },
+      "metadataPolicy": "What to keep",
+      "metadataPolicyHint": "Orientation and colour profile change the image when removed.",
+      "metadataTitle": "Metadata",
+      "noAdvanced": "This format has no additional settings.",
+      "output": "Output",
+      "pngLevel": "Compression level",
+      "pngLevelHint": "Lossless: higher levels take longer and never change the image.",
+      "preventUpscale": "No upscaling",
+      "preventUpscaleHint": "Enlarging never makes a file smaller.",
+      "progressive": "Progressive loading",
+      "progressiveHint": "The whole image appears first, then sharpens.",
+      "quality": "Quality",
+      "qualityHint": {
+        "balanced": "Balance between size and appearance",
+        "high": "Good for the web; the difference is hard to spot",
+        "maximum": "Practically indistinguishable from the original",
+        "minimum": "Very small; the loss is visible",
+        "small": "Small file; the loss starts to show"
+      },
+      "resolution": {
+        "label": "Resolution",
+        "original": "Original"
+      },
+      "size": "Size",
+      "speed": "Speed",
+      "speedHint": "Faster compresses less."
     },
     "info": {
       "alpha": "Transparency",
@@ -81,6 +187,21 @@
       "advanced": "Advanced",
       "basic": "Basic"
     },
+    "preset": {
+      "archive": "Archive",
+      "balanced": "Balanced",
+      "custom": "Custom",
+      "maximum_quality": "Maximum quality",
+      "modified": "Changed since the preset was chosen",
+      "origin": {
+        "builtin": "Built-in",
+        "platform": "Platform",
+        "user": "Yours"
+      },
+      "placeholder": "Choose a preset",
+      "smallest_file": "Smallest file",
+      "web": "Web"
+    },
     "queue": {
       "add": "Add",
       "clearAll": "Clear all",
@@ -104,8 +225,59 @@
       "unreadable": "could not be read",
       "unsupported_media": "not a recognised media file"
     },
+    "result": {
+      "elapsed": "{seconds} s",
+      "grewBy": "The file ended up {size} larger than the original",
+      "reveal": "Show in folder",
+      "saved": "Saved {size} ({percent}%)",
+      "title": "Result"
+    },
+    "run": "Compress",
     "subtitle": "Make files smaller while keeping control of quality",
+    "summary": {
+      "defaults": "Nothing changed — all defaults.",
+      "field": {
+        "audio_codec": "Audio",
+        "bitrate_mode": "Bitrate mode",
+        "channels": "Channels",
+        "chroma_subsampling": "Chroma",
+        "container": "Container",
+        "effort": "Effort",
+        "fps": "Frame rate",
+        "height": "Height",
+        "lossless": "Lossless",
+        "max_colors": "Colours",
+        "metadata_policy": "Metadata",
+        "output_format": "Format",
+        "percent": "Scale",
+        "png_compress_level": "PNG level",
+        "preserve_aspect": "Keep aspect ratio",
+        "prevent_upscale": "No upscaling",
+        "progressive": "Progressive",
+        "quality": "Quality",
+        "rate_mode": "Rate mode",
+        "resolution": "Resolution",
+        "sample_rate": "Sample rate",
+        "speed": "Speed",
+        "video_codec": "Video",
+        "width": "Width"
+      },
+      "on": "On",
+      "title": "Summary"
+    },
+    "target": {
+      "hint": "The search runs when you confirm the value, not on every keystroke.",
+      "label": "Target size",
+      "size": "Size",
+      "unit": "Unit"
+    },
     "title": "Compression",
+    "unavailable": {
+      "format_not_writable": "this computer cannot write this format",
+      "no_encoder_available": "this computer cannot write this format",
+      "not_supported_by_build": "not available in this installation",
+      "requires_hardware_encoder": "needs video acceleration this machine does not have"
+    },
     "upload": {
       "selectPrompt": "Select a file from the queue",
       "subtitle": "Images, video, audio and GIFs — the kind is read from the content",
