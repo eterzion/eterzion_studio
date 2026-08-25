@@ -66,8 +66,10 @@ const text = computed(() =>
   display: inline-flex;
   align-items: center;
   gap: var(--space-1-5);
+  font-family: var(--font-mono);
   font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.01em;
   min-width: 0;
 }
 

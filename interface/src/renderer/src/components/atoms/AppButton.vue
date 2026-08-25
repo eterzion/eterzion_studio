@@ -64,7 +64,7 @@ const sizeClasses = computed<string>(() => {
   <button
     :type="type"
     :disabled="disabled || loading"
-    class="inline-flex items-center justify-center rounded-(--radius-sm) font-(family-name:--font-sans) font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+    class="inline-flex items-center justify-center rounded-(--radius-sm) font-(family-name:--font-mono) font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
     :class="[variantClasses, sizeClasses]"
     @click="$emit('click', $event)"
   >
