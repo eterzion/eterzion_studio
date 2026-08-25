@@ -1,109 +1,73 @@
+:root {
+  --primary: #34D0DF;
+  --primary-hover: #28B8C7;
+  --primary-highlight: #6EE7F0;
+  --background: #08090D;
+  --background-secondary: #0C0E12;
+  --surface: #111319;
+  --surface-elevated: #171A21;
+  --border: #252A33;
+  --border-primary: rgba(52, 208, 223, 0.45);
+  --primary-muted: rgba(52, 208, 223, 0.10);
+  --primary-glow: rgba(52, 208, 223, 0.18);
+  --text-primary-token: #F5F7FA;
+  --text-secondary-token: #929AA8;
+  --success: #42D392;
+  --danger: #EF5350;
+  color-scheme: dark;
+}
+
 :root,
-:root[data-theme='dark'] {
-  /* Surfaces — the deep navy the Home screen established, promoted from the
-     literals it used to hardcode so every screen shares one palette (and so
-     Home itself gets a light theme for free, which it never had). */
-  --surface-0: #020910;
-  --surface-1: #030d18;
-  --surface-2: #04101b;
-  --surface-3: #071524;
-  --surface-border: #10263b;
-  --surface-border-soft: #0a1a2b;
+:root[data-theme='dark'],
+:root[data-theme='light'] {
+  --surface-0: var(--background);
+  --surface-1: var(--background-secondary);
+  --surface-2: var(--surface);
+  --surface-3: var(--surface-elevated);
+  --surface-border: var(--border);
+  --surface-border-soft: var(--border);
 
-  /* Text. --text-tertiary is the floor of the scale, so it is the one that
-     decides whether the palette passes WCAG AA (4.5:1) — both themes' values
-     below are measured against their own --surface-0/-2/-3, not picked by eye. */
-  --text-primary: #f7f8fc;
-  --text-secondary: #a3adc2;
-  --text-tertiary: #7b8397;
+  --text-primary: var(--text-primary-token);
+  --text-secondary: var(--text-secondary-token);
+  --text-tertiary: var(--text-secondary-token);
 
-  /* Semantic (accent-independent) */
-  --color-success: #22c55e;
-  --color-success-soft: rgba(34, 197, 94, 0.14);
+  /* Semantic colours remain independent from the brand identity. */
+  --color-success: var(--success);
+  --color-success-soft: rgba(66, 211, 146, 0.12);
   --color-warning: #f59e0b;
   --color-warning-soft: rgba(245, 158, 11, 0.14);
-  --color-danger: #ef4444;
-  --color-danger-soft: rgba(239, 68, 68, 0.14);
+  --color-danger: var(--danger);
+  --color-danger-soft: rgba(239, 83, 80, 0.12);
 
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
 }
 
-:root[data-theme='light'] {
-  /* The counterpart of the navy dark theme above, not a neutral grey: the same
-     blue cast, inverted. Surfaces get progressively deeper (page -> card ->
-     raised), so elevation reads the same way in both themes. */
-  --surface-0: #eef2f9;
-  --surface-1: #ffffff;
-  --surface-2: #f5f8fd;
-  --surface-3: #e3eaf5;
-  --surface-border: #cbd8ea;
-  --surface-border-soft: #dfe7f3;
-
-  /* Text — a deep navy rather than black, mirroring the dark theme's ground. */
-  --text-primary: #0a1420;
-  --text-secondary: #4d5a6e;
-  --text-tertiary: #616e82;
-
-  /* Semantic (accent-independent) */
-  --color-success: #15803d;
-  --color-success-soft: rgba(21, 128, 61, 0.1);
-  --color-warning: #b45309;
-  --color-warning-soft: rgba(180, 83, 9, 0.1);
-  --color-danger: #b91c1c;
-  --color-danger-soft: rgba(185, 28, 28, 0.1);
-
-  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.08);
-  --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.12);
-}
-
 /* ---------------------------- accent ---------------------------- */
 /*
- * Each module owns a colour, and the Home cards already taught it: image is
- * blue, video purple, audio green. Those were only ever card
- * tints; now they are real tokens, so a screen can adopt its module's colour
- * and everything inside it follows.
- *
- * The mechanism is deliberately boring: every component already styles itself
- * from --color-primary/-hover/-soft, so a screen only has to re-declare those
- * three under a [data-module] attribute and its buttons, sliders, focus rings,
- * badges, icon chips and upload zone all shift together. No component needs to
- * know which module it is rendering inside.
+ * Image, video and audio share the same cyan identity. The module variables stay
+ * available as compatibility aliases so existing components keep their structure.
  */
 :root {
-  --accent-image: #1688ff;
-  --accent-video: #bd24ff;
-  --accent-audio: #1ee07a;
+  --accent-image: var(--primary);
+  --accent-video: var(--primary);
+  --accent-audio: var(--primary);
 }
 
-:root[data-theme='dark'] {
-  --color-primary: #22d3ee;
-  --color-primary-hover: #06b6d4;
-  --color-primary-soft: rgba(34, 211, 238, 0.14);
-}
+:root[data-theme='dark'],
 :root[data-theme='light'] {
-  --color-primary: #0e7490;
-  --color-primary-hover: #155e75;
-  --color-primary-soft: rgba(14, 116, 144, 0.1);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-muted);
 }
 
-/* Module scoping. `color-mix` derives the hover/soft variants from the one
-   accent value, so adding a module never means hand-picking three colours —
-   and the soft variant lands at the same opacity the neutral accent uses. */
-[data-module='image'] {
-  --color-primary: var(--accent-image);
-  --color-primary-hover: color-mix(in srgb, var(--accent-image) 82%, #000);
-  --color-primary-soft: color-mix(in srgb, var(--accent-image) 14%, transparent);
-}
-[data-module='video'] {
-  --color-primary: var(--accent-video);
-  --color-primary-hover: color-mix(in srgb, var(--accent-video) 82%, #000);
-  --color-primary-soft: color-mix(in srgb, var(--accent-video) 14%, transparent);
-}
+/* Every editor module resolves to the same official identity tokens. */
+[data-module='image'],
+[data-module='video'],
 [data-module='audio'] {
-  --color-primary: var(--accent-audio);
-  --color-primary-hover: color-mix(in srgb, var(--accent-audio) 82%, #000);
-  --color-primary-soft: color-mix(in srgb, var(--accent-audio) 14%, transparent);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-muted);
 }
 
 /* Tailwind's theme aliases (styles/tailwind.css `@theme`) are declared once on
@@ -117,22 +81,6 @@
   --color-accent: var(--color-primary);
   --color-accent-hover: var(--color-primary-hover);
   --color-accent-soft: var(--color-primary-soft);
-}
-
-/* The accents were picked against the dark ground; on the light theme they need
-   darkening to stay legible as text/icon colour on a near-white surface. Each
-   percentage below is the one that puts the resulting colour at >=4.6:1 against
-   --surface-0 (WCAG AA for body text, measured, not eyeballed). Green needs the
-   most correction of the three, since it is the lightest of them at full
-   saturation. */
-:root[data-theme='light'] [data-module='image'] {
-  --color-primary: color-mix(in srgb, var(--accent-image) 79%, #000);
-}
-:root[data-theme='light'] [data-module='video'] {
-  --color-primary: color-mix(in srgb, var(--accent-video) 80%, #000);
-}
-:root[data-theme='light'] [data-module='audio'] {
-  --color-primary: color-mix(in srgb, var(--accent-audio) 56%, #000);
 }
 
 :root {
@@ -155,9 +103,8 @@
      because the places that used it still mean "the roundest we go". */
   --radius-full: 10px;
 
-  /* Text/icon on a colored (accent/primary) background — always white regardless of
-     light/dark theme, since accent colors are chosen for contrast against white. */
-  --on-primary: #fff;
+  /* High-contrast text/icon colour used on the cyan primary background. */
+  --on-primary: var(--background);
 
   /* Typography */
   --font-sans: 'Inter Variable', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -240,16 +187,51 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--chip-tone, var(--color-primary));
-  background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent));
+  background: var(--primary-muted);
+  filter: drop-shadow(0 0 8px var(--primary-glow));
 }
 
 * {
   box-sizing: border-box;
 }
 
-button {
-  font-family: inherit;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+button,
+[role='button'],
+[role='tab'],
+[role='status'],
+output,
+code,
+kbd {
+  font-family: var(--font-mono);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+button,
+[role='button'],
+[role='tab'] {
+  letter-spacing: -0.01em;
+}
+
+[role='status'],
+output,
+code,
+kbd {
+  font-variant-numeric: tabular-nums;
 }
 
 ::-webkit-scrollbar {
