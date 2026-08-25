@@ -1,6 +1,6 @@
 {
   "name": "astros-upscale",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Upscale de imagens e vídeos com IA — aplicativo desktop",
   "main": "./out/main/index.js",
   "author": "Eric Inácio",

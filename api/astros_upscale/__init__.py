@@ -1,4 +1,4 @@
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 
 from .processing import MODELS, AstrosUpscaler, load_model, resolve_model
 from .media import img2tensor, imread, imwrite, tensor2img
