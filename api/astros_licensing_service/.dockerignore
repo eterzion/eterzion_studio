@@ -1,0 +1,9 @@
+__pycache__/
+.pytest_cache/
+.coverage
+coverage.xml
+.env
+.venv/
+storage/
+tests/
+requirements-dev.txt
