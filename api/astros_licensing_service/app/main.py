@@ -15,7 +15,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title='Astros Upscale — Licensing Service', lifespan=lifespan)
+app = FastAPI(title='Eterzion Studio — Licensing Service', lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -37,7 +37,5 @@ def health():
 
 @app.get('/public-key')
 def public_key():
-    """The service's signing public key — a real client should pin this at
-    build time rather than fetch it over the wire (fetching it live is only
-    convenient for local development/testing, not for production trust)."""
+    """Expose the public half of the stable server signing identity."""
     return {'public_key_b64': get_public_key_b64()}
