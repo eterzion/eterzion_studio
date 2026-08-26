@@ -219,7 +219,10 @@ class TestAcceptWithTimeout:
         """A real Listener that nothing ever connects to — proves the
         timeout path itself (not the torch-import-speed-dependent real
         spawn path other tests exercise)."""
-        supervisor._listener = Listener(family='AF_PIPE', authkey=b'test-authkey-for-timeout-check')
+        family = 'AF_PIPE' if os.name == 'nt' else 'AF_UNIX'
+        supervisor._listener = Listener(
+            family=family, authkey=b'test-authkey-for-timeout-check',
+        )
         supervisor._process = None
         start = time.time()
         with pytest.raises(WorkerCrashed):
