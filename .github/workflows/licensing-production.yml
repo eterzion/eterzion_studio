@@ -1,6 +1,12 @@
 name: Licensing production
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - api/astros_licensing_service/**
+      - deploy/licensing/**
+      - .github/workflows/licensing-production.yml
   push:
     branches: [main]
     paths:
@@ -21,8 +27,8 @@ env:
   IMAGE: ghcr.io/eterzion/eterzion_studio/licensing
 
 jobs:
-  validate-build-and-promote:
-    name: Validate, publish and promote licensing
+  validate:
+    name: Validate licensing
     runs-on: [self-hosted, linux, x64, hostinger]
     steps:
       - uses: actions/checkout@v7
@@ -45,6 +51,16 @@ jobs:
           uv venv --clear "$ci_venv" --python python
           uv pip install --python "$ci_venv/bin/python" -r requirements-dev.txt
           "$ci_venv/bin/python" -m pytest
+
+  publish-and-promote:
+    name: Publish and promote licensing
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: [self-hosted, linux, x64, hostinger]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
