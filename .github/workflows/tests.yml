@@ -15,6 +15,8 @@ jobs:
     defaults:
       run:
         working-directory: api/astros_licensing_service
+    env:
+      CI_VENV: ${{ runner.temp }}/eterzion-studio-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -24,8 +26,10 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: api/astros_licensing_service/requirements*.txt
-      - run: uv pip install --system -r requirements-dev.txt
-      - run: pytest --cov-report=xml
+      - name: Create isolated Python environment
+        run: uv venv --clear "$CI_VENV" --python python
+      - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
+      - run: "$CI_VENV/bin/python" -m pytest --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -34,62 +38,53 @@ jobs:
 
   upscale-api-tests:
     name: Upscale API (pytest)
-    # Required CI runs on the organization's Ubuntu self-hosted runner. The
-    # Windows-only DPAPI path must also be exercised by a Windows packaging
-    # workflow before release.
+    # setup-python's toolcache persists between jobs on this self-hosted runner.
+    # A unique venv prevents dependencies from another run or former repository
+    # name from contaminating the tested PyTorch stack.
     runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
         working-directory: api/astros_upscale_api
+    env:
+      CI_VENV: ${{ runner.temp }}/eterzion-studio-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
     steps:
-      # /inputs at repo root (~2.3MB) is unused by any test, slow or not —
-      # confirmed via grep. /models IS needed even by non-`slow` tests
-      # (test_component_manager.py checks real on-disk install state), so
-      # it stays. api/ as a whole (astros_upscale + astros_upscale_api +
-      # astros_licensing_service + pyproject.toml) is checked out together —
-      # astros_upscale must be pip-installable from api/pyproject.toml, and
-      # sparse-checkout's cone mode only grants directory-level granularity,
-      # so there's no cheaper way to include just pyproject.toml + the two
-      # subpackages this job actually needs. This still skips the frontend
-      # tree, docs/specs, and other unrelated top-level dirs on this Windows
-      # runner.
       - uses: actions/checkout@v7
         with:
           sparse-checkout: |
             api
             models
           sparse-checkout-cone-mode: true
-      # Media tests synthesize real fixtures and therefore require ffmpeg.
       - uses: FedericoCarboni/setup-ffmpeg@v3.1
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
-      # uv resolves/downloads/installs in parallel with a Rust binary — no
-      # per-call pip resolver overhead — and its cache survives across runs,
-      # which is what actually keeps this job under budget on a Windows
-      # runner (slower disk/process spawn than Linux runners).
       - uses: astral-sh/setup-uv@v10.0.0
         with:
           enable-cache: true
           cache-dependency-glob: api/astros_upscale_api/requirements*.txt
-      # CI runners have no GPU — the CUDA torch/torchaudio wheels pulled by
-      # requirements.txt's unpinned `torch`/`torchaudio` are several GB and
-      # dominate the job's runtime. Installing the CPU wheels first satisfies
-      # those (unversioned) requirement lines, so the requirements-dev.txt
-      # install below reuses them instead of re-resolving CUDA builds.
-      - run: uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-      - run: uv pip install --system -r requirements-dev.txt
-      # astros_upscale is a real dependency of app.processing/app.routes —
-      # installed editable from its new home in api/ instead of the sys.path
-      # climbing conftest.py used to do (see
-      # specs/002-api-interface-split/research.md Decisão 3).
-      - run: uv pip install --system --no-deps -e ..
-      # Deselect `slow` (real subprocess/model-inference) tests from the
-      # required CI run — they run real ffmpeg/model workloads unsuited to a
-      # tight time budget. Run them locally or in a separate scheduled job
-      # before release. `-n auto` (pytest-xdist) spreads the rest across the
-      # runner's cores instead of running ~30 test files serially.
-      - run: pytest -m "not slow" -n auto --durations=20 --cov-report=xml
+      - name: Create isolated Python environment
+        run: uv venv --clear "$CI_VENV" --python python
+      - name: Install the CPU PyTorch stack
+        run: >-
+          uv pip install --python "$CI_VENV/bin/python"
+          torch torchvision torchaudio
+          --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
+      - run: uv pip install --python "$CI_VENV/bin/python" --no-deps -e ..
+      - name: Verify the CPU PyTorch stack
+        run: |
+          "$CI_VENV/bin/python" - <<'PY'
+          import torch
+          import torchvision
+          import torchaudio
+
+          print(f"torch={torch.__version__}")
+          print(f"torchvision={torchvision.__version__}")
+          print(f"torchaudio={torchaudio.__version__}")
+          if torch.version.cuda is not None:
+              raise SystemExit(f"Expected CPU-only torch, found CUDA {torch.version.cuda}")
+          PY
+      - run: "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto --durations=20 --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
         with:
