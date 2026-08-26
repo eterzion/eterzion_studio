@@ -1,0 +1,102 @@
+name: Licensing production
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - api/astros_licensing_service/**
+      - deploy/licensing/**
+      - .github/workflows/licensing-production.yml
+  push:
+    branches: [main]
+    paths:
+      - api/astros_licensing_service/**
+      - deploy/licensing/**
+      - .github/workflows/licensing-production.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: eterzion-studio-licensing-production
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/eterzion/eterzion_studio/licensing
+
+jobs:
+  validate:
+    name: Validate licensing
+    runs-on: [self-hosted, linux, x64, hostinger]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+
+      - uses: astral-sh/setup-uv@v10.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/astros_licensing_service/requirements*.txt
+
+      - name: Test licensing service in an isolated environment
+        working-directory: api/astros_licensing_service
+        run: |
+          ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-licensing-production"
+          uv venv --clear "$ci_venv" --python python
+          uv pip install --python "$ci_venv/bin/python" -r requirements-dev.txt
+          "$ci_venv/bin/python" -m pytest
+
+  publish-and-promote:
+    name: Publish and promote licensing
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: [self-hosted, linux, x64, hostinger]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and publish immutable image
+        uses: docker/build-push-action@v7
+        with:
+          context: api/astros_licensing_service
+          push: true
+          tags: ${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: Assemble deploy-only production branch
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          release_dir="$(mktemp -d)"
+          trap 'rm -rf "$release_dir"' EXIT
+          mkdir -p "$release_dir/scripts"
+          cp deploy/licensing/docker-compose.yml "$release_dir/docker-compose.yml"
+          cp deploy/licensing/vps/deploy.sh "$release_dir/scripts/deploy.sh"
+          cp deploy/licensing/vps/poll-production-release.sh "$release_dir/scripts/poll-production-release.sh"
+          chmod 0700 "$release_dir/scripts/"*.sh
+          printf 'LICENSING_IMAGE_TAG=%s\n' "$SOURCE_SHA" > "$release_dir/.licensing-image.env"
+
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git checkout --orphan production-next
+          git rm -rf .
+          cp -a "$release_dir/." .
+          git add --all
+          git commit -m "Promote licensing ${SOURCE_SHA}"
+          git push --force origin HEAD:production
