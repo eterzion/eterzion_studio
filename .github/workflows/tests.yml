@@ -3,12 +3,15 @@ name: Tests
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   licensing-service-tests:
     name: Licensing service (pytest)
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
         working-directory: api/astros_licensing_service
@@ -31,11 +34,10 @@ jobs:
 
   upscale-api-tests:
     name: Upscale API (pytest)
-    runs-on: windows-latest
-    # DPAPI (used by app.security) is Windows-only — the same reason
-    # app.security's install identity itself falls back to a weaker,
-    # explicitly-documented no-op on other platforms. Running this suite on
-    # windows-latest exercises the real code path instead of the fallback.
+    # Required CI runs on the organization's Ubuntu self-hosted runner. The
+    # Windows-only DPAPI path must also be exercised by a Windows packaging
+    # workflow before release.
+    runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
         working-directory: api/astros_upscale_api
@@ -57,10 +59,7 @@ jobs:
             api
             models
           sparse-checkout-cone-mode: true
-      # windows-latest ships no ffmpeg on PATH. Several non-`slow` tests
-      # (e.g. test_content_type_audio.py) shell out to a real `ffmpeg` to
-      # synthesize fixture audio/video, so without this they fail with
-      # WinError 2 rather than being skipped.
+      # Media tests synthesize real fixtures and therefore require ffmpeg.
       - uses: FedericoCarboni/setup-ffmpeg@v3.1
       - uses: actions/setup-python@v7
         with:
@@ -99,7 +98,7 @@ jobs:
 
   frontend-lint-and-typecheck:
     name: Desktop app — lint + typecheck
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
         working-directory: interface
@@ -108,6 +107,7 @@ jobs:
       - uses: pnpm/action-setup@v6.0.10
         with:
           version: 11
+          dest: ${{ runner.temp }}/pnpm-upscale-${{ github.run_id }}-${{ github.job }}
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
