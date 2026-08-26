@@ -30,7 +30,8 @@ jobs:
           printf 'CI_VENV=%s\n' "$ci_venv" >> "$GITHUB_ENV"
           uv venv --clear "$ci_venv" --python python
       - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
-      - run: "$CI_VENV/bin/python" -m pytest --cov-report=xml
+      - run: >-
+          "$CI_VENV/bin/python" -m pytest --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
         with:
@@ -86,7 +87,9 @@ jobs:
           if torch.version.cuda is not None:
               raise SystemExit(f"Expected CPU-only torch, found CUDA {torch.version.cuda}")
           PY
-      - run: "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto --durations=20 --cov-report=xml
+      - run: >-
+          "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto
+          --durations=20 --cov-report=xml
       - uses: actions/upload-artifact@v7
         if: always()
         with:
