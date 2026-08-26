@@ -35,11 +35,11 @@ dependencies = [
 
 [project.optional-dependencies]
 audio = [
-    # denoiser (CC-BY-NC-4.0) and voicefixer's unlicensed vocoder checkpoint were
-    # removed per docs/models/MODEL_LICENSES.md — replaced by DSP (afftdn/loudnorm)
-    # in astros_upscale.processing plus the two commercially-clean model paths below.
+    # denoiser (CC-BY-NC-4.0), voicefixer's unlicensed vocoder checkpoint and
+    # the retired external astros_audio_enhance repository were removed. DSP
+    # (afftdn/loudnorm) remains built in, while AudioSR provides the approved
+    # speech bandwidth-extension path.
     "audiosronnx",  # Apache-2.0 code and weights — speech bandwidth extension
-    "astros-audio-enhance @ git+https://github.com/ericinacio/astros_audio_enhance.git",
     # SonicMaster (music restoration, approved_conditional — see MODEL_LICENSES.md §3-bis) is
     # deliberately NOT listed here: its upstream repo (github.com/AMAAI-Lab/SonicMaster) has no
     # setup.py/pyproject.toml, so `pip install git+...` never worked (T001, specs/
