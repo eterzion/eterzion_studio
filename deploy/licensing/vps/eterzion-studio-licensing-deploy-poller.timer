@@ -1,0 +1,12 @@
+[Unit]
+Description=Poll Eterzion Studio licensing production releases
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+RandomizedDelaySec=20s
+Persistent=true
+Unit=eterzion-studio-licensing-deploy-poller.service
+
+[Install]
+WantedBy=timers.target
