@@ -34,10 +34,28 @@ class Settings(BaseSettings):
     )
 
     # Electron uses app://. in production; Vite uses localhost in development.
-    cors_origins: list[str] = ['http://localhost:5173', 'app://.', 'null']
+    cors_origins: list[str] = Field(
+        ['http://localhost:5173', 'app://.', 'null'],
+        validation_alias=AliasChoices(
+            'ETERZION_LICENSING_CORS_ORIGINS',
+            'ASTROS_LICENSING_CORS_ORIGINS',
+        ),
+    )
 
-    default_activation_limit: int = 2
-    authorization_ttl_seconds: int = 300
+    default_activation_limit: int = Field(
+        2,
+        validation_alias=AliasChoices(
+            'ETERZION_LICENSING_DEFAULT_ACTIVATION_LIMIT',
+            'ASTROS_LICENSING_DEFAULT_ACTIVATION_LIMIT',
+        ),
+    )
+    authorization_ttl_seconds: int = Field(
+        300,
+        validation_alias=AliasChoices(
+            'ETERZION_LICENSING_AUTHORIZATION_TTL_SECONDS',
+            'ASTROS_LICENSING_AUTHORIZATION_TTL_SECONDS',
+        ),
+    )
 
     # Provider integrations stay disabled until their secrets are configured.
     stripe_webhook_secret: str = Field(
