@@ -8,9 +8,13 @@ cd "$repo_dir"
 git fetch --quiet origin production
 target_sha="$(git rev-parse refs/remotes/origin/production)"
 
-if [[ -f "$deployed_file" ]] && [[ "$(<"$deployed_file")" == "$target_sha" ]]; then
-  echo "Production release already deployed: ${target_sha}"
-  exit 0
+if [[ -f "$deployed_file" ]]; then
+  deployed_sha=''
+  IFS= read -r deployed_sha < "$deployed_file" || true
+  if [[ "$deployed_sha" == "$target_sha" ]]; then
+    echo "Production release already deployed: ${target_sha}"
+    exit 0
+  fi
 fi
 
 script_file="$(mktemp "${TMPDIR:-/tmp}/eterzion-licensing-deploy.XXXXXX")"
