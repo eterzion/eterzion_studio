@@ -15,8 +15,6 @@ jobs:
     defaults:
       run:
         working-directory: api/astros_licensing_service
-    env:
-      CI_VENV: ${{ runner.temp }}/eterzion-studio-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -27,7 +25,10 @@ jobs:
           enable-cache: true
           cache-dependency-glob: api/astros_licensing_service/requirements*.txt
       - name: Create isolated Python environment
-        run: uv venv --clear "$CI_VENV" --python python
+        run: |
+          ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-licensing"
+          printf 'CI_VENV=%s\n' "$ci_venv" >> "$GITHUB_ENV"
+          uv venv --clear "$ci_venv" --python python
       - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
       - run: "$CI_VENV/bin/python" -m pytest --cov-report=xml
       - uses: actions/upload-artifact@v7
@@ -45,8 +46,6 @@ jobs:
     defaults:
       run:
         working-directory: api/astros_upscale_api
-    env:
-      CI_VENV: ${{ runner.temp }}/eterzion-studio-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -63,7 +62,10 @@ jobs:
           enable-cache: true
           cache-dependency-glob: api/astros_upscale_api/requirements*.txt
       - name: Create isolated Python environment
-        run: uv venv --clear "$CI_VENV" --python python
+        run: |
+          ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-upscale"
+          printf 'CI_VENV=%s\n' "$ci_venv" >> "$GITHUB_ENV"
+          uv venv --clear "$ci_venv" --python python
       - name: Install the CPU PyTorch stack
         run: >-
           uv pip install --python "$CI_VENV/bin/python"
