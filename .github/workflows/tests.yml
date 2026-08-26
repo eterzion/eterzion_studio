@@ -77,7 +77,7 @@ jobs:
       # dominate the job's runtime. Installing the CPU wheels first satisfies
       # those (unversioned) requirement lines, so the requirements-dev.txt
       # install below reuses them instead of re-resolving CUDA builds.
-      - run: uv pip install --system torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install --system torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
       - run: uv pip install --system -r requirements-dev.txt
       # astros_upscale is a real dependency of app.processing/app.routes —
       # installed editable from its new home in api/ instead of the sys.path
