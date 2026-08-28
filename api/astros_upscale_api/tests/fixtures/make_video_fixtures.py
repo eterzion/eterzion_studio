@@ -117,6 +117,30 @@ def build_vfr(path: Path) -> None:
           '-fps_mode', 'passthrough', *_FIXTURE_VIDEO_CODEC, str(path)])
 
 
+def build_curto_webm(path: Path) -> None:
+    """O mesmo assunto do `curto.mp4`, em WebM — a saída que esta build sabe
+    produzir sem encoder de hardware (specs/008).
+
+    Curto e pequeno de propósito: os testes que o usam medem **progresso** e
+    **sincronia**, não qualidade, e uma codificação VP9 de 10 s em 1080p
+    custaria minutos a cada execução.
+    """
+    _run([*_testsrc(3, '640x480', 24), *_sine(3),
+          '-c:v', 'libvpx-vp9', '-b:v', '300k', '-c:a', 'libopus',
+          '-shortest', str(path)])
+
+
+def build_curto_wav(path: Path) -> None:
+    """Áudio a **32 kHz**, e a taxa é o ponto (specs/008, FR-034).
+
+    Uma fixture a 44100 esconderia o defeito mais provável — cair no padrão do
+    encoder, que costuma ser exatamente 44100 — e o teste de "não reamostrar"
+    passaria com o bug presente.
+    """
+    _run(['-f', 'lavfi', '-i', 'sine=frequency=440:sample_rate=32000:duration=2',
+          '-ac', '2', str(path)])
+
+
 def build_longo(path: Path) -> None:
     """Over the 2 h ceiling. Cheap to encode despite its length: a static
     source at a low frame rate and tiny resolution — what matters is the
@@ -129,6 +153,8 @@ BUILDERS = {
     'curto.mp4': build_curto,
     'sem_audio.mp4': build_sem_audio,
     'vfr.mp4': build_vfr,
+    'curto.webm': build_curto_webm,
+    'curto.wav': build_curto_wav,
 }
 
 OPTIONAL_BUILDERS = {'longo.mp4': build_longo}

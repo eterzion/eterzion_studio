@@ -105,8 +105,7 @@ export function useCompressionJob() {
     }
     if (status.status !== 'done') return
 
-    const medido = (status as unknown as { compression?: Record<string, number | boolean> })
-      .compression
+    const medido = (status as unknown as { compression?: Record<string, unknown> }).compression
     if (!medido || !status.output_path) return
     result.value = {
       outputPath: status.output_path,
@@ -116,7 +115,8 @@ export function useCompressionJob() {
       reductionRatio:
         medido.reduction_ratio == null ? null : Number(medido.reduction_ratio),
       grew: Boolean(medido.grew),
-      elapsedSeconds: Number(medido.elapsed_seconds)
+      elapsedSeconds: Number(medido.elapsed_seconds),
+      applied: (medido.applied as Record<string, unknown> | undefined) ?? null
     }
   }
 

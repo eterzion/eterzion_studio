@@ -24,6 +24,10 @@ export interface CompressionResultData {
   reductionRatio: number | null
   grew: boolean
   elapsedSeconds: number
+  /** O que de fato foi aplicado — formato, codec e opções resolvidas. Pedir e
+   *  aplicar divergem sempre que um `auto` resolve, e mostrar o pedido como
+   *  resultado seria a mesma confusão entre estimativa e medição. */
+  applied: Record<string, unknown> | null
 }
 
 const props = defineProps<{ result: CompressionResultData }>()

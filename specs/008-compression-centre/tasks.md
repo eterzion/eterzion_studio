@@ -218,15 +218,15 @@ já resolve o caso mais comum.
 
 ## Fase 5 — US4: Áudio (P2)
 
-- [ ] T063 [US4] `app/compression/audio.py`: MP3, AAC, M4A, OGG, Opus, WAV, FLAC; codec, bitrate
+- [X] T063 [US4] `app/compression/audio.py`: MP3, AAC, M4A, OGG, Opus, WAV, FLAC; codec, bitrate
       CBR/VBR, sample rate, canais
-- [ ] T064 [US4] Formato lossless **oculta** controles de bitrate lossy (FR-033); sample rate
+- [X] T064 [US4] Formato lossless **oculta** controles de bitrate lossy (FR-033); sample rate
       `original` não faz resampling (FR-034)
-- [ ] T065 [P] [US4] Escrever `test_audio_lossless_controls.py` e `test_audio_no_resampling.py`
-- [ ] T066 [US4] `AudioCompressionSettings.vue`
-- [ ] T067 [US4] Comparação de áudio: alternar original ⇄ resultado com duração, bitrate, codec,
+- [X] T065 [P] [US4] Escrever `test_audio_lossless_controls.py` e `test_audio_no_resampling.py`
+- [X] T066 [US4] `AudioCompressionSettings.vue`
+- [X] T067 [US4] Comparação de áudio: alternar original ⇄ resultado com duração, bitrate, codec,
       tamanho e sample rate (FR-056)
-- [ ] T068 [P] [US4] i18n nos 11 locales
+- [X] T068 [P] [US4] i18n nos 11 locales
 - [ ] T069 [US4] Rodar o cenário 15 do quickstart
 
 ---

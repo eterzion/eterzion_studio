@@ -20,6 +20,8 @@ import CompressionExportPanel from '../components/compression/CompressionExportP
 import ImageCompressionSettings from '../components/compression/ImageCompressionSettings.vue'
 import VideoCompressionSettings from '../components/compression/VideoCompressionSettings.vue'
 import CompressionVideoComparison from '../components/compression/CompressionVideoComparison.vue'
+import AudioCompressionSettings from '../components/compression/AudioCompressionSettings.vue'
+import CompressionAudioComparison from '../components/compression/CompressionAudioComparison.vue'
 import { useCompressionQueue } from '../composables/useCompressionQueue'
 import { useCompressionSettings } from '../composables/useCompressionSettings'
 import { useCompressionEstimate } from '../composables/useCompressionEstimate'
@@ -48,9 +50,9 @@ import type { MediaKind } from '../constants/compression'
 // exceção do Princípio V exige que quem nunca abrir o Avançado jamais encontre
 // um nome de codec.
 //
-// **Áudio e GIF ainda não comprimem**, e a tela diz isso em vez de oferecer um
-// botão que falha. Um botão sem função é pior que a sua ausência: a pessoa monta
-// as configurações inteiras antes de descobrir.
+// **GIF e animação ainda não comprimem**, e a tela diz isso em vez de oferecer
+// um botão que falha. Um botão sem função é pior que a sua ausência: a pessoa
+// monta as configurações inteiras antes de descobrir.
 
 defineEmits<{ back: [] }>()
 
@@ -139,8 +141,8 @@ function choosePreset(id: string | null): void {
 
 const imageFormats = computed<CapabilityEntry[]>(() => capabilities.value?.image.formats ?? [])
 
-/** Imagem e vídeo comprimem. Áudio e animação chegam nas fases 5 e 6. */
-const supported = computed(() => mediaKind.value === 'image' || mediaKind.value === 'video')
+/** Imagem, vídeo e áudio comprimem. Animação chega na fase 6. */
+const supported = computed(() => mediaKind.value !== 'animation')
 
 const canRun = computed(
   () => Boolean(activeHandle.value) && supported.value && !job.running.value
@@ -239,11 +241,13 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
           :original-bytes="activeMedia?.size_bytes ?? 0"
           :output-bytes="job.result.value?.outputSizeBytes ?? null"
         />
-        <audio
-          v-else-if="hasNativeApi && previewPath && previewKind === 'audio'"
-          :src="api.toFileUrl(previewPath)"
-          class="preview-audio"
-          controls
+        <CompressionAudioComparison
+          v-else-if="previewPath && previewKind === 'audio'"
+          :source-path="previewPath"
+          :output-path="job.result.value?.outputPath ?? null"
+          :media="activeMedia"
+          :output-bytes="job.result.value?.outputSizeBytes ?? null"
+          :applied="job.result.value?.applied ?? null"
         />
         <p v-else class="preview-empty">{{ t('compression.upload.selectPrompt') }}</p>
       </template>
@@ -283,6 +287,17 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
 
             <VideoCompressionSettings
               v-else-if="mediaKind === 'video'"
+              :settings="settings"
+              :target="target"
+              :mode="mode"
+              :capabilities="capabilities"
+              :disabled="job.running.value"
+              @set="set"
+              @update:target="setTarget"
+            />
+
+            <AudioCompressionSettings
+              v-else-if="mediaKind === 'audio'"
               :settings="settings"
               :target="target"
               :mode="mode"

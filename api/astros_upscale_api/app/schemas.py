@@ -167,6 +167,12 @@ class CompressionResultSummary(BaseModel):
     # como economia é o tipo de defeito que passa por formatação.
     grew: bool = False
     elapsed_seconds: float = 0.0
+    # O que de fato foi aplicado — formato, codec, e as opções resolvidas. A
+    # comparação de áudio (FR-056) precisa disto para dizer "128 kbps" em vez de
+    # repetir o que a pessoa pediu: pedir e aplicar divergem sempre que o
+    # `auto` resolve, e mostrar o pedido como resultado seria a mesma confusão
+    # entre estimativa e medição que o FR-022 trata.
+    applied: dict[str, Any] | None = None
 
 
 class JobStatus(BaseModel):
