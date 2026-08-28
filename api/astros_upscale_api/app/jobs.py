@@ -632,6 +632,37 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
     }
 
 
+# Marcadores de que uma mensagem veio do FFmpeg, e não de nós. O que a pessoa
+# precisa ver é uma frase que fale do que ela pediu; o resto é diagnóstico, e
+# esconder o diagnóstico é tão ruim quanto exibi-lo como se fosse a explicação.
+_FFMPEG_MARKERS = ('Falha ao processar com ffmpeg', 'ffmpeg', 'Conversion failed',
+                   'Invalid argument', 'Error opening')
+
+
+def _record_failure(job: dict, error: Exception) -> None:
+    """Registra a falha com a razão separada da saída bruta (FR-065).
+
+    A saída do FFmpeg é indispensável para diagnosticar e ilegível para decidir:
+    "Task finished with error code: -22 (Invalid argument)" não diz a ninguém o
+    que fazer a seguir. Apresentá-la como *a* mensagem de erro transfere para a
+    pessoa um trabalho que é nosso.
+
+    Então ela vai num campo separado — `error_detail` — que a interface mostra
+    numa área recolhida. Quem precisa copiar para um relatório encontra; quem só
+    quer saber o que aconteceu lê a frase de cima.
+    """
+    mensagem = str(error)
+    job['status'] = 'error'
+    job['error'] = mensagem
+    job['error_category'] = _categorize_error(error)
+
+    reason = getattr(error, 'reason', None)
+    if reason:
+        job['error_reason'] = reason
+    if any(marcador in mensagem for marcador in _FFMPEG_MARKERS):
+        job['error_detail'] = mensagem
+
+
 def _record_compression_history(job: dict, medido: dict) -> None:
     """Registra a compressão no histórico local (FR-062).
 
@@ -1234,14 +1265,10 @@ async def _process_job(job_id: str) -> None:
             }
     except WorkerFailure as error:
         if job['status'] != 'cancelled':
-            job['status'] = 'error'
-            job['error'] = str(error)
-            job['error_category'] = _categorize_error(error)
+            _record_failure(job, error)
     except Exception as error:  # noqa: BLE001 - surfaced to the client as job.error
         if job['status'] != 'cancelled':
-            job['status'] = 'error'
-            job['error'] = str(error)
-            job['error_category'] = _categorize_error(error)
+            _record_failure(job, error)
     finally:
         _processing_job_id = None
     _notify(job_id)

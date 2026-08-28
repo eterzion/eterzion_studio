@@ -149,6 +149,11 @@ export interface JobStatus {
   output_path: string | null
   error: string | null
   error_category: ErrorCategory | null
+  /** specs/008 (FR-065) — a razão em chave, que a interface traduz. */
+  error_reason?: string | null
+  /** A saída bruta da ferramenta, quando houve. Vai numa área recolhida: é
+   *  indispensável para diagnosticar e ilegível para decidir. */
+  error_detail?: string | null
   capacity_check: CapacityCheck | null
   created_at: string
   processing_started_at: string | null

@@ -189,6 +189,12 @@ class JobStatus(BaseModel):
     output_path: str | None = None
     error: str | None = None
     error_category: ErrorCategory | None = None
+    # specs/008 (FR-065) — a razão em chave, para a interface traduzir, e a saída
+    # bruta da ferramenta separada. Juntar as duas transferiria para a pessoa um
+    # trabalho de diagnóstico que é nosso: "error code: -22 (Invalid argument)"
+    # não diz a ninguém o que fazer a seguir.
+    error_reason: str | None = None
+    error_detail: str | None = None
     capacity_check: CapacityCheck | None = None
     created_at: str
     processing_started_at: str | None = None

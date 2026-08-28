@@ -481,9 +481,18 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
 
           <ProgressBar v-if="job.running.value" :value="job.progress.value" />
 
-          <p v-if="job.error.value" class="panel-error">
-            {{ t(`compression.refusal.${job.error.value}`) }}
-          </p>
+          <div v-if="job.error.value" class="panel-error">
+            <p class="error-message">{{ t(`compression.refusal.${job.error.value}`) }}</p>
+
+            <!-- A saída da ferramenta é indispensável para diagnosticar e
+                 ilegível para decidir (FR-065). Recolhida: quem precisa copiar
+                 para um relatório encontra; quem só quer saber o que aconteceu
+                 lê a frase de cima. -->
+            <details v-if="job.errorDetailText.value" class="error-details">
+              <summary>{{ t('compression.error.showDetail') }}</summary>
+              <pre>{{ job.errorDetailText.value }}</pre>
+            </details>
+          </div>
 
           <CompressionResult v-if="job.result.value" :result="job.result.value" @reveal="reveal" />
           <CompressionQueue
@@ -589,9 +598,34 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
 }
 
 .panel-error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.error-message {
   margin: 0;
   font-size: var(--fs-label-sm);
   color: var(--color-warning);
+}
+
+.error-details summary {
+  font-size: var(--fs-label-sm);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.error-details pre {
+  margin: var(--space-1) 0 0;
+  padding: var(--space-1-5);
+  max-height: 160px;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: var(--fs-label-sm);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .panel-stack {

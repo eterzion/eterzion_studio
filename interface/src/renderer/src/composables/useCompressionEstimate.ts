@@ -30,7 +30,15 @@ export interface EstimateSource {
   target: Ref<SizeTarget | null>
 }
 
-export function useCompressionEstimate(source: EstimateSource) {
+export interface CompressionEstimateApi {
+  estimate: Readonly<Ref<CompressionEstimate | null>>
+  loading: Readonly<Ref<boolean>>
+  error: Readonly<Ref<string | null>>
+  refresh: () => Promise<void>
+  stop: () => void
+}
+
+export function useCompressionEstimate(source: EstimateSource): CompressionEstimateApi {
   const estimate = ref<CompressionEstimate | null>(null)
   const loading = ref(false)
   /** Chave de razão, nunca frase: quem exibe traduz (Princípio XIV). */

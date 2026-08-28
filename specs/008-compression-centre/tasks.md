@@ -171,7 +171,7 @@ termo técnico.
 - [X] T042 [P] [US1] `CompressionEstimate.vue` — original, estimativa, economia, redução, e a
       declaração de que é estimativa (FR-019), com a `confidence` visível
 - [X] T043 [P] [US1] `CompressionSummary.vue` — o resumo lateral do §61
-- [ ] T044 [US1] `CompressionQueue.vue` + item, sobre a fila existente
+- [X] T044 [US1] `CompressionQueue.vue` + item, sobre a fila existente
 - [X] T045 [US1] `CompressionComparison.vue` para imagem: lado a lado, slider, zoom sincronizado —
       reusando `CompareSlider` e `useViewportPanZoom`
 - [X] T046 [US1] Resultado: tamanhos medidos, economia, redução, tempo, e `grew` quando o arquivo
@@ -273,8 +273,8 @@ já resolve o caso mais comum.
 
 ## Fase 9 — Transversais e acabamento
 
-- [ ] T088 Erros compreensíveis, com a saída bruta do FFmpeg numa área recolhível (FR-065)
-- [ ] T089 [P] Logs técnicos estruturados: job, arquivo, encoder, codec, parâmetros, duração,
+- [X] T088 Erros compreensíveis, com a saída bruta do FFmpeg numa área recolhível (FR-065)
+- [X] T089 [P] Logs técnicos estruturados: job, arquivo, encoder, codec, parâmetros, duração,
       status, erro — fora da interface comum (FR-066)
 - [ ] T090 [P] Acessibilidade: rótulo, foco, teclado, contraste em todo controle (FR-071)
 - [ ] T091 [P] Responsividade desktop/notebook/telas menores (§57)
@@ -284,9 +284,9 @@ já resolve o caso mais comum.
       mídias, nos dois modos, e verificar que nenhuma falha por indisponibilidade do ambiente.
       Acrescentado pelo `/speckit.analyze` — o SC-008 era o único critério de sucesso sem nenhuma
       tarefa que o verificasse
-- [ ] T094 Confirmar que nenhuma opção da interface existe sem implementação (FR-068) — varredura
+- [X] T094 Confirmar que nenhuma opção da interface existe sem implementação (FR-068) — varredura
       por controle, não por amostragem
-- [ ] T095 Confirmar que nada fora da Central mudou (FR-069): `git diff` contra o estado inicial,
+- [X] T095 Confirmar que nada fora da Central mudou (FR-069): `git diff` contra o estado inicial,
       arquivo por arquivo
 - [ ] T096 Rodar lint, typecheck, vitest, pytest do core e pytest da API, **contra a build LGPL
       empacotada** e com o PATH limpo

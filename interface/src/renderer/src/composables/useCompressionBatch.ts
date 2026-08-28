@@ -10,7 +10,7 @@
 // **Um erro não para a fila.** O contrário é fácil de escrever e destrói o valor
 // do lote: quem deixou trinta arquivos processando à noite volta e encontra
 // vinte e nove não feitos por causa de um PNG corrompido.
-import { computed, ref } from 'vue'
+import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { cancelJob, getJob, type JobStatus } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import {
@@ -52,7 +52,24 @@ export interface BatchRequest {
   export: CompressionExport
 }
 
-export function useCompressionBatch() {
+export interface CompressionBatchApi {
+  items: Ref<BatchItem[]>
+  running: Ref<boolean>
+  done: ComputedRef<BatchItem[]>
+  failed: ComputedRef<BatchItem[]>
+  finished: ComputedRef<number>
+  overallProgress: ComputedRef<number>
+  savedBytes: ComputedRef<number>
+  originalBytes: ComputedRef<number>
+  run: (pedidos: BatchRequest[]) => Promise<void>
+  cancelItem: (queueId: string) => Promise<void>
+  cancelAll: () => Promise<void>
+  retryFailed: (pedidos: BatchRequest[]) => Promise<void>
+  clear: () => void
+  stop: () => void
+}
+
+export function useCompressionBatch(): CompressionBatchApi {
   const items = ref<BatchItem[]>([])
   const running = ref(false)
 
@@ -227,9 +244,7 @@ export function useCompressionBatch() {
   /** Cancela a fila inteira: o que está rodando e o que ainda não começou. */
   async function cancelAll(): Promise<void> {
     cancelled = true
-    const pendentes = items.value.filter(
-      (i) => i.status === 'pending' || i.status === 'running'
-    )
+    const pendentes = items.value.filter((i) => i.status === 'pending' || i.status === 'running')
     await Promise.all(pendentes.map((i) => cancelItem(i.queueId)))
   }
 

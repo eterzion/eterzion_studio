@@ -8,7 +8,7 @@
 // meio deixaria a barra parada em 60% para sempre, e a compressão teria
 // terminado. Uma consulta ao final é barata e transforma um travamento aparente
 // num resultado.
-import { ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { getJob, type JobStatus } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import {
@@ -32,13 +32,27 @@ export interface RunRequest {
   export: CompressionExport
 }
 
-export function useCompressionJob() {
+export interface CompressionJobApi {
+  running: Ref<boolean>
+  progress: Ref<number>
+  error: Ref<string | null>
+  errorDetail: Ref<Record<string, unknown>>
+  errorDetailText: Ref<string | null>
+  result: Ref<CompressionResultData | null>
+  jobId: Ref<string | null>
+  run: (pedido: RunRequest) => Promise<void>
+  stop: () => void
+}
+
+export function useCompressionJob(): CompressionJobApi {
   const running = ref(false)
   const progress = ref(0)
   /** Chave de razão, nunca frase — quem exibe traduz (Princípio XIV). */
   const error = ref<string | null>(null)
   const errorDetail = ref<Record<string, unknown>>({})
   const result = ref<CompressionResultData | null>(null)
+  /** A saída bruta da ferramenta, quando houve — para a área recolhida. */
+  const errorDetailText = ref<string | null>(null)
   const jobId = ref<string | null>(null)
 
   let unsubscribe: (() => void) | null = null
@@ -49,6 +63,7 @@ export function useCompressionJob() {
     progress.value = 0
     error.value = null
     errorDetail.value = {}
+    errorDetailText.value = null
     result.value = null
 
     const corpo: CompressionJobRequest = {
@@ -100,7 +115,8 @@ export function useCompressionJob() {
   function apply(status: JobStatus): void {
     if (typeof status.progress === 'number') progress.value = status.progress
     if (status.status === 'error') {
-      error.value = status.error_category ?? 'unknown'
+      error.value = status.error_reason ?? status.error_category ?? 'unknown'
+      errorDetailText.value = status.error_detail ?? null
       return
     }
     if (status.status !== 'done') return
@@ -112,8 +128,7 @@ export function useCompressionJob() {
       originalBytes: Number(medido.original_bytes),
       outputSizeBytes: Number(medido.output_size_bytes),
       savingBytes: Number(medido.saving_bytes),
-      reductionRatio:
-        medido.reduction_ratio == null ? null : Number(medido.reduction_ratio),
+      reductionRatio: medido.reduction_ratio == null ? null : Number(medido.reduction_ratio),
       grew: Boolean(medido.grew),
       elapsedSeconds: Number(medido.elapsed_seconds),
       applied: (medido.applied as Record<string, unknown> | undefined) ?? null
@@ -129,5 +144,5 @@ export function useCompressionJob() {
     unsubscribe = null
   }
 
-  return { running, progress, error, errorDetail, result, jobId, run, stop }
+  return { running, progress, error, errorDetail, errorDetailText, result, jobId, run, stop }
 }

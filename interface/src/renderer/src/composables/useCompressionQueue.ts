@@ -9,13 +9,9 @@
 // interface não adivinha por extensão: um `.png` com bytes JPEG e um `.gif` de
 // um quadro só chegariam classificados errado, e os controles oferecidos seriam
 // os do formato que o arquivo não é.
-import { computed, ref } from 'vue'
+import { computed, ref, type ComputedRef, type Ref } from 'vue'
 import { api, hasNativeApi } from '../services/native'
-import {
-  CompressionError,
-  registerMedia,
-  type CompressionMedia
-} from '../services/compression'
+import { CompressionError, registerMedia, type CompressionMedia } from '../services/compression'
 import type { MediaKind } from '../constants/compression'
 
 export interface QueueItem {
@@ -32,7 +28,22 @@ export interface QueueItem {
 
 let contador = 0
 
-export function useCompressionQueue() {
+export interface CompressionQueueApi {
+  items: Ref<QueueItem[]>
+  activeId: Ref<string | null>
+  active: ComputedRef<QueueItem | null>
+  ready: ComputedRef<QueueItem[]>
+  importing: Ref<boolean>
+  byKind: (kind: MediaKind) => QueueItem[]
+  add: (paths: string[]) => Promise<void>
+  addDropped: (files: File[]) => Promise<void>
+  pick: () => Promise<void>
+  remove: (id: string) => void
+  clear: () => void
+  select: (id: string) => void
+}
+
+export function useCompressionQueue(): CompressionQueueApi {
   const items = ref<QueueItem[]>([])
   const activeId = ref<string | null>(null)
   const importing = ref(false)
@@ -108,12 +119,25 @@ export function useCompressionQueue() {
     activeId.value = id
   }
 
-  return { items, activeId, active, ready, importing, byKind, add, addDropped, pick, remove, clear, select }
+  return {
+    items,
+    activeId,
+    active,
+    ready,
+    importing,
+    byKind,
+    add,
+    addDropped,
+    pick,
+    remove,
+    clear,
+    select
+  }
 }
 
 function baseName(path: string): string {
   // Sem `path.basename` no renderer, e os dois separadores aparecem: o Windows
   // aceita ambos, e um caminho vindo de um arraste pode ter os dois misturados.
-  const partes = path.split(/[\/]/)
+  const partes = path.split(/[\\/]/)
   return partes[partes.length - 1] || path
 }

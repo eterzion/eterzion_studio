@@ -12,7 +12,7 @@
 // backend resolver a partir do que a máquina tem. Um padrão concreto (`h264`,
 // `48000`) seria uma decisão nossa disfarçada de default, e quebraria em toda
 // máquina onde aquilo não existe.
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, type ComputedRef, type Ref } from 'vue'
 import {
   DEFAULT_COMPRESSION_MODE,
   DEFAULT_MEDIA_KIND,
@@ -53,7 +53,19 @@ function defaultsFor(kind: MediaKind): CompressionSettings {
   }
 }
 
-export function useCompressionSettings() {
+export interface CompressionSettingsApi {
+  mediaKind: Ref<MediaKind>
+  mode: Ref<CompressionMode>
+  settings: ComputedRef<CompressionSettings>
+  target: ComputedRef<SizeTarget | null>
+  payload: ComputedRef<CompressionSettings>
+  set: (field: string, value: unknown) => void
+  setTarget: (value: SizeTarget | null) => void
+  reset: (kind?: MediaKind) => void
+  applyPreset: (kind: MediaKind, presetSettings: CompressionSettings) => void
+}
+
+export function useCompressionSettings(): CompressionSettingsApi {
   const mediaKind = ref<MediaKind>(DEFAULT_MEDIA_KIND)
   const mode = ref<CompressionMode>(DEFAULT_COMPRESSION_MODE)
 

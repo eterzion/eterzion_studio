@@ -8,12 +8,20 @@ algo que valha o nome.
 """
 from __future__ import annotations
 
+import logging
 import os
 import shutil
 import time
 from typing import Any, Callable
 
 from . import animation, audio, capabilities, config, image, video, workspace
+
+
+# Log técnico, e **só** no log (FR-066). Encoder, codec e parâmetros resolvidos
+# são o que resolve um chamado de suporte e exatamente o que o Princípio V
+# proíbe na interface. Separar os dois destinos é o que permite ser preciso aqui
+# sem ser técnico lá.
+logger = logging.getLogger('astros.compression')
 
 
 class CompressionRefused(ValueError):
@@ -197,8 +205,25 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
 
     with workspace.workspace() as trabalho:
         temporario = os.path.join(trabalho, 'saida' + os.path.splitext(output_path)[1])
-        aplicado = _compress(media_kind, source_path, temporario, settings,
-                             on_progress=avancar, on_stage=on_stage)
+        try:
+            aplicado = _compress(media_kind, source_path, temporario, settings,
+                                 on_progress=avancar, on_stage=on_stage)
+        except Exception as error:
+            # O log carrega o que a interface não pode: qual codec, quais
+            # parâmetros, quanto tempo até falhar. É o que responde "por que
+            # falhou na máquina dele e não na minha".
+            logger.warning(
+                'compressão falhou',
+                extra={'compression': {
+                    'media_kind': media_kind,
+                    'source': os.path.basename(source_path),
+                    'settings': settings,
+                    'elapsed_seconds': round(time.monotonic() - inicio, 2),
+                    'status': 'error',
+                    'reason': getattr(error, 'reason', type(error).__name__),
+                    'message': str(error),
+                }})
+            raise
 
         avancar(90)
 
@@ -209,6 +234,21 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
 
     tamanho_final = os.path.getsize(output_path)
     avancar(100)
+
+    decorrido = round(time.monotonic() - inicio, 2)
+    logger.info(
+        'compressão concluída',
+        extra={'compression': {
+            'media_kind': media_kind,
+            'source': os.path.basename(source_path),
+            'output': os.path.basename(output_path),
+            'settings': settings,
+            'applied': aplicado,
+            'original_bytes': original_bytes,
+            'output_bytes': tamanho_final,
+            'elapsed_seconds': decorrido,
+            'status': 'done',
+        }})
 
     return {
         'output_path': output_path,
@@ -229,8 +269,16 @@ def _compress(media_kind: str, source_path: str, output_path: str, settings: dic
               *, on_progress: Callable[[int], None] | None = None,
               on_stage: Callable[[str], None] | None = None) -> dict[str, Any]:
     if media_kind == 'image':
-        return image.compress(source_path, output_path,
-                              image.ImageSettings.from_dict(settings))
+        try:
+            return image.compress(source_path, output_path,
+                                  image.ImageSettings.from_dict(settings))
+        except image.ImageCompressionError as error:
+            # Traduzida como as outras três. Imagem era a única mídia cujo erro
+            # atravessava `run()` com outro tipo, e quem trata `CompressionRefused`
+            # o deixaria passar — virando falha genérica em vez de recusa com
+            # razão. Foi encontrado por um teste que esperava a recusa e recebeu
+            # o tipo de baixo.
+            raise CompressionRefused(error.reason, str(error)) from error
     if media_kind == 'video':
         try:
             return video.compress(source_path, output_path,
