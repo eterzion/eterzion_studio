@@ -6,7 +6,7 @@ from app.config import settings
 from app.routes import (components_router, files_router, identity_router, jobs_router, license_router,
                         preview_router, ws_router)
 
-app = FastAPI(title='Astros Upscale API')
+app = FastAPI(title='Eterzion Studio API')
 
 app.add_middleware(
     CORSMiddleware,

@@ -68,6 +68,12 @@ def latest_version(name: str) -> str | None:
 #    instalação" actually means cryptographically, not just an access-control
 #    check.
 
+# ATENÇÃO — não é o nome do produto. `_HKDF_INFO` é separação de domínio na
+# derivação de chave, e o **mesmo valor** vive no cliente, em
+# `astros_upscale_api/app/security.py`. O produto passou a se chamar Eterzion
+# Studio; esta cadeia não acompanhou de propósito, porque as duas pontas têm de
+# bater e este serviço já está implantado. Trocá-la é migração de protocolo
+# coordenada, não renomeação.
 _HKDF_INFO = b'astros-upscale-package-key-wrap'
 
 

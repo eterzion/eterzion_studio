@@ -2,7 +2,7 @@ import { reactive, watch } from 'vue'
 import { applyTheme, getInitialTheme, watchSystemTheme, type ThemeMode } from '../theme'
 import { detectSystemLocale, setLocale, type SupportedLocale } from '../i18n'
 
-const STORAGE_KEY = 'astros-upscale:settings'
+const STORAGE_KEY = 'eterzion-studio:settings'
 
 export interface AppSettings {
   theme: ThemeMode

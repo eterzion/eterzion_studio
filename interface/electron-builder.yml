@@ -1,5 +1,5 @@
-appId: com.astrosupscale.app
-productName: Astros Upscale
+appId: com.eterzion.studio
+productName: Eterzion Studio
 directories:
   buildResources: build
 files:
@@ -14,14 +14,36 @@ files:
   # per-platform extraResources below (not through the app.asar), so exclude it
   # here to avoid bundling every platform's binaries into every installer.
   - '!resources/ffmpeg/**'
+  - '!resources/backend/**'
 asarUnpack:
   - resources/**
 win:
-  executableName: astros-upscale
+  executableName: eterzion-studio
+  # Gerado de `resources/icon.png` (512x512) com as sete resoluções que o Windows
+  # pede — 16 a 256. Sem ele o build avisava "default Electron icon is used" e o
+  # instalador saía com o ícone do Electron, o que num produto pago é a primeira
+  # coisa que a pessoa vê. Um .ico de tamanho único também não serve: o sistema
+  # reescala e borra justamente nos tamanhos pequenos, que são os mais vistos.
+  icon: build/icon.ico
+  # Assina sempre. Um instalador sem assinatura não deve ser produzível por
+  # acidente: ele sai parecendo pronto e cada usuário encontra o SmartScreen.
+  #
+  # Para um build local de desenvolvimento, sem certificado, é preciso pedir
+  # explicitamente:
+  #     pnpm exec electron-builder --win --config.forceCodeSigning=false
+  # Pedir explicitamente é o ponto — quem faz isso sabe que o resultado não pode
+  # ser distribuído.
+  forceCodeSigning: true
   # LGPL FFmpeg build (win64-lgpl-shared, no --enable-gpl/--enable-nonfree) fetched
   # by `npm run fetch:ffmpeg:win` (scripts/fetch-ffmpeg.mjs) ahead of packaging.
   # See docs/models/MODEL_LICENSES.md §5 for the licensing verification.
   extraResources:
+    - from: resources/backend/win32/eterzion-studio-api
+      to: backend
+    - from: ../models
+      to: models
+      filter:
+        - '**/*'
     - from: resources/ffmpeg/win32
       to: ffmpeg
 nsis:
@@ -59,7 +81,8 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  provider: generic
-  url: https://example.com/auto-updates
+  provider: github
+  owner: eterzion
+  repo: eterzion_studio
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

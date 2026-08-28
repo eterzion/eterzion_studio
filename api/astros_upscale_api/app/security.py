@@ -23,6 +23,7 @@ from ctypes import wintypes
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from astros_upscale import __version__
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey
@@ -129,7 +130,7 @@ def dpapi_is_available() -> bool:
 # Fase 5/6 concern) — this only keeps casual/other-user access off artifacts that
 # briefly touch disk.
 
-_ROOT_DIRNAME = 'astros-upscale-worker'
+_ROOT_DIRNAME = 'eterzion-studio-worker'
 
 
 def _base_root() -> str:
@@ -256,6 +257,25 @@ def _pid_alive(pid: int) -> bool:
 # protection, where available, is a Fase 6 enhancement layered on top of this,
 # not a prerequisite for it.
 
+# ---------------------------------------------------------------------------
+# ATENÇÃO — os identificadores abaixo NÃO são o nome do produto.
+#
+# O produto passou a se chamar Eterzion Studio, e estas quatro cadeias
+# continuaram "astros-upscale"/"AstrosUpscale" de propósito:
+#
+# - `_DIRNAME` é a pasta onde o `identity.json` desta instalação já está
+#   gravado. Renomear órfã a identidade de toda máquina instalada.
+# - `_HKDF_INFO` é separação de domínio na derivação da chave que abre os
+#   pacotes, e o **mesmo valor** vive em
+#   `astros_licensing_service/app/packages.py`, num serviço já implantado. As
+#   duas pontas têm de bater.
+# - `astros-upscale-install-signing` e `-install-encryption` são a entropia do
+#   DPAPI. Mudá-las torna indecifrável todo `identity.json` já escrito — cada
+#   máquina perde a identidade e precisa reativar.
+#
+# Trocá-las é uma migração de protocolo com as duas pontas coordenadas, não uma
+# renomeação. Se um dia isso for feito, tem de vir com caminho de migração.
+# ---------------------------------------------------------------------------
 _DIRNAME = 'AstrosUpscale'
 _IDENTITY_FILENAME = 'identity.json'
 _HKDF_INFO = b'astros-upscale-package-key-wrap'
@@ -434,14 +454,26 @@ class UnsupportedRuntime(ProtectedLoadError):
     pass
 
 
+_HTTP_HEADERS = {
+    'Accept': 'application/json',
+    'User-Agent': f'EterzionStudio/{__version__}',
+}
+
+
 def _http_get(url: str) -> dict:
-    with urllib.request.urlopen(url, timeout=15) as resp:
+    req = urllib.request.Request(url, headers=_HTTP_HEADERS)
+    with urllib.request.urlopen(req, timeout=15) as resp:
         return json.loads(resp.read().decode('utf-8'))
 
 
 def _http_post(url: str, body: dict) -> dict:
     data = json.dumps(body).encode('utf-8')
-    req = urllib.request.Request(url, data=data, headers={'Content-Type': 'application/json'}, method='POST')
+    req = urllib.request.Request(
+        url,
+        data=data,
+        headers={**_HTTP_HEADERS, 'Content-Type': 'application/json'},
+        method='POST',
+    )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:
             return json.loads(resp.read().decode('utf-8'))
@@ -470,7 +502,7 @@ def release(base_url: str, license_id: str, install_id: str) -> dict:
     """T036 — releases this installation's seat (FR-054)."""
     req = urllib.request.Request(
         f'{base_url}/activations/{install_id}?license_id={license_id}',
-        headers={'Content-Type': 'application/json'}, method='DELETE',
+        headers={**_HTTP_HEADERS, 'Content-Type': 'application/json'}, method='DELETE',
     )
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:

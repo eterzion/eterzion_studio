@@ -37,7 +37,7 @@ async function copyInput(): Promise<void> {
 
 function openHelp(): void {
   // main/index.ts's setWindowOpenHandler routes this to shell.openExternal.
-  window.open('https://example.com/astros-upscale/help', '_blank')
+  window.open('https://example.com/eterzion-studio/help', '_blank')
 }
 
 const STATUS_COPY: Record<string, { title: string; body: string }> = {

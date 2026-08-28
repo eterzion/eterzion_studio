@@ -4,26 +4,33 @@ on:
   push:
     branches: [main]
     paths:
-      - interface/package.json
-      - api/pyproject.toml
-      - api/astros_upscale/__init__.py
+      - api/**
+      - interface/**
+      - models/**
       - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  release:
+  prepare:
+    name: Prepare release
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    outputs:
+      exists: ${{ steps.release.outputs.exists }}
+      tag: ${{ steps.version.outputs.tag }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-python@a7c2a10549f112af0dc3ec4e9093277505920566 # v6
+      - uses: actions/setup-python@v7
         with:
-          python-version: "3.13"
+          python-version: '3.13'
       - name: Validate synchronized versions
         id: version
         run: |
@@ -34,22 +41,163 @@ jobs:
           test "$package_version" = "$python_version"
           test "$package_version" = "$module_version"
           echo "tag=v$package_version" >> "$GITHUB_OUTPUT"
-      - name: Build Python package
-        run: |
-          python -m pip install --disable-pip-version-check build
-          python -m build api
-      - name: Publish release
+      - name: Prevent duplicate release
+        id: release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping all build jobs."
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+  python-package:
+    name: Build Python package
+    needs: prepare
+    if: needs.prepare.outputs.exists != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check build
+      - run: python -m build api
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-package
+          path: api/dist/*
+          if-no-files-found: error
+
+  windows-installer:
+    name: Build Windows installer
+    needs: prepare
+    if: needs.prepare.outputs.exists != 'true'
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      # Assinatura de código é obrigatória. Não há caminho que produza um
+      # instalador sem assinar: um release sem assinatura sai parecendo pronto e
+      # cada usuário encontra o aviso do SmartScreen na primeira execução — o
+      # custo aparece na conversão, longe de quem publicou.
+      #
+      # Sem os segredos configurados, este job **falha**. É deliberado: uma
+      # falha de build é barata e visível; um instalador sem assinatura é caro e
+      # silencioso.
+      #
+      # `CSC_IDENTITY_AUTO_DISCOVERY` fica desligado porque ele faz o
+      # electron-builder procurar certificado no chaveiro da máquina, e um
+      # runner efêmero não tem nenhum.
+      CSC_LINK: ${{ secrets.WINDOWS_CERT_BASE64 }}
+      CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@v10.0.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: api/astros_upscale_api/requirements*.txt
+      - uses: pnpm/action-setup@v6.0.10
+        with:
+          version: 11
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: interface/pnpm-lock.yaml
+      - name: Create isolated Python environment
+        shell: pwsh
+        run: uv venv --clear .venv --python python
+      - name: Install CPU PyTorch stack
+        shell: pwsh
+        run: >-
+          uv pip install --python .venv/Scripts/python.exe
+          torch torchvision torchaudio
+          --index-url https://download.pytorch.org/whl/cpu
+      - name: Install backend build dependencies
+        shell: pwsh
+        run: |
+          uv pip install --python .venv/Scripts/python.exe -r api/astros_upscale_api/requirements.txt
+          uv pip install --python .venv/Scripts/python.exe --no-deps -e api
+          uv pip install --python .venv/Scripts/python.exe pyinstaller==6.14.1
+      - name: Install desktop dependencies
+        working-directory: interface
+        run: pnpm install --frozen-lockfile
+      - name: Require signing credentials
+        shell: pwsh
+        run: |
+          # Falhar aqui, antes de duas horas de build, e não no fim. Um segredo
+          # ausente descoberto depois do PyInstaller custa o dobro do tempo e
+          # chega como erro do electron-builder, que não diz o que fazer.
+          if (-not $env:CSC_LINK) {
+            throw 'WINDOWS_CERT_BASE64 nao esta configurado. O release assina sempre; configure o segredo antes de publicar.'
+          }
+          if (-not $env:CSC_KEY_PASSWORD) {
+            throw 'WINDOWS_CERT_PASSWORD nao esta configurado.'
+          }
+          Write-Output 'Credenciais de assinatura presentes.'
+
+      - name: Build NSIS installer
+        working-directory: interface
+        shell: pwsh
+        env:
+          PYTHON_EXE: ${{ github.workspace }}\.venv\Scripts\python.exe
+        run: pnpm run build:win
+
+      - name: Verify signature
+        working-directory: interface
+        shell: pwsh
+        run: |
+          # Verificar em vez de assumir. Um certificado vencido, revogado ou com
+          # a senha trocada produz um build verde e um instalador sem
+          # assinatura; a única forma de saber é perguntar ao Windows depois do
+          # fato.
+          $exe = Get-ChildItem dist\*-setup.exe | Select-Object -First 1
+          $sig = Get-AuthenticodeSignature $exe.FullName
+          Write-Output "Instalador: $($exe.Name)"
+          Write-Output "Assinatura: $($sig.Status)"
+          if ($sig.SignerCertificate) {
+            Write-Output "Assinado por: $($sig.SignerCertificate.Subject)"
+            Write-Output "Valido ate:   $($sig.SignerCertificate.NotAfter)"
+          }
+          if ($sig.Status -ne 'Valid') {
+            throw "O instalador saiu com assinatura '$($sig.Status)'. Nao sera publicado."
+          }
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: python-package
+          path: api/dist/*
+          if-no-files-found: error
+
+  publish:
+    name: Publish GitHub release
+    needs: [prepare, python-package, windows-installer]
+    if: needs.prepare.outputs.exists != 'true'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Publish immutable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
           set -euo pipefail
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists."
+            echo "Release $TAG was created by another run; refusing to duplicate it."
             exit 0
           fi
-          gh release create "$TAG" api/dist/* \
+          gh release create "$TAG" artifacts/* \
             --target "$GITHUB_SHA" \
-            --title "Astros Upscale $TAG" \
+            --title "Eterzion Studio $TAG" \
             --generate-notes \
             --repo "$GITHUB_REPOSITORY"

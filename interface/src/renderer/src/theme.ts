@@ -3,7 +3,7 @@ import { ref } from 'vue'
 export type ThemeMode = 'dark' | 'light' | 'auto'
 export type ResolvedTheme = 'dark' | 'light'
 
-const THEME_STORAGE_KEY = 'astros-upscale:theme'
+const THEME_STORAGE_KEY = 'eterzion-studio:theme'
 
 function systemPrefersLight(): boolean {
   return window.matchMedia?.('(prefers-color-scheme: light)').matches ?? false

@@ -120,7 +120,7 @@ export function registerDialogIpc(win: BrowserWindow): void {
   ipcMain.handle('fs:statPath', async (_event, path: string) => describeFile(path))
 
   ipcMain.handle('paste:saveImage', async (_event, buffer: ArrayBuffer, ext: string) => {
-    const path = join(app.getPath('temp'), `astros-upscale-paste-${randomUUID()}${ext}`)
+    const path = join(app.getPath('temp'), `eterzion-studio-paste-${randomUUID()}${ext}`)
     await writeFile(path, Buffer.from(buffer))
     return path
   })

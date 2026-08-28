@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Must match MEDIA_SCHEME in src/main/index.ts.
-const MEDIA_SCHEME = 'astros-media'
+const MEDIA_SCHEME = 'eterzion-media'
 
 /** Which media a screen can open. Mirrors MediaKind in
  *  src/main/ipc/dialog.ipc.ts — preload cannot import from main. */
@@ -50,7 +50,7 @@ const api = {
   getAppPaths: (): Promise<{ documents: string; repoRoot: string; apiBaseUrl: string }> =>
     ipcRenderer.invoke('app:paths'),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
-  // "astros-media://local/C:/Users/..." — the "local" host is mandatory because the
+  // "eterzion-media://local/C:/Users/..." — the "local" host is mandatory because the
   // scheme is registered as standard (see MEDIA_SCHEME comment in src/main/index.ts);
   // Chromium rejects standard-scheme URLs with an empty host. Node's pathToFileURL
   // supplies the correct percent-encoding of the path.

@@ -1,6 +1,6 @@
 {
-  "name": "astros-upscale",
-  "version": "1.0.1",
+  "name": "eterzion-studio",
+  "version": "1.0.2",
   "description": "Upscale de imagens e vídeos com IA — aplicativo desktop",
   "main": "./out/main/index.js",
   "author": "Eric Inácio",
@@ -16,8 +16,9 @@
     "postinstall": "electron-builder install-app-deps",
     "fetch:ffmpeg:win": "node scripts/fetch-ffmpeg.mjs win32",
     "fetch:ffmpeg:linux": "node scripts/fetch-ffmpeg.mjs linux",
+    "build:backend:win": "node scripts/build-python-backend.mjs win32",
     "build:unpack": "npm run build && electron-builder --dir",
-    "build:win": "npm run build && npm run fetch:ffmpeg:win && electron-builder --win",
+    "build:win": "npm run build && npm run build:backend:win && npm run fetch:ffmpeg:win && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
     "build:linux": "npm run build && npm run fetch:ffmpeg:linux && electron-builder --linux"
   },

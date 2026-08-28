@@ -1,3 +1,21 @@
+# node_modules plano, sem o segmento `.pnpm/<pacote>@<hash>/`.
+#
+# O NSIS falhava com "!include: could not open file" para um arquivo que existe:
+# `makensis.exe` é Win32 clássico, não usa o prefixo `\?\`, e o caminho do
+# template do app-builder-lib chegava a 277 caracteres contra o limite de 260 —
+# a raiz do repositório soma 101 e o segmento com hash do pnpm somava o resto.
+# Sem esse segmento o mesmo caminho fica em 197.
+#
+# Vai aqui e não no `.npmrc` porque o pnpm 11 lê as configurações do projeto
+# deste arquivo; posta no `.npmrc` a opção é silenciosamente ignorada, que foi
+# o que aconteceu na primeira tentativa.
+#
+# O custo é real: o layout isolado do pnpm é o que pega dependência fantasma —
+# pacote usado sem estar declarado no package.json. Com `hoisted` essa checagem
+# some. Se a raiz do repositório ficar curta, ou `LongPathsEnabled` for ligado,
+# esta linha pode voltar atrás.
+nodeLinker: hoisted
+
 packages:
   - '.'
 

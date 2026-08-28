@@ -3,7 +3,7 @@ import type { ContentType, MediaType } from '../services/api'
 import type { Job, JobStatus, ScaleConfig } from './jobs'
 import { settingsState } from './settings'
 
-const STORAGE_KEY = 'astros-upscale:history'
+const STORAGE_KEY = 'eterzion-studio:history'
 
 export type HistoryStatus = 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
 

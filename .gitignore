@@ -40,6 +40,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!api/astros_upscale_api/eterzion-studio-api.spec
 
 # Installer logs
 pip-log.txt
@@ -146,3 +147,10 @@ models/sonicmaster/
 # audio-engine (real pytest fixtures are synthesized inline in the test
 # files themselves, not committed as standalone files).
 /teste_*.wav
+
+# Binários empacotados para o instalador Windows. Gerados por
+# `build:backend:win` (PyInstaller) e por `fetch:ffmpeg:win` — 821 MB em ~3.000
+# arquivos que se reconstroem a partir do código. Sem estas linhas, um
+# `git add -A` os leva para o histórico, e um histórico não desengorda.
+interface/resources/backend/
+interface/resources/ffmpeg/
