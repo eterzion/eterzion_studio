@@ -25,19 +25,36 @@ const DEV_API_PORT = process.env.ASTROS_API_PORT || '8050'
 // what makes a bare `pnpm dev` land on the right ports.
 process.env.ASTROS_API_PORT = DEV_API_PORT
 
+// A porta do app empacotado. Espelha `port` em
+// api/astros_upscale_api/app/config.py e `API_PORT` em src/main/apiProcess.ts —
+// os três precisam concordar, e é por isso que este arquivo os documenta juntos.
+const PACKAGED_API_PORT = '8051'
+
 /** Substitutes the API origin into index.html's Content-Security-Policy.
  *
  *  The CSP has to name the exact origin the renderer will call, and that port
  *  differs between the packaged app and development. Hardcoding either one
  *  blocks every request in the other — with an error that reads like a network
- *  failure rather than a policy one, which is how it was found. */
+ *  failure rather than a policy one, which is how it was found.
+ *
+ *  **As duas origens entram, e não só a de desenvolvimento.** O build gera um
+ *  único index.html que serve os dois modos: `electron-vite build` roda sem
+ *  `ASTROS_API_PORT`, então substituía 8050 e o app empacotado — que sobe a API
+ *  em 8051 — tinha toda chamada bloqueada pela política. O sintoma seria "não
+ *  conecta na API" num app recém-instalado, com o backend rodando perfeitamente
+ *  ao lado.
+ *
+ *  Listar as duas não afrouxa nada de relevante: as duas são loopback, e um
+ *  processo que já esteja escutando numa delas na máquina do usuário poderia
+ *  igualmente escutar na outra. */
 function astrosApiOrigin(): { name: string; transformIndexHtml: (html: string) => string } {
+  const origens = [...new Set([DEV_API_PORT, PACKAGED_API_PORT])]
+  const http = origens.map((p) => `http://127.0.0.1:${p}`).join(' ')
+  const ws = origens.map((p) => `ws://127.0.0.1:${p}`).join(' ')
   return {
     name: 'astros-api-origin',
     transformIndexHtml(html: string): string {
-      return html
-        .replace(/%ASTROS_API_ORIGIN%/g, `http://127.0.0.1:${DEV_API_PORT}`)
-        .replace(/%ASTROS_API_WS_ORIGIN%/g, `ws://127.0.0.1:${DEV_API_PORT}`)
+      return html.replace(/%ASTROS_API_ORIGIN%/g, http).replace(/%ASTROS_API_WS_ORIGIN%/g, ws)
     }
   }
 }
