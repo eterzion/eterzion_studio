@@ -531,6 +531,12 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
   height: 100vh;
   overflow: hidden;
   background: var(--surface-0);
+  /* `flex: 1` porque `.app-shell` é um flex row: sem isto a tela encolhe até a
+     largura do conteúdo e sobra metade da janela em preto. É o que Imagem,
+     Vídeo e Áudio já fazem — a Central era a única sem. `min-width: 0` deixa os
+     filhos com texto longo encolherem em vez de esticar a coluna. */
+  flex: 1;
+  min-width: 0;
 }
 
 .compression-header {

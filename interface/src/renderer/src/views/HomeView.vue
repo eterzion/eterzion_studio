@@ -22,7 +22,7 @@ import type { NavKey } from '../types'
 
 const { t } = useI18n()
 const emit = defineEmits<{ navigate: [key: NavKey] }>()
-type CategoryVariant = 'imagem' | 'video' | 'audio'
+type CategoryVariant = 'imagem' | 'video' | 'audio' | 'compressao'
 const CATEGORIES = computed<
   { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
 >(() => [
@@ -30,7 +30,13 @@ const CATEGORIES = computed<
   // so a card and the screen it opens are literally the same colour.
   { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: 'var(--accent-image)' },
   { key: 'video', label: t('nav.video'), variant: 'video', tint: 'var(--accent-video)' },
-  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' }
+  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' },
+  {
+    key: 'compressao',
+    label: t('nav.compression'),
+    variant: 'compressao',
+    tint: 'var(--accent-compression)'
+  }
 ])
 // All three queues, not just images: videos and audio were simply absent from
 // this list before, because it read store/jobs.ts and that store only ever held
@@ -118,7 +124,7 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
   <main class="home-view">
     <div class="home-panel">
       <h1 class="home-title">{{ t('home.title') }}</h1>
-      <div class="category-grid">
+      <div class="category-grid" :style="{ '--categorias': CATEGORIES.length }">
         <button
           v-for="category in CATEGORIES"
           :key="category.key"
@@ -225,10 +231,11 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
 }
 .category-grid {
   display: grid;
-  /* One column per card, so the row always ends where the panel does. The count
-     is tied to the number of categories — it was still 4 after Exportar was
-     removed, which is what left a card-sized hole on the right. */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Uma coluna por cartão, para a linha terminar onde o painel termina. A
+     contagem vem de `CATEGORIES.length` via variável CSS, e não de um número
+     escrito aqui: já ficou em 4 depois de "Exportar" sair, deixando um buraco do
+     tamanho de um cartão, e voltaria a divergir agora que a Central entrou. */
+  grid-template-columns: repeat(var(--categorias, 3), minmax(0, 1fr));
   gap: clamp(8px, 0.9vw, 12px);
   margin-bottom: 16px;
 }
