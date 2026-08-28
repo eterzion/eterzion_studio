@@ -1,0 +1,102 @@
+# Atualização automática de dependências.
+#
+# Este arquivo controla apenas as atualizações de **versão**. Os alertas de
+# segurança são detectados pelo GitHub independentemente dele — e é por isso que
+# havia 30 alertas resolvidos sem nunca ter existido um `dependabot.yml`: alguém
+# os corrigia à mão, um a um.
+#
+# As duas decisões que este arquivo toma, e o motivo de cada uma:
+#
+# **Agrupar.** Sem agrupamento, 27 dependências no `interface` viram dezenas de
+# PRs por mês, e o resultado previsível é ninguém revisar nenhum. Agrupados por
+# ecossistema, um PR por semana carrega tudo que é patch e minor.
+#
+# **Separar os majors.** Eles ficam de fora dos grupos, um PR cada. Um major é
+# mudança de contrato: juntá-lo ao lote faz um único incompatível reprovar o
+# grupo inteiro, e o hábito que se forma é fechar o PR sem ler.
+version: 2
+
+updates:
+  # ---------------------------------------------------------------- GitHub Actions
+  #
+  # Semanal e agrupado. Bump de action é barato de revisar e é onde uma
+  # vulnerabilidade em ferramenta de CI chega primeiro — um `checkout` ou
+  # `setup-node` desatualizado roda com as credenciais do release.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    groups:
+      actions:
+        patterns: ['*']
+        update-types: [minor, patch]
+    commit-message:
+      prefix: 'ci'
+
+  # ---------------------------------------------------------------- Desktop (pnpm)
+  - package-ecosystem: npm
+    directory: /interface
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      desktop-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+    ignore:
+      # `electron` e `electron-builder` decidem o que é empacotado e assinado.
+      # Um major aqui muda o comportamento do instalador, e o caminho para
+      # descobrir isso é o ciclo completo de build, instalação e desinstalação —
+      # não um PR verde. Sobe quando alguém decidir subir.
+      - dependency-name: electron
+        update-types: [version-update:semver-major]
+      - dependency-name: electron-builder
+        update-types: [version-update:semver-major]
+    commit-message:
+      prefix: 'chore(desktop)'
+
+  # ---------------------------------------------------------------- API (pip)
+  #
+  # Mensal, e não semanal: a pilha aqui é pesada e o CI que a valida leva
+  # dezenas de minutos. Um PR por semana gastaria mais tempo de runner do que a
+  # atualização vale.
+  - package-ecosystem: pip
+    directory: /api/astros_upscale_api
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      api-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+    ignore:
+      # torch, torchvision e torchaudio vêm do índice da PyTorch
+      # (download.pytorch.org/whl/cpu), e não do PyPI. O Dependabot leria a
+      # versão do PyPI, que é a build com CUDA — proporia um número que o CI
+      # instalaria de outro índice, ou não instalaria. O bump destes três é
+      # manual e coordenado com a linha `--index-url` do workflow.
+      - dependency-name: torch
+      - dependency-name: torchvision
+      - dependency-name: torchaudio
+    commit-message:
+      prefix: 'chore(api)'
+
+  # ---------------------------------------------------------------- Licenciamento (pip)
+  #
+  # Separado do outro serviço de propósito: este é o que está implantado em
+  # produção, e um PR que o toque merece ser lido sabendo disso — e não diluído
+  # num lote com dependências do aplicativo desktop.
+  - package-ecosystem: pip
+    directory: /api/astros_licensing_service
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      licensing-minor-patch:
+        patterns: ['*']
+        update-types: [minor, patch]
+    commit-message:
+      prefix: 'chore(licensing)'
