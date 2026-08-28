@@ -1,28 +1,49 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { Shrink } from '@lucide/vue'
 import imageArtwork from '../assets/home-image.webp'
 import videoArtwork from '../assets/home-video.webp'
 import audioArtwork from '../assets/home-audio.webp'
 
 const props = defineProps<{
-  variant: 'imagem' | 'video' | 'audio'
+  variant: 'imagem' | 'video' | 'audio' | 'compressao'
   tint: string
 }>()
 
+// `compressao` ainda não tem ilustração própria (specs/008). Um ícone tingido
+// com o mesmo acento mantém o cartão coerente e **não finge** ter arte que não
+// existe — reaproveitar a de outra categoria diria que a Central é aquela outra
+// coisa. Quando `home-compression.webp` existir, entra aqui e o fallback some.
 const artworkByVariant = {
   imagem: imageArtwork,
   video: videoArtwork,
   audio: audioArtwork
 } as const
 
-const artwork = computed(() => artworkByVariant[props.variant])
+const artwork = computed(() =>
+  props.variant in artworkByVariant
+    ? artworkByVariant[props.variant as keyof typeof artworkByVariant]
+    : null
+)
 </script>
 
 <template>
-  <img class="category-bitmap-art" :class="`art-${variant}`" :src="artwork" alt="" />
+  <img v-if="artwork" class="category-bitmap-art" :class="`art-${variant}`" :src="artwork" alt="" />
+  <span v-else class="category-icon-art" :style="{ color: tint }">
+    <Shrink :size="72" :stroke-width="1.5" />
+  </span>
 </template>
 
 <style scoped>
+.category-icon-art {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  opacity: 0.85;
+}
+
 .category-bitmap-art {
   display: block;
   width: 100%;

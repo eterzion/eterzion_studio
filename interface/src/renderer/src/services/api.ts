@@ -1,7 +1,13 @@
 // Client for the astros_upscale_api FastAPI server (api/astros_upscale_api).
 // Mirrors app/models/schemas.py — keep the two in sync when either changes.
 
-export const BASE_URL = 'http://127.0.0.1:8765'
+// Inlined at build time by electron.vite.config.ts's `define`. The renderer has
+// no process.env, and making every call site await the port from the main
+// process would turn a constant into an async dependency for no gain.
+declare const __ASTROS_API_PORT__: string
+import { i18n } from '../i18n'
+
+export const BASE_URL = `http://127.0.0.1:${__ASTROS_API_PORT__}`
 
 // T069/T070 — GET /components (FR-063/FR-064): capability-first, never a raw
 // technical model identifier at the list level (FR-009). Replaces the old
@@ -46,7 +52,14 @@ export type MediaType = 'image' | 'video' | 'audio'
 export type Operation = 'enhance' | 'compress' | 'convert'
 export type Profile = 'fast' | 'balanced' | 'quality'
 export type ContentType =
-  'photo' | 'anime_image' | 'real_video' | 'anime_video' | 'speech' | 'music'
+  | 'photo'
+  | 'pixel_art'
+  | 'no_model'
+  | 'anime_image'
+  | 'real_video'
+  | 'anime_video'
+  | 'speech'
+  | 'music'
 
 export interface OutputTarget {
   format: string
@@ -68,10 +81,26 @@ export interface MediaRequest {
   device?: string
   custom_size?: CustomSize | null
   quality?: number | null // compress/convert only (FR-027)
+  /** specs/007-video-editor-player — the editor's settings, applied to the
+      upscaled result as a second pass. Omitted means "no edits", and the job
+      behaves exactly as it did before the unified screen existed. */
+  edits?: unknown
 }
 
+/** Espelha `JobStatusValue` de `api/astros_upscale_api/app/schemas.py`. As duas
+    listas são verificadas uma contra a outra por `test_status_enum_is_single_source.py`
+    — um status novo no backend que não chegasse aqui viraria um estado que a
+    interface não sabe desenhar. */
 export type JobStatusValue =
-  'pending' | 'pending_confirmation' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
+  | 'pending'
+  | 'pending_confirmation'
+  /** specs/008 — entre importar e poder estimar: sondagem de metadados. */
+  | 'analyzing'
+  | 'queued'
+  | 'processing'
+  | 'done'
+  | 'error'
+  | 'cancelled'
 export type ErrorCategory =
   | 'out_of_memory'
   | 'corrupted_input'
@@ -120,6 +149,11 @@ export interface JobStatus {
   output_path: string | null
   error: string | null
   error_category: ErrorCategory | null
+  /** specs/008 (FR-065) — a razão em chave, que a interface traduz. */
+  error_reason?: string | null
+  /** A saída bruta da ferramenta, quando houve. Vai numa área recolhida: é
+   *  indispensável para diagnosticar e ilegível para decidir. */
+  error_detail?: string | null
   capacity_check: CapacityCheck | null
   created_at: string
   processing_started_at: string | null
@@ -310,29 +344,170 @@ export function defaultAdjustments(): Adjustments {
   }
 }
 
-export const ERROR_CATEGORY_COPY: Record<ErrorCategory, { message: string; action: string }> = {
-  out_of_memory: {
-    message: 'Memória insuficiente para este tamanho de saída.',
-    action: 'Tente reduzir o fator de escala ou o tamanho customizado.'
-  },
-  corrupted_input: {
-    message: 'Não foi possível ler o arquivo de origem.',
-    action: 'Remova este item da fila e tente importar o arquivo novamente.'
-  },
-  model_failure: {
-    message: 'Erro no processamento.',
-    action: 'Tente novamente — se persistir, tente outro modelo ou dispositivo.'
-  },
-  disk_full: {
-    message: 'Espaço em disco insuficiente.',
-    action: 'Escolha outra pasta de destino com mais espaço livre.'
-  },
-  hardware_insufficient: {
-    message: 'Este equipamento não tem capacidade para este processamento.',
-    action: 'Tente um tamanho de saída menor ou o perfil Rápido.'
-  },
-  license_invalid: {
-    message: 'Sua licença não está ativa.',
-    action: 'Verifique o status da sua licença nas Configurações.'
+/** Copy for a failed job, in the current language.
+ *
+ *  A function, not a const object: a const is evaluated once at module load, so
+ *  it would freeze whichever locale happened to be active at startup and never
+ *  follow a language change — which is the bug this sweep exists to fix.
+ *
+ *  Keys live under errors.category.* so the message and its suggested action
+ *  stay together; splitting them invites a message that no longer matches the
+ *  advice beneath it. */
+export function errorCategoryCopy(category: ErrorCategory): { message: string; action: string } {
+  const key = ERROR_CATEGORY_KEYS[category]
+  const t = i18n.global.t
+  return {
+    message: t(`errors.category.${key}.message`),
+    action: t(`errors.category.${key}.action`)
   }
+}
+
+// The API's snake_case categories mapped to the locale files' camelCase keys.
+// Explicit rather than derived, so renaming one side breaks the build here
+// instead of silently rendering a raw identifier on screen.
+const ERROR_CATEGORY_KEYS: Record<ErrorCategory, string> = {
+  out_of_memory: 'outOfMemory',
+  corrupted_input: 'corruptedInput',
+  model_failure: 'modelFailure',
+  disk_full: 'diskFull',
+  hardware_insufficient: 'hardwareInsufficient',
+  license_invalid: 'licenseInvalid'
+}
+
+// --- Video editing (specs/007-video-editor-player) ---
+//
+// Media is referenced by handle_id, never by path — Constitution Princípio
+// XIII. `registerMediaHandle` is the single exception, and exists so that no
+// other call needs a path: it is the bounded exception added to the principle
+// in constitution v3.0.0, and its path must come from the OS file dialog.
+
+export type VideoContainer = 'mp4' | 'mov' | 'mkv' | 'webm'
+
+export interface MediaHandle {
+  handle_id: string
+  display_name: string
+  /** Ausente quando a mídia não tem duração — uma imagem registrada pela mesma
+   *  rota (specs/008). Todo vídeo continua trazendo o campo. `0` seria uma
+   *  afirmação sobre a mídia onde a verdade é que a pergunta não se aplica. */
+  duration_seconds: number | null
+  width: number | null
+  height: number | null
+  frame_rate: number | null
+  /** When true, FR-012 forbids presenting a frame number as exact. */
+  frame_rate_is_variable: boolean
+  has_audio: boolean
+  size_bytes: number
+  /** Changes when the file's content changes — compare against a cached value
+      to know that derived thumbnails are stale (FR-017). */
+  content_key: string
+}
+
+export interface ContainerAvailability {
+  value: VideoContainer
+  available: boolean
+  /** A key, not a sentence — the interface translates it. Never an encoder
+      name (Princípio V). */
+  unavailable_reason: 'no_encoder_available' | null
+}
+
+export interface VideoExportOptions {
+  containers: ContainerAvailability[]
+  profiles: Profile[]
+  ceilings: {
+    max_duration_seconds: number
+    max_width: number
+    max_height: number
+    max_frame_rate: number
+    max_frame_count: number
+    max_size_bytes: number
+  }
+}
+
+/** Register a file chosen through the native dialog and receive the identifier
+ *  every other video-editing call uses. The path passed here MUST have come
+ *  from the OS file dialog — that is the first condition of the constitutional
+ *  exception this call relies on, and the only one the renderer can honour. */
+export async function registerMediaHandle(path: string): Promise<MediaHandle> {
+  const res = await fetch(`${BASE_URL}/media/handles`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path })
+  })
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+/** Re-read a handle's metadata. Used to detect that the source file changed
+ *  underneath us, which invalidates thumbnails and previews (FR-017). */
+export async function getMediaHandle(handleId: string): Promise<MediaHandle> {
+  const res = await fetch(`${BASE_URL}/media/handles/${handleId}`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+/** What this machine can actually produce. Drives FR-027: a container with no
+ *  working encoder is disabled before the person picks it, not after an export
+ *  fails. */
+export async function getVideoExportOptions(): Promise<VideoExportOptions> {
+  const res = await fetch(`${BASE_URL}/video/export-options`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+/** The image counterpart. Same purpose as the video one: a format this
+ *  machine's OpenCV build cannot write is disabled before it is chosen, not
+ *  after the export fails. */
+export interface ImageFormatAvailability {
+  value: 'png' | 'jpg' | 'jpeg' | 'tiff' | 'webp'
+  available: boolean
+  unavailable_reason: 'unsupported_build' | null
+}
+
+export interface ImageExportOptions {
+  formats: ImageFormatAvailability[]
+}
+
+export async function getImageExportOptions(): Promise<ImageExportOptions> {
+  const res = await fetch(`${BASE_URL}/image/export-options`)
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+export interface VideoEditSetPayload {
+  adjustments: Record<string, number>
+  effects: Record<string, number | boolean>
+  transform: Record<string, unknown>
+  trim: { start_seconds: number; end_seconds: number } | null
+  audio: { mode: string; volume: number }
+}
+
+export interface VideoExportRequest {
+  handle_id: string
+  edits: VideoEditSetPayload
+  container: VideoContainer
+  profile: Profile
+  output_directory?: string | null
+  output_filename?: string | null
+  conflict?: 'rename' | 'overwrite'
+}
+
+/** Create an export. A 422 body carries a `reason` key (ceiling_exceeded,
+ *  encoder_unavailable, hardware_insufficient, source_changed) and, for a
+ *  ceiling, the `limiting_factor` — so the interface can name what to change
+ *  rather than reporting a generic failure (FR-025). */
+export async function createVideoEditJob(
+  request: VideoExportRequest
+): Promise<{ job_id: string; status: string; estimated_duration_seconds: number | null }> {
+  const res = await fetch(`${BASE_URL}/video/edit-jobs`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  })
+  if (!res.ok) {
+    // The detail object is preserved verbatim so useVideoExport can read the
+    // reason key; extractError would flatten it to a sentence.
+    const body = await res.json().catch(() => null)
+    throw new Error(JSON.stringify(body?.detail ?? { reason: 'unknown' }))
+  }
+  return res.json()
 }

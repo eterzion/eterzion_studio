@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, type Component } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Clock,
   Loader2,
@@ -32,18 +33,22 @@ const props = withDefaults(
   { detail: null }
 )
 
-const META: Record<JobState, { label: string; icon: Component; tone: string }> = {
-  configuring: { label: 'Configurando', icon: Clock, tone: 'neutral' },
-  detecting: { label: 'Detectando tipo de conteúdo', icon: Search, tone: 'neutral' },
-  queued: { label: 'Na fila', icon: Clock, tone: 'neutral' },
-  processing: { label: 'Processando', icon: Loader2, tone: 'primary' },
-  awaiting_confirmation: { label: 'Aguardando confirmação', icon: ShieldAlert, tone: 'warning' },
-  done: { label: 'Concluído', icon: CheckCircle2, tone: 'success' },
-  error: { label: 'Erro', icon: AlertCircle, tone: 'danger' },
-  cancelled: { label: 'Cancelado', icon: XCircle, tone: 'neutral' }
+const { t } = useI18n()
+
+// Icon and tone are fixed; only the label follows the language, so the map
+// stays a const and the label is looked up when the badge renders.
+const META: Record<JobState, { icon: Component; tone: string }> = {
+  configuring: { icon: Clock, tone: 'neutral' },
+  detecting: { icon: Search, tone: 'neutral' },
+  queued: { icon: Clock, tone: 'neutral' },
+  processing: { icon: Loader2, tone: 'primary' },
+  awaiting_confirmation: { icon: ShieldAlert, tone: 'warning' },
+  done: { icon: CheckCircle2, tone: 'success' },
+  error: { icon: AlertCircle, tone: 'danger' },
+  cancelled: { icon: XCircle, tone: 'neutral' }
 }
 
-const meta = computed(() => META[props.state])
+const meta = computed(() => ({ ...META[props.state], label: t(`jobState.${props.state}`) }))
 const text = computed(() =>
   props.detail ? `${meta.value.label} · ${props.detail}` : meta.value.label
 )

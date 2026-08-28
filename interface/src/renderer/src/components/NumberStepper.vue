@@ -1,18 +1,35 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Minus, Plus } from '@lucide/vue'
 
 const props = withDefaults(
   defineProps<{
     modelValue: number
-    label: string
+    /** Rendered above the field. Omit it where the surrounding row already
+     *  names the control — a SettingRow, for instance — and pass ariaLabel
+     *  instead, so the field still has a name for a screen reader. */
+    label?: string
+    ariaLabel?: string
     min?: number
     max?: number
     step?: number
     disabled?: boolean
+    /** Narrow enough to sit at the right edge of a settings row. */
+    compact?: boolean
   }>(),
-  { min: 1, max: 32000, step: 1, disabled: false }
+  {
+    label: undefined,
+    ariaLabel: undefined,
+    min: 1,
+    max: 32000,
+    step: 1,
+    disabled: false,
+    compact: false
+  }
 )
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -57,14 +74,14 @@ const focused = ref(false)
 </script>
 
 <template>
-  <div class="stepper-field">
-    <label class="stepper-label">{{ label }}</label>
+  <div class="stepper-field" :class="{ compact }">
+    <label v-if="label" class="stepper-label">{{ label }}</label>
     <div class="stepper" :class="{ disabled, focused }">
       <button
         class="step-btn"
         type="button"
         :disabled="disabled || modelValue <= min"
-        aria-label="Diminuir"
+        :aria-label="t('actions.decrease')"
         @pointerdown="startHold(-1)"
         @pointerup="stopHold"
         @pointerleave="stopHold"
@@ -74,6 +91,7 @@ const focused = ref(false)
       <input
         class="step-value"
         type="number"
+        :aria-label="ariaLabel ?? label"
         :value="modelValue"
         :min="min"
         :max="max"
@@ -86,7 +104,7 @@ const focused = ref(false)
         class="step-btn"
         type="button"
         :disabled="disabled || modelValue >= max"
-        aria-label="Aumentar"
+        :aria-label="t('actions.increase')"
         @pointerdown="startHold(1)"
         @pointerup="stopHold"
         @pointerleave="stopHold"
@@ -103,6 +121,13 @@ const focused = ref(false)
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+
+/* A fixed, modest width: in a settings row the field sits at the right edge
+   next to its own label, where a full-width control would look like a text
+   box rather than a number. */
+.stepper-field.compact .stepper {
+  width: 104px;
 }
 
 .stepper-label {

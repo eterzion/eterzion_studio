@@ -1,67 +1,104 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { X, Image } from '@lucide/vue'
-import type { Job } from '../store/jobs'
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { X, Image, Film, AudioLines, GripVertical } from '@lucide/vue'
 import AppButton from './atoms/AppButton.vue'
 import StatusBadge from './atoms/StatusBadge.vue'
 import ProgressBar from './atoms/ProgressBar.vue'
+import { canReorder, kindLabel, type QueueEntry } from '../store/mediaQueue'
 
-const props = defineProps<{
-  job: Job
-}>()
+// Takes a QueueEntry rather than a Job: this row now shows images, videos and
+// audio, and those three keep very different state (see store/mediaQueue.ts).
+// The entry is the small set of fields the queue actually needs from all three.
 
-defineEmits<{
-  remove: [id: string]
-}>()
+// NOT named `draggable`: a prop by that name swallows the native attribute of
+// the same name, so Vue removes it from the fallthrough attrs and the root
+// element never becomes draggable. That is exactly what broke reordering — the
+// parent passed :draggable, it landed on the prop, and dragstart never fired.
+const props = defineProps<{ entry: QueueEntry; allowReorder?: boolean }>()
+
+defineEmits<{ remove: [entry: QueueEntry] }>()
+
+const { t } = useI18n()
+
+const KIND_ICON = { image: Image, video: Film, audio: AudioLines }
+const icon = computed(() => KIND_ICON[props.entry.kind])
+
+const sizeLabel = computed(() => `${(props.entry.sizeBytes / (1024 * 1024)).toFixed(1)} MB`)
+
+const reorderable = computed(() => props.allowReorder !== false && canReorder(props.entry))
+
+// The row carries the native draggable attribute, but only while the pointer is
+// holding the handle. Leaving it always on makes the whole row draggable, and
+// the row is also the click target that opens the file — every attempt to open
+// one would risk starting a drag instead.
+const handleHeld = ref(false)
 
 // StatusBadge owns the label/icon/tone for each state — this only supplies what
-// is specific to THIS job (queue position, progress, failure reason).
+// is specific to THIS item (queue position, progress, failure reason).
 const statusDetail = computed(() => {
-  switch (props.job.status) {
+  switch (props.entry.status) {
     case 'queued':
-      return props.job.queuePosition ? `posição ${props.job.queuePosition}` : null
+      return props.entry.queuePosition
+        ? t('jobState.queuePosition', { position: props.entry.queuePosition })
+        : null
     case 'processing':
-      return `${props.job.progress}%`
+      return `${props.entry.progress}%`
     case 'error':
-      return props.job.errorMessage || 'falha no processamento'
+      return props.entry.errorMessage || t('jobState.error').toLowerCase()
     default:
       return null
   }
 })
-
-const sizeLabel = computed(
-  () => (props.job.sourceMeta.sizeBytes / (1024 * 1024)).toFixed(2) + ' MB'
-)
 </script>
 
 <template>
-  <div class="queue-item">
+  <div
+    class="queue-item"
+    :class="{ reorderable }"
+    :draggable="handleHeld"
+    @dragend="handleHeld = false"
+  >
+    <!-- A dedicated handle, not the whole row: the row is also a click target
+         that opens the file, and a draggable row makes that click feel unsafe
+         to press. The handle only appears where a drag would actually change
+         the processing order. -->
+    <div
+      v-if="reorderable"
+      class="drag-handle"
+      :title="t('queue.dragToReorder')"
+      @mousedown="handleHeld = true"
+      @mouseup="handleHeld = false"
+      @click.stop
+    >
+      <GripVertical :size="15" />
+    </div>
+    <div v-else class="drag-spacer" />
+
     <div class="thumb">
-      <img v-if="job.thumbnail" :src="job.thumbnail" alt="" />
-      <Image v-else :size="20" />
+      <img v-if="entry.thumbnail" :src="entry.thumbnail" alt="" />
+      <component :is="icon" v-else :size="20" />
     </div>
 
     <div class="info">
       <div class="info-top">
-        <span class="file-name">{{ job.fileName }}</span>
-        <AppButton variant="ghost" icon-only size="sm" @click.stop="$emit('remove', job.id)">
+        <span class="file-name">{{ entry.fileName }}</span>
+        <AppButton variant="ghost" icon-only size="sm" @click.stop="$emit('remove', entry)">
           <template #icon><X :size="14" /></template>
         </AppButton>
       </div>
       <div class="meta">
-        <span>Imagem · {{ job.sourceMeta.format }}</span>
-        <span v-if="job.sourceMeta.width"
-          >{{ job.sourceMeta.width }} x {{ job.sourceMeta.height }}</span
-        >
+        <span>{{ kindLabel(entry.kind) }}</span>
+        <span v-if="entry.detail">{{ entry.detail }}</span>
         <span>{{ sizeLabel }}</span>
       </div>
 
-      <StatusBadge :state="job.status" :detail="statusDetail" />
+      <StatusBadge :state="entry.status" :detail="statusDetail" />
 
       <ProgressBar
-        v-if="job.status === 'processing' || job.status === 'queued'"
-        :value="job.status === 'queued' ? 0 : job.progress"
-        :tone="job.status === 'queued' ? 'neutral' : 'primary'"
+        v-if="entry.status === 'processing' || entry.status === 'queued'"
+        :value="entry.status === 'queued' ? 0 : entry.progress"
+        :tone="entry.status === 'queued' ? 'neutral' : 'primary'"
       />
     </div>
   </div>
@@ -89,6 +126,21 @@ const sizeLabel = computed(
   transform: translateY(-1px);
 }
 
+/* While this row is the one being dragged. Kept faint rather than hidden so
+   the list does not appear to lose an item mid-drag. */
+.queue-item.dragging {
+  opacity: 0.4;
+}
+
+/* Where the dragged row would land. */
+.queue-item.drop-before {
+  box-shadow: inset 0 2px 0 0 var(--color-primary);
+}
+
+.queue-item.drop-after {
+  box-shadow: inset 0 -2px 0 0 var(--color-primary);
+}
+
 @keyframes queue-item-in {
   from {
     opacity: 0;
@@ -98,6 +150,33 @@ const sizeLabel = computed(
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.drag-handle,
+.drag-spacer {
+  width: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drag-handle {
+  cursor: grab;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+/* Revealed on hover or keyboard focus. Always-on grips turn a list into a
+   control panel; hidden-forever ones are undiscoverable. */
+.queue-item:hover .drag-handle,
+.queue-item:focus-within .drag-handle {
+  opacity: 1;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
 }
 
 .thumb {

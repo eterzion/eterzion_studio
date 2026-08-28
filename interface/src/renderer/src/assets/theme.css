@@ -49,9 +49,10 @@
  * available as compatibility aliases so existing components keep their structure.
  */
 :root {
-  --accent-image: var(--primary);
-  --accent-video: var(--primary);
-  --accent-audio: var(--primary);
+  --accent-image: #1688ff;
+  --accent-video: #bd24ff;
+  --accent-audio: #1ee07a;
+  --accent-compression: #ff7a18;
 }
 
 :root[data-theme='dark'],
@@ -69,6 +70,11 @@
   --color-primary-hover: var(--primary-hover);
   --color-primary-soft: var(--primary-muted);
 }
+[data-module='compression'] {
+  --color-primary: var(--accent-compression);
+  --color-primary-hover: color-mix(in srgb, var(--accent-compression) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-compression) 14%, transparent);
+}
 
 /* Tailwind's theme aliases (styles/tailwind.css `@theme`) are declared once on
    :root as `--color-accent: var(--color-primary)`. A var() inside a custom
@@ -81,6 +87,27 @@
   --color-accent: var(--color-primary);
   --color-accent-hover: var(--color-primary-hover);
   --color-accent-soft: var(--color-primary-soft);
+}
+
+/* The accents were picked against the dark ground; on the light theme they need
+   darkening to stay legible as text/icon colour on a near-white surface. Each
+   percentage below is the one that puts the resulting colour at >=4.6:1 against
+   --surface-0 (WCAG AA for body text, measured, not eyeballed). Green needs the
+   most correction of the three, since it is the lightest of them at full
+   saturation. */
+:root[data-theme='light'] [data-module='image'] {
+  --color-primary: color-mix(in srgb, var(--accent-image) 79%, #000);
+}
+:root[data-theme='light'] [data-module='video'] {
+  --color-primary: color-mix(in srgb, var(--accent-video) 80%, #000);
+}
+:root[data-theme='light'] [data-module='audio'] {
+  --color-primary: color-mix(in srgb, var(--accent-audio) 56%, #000);
+}
+/* O laranja é o mais claro dos quatro acentos e precisa escurecer mais que os
+   outros para manter contraste sobre o fundo claro. */
+:root[data-theme='light'] [data-module='compression'] {
+  --color-primary: color-mix(in srgb, var(--accent-compression) 70%, #000);
 }
 
 :root {
@@ -187,8 +214,10 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--chip-tone, var(--color-primary));
-  background: var(--primary-muted);
-  filter: drop-shadow(0 0 8px var(--primary-glow));
+  background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
+  filter: drop-shadow(
+    0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent)
+  );
 }
 
 * {
@@ -251,3 +280,21 @@ kbd {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--surface-border);
 }
+
+/* Foco visível em todo controle que o teclado alcança (FR-071).
+ *
+ * Estava faltando no aplicativo inteiro, e não só na Central: quem navega por
+ * teclado não tinha como saber onde estava. `:focus-visible` e não `:focus` é o
+ * que mantém o anel fora do caminho de quem usa o mouse — o navegador só o
+ * aplica quando a navegação foi por teclado.
+ *
+ * A regra é global de propósito. Repeti-la em cada componente daria o mesmo
+ * resultado hoje e divergiria no primeiro componente que alguém esquecesse. */
+:where(button, [role='button'], a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* `:where` tem especificidade zero, então um componente que precise de um foco
+ * diferente sobrescreve sem precisar de `!important`. */

@@ -1,12 +1,19 @@
 <script setup lang="ts">
-defineProps<{
-  label: string
-  description?: string
-}>()
+withDefaults(
+  defineProps<{
+    label: string
+    description?: string
+    /** A linha de baixo separa um controle do próximo. Quando uma linha é
+     *  continuação da anterior — um interruptor e a intensidade que ele revela —
+     *  a régua entre as duas divide o que é uma coisa só. */
+    divided?: boolean
+  }>(),
+  { divided: true }
+)
 </script>
 
 <template>
-  <div class="setting-row">
+  <div class="setting-row" :class="{ undivided: !divided }">
     <div class="setting-text">
       <span class="setting-label">{{ label }}</span>
       <span v-if="description" class="setting-description">{{ description }}</span>
@@ -30,6 +37,18 @@ defineProps<{
 
 .setting-row:last-child {
   border-bottom: none;
+}
+
+/* Tirar a régua não bastou: as duas linhas continuavam com o respiro de
+   controles vizinhos (16px de cada lado, 32px entre elas), e espaço demais
+   separa tanto quanto uma linha. Uma continuação encosta na anterior. */
+.setting-row.undivided {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.setting-row.undivided + .setting-row {
+  padding-top: var(--space-1-5);
 }
 
 .setting-text {

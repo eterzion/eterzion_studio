@@ -1,68 +1,1013 @@
 {
-  "nav": {
-    "home": "主页",
-    "image": "图像",
-    "video": "视频",
-    "audio": "音频",
-    "history": "历史记录",
-    "settings": "设置"
+  "actions": {
+    "decrease": "减少",
+    "exportAll": "全部导出",
+    "import": "导入",
+    "increase": "增加",
+    "noAudioSelected": "未选择音频",
+    "noImageSelected": "未选择图片",
+    "noVideoSelected": "未选择视频",
+    "openFolder": "打开文件夹",
+    "processAll": "全部处理",
+    "undo": "撤销"
+  },
+  "activation": {
+    "blockedBody": "您的许可证已不再有效，或离线使用期限已到期。请检查订阅状态，或联网后重新验证。",
+    "blockedTitle": "许可证已封禁",
+    "checkingBody": "请稍候。",
+    "checkingTitle": "正在验证许可证…",
+    "copied": "已复制。",
+    "copy": "复制",
+    "errorBody": "查询许可证状态时出错。请检查网络连接后重试。",
+    "errorTitle": "无法验证您的许可证",
+    "fetchErrorDetail": "无法连接到我们的服务器。请检查网络连接后重试。",
+    "fetchErrorTitle": "无法获取信息",
+    "needHelp": "需要帮助？",
+    "notActivatedBody": "本产品尚未在此安装上激活。请输入购买后通过电子邮件收到的许可证 ID。",
+    "notActivatedTitle": "激活您的许可证",
+    "retry": "重试"
+  },
+  "app": {
+    "apiCheckFailed": "无法检查 API。",
+    "apiErrorTitle": "无法连接到 API",
+    "apiUnreachable": "无法连接到 API 服务器。",
+    "connecting": "正在连接 API 服务器（astros_upscale_api）…",
+    "desktopOnly": "仅在桌面应用中可用。",
+    "notImplemented": "此部分在本次改版预览中尚未实现。"
+  },
+  "audio": {
+    "addAudio": "添加音频",
+    "detectedContent": "检测到的内容",
+    "effort": "处理强度",
+    "musicDescription": "包含乐器与混音的完整音乐曲目",
+    "musicLabel": "音乐",
+    "processingDescription": "模型如何处理音频",
+    "processingTitle": "处理",
+    "speechDescription": "旁白、播客、访谈 — 以人声为主",
+    "speechLabel": "语音 / 人声",
+    "unsupportedFormat": "不支持的格式：{name}"
+  },
+  "compression": {
+    "animation": {
+      "autoColors": "自动选择颜色",
+      "autoColorsHint": "调色板跟随质量设置。",
+      "colors": "调色板颜色数",
+      "colorsHint": "颜色越少体积越小，色带也越明显。",
+      "dither": {
+        "bayer": "规则图案",
+        "floyd_steinberg": "细腻扩散",
+        "none": "不使用",
+        "sierra2_4a": "轻度扩散"
+      },
+      "ditherDescription": "如何近似调色板中没有的颜色。",
+      "ditherHint": {
+        "bayer": "压缩效果好，本页的默认选项",
+        "floyd_steinberg": "更好看，也更大",
+        "none": "体积最小，渐变处出现色带",
+        "sierra2_4a": "介于上面两者之间"
+      },
+      "ditherLabel": "抖动",
+      "format": "格式",
+      "formatHint": {
+        "mp4": "小得多，但不再是动图",
+        "webm": "小得多，但不再是动图",
+        "webp": "同样的颜色下通常比 GIF 更小"
+      },
+      "fps": "帧率",
+      "fpsHint": "减少帧数通常比减少颜色更省体积。",
+      "output": "输出",
+      "palette": "颜色",
+      "quality": "质量",
+      "qualityHintCodec": "每帧保留多少细节。",
+      "qualityHintPalette": "调整调色板中的颜色数量。",
+      "resolution": "分辨率",
+      "sameAsSource": "与原文件相同",
+      "size": "尺寸",
+      "videoNote": "转成视频后体积小很多，但在只接受 GIF 的地方就无法使用了。"
+    },
+    "audio": {
+      "advanced": "高级设置",
+      "auto": "自动",
+      "bitrateMode": "码率模式",
+      "bitrateModeHint": "码率如何分配到整个文件。",
+      "cbr": "恒定",
+      "cbrHint": "自始至终一样，更可预测。",
+      "channels": "声道",
+      "format": "格式",
+      "losslessNote": "无损格式会完整保留录音，体积取决于内容，不由质量设置决定。",
+      "losslessTag": "无损",
+      "mono": "单声道",
+      "monoHint": "体积减半，左右声道合并。",
+      "output": "输出",
+      "quality": "质量",
+      "qualityHint": {
+        "balanced": "体积与保真度的平衡",
+        "high": "适合音乐，损失很难听出来",
+        "maximum": "与原文件几乎听不出差别",
+        "minimum": "非常小，适合人声，不适合音乐",
+        "small": "文件较小，高频开始丢失"
+      },
+      "sameAsSource": "与原文件相同",
+      "sampleRate": "采样率",
+      "sampleRateHint": "改动会重新采样，信息会有损失。",
+      "signal": "信号",
+      "stereo": "立体声",
+      "vbr": "可变",
+      "vbrHint": "在需要的地方多分配，通常效果更好。"
+    },
+    "back": "返回",
+    "batch": {
+      "cancelAll": "全部取消",
+      "cancelOne": "取消 {name}",
+      "cancelled": "已取消",
+      "progress": "已完成 {done} / {total}",
+      "retryFailed": "重试 {count} 个文件",
+      "runAll": "压缩 {count} 个文件",
+      "saved": "目前已节省 {size}（{percent}%）",
+      "show": "显示",
+      "title": "压缩队列",
+      "waiting": "排队中"
+    },
+    "comingSoon": "{media}压缩将在后续阶段加入。",
+    "compare": {
+      "after": "压缩后",
+      "before": "原图",
+      "keepsPosition": "切换时会保持当前收听的位置。",
+      "pause": "暂停",
+      "pending": "压缩后即可对比。",
+      "play": "播放",
+      "reset": "适应",
+      "sideBySide": "并排对比",
+      "slider": "叠加对比",
+      "synced": "两边同步推进。",
+      "view": "视图",
+      "zoom": "缩放"
+    },
+    "estimate": {
+      "assumption": {
+        "audio_bitrate_fixed": "假设音频保持当前码率",
+        "constant_quality": "恒定质量下体积取决于内容",
+        "container_overhead": "包含容器开销的余量",
+        "lossless_content_dependent": "无损：体积取决于内容",
+        "sampled_crops": "按图像采样测量，而非整幅图像",
+        "source_bitrate_unknown": "未探测到源码率"
+      },
+      "belowFloor": "不破坏内容就无法达到这个体积。",
+      "confidence": {
+        "derived": "推算",
+        "measured": "实测",
+        "rough": "粗略"
+      },
+      "disclaimer": "这是预估值。最终体积在压缩后实测。",
+      "empty": "选择文件后显示预估。",
+      "estimated": "预计",
+      "growth": "增大",
+      "loading": "计算中…",
+      "original": "原始",
+      "saving": "节省",
+      "title": "预估",
+      "unknown": "无法预估",
+      "wouldGrow": "按当前设置，文件会比原来更大。"
+    },
+    "export": {
+      "applyToAll": "应用到全部",
+      "applyToAllHint": "整批都使用这个选择。",
+      "choose": "选择文件夹",
+      "conflict": {
+        "ask": "询问",
+        "overwrite": "替换",
+        "rename": "重命名"
+      },
+      "destination": "保存位置",
+      "onConflict": "如果已存在",
+      "pattern": "命名模式",
+      "patternHint": "{filename} 会替换为文件名。",
+      "sameFolder": "与原文件相同的文件夹",
+      "title": "导出"
+    },
+    "history": {
+      "clear": "清空历史",
+      "empty": "还没有压缩过任何文件。",
+      "remove": "从历史中移除 {name}",
+      "repeat": "重复",
+      "repeatHint": "使用那次运行的设置，而不是当前的预设。",
+      "showInFolder": "在文件夹中显示 {name}",
+      "title": "历史"
+    },
+    "image": {
+      "advanced": "高级设置",
+      "chroma": "色度抽样",
+      "chromaHint": "4:4:4 保留更多色彩；4:2:0 文件更小。",
+      "effort": "压缩强度",
+      "effortHint": "强度越高文件越小，耗时越久。",
+      "format": {
+        "keep": "保持原格式",
+        "label": "格式"
+      },
+      "lossless": "无损",
+      "losslessHint": "保留每个像素，文件会更大。",
+      "metadata": {
+        "essential_only": "仅保留必要项",
+        "preserve_all": "全部保留",
+        "strip_all": "全部移除",
+        "strip_comments": "移除注释",
+        "strip_exif": "移除 EXIF",
+        "strip_gps": "移除位置信息",
+        "strip_icc": "移除色彩配置文件"
+      },
+      "metadataHint": {
+        "essential_only": "方向与色彩配置文件；移除 GPS 及其余",
+        "preserve_all": "包括位置信息和注释",
+        "strip_all": "什么都不保留",
+        "strip_comments": "说明与注释",
+        "strip_exif": "相机、日期和拍摄参数",
+        "strip_gps": "只移除位置",
+        "strip_icc": "颜色可能看起来不同"
+      },
+      "metadataPolicy": "保留哪些",
+      "metadataPolicyHint": "方向和色彩配置文件被移除后会改变画面。",
+      "metadataTitle": "元数据",
+      "noAdvanced": "该格式没有额外设置。",
+      "output": "输出",
+      "pngLevel": "压缩级别",
+      "pngLevelHint": "无损：级别越高耗时越久，画面不变。",
+      "preventUpscale": "不放大",
+      "preventUpscaleHint": "放大不会让文件变小。",
+      "progressive": "渐进式加载",
+      "progressiveHint": "先显示整幅图像，再逐渐清晰。",
+      "quality": "质量",
+      "qualityHint": {
+        "balanced": "体积与观感的平衡",
+        "high": "适合网页，差异很难察觉",
+        "maximum": "与原图几乎无法分辨",
+        "minimum": "非常小，损失明显",
+        "small": "体积小，损失开始显现"
+      },
+      "resolution": {
+        "label": "分辨率",
+        "original": "原始"
+      },
+      "size": "尺寸",
+      "speed": "速度",
+      "speedHint": "越快压缩率越低。"
+    },
+    "info": {
+      "alpha": "透明度",
+      "alphaYes": "有",
+      "audioBitrate": "音频码率",
+      "audioCodec": "音频",
+      "bitrate": "码率",
+      "channels": "声道",
+      "channelsCount": "{count} 声道",
+      "channelsMono": "单声道",
+      "channelsStereo": "立体声",
+      "codec": "编解码器",
+      "duration": "时长",
+      "frameRate": "帧率",
+      "frameRateVariable": "约 {value} fps（可变）",
+      "resolution": "分辨率",
+      "sampleRate": "采样率",
+      "size": "大小",
+      "videoBitrate": "视频码率",
+      "videoCodec": "视频"
+    },
+    "media": {
+      "animation": "GIF / 动画",
+      "audio": "音频",
+      "image": "图像",
+      "video": "视频"
+    },
+    "mode": {
+      "advanced": "高级",
+      "basic": "基础"
+    },
+    "preset": {
+      "archive": "存档",
+      "balanced": "均衡",
+      "cancel": "取消",
+      "confirmSave": "保存",
+      "copyOf": "{name}（副本）",
+      "custom": "自定义",
+      "delete": "删除",
+      "duplicate": "复制",
+      "maximum_quality": "最高质量",
+      "modified": "选择预设后已修改",
+      "namePlaceholder": "预设名称",
+      "origin": {
+        "builtin": "内置",
+        "platform": "平台",
+        "user": "你的"
+      },
+      "placeholder": "选择预设",
+      "saveAs": "保存为预设",
+      "smallest_file": "最小体积",
+      "update": "更新预设",
+      "web": "网页"
+    },
+    "queue": {
+      "add": "添加",
+      "clearAll": "全部清除",
+      "count": "没有文件 | {count} 个文件",
+      "remove": "移除 {name}",
+      "status": {
+        "importing": "读取中…",
+        "rejected": "已拒绝"
+      },
+      "title": "已导入的文件"
+    },
+    "refusal": {
+      "ceiling_exceeded": "超出本操作的上限",
+      "encoder_unavailable": "这台电脑无法生成该格式",
+      "incompatible_combination": "组合不兼容",
+      "insufficient_disk": "磁盘空间不足",
+      "invalid_settings": "设置无效",
+      "not_found": "找不到文件",
+      "target_below_floor": "目标体积过小",
+      "unknown": "失败",
+      "unreadable": "无法读取",
+      "unsupported_media": "不是可识别的媒体文件"
+    },
+    "result": {
+      "elapsed": "{seconds} 秒",
+      "grewBy": "文件比原来大了 {size}",
+      "reveal": "在文件夹中显示",
+      "saved": "节省 {size}（{percent}%）",
+      "title": "结果"
+    },
+    "run": "压缩",
+    "subtitle": "在自己掌控画质的前提下减小文件",
+    "summary": {
+      "defaults": "未做更改 — 全部为默认值。",
+      "field": {
+        "audio_codec": "音频",
+        "bitrate_mode": "比特率模式",
+        "channels": "声道",
+        "chroma_subsampling": "色度",
+        "container": "容器",
+        "effort": "编码强度",
+        "fps": "帧率",
+        "height": "高度",
+        "lossless": "无损",
+        "max_colors": "颜色数",
+        "metadata_policy": "元数据",
+        "output_format": "格式",
+        "percent": "缩放",
+        "png_compress_level": "PNG 级别",
+        "preserve_aspect": "保持比例",
+        "prevent_upscale": "不放大",
+        "progressive": "渐进式",
+        "quality": "质量",
+        "rate_mode": "码率模式",
+        "resolution": "分辨率",
+        "sample_rate": "采样率",
+        "speed": "速度",
+        "video_codec": "视频",
+        "width": "宽度"
+      },
+      "on": "开启",
+      "title": "摘要"
+    },
+    "target": {
+      "hint": "确认数值时才开始搜索，而不是每敲一个字符。",
+      "label": "目标体积",
+      "size": "体积",
+      "unit": "单位"
+    },
+    "title": "压缩",
+    "unavailable": {
+      "format_not_writable": "这台电脑无法写入该格式",
+      "no_encoder_available": "这台电脑无法写入该格式",
+      "not_supported_by_build": "此安装中不可用",
+      "requires_hardware_encoder": "需要这台机器没有的视频加速"
+    },
+    "upload": {
+      "selectPrompt": "从队列中选择一个文件",
+      "subtitle": "图片、视频、音频和 GIF — 类型由内容判断",
+      "title": "拖入要压缩的文件"
+    },
+    "video": {
+      "advanced": "高级设置",
+      "audio": {
+        "bitrate": "音频码率",
+        "bitrateHint": "超过 192 kbps 后差别很难听出来。",
+        "codec": "音频编解码器",
+        "keep": "保持原样",
+        "keepHint": "直接复制音轨，不重新编码——更快且无损。",
+        "label": "音轨",
+        "recompress": "重新压缩",
+        "remove": "移除",
+        "removeHint": "视频将没有声音。"
+      },
+      "audioTitle": "音频",
+      "auto": "自动",
+      "codec": "视频编解码器",
+      "codecHint": "这里只列出该格式接受的选项。",
+      "container": "格式",
+      "containerHint": "决定可以使用哪些编解码器。",
+      "encoder": {
+        "auto": "自动",
+        "autoHint": "优先保证质量与兼容性，而不是速度。",
+        "cpu": "处理器",
+        "gpu": "显卡",
+        "hint": "在哪里进行编码。",
+        "label": "处理方式",
+        "noHardware": "这台电脑没有可用的加速，将使用处理器。"
+      },
+      "fps": "帧率",
+      "fpsHint": "降低帧率省不了多少体积，还会改变动感。",
+      "noHardwareNote": "这台电脑没有可用的视频加速，因此无法使用 MP4。WebM 和 MKV 的压缩效果同样好，现代浏览器和播放器都能打开。",
+      "output": "输出",
+      "quality": "质量",
+      "qualityHint": {
+        "balanced": "体积与清晰度的平衡",
+        "high": "适合观看和发布，损失很难察觉",
+        "maximum": "与原片几乎一致；文件较大",
+        "minimum": "非常小；损失始终可见",
+        "small": "文件较小；运动画面会出现块状"
+      },
+      "resolution": "分辨率",
+      "sameAsSource": "与原文件相同",
+      "size": "尺寸",
+      "speed": {
+        "fast": "快",
+        "fastHint": "更快完成，文件略大。",
+        "hint": "影响耗时和体积，不影响分辨率。",
+        "label": "编码速度",
+        "medium": "中",
+        "slow": "慢",
+        "slowHint": "文件更小，耗时更久。"
+      }
+    }
+  },
+  "contentType": {
+    "anime_image": "动漫/插画",
+    "anime_video": "动画视频",
+    "archived": "已归档",
+    "music": "音乐",
+    "no_model": "不使用模型",
+    "photo": "照片",
+    "pixel_art": "像素画",
+    "real_video": "实拍视频",
+    "speech": "语音"
+  },
+  "credits": {
+    "audioMusic": "音频增强 — 音乐",
+    "audioSpeech": "音频增强 — 语音",
+    "faceEnhance": "人脸增强（图片）",
+    "imageAnime": "图片增强 — 动漫/插画",
+    "imagePhoto": "图片增强 — 照片",
+    "media": "媒体处理",
+    "noteFfmpeg": "（发行版构建）",
+    "noteSonicMaster": "Apache-2.0 — 有条件（依赖 Stable Audio Open 的 VAE）",
+    "videoAnime": "视频增强 — 动画",
+    "videoReal": "视频增强 — 实拍"
+  },
+  "errors": {
+    "category": {
+      "corruptedInput": {
+        "action": "请从队列中移除该项并重新导入文件。",
+        "message": "无法读取源文件。"
+      },
+      "diskFull": {
+        "action": "请选择剩余空间更多的其他目标文件夹。",
+        "message": "磁盘空间不足。"
+      },
+      "hardwareInsufficient": {
+        "action": "请尝试更小的输出尺寸或“快速”配置。",
+        "message": "此设备无法完成该处理。"
+      },
+      "licenseInvalid": {
+        "action": "请在设置中查看许可证状态。",
+        "message": "您的许可证未激活。"
+      },
+      "modelFailure": {
+        "action": "请重试；若仍然失败，请换一个模型或设备。",
+        "message": "处理出错。"
+      },
+      "outOfMemory": {
+        "action": "请尝试更小的放大倍数或更小的自定义尺寸。",
+        "message": "内存不足，无法输出该尺寸。"
+      }
+    },
+    "job": {
+      "connectionLost": "处理过程中与服务器的连接中断。",
+      "contentTypeMissing": "尚未识别内容类型，请手动选择。",
+      "createFailed": "无法创建任务。",
+      "customTooSmall": "自定义尺寸不能小于原图（这是放大工具）。",
+      "noBackendJob": "该任务没有关联的处理。",
+      "notificationDone": "{file} 处理完成。",
+      "originalTooLarge": "“原始”模式下尺寸不能超过原图；如需放大，请使用预设或自定义。",
+      "processingFailed": "处理失败。",
+      "resolutionTooHigh": "输入分辨率过高（超过 10000px），可能无法放大。",
+      "scaleMissing": "请选择放大倍数。",
+      "sizeMissing": "请输入宽度和高度。",
+      "unsupportedFormat": "不支持的格式（仅限图片：PNG、JPG、TIFF、WEBP、BMP）。"
+    }
+  },
+  "history": {
+    "allStatuses": "全部状态",
+    "allTypes": "全部类型",
+    "alreadyQueued": "该文件已在当前队列中。",
+    "anyDate": "任意日期",
+    "downloadAgain": "重新下载",
+    "emptyAction": "处理图片",
+    "emptyDescription": "处理过的图片会显示在这里。",
+    "emptyTitle": "尚未处理任何内容",
+    "errorLabel": "错误",
+    "finishedAt": "完成于",
+    "last30": "最近 30 天",
+    "last7": "最近 7 天",
+    "limitLabel": "记录上限",
+    "limitSettingDescription": "超出后会删除最早的记录",
+    "limitSettingLabel": "最大记录数",
+    "moreActions": "更多操作",
+    "newest": "最新优先",
+    "noFilterMatch": "没有符合当前筛选条件的项目。",
+    "notExported": "尚未导出",
+    "oldest": "最早优先",
+    "output": "输出",
+    "removed": "已从历史记录中移除“{name}”。",
+    "resAsc": "分辨率从低到高",
+    "resDesc": "分辨率从高到低",
+    "reuseImageOnly": "仅图片条目支持复用配置。",
+    "reuseSettings": "复用这些设置",
+    "reuseTooOld": "该配置早于本次更新，已无法复用，请重新设置。",
+    "searchPlaceholder": "按名称或模型搜索…",
+    "sizeAsc": "体积从小到大",
+    "sizeDesc": "体积从大到小",
+    "source": "来源",
+    "sourceMissing": "找不到原始文件：{path}",
+    "storedCount": "本地已保存 {n} 条记录",
+    "title": "历史记录",
+    "today": "今天",
+    "view": "查看"
   },
   "home": {
-    "title": "今天您想改善什么？",
     "openAria": "打开{label}",
-    "status": {
-      "processing": "处理中",
-      "done": "已完成",
-      "errors": "有错误",
-      "queued": "排队中",
-      "configuring": "配置中",
-      "empty": "空"
+    "title": "今天您想改善什么？"
+  },
+  "imageEditor": {
+    "adjustmentsDescription": "画质微调",
+    "adjustmentsTitle": "调整",
+    "after": "处理后",
+    "animeDescription": "数字绘画、动漫、线条清晰的插画",
+    "animeLabel": "动漫/插画",
+    "applyToAll": "将此配置应用到全部（{n}）",
+    "aspectFree": "比例自由 — 点击锁定",
+    "aspectLocked": "已锁定比例 — 点击解锁",
+    "before": "处理前",
+    "beyondNative": "目标超过原生倍数（{factor}x），超出部分靠插值，细节提升有限。",
+    "cancel": "取消",
+    "cancelled": "已取消处理。",
+    "conflictPrompt": "已存在同名文件。要怎么处理？",
+    "denoiseAfterAlt": "降噪后",
+    "denoiseBeforeAlt": "降噪前",
+    "denoiseHint": "在不模糊轮廓的前提下去除颗粒和压缩痕迹。适合手机照片、弱光照片，或多次保存为 JPG 的图片。",
+    "denoiseLabel": "降噪滤镜",
+    "destinationFolder": "目标文件夹",
+    "detectedContent": "检测到的内容",
+    "detecting": "识别中…",
+    "effort": "处理强度",
+    "elapsed": "已用时间：{time}",
+    "exportDescription": "格式、目标位置和名称",
+    "exportTitle": "导出",
+    "faceRecoveryHint": "重建人脸——它比画面其他部分更早丢失细节。若未检测到人脸，图片将保持原样。",
+    "faceRecoveryLabel": "人脸修复",
+    "fileName": "文件名",
+    "fit": "适应窗口",
+    "format": "格式",
+    "formatUnavailable": "此计算机无法写入该格式",
+    "free": "自由",
+    "height": "高度",
+    "holdSpace": "按住空格键可在处理前后之间快速切换",
+    "locked": "已锁定",
+    "modeCustom": "精确尺寸",
+    "modePreset": "放大 2x/4x",
+    "noFormatAvailable": "此计算机没有可用的导出格式。",
+    "noModelDescription": "仅应用滤镜与尺寸调整，不经过任何 AI 模型。",
+    "noModelLabel": "不使用模型",
+    "onConflict": "发生冲突时",
+    "photoDescription": "真实照片 — 人像、风景、产品",
+    "photoLabel": "照片",
+    "pixelArtDescription": "图标、精灵图，以及逐像素绘制的作品。不使用模型，通过重复像素放大，不会柔化任何边缘。",
+    "pixelArtLabel": "像素画",
+    "previewDesktopOnly": "预览仅在桌面应用中可用。",
+    "process": "开始处理",
+    "processingDescription": "模型如何处理图片",
+    "processingProgress": "处理中… {progress}%",
+    "processingTitle": "处理",
+    "quality": "质量",
+    "queued": "排队中",
+    "queuedAt": "排队中（第 {position} 位）",
+    "reduceTo": "缩小到",
+    "resolutionMultiplier": "分辨率倍数",
+    "resultDescription": "处理前后的比较与统计",
+    "resultTitle": "结果",
+    "retry": "重试",
+    "sameAsSource": "与原文件相同的文件夹",
+    "scaleDescription": "图片的最终尺寸",
+    "scaleTitle": "缩放",
+    "sharpenHint": "强化轮廓，让画面看起来更清晰。过度会在边缘产生亮色光晕。",
+    "sharpenLabel": "锐度",
+    "sideBySide": "并排显示",
+    "sizeLabel": "尺寸",
+    "sliderView": "前后对比滑块",
+    "strength": "强度",
+    "technicalDetails": "技术细节",
+    "whereToProcess": "处理位置",
+    "width": "宽度",
+    "willDistort": "图片会被拉伸变形。"
+  },
+  "importing": {
+    "alreadyQueued": "已在队列中：{files}。",
+    "dropDesktopOnly": "仅桌面应用支持拖放。",
+    "filesDesktopOnly": "仅桌面应用支持选择文件。",
+    "folderDesktopOnly": "仅桌面应用支持选择文件夹。",
+    "noFilesInFolder": "该文件夹中没有找到受支持的文件。",
+    "noImagesInFolder": "该文件夹中没有找到受支持的图片。",
+    "pickFilesFailed": "无法选择文件。",
+    "pickFolderFailed": "无法选择文件夹。",
+    "rejected": "有 {n} 个文件无法导入（格式不受支持或无法读取）。"
+  },
+  "jobState": {
+    "awaiting_confirmation": "等待确认",
+    "cancelled": "已取消",
+    "configuring": "配置中",
+    "detecting": "正在识别内容类型",
+    "done": "完成",
+    "error": "错误",
+    "processing": "处理中",
+    "queuePosition": "第 {position} 位",
+    "queued": "排队中"
+  },
+  "license": {
+    "activate": "激活",
+    "activating": "正在激活…",
+    "active": "许可证已激活",
+    "activeHere": "已在此安装上激活",
+    "activeOffline": "已激活（离线）",
+    "blocked": "许可证已封禁",
+    "checkConnection": "请检查网络连接",
+    "checking": "正在检查…",
+    "deactivate": "在此安装上停用",
+    "error": "许可证错误",
+    "generic": "许可",
+    "idHint": "购买后通过电子邮件发送。",
+    "idLabel": "许可证 ID",
+    "installations": "安装数：{used}/{limit}",
+    "notActivated": "未激活",
+    "notConfigured": "未配置许可证",
+    "offlineDays": "离线宽限：剩余 {n} 天",
+    "title": "许可证"
+  },
+  "localStatus": {
+    "configuring": "可以开始处理",
+    "detecting": "识别中…",
+    "done": "完成",
+    "error": "错误",
+    "processing": "处理中",
+    "queued": "排队中",
+    "serverCommunication": "无法与服务器通信。"
+  },
+  "misc": {
+    "defaultValue": "默认值：{value}",
+    "denoiseCustom": "自定义",
+    "denoiseHigh": "高",
+    "denoiseLow": "低",
+    "denoiseMedium": "中",
+    "previewFailed": "无法生成预览。",
+    "remove": "移除",
+    "selectCompleted": "选择要导出的已完成图片："
+  },
+  "nav": {
+    "audio": "音频",
+    "compression": "压缩",
+    "history": "历史记录",
+    "home": "主页",
+    "image": "图像",
+    "settings": "设置",
+    "video": "视频"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "description": "有 GPU 就用 GPU，否则用 CPU。",
+        "label": "自动"
+      },
+      "cpu": {
+        "description": "较慢，但任何机器都能运行。",
+        "label": "CPU"
+      },
+      "cuda": {
+        "description": "更快，需要 NVIDIA 驱动。",
+        "label": "GPU (CUDA)"
+      }
+    },
+    "profile": {
+      "balanced": {
+        "description": "在细节与耗时之间取中",
+        "label": "均衡"
+      },
+      "fast": {
+        "description": "细节较少，完成更快",
+        "label": "快速"
+      },
+      "quality": {
+        "description": "细节更多，耗时更长",
+        "label": "高质量"
+      }
     }
   },
-  "sidebar": {
-    "support": "支持",
-    "collapse": "收起侧边栏",
-    "expand": "展开侧边栏",
-    "darkMode": "深色模式",
-    "lightMode": "浅色模式",
-    "toggleTheme": "切换浅色/深色主题",
-    "links": {
-      "site": "官方网站",
-      "discord": "Discord",
-      "faq": "常见问题",
-      "help": "帮助中心",
-      "email": "支持邮箱"
-    }
+  "queue": {
+    "clear": "清空队列",
+    "dragToReorder": "拖动可重新排序",
+    "empty": "空",
+    "fileCountLabel": "{n} 个文件",
+    "kind": {
+      "audio": "音频",
+      "image": "图片",
+      "video": "视频"
+    },
+    "title": "处理队列"
+  },
+  "select": {
+    "search": "搜索…"
   },
   "settings": {
-    "title": "设置",
+    "advancedDescription": "诊断与技术信息",
+    "advancedTitle": "高级",
+    "animations": "启用动画",
+    "animationsDescription": "界面过渡与微动效",
+    "appVersion": "应用版本",
+    "autoCleanup": "自动清理",
+    "autoCleanupDescription": "删除早于下方期限的记录",
+    "cacheRefreshFailed": "无法刷新缓存。",
+    "cacheRefreshFailedWith": "刷新失败：{error}",
+    "cacheRefreshed": "已从 API 刷新组件缓存。",
+    "clearCache": "清除缓存",
+    "clearCacheDescription": "直接从 API 重新加载模型列表",
+    "clearHistory": "手动清空历史记录",
+    "clearHistoryAction": "清空历史记录",
+    "clearHistoryDescription": "删除所有已保存的记录，不影响已导出的文件",
+    "collapse": "收起",
+    "comfortable": "宽松",
+    "compact": "紧凑",
+    "concurrentJobs": "并发任务数",
+    "concurrentJobsDescription": "受当前处理架构限制固定为 1（串行队列，单个 worker）",
+    "confirmClear": "确认删除",
+    "creditsDescription": "所用组件的必要署名。",
+    "creditsTitle": "致谢",
+    "days": "{n} 天",
+    "defaultScale": "默认倍数",
+    "defaultScaleDescription": "新图片预先选中的放大倍数",
+    "density": "界面密度",
+    "densityDescription": "元素之间的间距",
+    "details": "详情",
+    "distributedUnder": "依据 {license} 许可证分发。",
     "general": {
-      "title": "常规",
-      "description": "应用程序的常规首选项",
-      "language": {
-        "label": "语言",
-        "description": "首次启动时自动从 Windows 检测"
-      },
-      "theme": {
-        "label": "主题",
-        "description": "浅色、深色，或跟随 Windows",
-        "light": "浅色",
-        "dark": "深色",
-        "auto": "自动"
-      },
       "autoUpdate": {
-        "label": "自动更新",
-        "description": "启动时检查新版本（即将推出）"
+        "description": "启动时检查新版本（即将推出）",
+        "label": "自动更新"
+      },
+      "description": "应用程序的常规首选项",
+      "exportFormat": {
+        "description": "打开导出面板时预先选择",
+        "label": "默认图像格式"
+      },
+      "language": {
+        "description": "首次启动时自动从 Windows 检测",
+        "label": "语言"
       },
       "outputFolder": {
-        "label": "默认输出文件夹",
         "description": "导出时作为初始建议使用",
+        "label": "默认输出文件夹",
         "same": "与原始图像相同的文件夹"
       },
-      "exportFormat": {
-        "label": "默认图像格式",
-        "description": "打开导出面板时预先选择"
-      }
+      "theme": {
+        "auto": "自动",
+        "dark": "深色",
+        "description": "浅色、深色，或跟随 Windows",
+        "label": "主题",
+        "light": "浅色"
+      },
+      "title": "常规"
+    },
+    "imageQuality": "图片质量",
+    "imageQualityDescription": "导出为 .jpg/.webp 时的默认值",
+    "interfaceDescription": "显示多少信息，以及排布得多紧凑",
+    "interfaceTitle": "界面",
+    "keepAspect": "自动保持比例",
+    "keepAspectDescription": "在自定义模式下联动宽高",
+    "keepFor": "保留时长",
+    "keepForDescription": "自动删除前保留的天数",
+    "large": "大",
+    "medium": "中",
+    "openSourceOnly": "我们只使用许可证兼容的开源组件。",
+    "processingDescription": "设置新图片时使用的默认值",
+    "processingTitle": "处理",
+    "runtimeVersions": "运行时版本",
+    "showCommercial": "显示商用标识",
+    "showCommercialDescription": "在模型上显示许可证徽章",
+    "showDescriptions": "显示模型说明",
+    "showDescriptionsDescription": "在「模型」标签页的卡片上用一行说明用途",
+    "small": "小",
+    "standard": "标准",
+    "thumbnailSize": "缩略图大小",
+    "thumbnailSizeDescription": "队列、编辑器与历史记录",
+    "title": "设置"
+  },
+  "sidebar": {
+    "collapse": "收起侧边栏",
+    "darkMode": "深色模式",
+    "expand": "展开侧边栏",
+    "lightMode": "浅色模式",
+    "links": {
+      "discord": "Discord",
+      "email": "支持邮箱",
+      "faq": "常见问题",
+      "help": "帮助中心",
+      "site": "官方网站"
+    },
+    "support": "支持",
+    "toggleTheme": "切换浅色/深色主题"
+  },
+  "stats": {
+    "adjustmentsApplied": "已应用的调整",
+    "faces": "人脸 {value}",
+    "fileSize": "文件大小",
+    "modelAndParams": "模型与参数",
+    "newResolution": "新分辨率",
+    "noise": "降噪 {value}",
+    "originalResolution": "原始分辨率",
+    "processingTime": "处理时长",
+    "resolution": "分辨率",
+    "sharpness": "锐度 {value}"
+  },
+  "status": {
+    "cancelled": "已取消",
+    "done": "完成",
+    "error": "失败",
+    "processing": "处理中",
+    "queued": "等待中"
+  },
+  "upload": {
+    "aria": "将文件拖放到这里，或按 Enter 选择",
+    "audioTitle": "将音频拖放到这里",
+    "dropHere": "松开以导入",
+    "failed": "无法导入这些文件",
+    "imagesTitle": "将图片拖放到这里",
+    "importing": "正在导入文件…",
+    "limit": "每个文件最大 500 MB",
+    "pickFiles": "选择文件",
+    "pickFolder": "选择文件夹",
+    "subtitle": "也可以使用下方按钮",
+    "videoTitle": "将视频拖放到这里"
+  },
+  "validation": {
+    "exportFailed": "导出失败。",
+    "maxSide": "每边最多 {max}px。",
+    "minSide": "每边至少 {min}px。",
+    "nameConflict": "目标位置已存在同名文件。",
+    "outputTooLarge": "输出会超过每边 {max}px 的上限。",
+    "tooLargeFile": "文件超过 {mb} MB 的上限。",
+    "tooSmall": "分辨率过低（最小 {min}×{min}px）。"
+  },
+  "videoEditor": {
+    "editor": {
+      "addMore": "添加视频",
+      "importFailed": "无法导入该视频。",
+      "open": "打开视频编辑器",
+      "panelPending": "编辑控件将在后续步骤中加入。",
+      "ready": "可以编辑",
+      "runAll": "全部处理",
+      "title": "视频编辑器",
+      "uploadSubtitle": "也可以使用下方按钮",
+      "uploadTitle": "将视频拖放到这里"
+    },
+    "edits": {
+      "adjustments": "图像调整",
+      "blurHint": "柔化整个画面。可用于掩盖压缩痕迹，代价是锐度。",
+      "blur_enabled": "模糊",
+      "brightness": "亮度",
+      "brightnessHint": "整体均匀提亮或压暗画面。过量会压平暗部并让高光溢出。",
+      "clearTrim": "使用全部",
+      "contrast": "对比度",
+      "contrastHint": "把明暗从中间调推开。过量会让两端都丢失细节。",
+      "denoiseHint": "去除颗粒与噪点。过量会连细微纹理一起抹掉。",
+      "denoise_enabled": "降噪",
+      "effects": "效果",
+      "flipHorizontal": "水平翻转",
+      "flipVertical": "垂直翻转",
+      "gamma": "伽马",
+      "gammaHint": "只提升中间调，不动黑白两端。画面看着暗但并未欠曝时很有用。",
+      "grainHint": "加入颗粒，营造胶片质感。也能掩盖天空与渐变中的色带。",
+      "grain_enabled": "颗粒",
+      "hue_degrees": "色相",
+      "hue_degreesHint": "让所有颜色在色轮上旋转。小幅度用于校正偏色，大幅度则是换色。",
+      "notInLivePreview": "部分已启用的设置不会出现在动态预览中，只会体现在导出的文件里。",
+      "outputSize": "输出尺寸",
+      "reset": "恢复默认",
+      "rotation": "旋转",
+      "saturation": "饱和度",
+      "saturationHint": "加深或抽离色彩。过量会让肤色发橙。",
+      "sharpness": "锐度",
+      "sharpnessHint": "强调轮廓以营造对焦感。过量会在边缘产生亮边光晕。",
+      "strength": "强度",
+      "transform": "变换",
+      "trim": "片段",
+      "trimEnd": "片段终点",
+      "trimStart": "片段起点",
+      "wholeVideo": "整个视频"
+    },
+    "enhance": {
+      "animeVideo": "动画 / 动漫",
+      "animeVideoHint": "动漫、卡通、动态图形 — 线条清晰、色块平坦",
+      "aspectFree": "比例自由 — 点击锁定",
+      "aspectLocked": "已锁定比例 — 点击解锁",
+      "beyondNative": "目标超过原生倍数（{factor}x），超出部分靠插值，细节提升有限。",
+      "contentType": "内容类型",
+      "device": "处理方式",
+      "free": "自由",
+      "height": "高度",
+      "locked": "已锁定",
+      "modeCustom": "精确尺寸",
+      "modePreset": "放大 2x/4x",
+      "noModel": "不使用模型",
+      "noModelHint": "仅应用调整与尺寸变更，不经过任何 AI 模型。",
+      "processingDescription": "模型如何处理视频",
+      "processingTitle": "处理",
+      "profile": "画质",
+      "realVideo": "实拍视频",
+      "realVideoHint": "摄像、录屏等从现实世界拍摄的画面",
+      "resolutionMultiplier": "分辨率倍数",
+      "resultSize": "结果",
+      "scale": "放大",
+      "scaleDescription": "视频的最终尺寸",
+      "scaleTitle": "缩放",
+      "sizeLabel": "尺寸",
+      "sourceSize": "原始分辨率",
+      "title": "画质增强",
+      "width": "宽度"
+    },
+    "export": {
+      "cancel": "取消",
+      "container": "格式",
+      "destination": "保存位置",
+      "done": "文件已导出。",
+      "profile": "画质",
+      "sameFolder": "与原文件相同的文件夹",
+      "start": "导出",
+      "title": "导出",
+      "working": "处理中…"
+    },
+    "limits": {
+      "ceilingExceeded": "超出本次操作的{factor}上限。",
+      "encoder_unavailable": "没有可用于该格式的编码器。",
+      "factor_duration": "时长",
+      "factor_frame_count": "帧数",
+      "factor_frame_rate": "帧率",
+      "factor_height": "高度",
+      "factor_size_bytes": "文件大小",
+      "factor_width": "宽度",
+      "hardware_insufficient": "此设备无法完成该导出。",
+      "noContainerAvailable": "此设备没有可用的输出格式。",
+      "noEncoderAvailable": "此设备不可用",
+      "source_changed": "源文件已更改。",
+      "unknown": "无法开始导出。"
+    },
+    "player": {
+      "frame": "帧",
+      "frameUnavailable": "帧号不精确（可变帧率）",
+      "mute": "静音",
+      "noAudio": "无音频轨道",
+      "notPreviewable": "无法在此显示该视频。",
+      "pause": "暂停",
+      "play": "播放",
+      "previewUnavailable": "此设备无法预览调整效果",
+      "recalculating": "重新计算中…",
+      "stepBack": "上一帧",
+      "stepForward": "下一帧",
+      "timeline": "时间轴",
+      "transport": "播放控件",
+      "unmute": "取消静音",
+      "volume": "音量"
+    },
+    "secondary": {
+      "chapters": "章节",
+      "extra_audio_tracks": "额外音轨",
+      "proceed": "仍然继续",
+      "subtitles": "内嵌字幕",
+      "warning": "此处理将丢弃文件的部分内容："
+    },
+    "status": {
+      "awaiting_confirmation": "等待确认",
+      "cancelled": "已取消",
+      "creating": "准备中…",
+      "done": "完成",
+      "error": "错误",
+      "idle": "就绪",
+      "processing": "处理中",
+      "queued": "排队中"
     }
   }
 }

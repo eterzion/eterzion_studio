@@ -15,12 +15,13 @@ import pytest
 
 from app.processing import MissingAudioDependency, apply_dsp_chain, process
 from astros_upscale.media import ffprobe_json, has_ffmpeg
+from astros_upscale.media import ffmpeg_path
 
 pytestmark = pytest.mark.skipif(not has_ffmpeg(), reason='requires a real ffmpeg binary on PATH')
 
 
 def _run_ffmpeg(args: list[str]) -> None:
-    result = subprocess.run(['ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
+    result = subprocess.run([ffmpeg_path() or ffmpeg_path() or 'ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
 
 
@@ -50,7 +51,7 @@ def _measure_rms_level_db(path: str) -> float:
     broadband noise (no protected signal), a real denoiser's own broadband
     suppression shows up directly as a lower overall RMS level."""
     result = subprocess.run(
-        ['ffmpeg', '-i', path, '-af', 'astats', '-f', 'null', '-'],
+        [ffmpeg_path() or 'ffmpeg', '-i', path, '-af', 'astats', '-f', 'null', '-'],
         capture_output=True, text=True, timeout=30,
     )
     for line in result.stderr.splitlines():
@@ -61,7 +62,7 @@ def _measure_rms_level_db(path: str) -> float:
 
 def _measure_integrated_lufs(path: str) -> float:
     result = subprocess.run(
-        ['ffmpeg', '-i', path, '-af', 'loudnorm=print_format=json', '-f', 'null', '-'],
+        [ffmpeg_path() or 'ffmpeg', '-i', path, '-af', 'loudnorm=print_format=json', '-f', 'null', '-'],
         capture_output=True, text=True, timeout=30,
     )
     import json
@@ -117,7 +118,7 @@ class TestApplyDspChain:
         # Isolate afftdn alone (bypass loudnorm's independent gain change) to
         # measure the denoise filter's own real effect on the noise floor.
         result = subprocess.run(
-            ['ffmpeg', '-y', '-i', input_path, '-af', 'afftdn', output_path],
+            [ffmpeg_path() or ffmpeg_path() or 'ffmpeg', '-y', '-i', input_path, '-af', 'afftdn', output_path],
             capture_output=True, text=True, timeout=30,
         )
         assert result.returncode == 0, result.stderr

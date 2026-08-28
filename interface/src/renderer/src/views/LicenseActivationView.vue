@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   ShieldAlert,
   ShieldCheck,
@@ -12,12 +13,15 @@ import {
   HelpCircle
 } from '@lucide/vue'
 import { licenseState, activateLicense, refreshLicenseStatus } from '../store/license'
+import { configuredSupportLinks } from '../constants/support'
 import AppButton from '../components/atoms/AppButton.vue'
 
 // T039: rendered by App.vue INSTEAD of the whole app shell (no sidebar)
 // whenever isHardBlocked() is true — before the first successful check this
 // session, or once a status is confirmed bad (not_activated/blocked). Never
 // touches files already on disk (FR-059/SC-019), it only gates new work.
+
+const { t } = useI18n()
 
 const licenseInput = ref('')
 const copied = ref(false)
@@ -35,31 +39,33 @@ async function copyInput(): Promise<void> {
   setTimeout(() => (copied.value = false), 1500)
 }
 
+// Mesmo endereço que a sidebar usa, da mesma config — este era outro literal
+// `example.com`, e num botão que aparece justamente quando a pessoa está travada
+// e mais precisa de ajuda. Vazio significa "esse canal ainda não existe", e aí o
+// botão não é oferecido em vez de abrir o navegador em lugar nenhum.
+const helpUrl = computed(
+  () => configuredSupportLinks().find((link) => link.key === 'help')?.url ?? ''
+)
+
 function openHelp(): void {
   // main/index.ts's setWindowOpenHandler routes this to shell.openExternal.
-  window.open('https://example.com/eterzion-studio/help', '_blank')
+  if (helpUrl.value) window.open(helpUrl.value, '_blank')
 }
 
-const STATUS_COPY: Record<string, { title: string; body: string }> = {
-  not_activated: {
-    title: 'Ative sua licença',
-    body: 'Este produto ainda não foi ativado nesta instalação. Informe o ID da licença enviado por e-mail após a compra.'
-  },
-  blocked: {
-    title: 'Licença bloqueada',
-    body: 'Sua licença não está mais ativa, ou o período de uso offline expirou. Verifique o status da sua assinatura ou conecte-se à internet para revalidar.'
-  },
-  error: {
-    title: 'Não foi possível verificar sua licença',
-    body: 'Ocorreu um erro ao consultar o status da licença. Verifique sua conexão com a internet e tente novamente.'
-  },
-  checking: {
-    title: 'Verificando sua licença…',
-    body: 'Só um instante.'
-  }
+// Inside the computed rather than in a const map beside it: a const is built
+// once at import and would keep whichever language was active then. This screen
+// in particular can be the first thing shown, before anything else has run.
+const COPY_KEYS: Record<string, string> = {
+  not_activated: 'notActivated',
+  blocked: 'blocked',
+  error: 'error',
+  checking: 'checking'
 }
 
-const copy = computed(() => STATUS_COPY[licenseState.status] ?? STATUS_COPY.error)
+const copy = computed(() => {
+  const key = COPY_KEYS[licenseState.status] ?? 'error'
+  return { title: t(`activation.${key}Title`), body: t(`activation.${key}Body`) }
+})
 const icon = computed(() => {
   if (licenseState.status === 'checking') return Loader2
   if (licenseState.status === 'not_activated') return KeyRound
@@ -92,7 +98,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
         <hr class="divider" />
 
         <div class="field-group">
-          <label class="field-label" for="activation-license-id">ID da licença</label>
+          <label class="field-label" for="activation-license-id">{{ t('license.idLabel') }}</label>
           <div class="input-wrap">
             <KeyRound :size="15" class="input-icon" />
             <input
@@ -107,25 +113,22 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
               variant="ghost"
               icon-only
               size="sm"
-              title="Copiar"
+              :title="t('activation.copy')"
               :disabled="!licenseInput.trim()"
               @click="copyInput"
             >
               <template #icon><Copy :size="14" /></template>
             </AppButton>
           </div>
-          <p v-if="copied" class="copied-hint">Copiado!</p>
+          <p v-if="copied" class="copied-hint">{{ t('activation.copied') }}</p>
         </div>
 
         <div v-if="licenseState.status === 'error'" class="fetch-error-box">
           <XCircle :size="18" class="fetch-error-icon" />
           <div>
-            <p class="fetch-error-title">Falha ao buscar informações</p>
+            <p class="fetch-error-title">{{ t('activation.fetchErrorTitle') }}</p>
             <p class="fetch-error-detail">
-              {{
-                licenseState.error ??
-                'Não foi possível conectar aos nossos servidores. Verifique sua conexão e tente novamente.'
-              }}
+              {{ licenseState.error ?? t('activation.fetchErrorDetail') }}
             </p>
           </div>
         </div>
@@ -140,7 +143,7 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
             @click="submit"
           >
             <template #icon><ShieldCheck :size="16" /></template>
-            Ativar
+            {{ t('license.activate') }}
           </AppButton>
           <AppButton
             v-else
@@ -150,12 +153,12 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
             @click="refreshLicenseStatus"
           >
             <template #icon><RefreshCw :size="16" /></template>
-            Tentar novamente
+            {{ t('activation.retry') }}
           </AppButton>
 
-          <AppButton variant="ghost" size="lg" class="w-full" @click="openHelp">
+          <AppButton v-if="helpUrl" variant="ghost" size="lg" class="w-full" @click="openHelp">
             <template #icon><HelpCircle :size="16" /></template>
-            Precisa de ajuda?
+            {{ t('activation.needHelp') }}
           </AppButton>
         </div>
       </template>
@@ -181,19 +184,24 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   width: 100%;
   max-width: 460px;
   text-align: center;
-  padding: var(--space-4);
   background: var(--surface-1);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-lg, 16px);
-  padding: var(--space-6) var(--space-5);
+  /* Uma declaração só, e com token que existe. Havia duas — a segunda usava
+     `--space-6`, que a escala do design system não define (ela vai até
+     `--space-5`). Um var() indefinido invalida a declaração inteira, e padding
+     não é herdado, então o cartão ficava com padding ZERO: o respiro que se via
+     vinha só das margens dos filhos, o que é exatamente por que o espaçamento
+     parecia sobrar num canto e faltar no outro. */
+  padding: var(--space-5) var(--space-4);
 }
 
 .header-group {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
 }
 
 .icon-badge {
@@ -271,6 +279,9 @@ h1 {
 }
 
 .license-body {
+  /* Sem isto, a margem padrão do <p> soma ao `gap` do header-group e o título
+     fica com um respiro maior embaixo do que em cima. */
+  margin: 0;
   color: var(--text-secondary);
   font-size: var(--fs-body-sm);
   max-width: 380px;
@@ -280,15 +291,17 @@ h1 {
   width: 100%;
   border: none;
   border-top: 1px solid var(--surface-border-soft);
-  margin: 0 0 24px;
+  /* Mesmo valor do margin-bottom do header-group: a linha fica com o mesmo
+     respiro dos dois lados em vez de colada no rótulo de baixo. */
+  margin: 0 0 var(--space-4);
 }
 
 .field-group {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
 }
 
 .field-label {
@@ -301,11 +314,11 @@ h1 {
   width: 100%;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   background: var(--surface-2);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-sm);
-  padding: 0 10px;
+  padding: 0 var(--space-2-5);
 }
 
 .input-icon {
@@ -319,7 +332,7 @@ h1 {
   background: transparent;
   border: none;
   color: var(--text-primary);
-  padding: 10px 0;
+  padding: var(--space-2-5) 0;
   font-family: var(--font-mono);
   outline: none;
 }
@@ -335,13 +348,13 @@ h1 {
   width: 100%;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
+  gap: var(--space-2-5);
   text-align: left;
   background: var(--color-danger-soft);
   border: 1px solid var(--color-danger-soft);
   border-radius: var(--radius-sm);
   padding: var(--space-3);
-  margin-bottom: 20px;
+  margin-bottom: var(--space-3);
 }
 
 .fetch-error-icon {
@@ -367,7 +380,9 @@ h1 {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: var(--space-2-5);
+  /* Sem margin-bottom: este é o último elemento do cartão, e o respiro de baixo
+     é o padding do cartão. Os 28px que havia aqui se somavam a ele e deixavam a
+     base visivelmente mais folgada que o topo. */
 }
 </style>

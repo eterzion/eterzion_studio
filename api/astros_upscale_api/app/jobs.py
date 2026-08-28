@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import asyncio
 import itertools
+import logging
 import os
 import secrets
 import subprocess
@@ -43,6 +44,9 @@ from app.config import settings
 _API_ROOT = Path(__file__).resolve().parent.parent  # app -> astros_upscale_api
 
 
+logger = logging.getLogger(__name__)
+
+
 class ProcessResult(TypedDict, total=False):
     source_size: tuple[int, int]
     output_size: tuple[int, int]
@@ -51,6 +55,26 @@ class ProcessResult(TypedDict, total=False):
 
 class WorkerCrashed(RuntimeError):
     pass
+
+
+# De quanto em quanto tempo se verifica se o filho ainda está vivo enquanto se
+# espera a conexão. Curto o bastante para a falha ser imediata na percepção de
+# quem espera, longo o bastante para não virar espera ocupada.
+_SPAWN_POLL_SECONDS = 0.25
+
+# Códigos de saída que o worker usa em `main()` antes de abrir o canal IPC.
+# Traduzi-los aqui é o que transforma "não respondeu" numa frase acionável.
+_SPAWN_EXIT_REASONS = {
+    2: 'O worker isolado foi iniciado sem os argumentos que precisa.',
+    3: ('O worker isolado recusou iniciar: os arquivos protegidos não conferem '
+        'com o manifesto de integridade. Rode `python -m app.security` para '
+        'regerá-lo depois de alterar um deles.'),
+}
+
+
+def _spawn_exit_message(codigo: int) -> str:
+    return _SPAWN_EXIT_REASONS.get(
+        codigo, f'O worker isolado encerrou ao iniciar (código {codigo}).')
 
 
 class WorkerFailure(RuntimeError):
@@ -142,19 +166,46 @@ class WorkerSupervisor:
         assert self._listener is not None
         pool = ThreadPoolExecutor(max_workers=1)
         future = pool.submit(self._listener.accept)
+        limite = time.monotonic() + timeout
         try:
-            return future.result(timeout=timeout)
+            while True:
+                restante = limite - time.monotonic()
+                if restante <= 0:
+                    raise FutureTimeoutError()
+                try:
+                    # Espera em fatias em vez de uma só. A fatia não é
+                    # impaciência: é o que permite notar, **enquanto** se espera,
+                    # que o filho já morreu — e um filho que já morreu não é um
+                    # timeout. Esperar os 45 segundos inteiros por uma resposta
+                    # que já existe é metade do defeito, e foi o que escondeu
+                    # duas vezes um manifesto de integridade vencido atrás de
+                    # "não respondeu a tempo".
+                    return future.result(timeout=min(_SPAWN_POLL_SECONDS, restante))
+                except FutureTimeoutError:
+                    codigo = self._process.poll() if self._process is not None else None
+                    if codigo is not None:
+                        self._cleanup_failed_spawn(pool)
+                        raise WorkerCrashed(_spawn_exit_message(codigo)) from None
         except FutureTimeoutError as error:
             if self._process is not None:
                 self._process.kill()
-            try:
-                self._listener.close()  # unblocks the still-pending accept() in the background thread
-            except OSError:
-                pass
-            pool.shutdown(wait=False)
+            self._cleanup_failed_spawn(pool)
             raise WorkerCrashed('O worker isolado não respondeu a tempo ao iniciar.') from error
-        else:
-            pool.shutdown(wait=False)
+        finally:
+            if not future.running():
+                pool.shutdown(wait=False)
+
+    def _cleanup_failed_spawn(self, pool: ThreadPoolExecutor) -> None:
+        """Fecha o canal de um filho que já saiu.
+
+        Fechar o `Listener` é o que desbloqueia o `accept()` ainda pendente na
+        thread de fundo — sem isto ela ficaria viva até o processo terminar.
+        """
+        try:
+            self._listener.close()  # type: ignore[union-attr]
+        except OSError:
+            pass
+        pool.shutdown(wait=False)
 
     def ensure_started(self) -> None:
         with self._lock:
@@ -348,7 +399,26 @@ def get_audio_worker_supervisor() -> WorkerSupervisor | None:
 
 
 def shutdown() -> None:
+    """FR-023a, second half: closing the editing area leaves an export running,
+    but shutting the application down cancels one — and a cancellation leaves no
+    partial file behind (FR-023)."""
     global _supervisor, _audio_worker_supervisor
+
+    for job in jobs.values():
+        if job.get('operation') != 'video_edit':
+            continue
+        if job['status'] in ('pending', 'queued', 'processing'):
+            job['status'] = 'cancelled'
+        partial = job.get('partial_output')
+        if partial and os.path.exists(partial):
+            try:
+                os.remove(partial)
+            except OSError:
+                # A file the encoder still holds open cannot be removed here.
+                # Reporting it is more useful than pretending the sweep was
+                # complete.
+                logger.warning('não foi possível remover o parcial %s no encerramento', partial)
+
     if _supervisor is not None:
         _supervisor.terminate()
         _supervisor = None
@@ -403,7 +473,17 @@ _processing_job_id: str | None = None
 
 
 def _now_iso() -> str:
-    return time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+    """ISO 8601 UTC, with milliseconds.
+
+    Second precision made the duration of any fast job unreportable: an image
+    that takes 0.5s starts and ends inside the same second, so the difference
+    came out as zero and the panel showed its 1ms floor. The stat was there to
+    say how long the work took and could not say it for exactly the jobs people
+    run most. Date.parse() in the renderer reads this form unchanged.
+    """
+    now = time.time()
+    millis = int((now % 1) * 1000)
+    return time.strftime('%Y-%m-%dT%H:%M:%S', time.gmtime(now)) + f'.{millis:03d}Z'
 
 
 def _master_path(job_id: str) -> str:
@@ -478,6 +558,162 @@ def _compress_convert_output_path(job: dict, params: dict) -> str:
     return output_path
 
 
+def _video_edit_output_path(job: dict, params: dict) -> str:
+    """Where an edited video lands.
+
+    Reuses _compress_convert_output_path's shape rather than growing a second
+    collision policy: renaming on collision is already the established default,
+    and Princípio XV requires that overwriting be an explicit per-operation
+    instruction — never a fallback when a destination is ambiguous.
+    """
+    return _compress_convert_output_path(job, params)
+
+
+def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
+    """FR-013f. Renders the edit set to a new file.
+
+    Cleanup is a single exit path, not a cuidado repeated per error branch: the
+    finally block below covers success, failure and cancellation alike, which is
+    what makes FR-022 checkable rather than aspirational. The partial output is
+    removed too — FR-023 forbids leaving one behind, and ffmpeg will have
+    written bytes before any interruption.
+    """
+    from app import video_edits
+
+    output_path = _video_edit_output_path(job, params)
+    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
+
+    # Written to a temporary name and moved into place only on success. Without
+    # this, a cancellation halfway leaves a playable-looking file at the
+    # destination that is not the export the person asked for.
+    #
+    # The marker goes BEFORE the extension: ffmpeg infers the container from the
+    # suffix, and 'saida.webm.partial' fails with "Invalid argument" because
+    # .partial is not a format. Found by the export test, which is what it is
+    # for.
+    stem, extension = os.path.splitext(output_path)
+    temp_output = f'{stem}.partial{extension}'
+    # Recorded on the job so shutdown() can remove exactly this file. Sweeping
+    # the destination directory by pattern would mean deleting from a folder the
+    # person chose, on a guess about which files are ours — not a trade worth
+    # making for a cleanup.
+    job['partial_output'] = temp_output
+    if on_stage:
+        on_stage('Exportando')
+
+    try:
+        video_edits.export(
+            job['input_path'], temp_output, params.get('edits') or {},
+            container=params['container'], profile=params.get('profile', 'balanced'),
+            source_width=params['source_width'], source_height=params['source_height'],
+            has_audio=params.get('has_audio', True),
+        )
+        if job['status'] == 'cancelled':
+            raise RuntimeError('cancelado')
+        os.replace(temp_output, output_path)
+        if on_progress:
+            on_progress(100)
+    finally:
+        # Success moved it; anything else leaves it here to remove. One place,
+        # every outcome.
+        if os.path.exists(temp_output):
+            try:
+                os.remove(temp_output)
+            except OSError:
+                pass
+
+    # Same shape _run_compress_convert returns, because both are consumed by the
+    # same branch of _process_job. Dimensions are derived there; size is not, so
+    # it belongs here. Returning less than the sibling was a KeyError waiting on
+    # the first real export — and it got one.
+    return {
+        'output_path': output_path,
+        'size_bytes': os.path.getsize(output_path) if os.path.isfile(output_path) else None,
+    }
+
+
+# Marcadores de que uma mensagem veio do FFmpeg, e não de nós. O que a pessoa
+# precisa ver é uma frase que fale do que ela pediu; o resto é diagnóstico, e
+# esconder o diagnóstico é tão ruim quanto exibi-lo como se fosse a explicação.
+_FFMPEG_MARKERS = ('Falha ao processar com ffmpeg', 'ffmpeg', 'Conversion failed',
+                   'Invalid argument', 'Error opening')
+
+
+def _record_failure(job: dict, error: Exception) -> None:
+    """Registra a falha com a razão separada da saída bruta (FR-065).
+
+    A saída do FFmpeg é indispensável para diagnosticar e ilegível para decidir:
+    "Task finished with error code: -22 (Invalid argument)" não diz a ninguém o
+    que fazer a seguir. Apresentá-la como *a* mensagem de erro transfere para a
+    pessoa um trabalho que é nosso.
+
+    Então ela vai num campo separado — `error_detail` — que a interface mostra
+    numa área recolhida. Quem precisa copiar para um relatório encontra; quem só
+    quer saber o que aconteceu lê a frase de cima.
+    """
+    mensagem = str(error)
+    job['status'] = 'error'
+    job['error'] = mensagem
+    job['error_category'] = _categorize_error(error)
+
+    reason = getattr(error, 'reason', None)
+    if reason:
+        job['error_reason'] = reason
+    if any(marcador in mensagem for marcador in _FFMPEG_MARKERS):
+        job['error_detail'] = mensagem
+
+
+def _record_compression_history(job: dict, medido: dict) -> None:
+    """Registra a compressão no histórico local (FR-062).
+
+    Guarda o **snapshot** das configurações, e não o `preset_id`: o preset é
+    editável, e "repetir" lendo o preset atual produziria um resultado diferente
+    do que a entrada exibe (FR-063).
+
+    Falhar aqui não pode derrubar o job. O arquivo já existe no disco e é o que
+    a pessoa pediu; um histórico que não gravou custa memória, não trabalho.
+    """
+    from app.compression import history
+
+    params = job.get('params') or {}
+    try:
+        history.record(
+            entry_id=job['id'],
+            display_name=job.get('input_file') or '',
+            media_kind=params.get('media_kind') or 'image',
+            settings_snapshot=params.get('settings') or {},
+            preset_id=params.get('preset_id'),
+            result=medido,
+            output_path=job.get('output_path'),
+            finished_at=job.get('processing_ended_at'))
+    except Exception:  # noqa: BLE001
+        logger.warning('Não foi possível gravar o histórico de compressão.', exc_info=True)
+
+
+def _run_compression(job: dict, params: dict, on_progress, on_stage) -> dict:
+    """Central de Compressão (specs/008-compression-centre).
+
+    Separado de `_run_compress_convert`, que serve o fluxo antigo e continua
+    funcionando: o Princípio II proíbe duplicar sem motivo, e o motivo aqui é
+    que os dois têm contratos diferentes — este devolve números medidos,
+    economia e o que de fato aplicou, e aquele devolve caminho e tamanho.
+    Fundi-los mudaria o contrato de um caminho que já está em uso (FR-069).
+    """
+    from app.compression import runner
+
+    resultado = runner.run(
+        params['media_kind'], job['input_path'], params['output_path'],
+        params.get('settings') or {},
+        on_progress=on_progress, on_stage=on_stage)
+    # `output_meta` é o que a fila e o histórico leem; `compression` carrega o
+    # que só esta tela usa, sem alargar o contrato compartilhado.
+    return {
+        'output_path': resultado['output_path'],
+        'size_bytes': resultado['output_size_bytes'],
+        'compression': resultado,
+    }
+
+
 def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dict:
     """FR-025 to FR-030: real ffmpeg/OpenCV transcoding, never an AI model —
     this never touches app.licensing's profile resolver or WorkerSupervisor,
@@ -500,6 +736,77 @@ def _run_compress_convert(job: dict, params: dict, on_progress, on_stage) -> dic
         'output_path': output_path,
         'size_bytes': os.path.getsize(output_path) if os.path.isfile(output_path) else None,
     }
+
+
+def has_meaningful_edits(edits: dict | None) -> bool:
+    """True when an edit set asks for something other than the neutral state.
+
+    A neutral set produces an empty filter chain, and a second encode pass that
+    changes nothing is pure cost — on an upscaled 4K frame, a very large one.
+    """
+    if not edits:
+        return False
+    from app import video_edits
+
+    if edits.get('trim'):
+        return True
+    if (edits.get('audio') or {}).get('mode', 'keep') != 'keep':
+        return True
+    if float((edits.get('audio') or {}).get('volume', 1.0)) != 1.0:
+        return True
+    # Dimensions do not matter here: the chain builder only emits `scale` when
+    # the requested output differs from the source, and the upscale already
+    # decided the size.
+    return bool(video_edits.build_filter_chain(edits, 0, 0))
+
+
+def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage) -> None:
+    """Apply the editor's settings to an upscaled video, as a second pass.
+
+    A separate pass rather than a change to the model pipeline: VideoUpscaler
+    owns frame generation and knows nothing about colour grading or trimming,
+    and teaching it would couple two things that change for different reasons.
+    The cost is one extra encode, which is small beside the model pass that
+    just ran.
+
+    The filters run on the UPSCALED frames, not the source. That is the right
+    order — sharpening or denoising before an upscale would feed the model an
+    altered picture, and the person adjusted against a preview of the result.
+    """
+    from app import video_edits
+
+    edits = params.get('edits')
+    if not has_meaningful_edits(edits):
+        return
+
+    width, height = _media_dimensions(output_path)
+    if not width or not height:
+        logger.warning('dimensões desconhecidas em %s — ajustes não aplicados', output_path)
+        return
+
+    if on_stage:
+        on_stage('Aplicando ajustes')
+
+    stem, extension = os.path.splitext(output_path)
+    temp_output = f'{stem}.edited{extension}'
+    job['partial_output'] = temp_output
+    try:
+        video_edits.export(
+            output_path, temp_output, edits,
+            # The upscale already produced an .mp4; keeping the container avoids
+            # a format change the person did not ask for. Profile follows the
+            # job's, so "quality" does not silently become "fast" here.
+            container='mp4', profile=params.get('profile') or 'balanced',
+            source_width=width, source_height=height,
+            has_audio=params.get('has_audio', True),
+        )
+        os.replace(temp_output, output_path)
+    finally:
+        if os.path.exists(temp_output):
+            try:
+                os.remove(temp_output)
+            except OSError:
+                pass
 
 
 def create_job(
@@ -705,10 +1012,26 @@ async def _process_job(job_id: str) -> None:
         loop.call_soon_threadsafe(_notify, job_id)
 
     def blocking_run():
+        if job.get('operation') == 'video_edit':
+            return _run_video_edit(job, params, on_progress, on_stage)
+
+        if job.get('operation') == 'compression':
+            return _run_compression(job, params, on_progress, on_stage)
+
         if job.get('operation') in ('compress', 'convert'):
             return _run_compress_convert(job, params, on_progress, on_stage)
 
-        if job.get('media_type') == 'image' and params.get('scale') == '1x':
+        from app import licensing
+
+        # pixel_art resolves no model at any scale — see
+        # licensing.MODEL_FREE_CONTENT_TYPES for the measurements behind that.
+        model_free_content = (
+            job.get('content_type_detected') in licensing.MODEL_FREE_CONTENT_TYPES
+            or params.get('content_type_override') in licensing.MODEL_FREE_CONTENT_TYPES
+        )
+        if job.get('media_type') == 'image' and (
+            params.get('scale') == '1x' or model_free_content
+        ):
             # Imagem screen's Original mode: keep or reduce the size, run the
             # filters, never the model. No engine is resolved and the isolated
             # worker is not involved — that subprocess exists to contain model
@@ -719,11 +1042,28 @@ async def _process_job(job_id: str) -> None:
 
             adjustments = params.get('adjustments', {})
             custom = params.get('custom_size')
+            resize = (int(custom['width']), int(custom['height'])) if custom else None
+
+            # A scale of 2x/4x has to be honoured here too, not only a
+            # custom size. Original mode always sends an explicit target,
+            # so this branch never needed to read `scale` -- and when
+            # pixel_art started arriving with '4x' and no custom size, the
+            # job completed and quietly returned the source at its own
+            # resolution. Silently doing nothing is the worst way to fail.
+            if resize is None:
+                factor = {'2x': 2, '4x': 4}.get(params.get('scale'))
+                if factor:
+                    import cv2
+
+                    probe = cv2.imread(job['input_path'], cv2.IMREAD_UNCHANGED)
+                    if probe is not None:
+                        resize = (probe.shape[1] * factor, probe.shape[0] * factor)
+
             return Upscaler.process_without_model(
                 job['input_path'],
                 _master_path(job_id),
                 settings.models_dir,
-                resize=(int(custom['width']), int(custom['height'])) if custom else None,
+                resize=resize,
                 on_progress=on_progress,
                 on_stage=on_stage,
                 sharpen_strength=adjustments.get('deblur', 0),
@@ -811,7 +1151,7 @@ async def _process_job(job_id: str) -> None:
             output_path = _master_path(job_id)
         # Runs in the isolated worker process (Fase 1), not on this thread — this
         # call just relays the request over IPC and blocks for the reply.
-        return get_supervisor().process(
+        upscale_result = get_supervisor().process(
             job_id=job_id,
             media_type=job.get('media_type', 'image'),
             operation=job.get('operation', 'enhance'),
@@ -836,6 +1176,14 @@ async def _process_job(job_id: str) -> None:
             tile_size=pipeline.execution_params.get('tile_size'),
         )
 
+        # The editor's settings, applied to the upscaled result (007 §Upscale
+        # com edição). Video only: the image path has its own adjustment
+        # pipeline inside the model pass, and a second one here would be two
+        # ways to do the same thing.
+        if is_video:
+            _apply_edits_to_upscaled(job, params, output_path, on_stage)
+        return upscale_result
+
     try:
         result_meta = await loop.run_in_executor(_executor, blocking_run)
         if job['status'] == 'cancelled':
@@ -845,9 +1193,19 @@ async def _process_job(job_id: str) -> None:
         job['progress'] = 100
         job['stage'] = None
         job['processing_ended_at'] = _now_iso()
-        if job.get('operation') in ('compress', 'convert'):
-            # No lossless "master" here (unlike enhance) — optimize_file()
-            # already wrote the real, final result.
+        if job.get('operation') in ('compress', 'convert', 'video_edit', 'compression'):
+            # No lossless "master" here (unlike enhance) — optimize_file(),
+            # video_edits.export() and the Compression Centre's runner already
+            # wrote the real, final result.
+            #
+            # video_edit belongs in THIS branch, not the media_type == 'video'
+            # one below: that branch is the upscale path, which reads
+            # result_meta['source_size'] and resolves the output to
+            # _video_output_path(job_id). Falling into it raised KeyError on
+            # 'source_size' and would then have pointed output_path at the
+            # upscale location rather than where the export was written.
+            # Checking the OPERATION before the media type is what keeps the two
+            # apart.
             job['output_path'] = result_meta['output_path']
             source_w, source_h = _media_dimensions(job['input_path'])
             output_w, output_h = _media_dimensions(result_meta['output_path'])
@@ -858,6 +1216,12 @@ async def _process_job(job_id: str) -> None:
             job['output_meta'] = {
                 'width': output_w, 'height': output_h, 'size_bytes': result_meta['size_bytes'],
             }
+            # Os números medidos da Central — economia, redução, tempo, e se o
+            # arquivo cresceu. Ficam num campo próprio para não alargar
+            # `output_meta`, que é contrato compartilhado com telas antigas.
+            if 'compression' in result_meta:
+                job['compression'] = result_meta['compression']
+                _record_compression_history(job, result_meta['compression'])
         elif job.get('media_type') == 'video':
             # No separate "master" for video (unlike image) — VideoUpscaler
             # already wrote the real, final, audio-muxed file.
@@ -901,14 +1265,10 @@ async def _process_job(job_id: str) -> None:
             }
     except WorkerFailure as error:
         if job['status'] != 'cancelled':
-            job['status'] = 'error'
-            job['error'] = str(error)
-            job['error_category'] = _categorize_error(error)
+            _record_failure(job, error)
     except Exception as error:  # noqa: BLE001 - surfaced to the client as job.error
         if job['status'] != 'cancelled':
-            job['status'] = 'error'
-            job['error'] = str(error)
-            job['error_category'] = _categorize_error(error)
+            _record_failure(job, error)
     finally:
         _processing_job_id = None
     _notify(job_id)

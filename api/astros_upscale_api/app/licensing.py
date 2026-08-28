@@ -353,9 +353,30 @@ def verify_registry_completeness() -> list[str]:
 MediaType = Literal['image', 'video', 'audio']
 Operation = Literal['enhance', 'compress', 'convert']
 Profile = Literal['fast', 'balanced', 'quality']
-ContentType = Literal['photo', 'anime_image', 'real_video', 'anime_video', 'speech', 'music']
+ContentType = Literal[
+    'photo', 'pixel_art', 'no_model', 'anime_image', 'real_video', 'anime_video', 'speech', 'music'
+]
 
-_IMAGE_VIDEO_CONTENT_TYPES = {'photo', 'anime_image', 'real_video', 'anime_video'}
+_IMAGE_VIDEO_CONTENT_TYPES = {
+    'photo', 'pixel_art', 'no_model', 'anime_image', 'real_video', 'anime_video'
+}
+
+# The one content type that resolves no model at all.
+#
+# Every super-resolution model here is trained on photographs and drawings,
+# where softening an edge is correct. Art drawn pixel by pixel is the case
+# where it is not: measured over 40 of the owner's real 32x32 icons, all four
+# approved models shifted the shape by 18 to 24 mean luma levels, while
+# repeating pixels shifts it by none and invents no colour at all.
+#
+# So this is not 'the model we chose for pixel art' — it is the finding that
+# no model belongs here, recorded as a content type so the person can say so
+# and the pipeline can act on it.
+# 'no_model' is the person saying "run the filters, skip the AI". It was the
+# Escala tab called "Manter tamanho", which never belonged there: whether a
+# model runs is not a question about size, and keeping it among the sizes
+# meant each of the two menus answered half of the other's question.
+MODEL_FREE_CONTENT_TYPES = {'pixel_art', 'no_model'}
 _AUDIO_CONTENT_TYPES = {'speech', 'music'}
 
 
@@ -493,6 +514,16 @@ def _resolve_engine(
 
     # operation == 'enhance'
     content_type = request.content_type
+
+    # Same shape as compress/convert above, and for the same reason: this
+    # resolves to a real implementation that is simply not an AI engine.
+    # pixel_art enlarges by repeating pixels, so there is no model to pick,
+    # no profile to tune it with and no VRAM to budget for -- and demanding
+    # an entry in _CONTENT_TYPE_IMPLEMENTATIONS made the resolver reject the
+    # request outright with "tipo de conteudo desconhecido".
+    if content_type in MODEL_FREE_CONTENT_TYPES:
+        return 'nearest-enlarge', {}, 'approved', None
+
     if content_type not in _CONTENT_TYPE_IMPLEMENTATIONS:
         raise UnresolvableRequestError(f"Tipo de conteúdo desconhecido: {content_type!r}.")
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS[content_type]

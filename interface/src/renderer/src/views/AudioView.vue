@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
 import AppButton from '../components/atoms/AppButton.vue'
@@ -7,7 +8,7 @@ import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
-import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX } from '@lucide/vue'
+import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX, Sparkles } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -21,11 +22,22 @@ import {
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
+import {
+  addAudioJob,
+  audioQueue,
+  removeAudioJob,
+  type AudioJob,
+  type AudioStatus
+} from '../store/audioQueue'
 import { usePickFiles } from '../composables/usePickFiles'
-import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
+import { profileOptions, deviceOptions } from '../constants/processing'
 
 defineEmits<{ back: [] }>()
 
+const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
+const devices = computed(() => deviceOptions())
 // T057/FR-081-086 don't apply to audio (no secondary streams to lose) — this
 // mirrors VideoView.vue's job-list shape without the confirmation step.
 // IMPORTANT (FR-023 / spec.md LC-003): there is no compression-artifact
@@ -33,24 +45,9 @@ defineEmits<{ back: [] }>()
 // screen only ever describes noise reduction, loudness normalization, and
 // voice-clarity/music-restoration, which are the real DSP + model steps
 // audio_processor.py runs.
-type LocalStatus = 'detecting' | 'configuring' | 'queued' | 'processing' | 'done' | 'error'
-
-interface AudioJob {
-  id: string
-  backendJobId: string | null
-  file: DescribedFile
-  contentType: ContentType
-  profile: Profile
-  device: string
-  status: LocalStatus
-  progress: number
-  stage: string | null
-  error?: string
-  outputPath?: string
-  createdAt: number
-  /** Drops the progress socket — held so cancelling can stop it. */
-  unsubscribe?: () => void
-}
+// LocalStatus and AudioJob now live in store/audioQueue.ts, alongside the
+// list itself — see that file for why the list had to leave this component.
+type LocalStatus = AudioStatus
 
 // T066 — mirrors store/jobs.ts's recordJob() calls, so audio jobs show up in
 // Histórico alongside image jobs (previously only image jobs did).
@@ -79,34 +76,30 @@ function syncHistory(job: AudioJob): void {
   })
 }
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
-  {
-    value: 'speech',
-    label: 'Fala / voz',
-    description: 'Locução, podcast, entrevista — uma voz em primeiro plano'
-  },
-  {
-    value: 'music',
-    label: 'Música',
-    description: 'Faixa musical completa, com instrumentos e mixagem'
-  }
-]
+// computed, not a const: a const is evaluated once at import and would keep
+// whichever language was active then.
+const contentTypeOptions = computed<{ value: ContentType; label: string; description: string }[]>(
+  () => [
+    { value: 'speech', label: t('audio.speechLabel'), description: t('audio.speechDescription') },
+    { value: 'music', label: t('audio.musicLabel'), description: t('audio.musicDescription') }
+  ]
+)
 
-const jobs = ref<AudioJob[]>([])
 const importError = ref<string | null>(null)
 
-// Which file the editor is showing. Mirrors ImageEditorView: the screen edits
-// one file at a time while the strip keeps the rest one click away.
-const activeId = ref<string | null>(null)
+// The list and the selection live in store/audioQueue.ts. The screen still
+// edits one file at a time while the strip keeps the rest one click away — but
+// the Início queue has to see this list too, and a ref inside this component is
+// invisible to every other screen.
+const jobs = computed(() => audioQueue.jobs)
+const activeId = computed({
+  get: () => audioQueue.activeId,
+  set: (value: string | null) => (audioQueue.activeId = value)
+})
 const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
 
-const STATUS_LABEL: Record<LocalStatus, string> = {
-  detecting: 'Detectando…',
-  configuring: 'Pronto para processar',
-  queued: 'Na fila',
-  processing: 'Processando',
-  done: 'Concluído',
-  error: 'Erro'
+function statusLabel(status: LocalStatus): string {
+  return t(`localStatus.${status}`)
 }
 
 const editorItems = computed(() =>
@@ -114,17 +107,21 @@ const editorItems = computed(() =>
     id: j.id,
     fileName: j.file.name,
     sourcePath: j.file.path,
-    statusLabel: STATUS_LABEL[j.status],
+    statusLabel: statusLabel(j.status),
     kind: 'audio' as const
   }))
 )
 
 async function addFile(described: DescribedFile): Promise<void> {
   if (described.kind !== 'Áudio') {
-    importError.value = `Formato não suportado: ${described.name}`
+    importError.value = t('audio.unsupportedFormat', { name: described.name })
     return
   }
-  jobs.value.push({
+  // addAudioJob returns the entry as stored, which is Vue's reactive
+  // proxy rather than the raw object handed in. Mutating the raw object
+  // bypasses the proxy's setter, so the template never re-renders and the
+  // card stays stuck on "Detectando tipo de conteúdo…" forever.
+  const job = addAudioJob({
     id: crypto.randomUUID(),
     backendJobId: null,
     file: described,
@@ -136,21 +133,21 @@ async function addFile(described: DescribedFile): Promise<void> {
     stage: null,
     createdAt: Date.now()
   })
-  // Read the entry back out of `jobs.value` — that returns Vue's reactive
-  // proxy, not the raw object that was pushed. Mutating the raw object
-  // (which is what holding onto a `const job = {...}` before the push gives
-  // you) bypasses the proxy's setter, so the template never re-renders and
-  // the card stays stuck on "Detectando tipo de conteúdo…" forever.
-  const job = jobs.value[jobs.value.length - 1]
-  activeId.value = job.id
-  try {
-    job.contentType = await detectContentType(described.path, 'audio')
-  } catch {
-    // Detection failure just leaves the default ('speech') — the person can
-    // still correct it manually (FR-096) before processing.
-  } finally {
-    job.status = 'configuring'
-  }
+  // Not awaited, matching store/jobs.ts: usePickFiles adds files one after
+  // another, so awaiting detection here made every later file wait for every
+  // earlier detection before it was even created. The card appears at once and
+  // fills in its detected type when the answer arrives.
+  //
+  // Detection failure just leaves the default ('speech') — the person can
+  // still correct it manually (FR-096) before processing.
+  detectContentType(described.path, 'audio')
+    .then((detected) => {
+      job.contentType = detected
+    })
+    .catch(() => {})
+    .finally(() => {
+      job.status = 'configuring'
+    })
 }
 
 const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
@@ -160,8 +157,7 @@ const { pickFiles, pickFolder, handleFilesDropped, uploading } = usePickFiles(
 )
 
 function removeJob(job: AudioJob): void {
-  jobs.value = jobs.value.filter((j) => j.id !== job.id)
-  if (activeId.value === job.id) activeId.value = jobs.value[0]?.id ?? null
+  removeAudioJob(job.id)
 }
 
 function removeById(id: string): void {
@@ -242,7 +238,7 @@ async function runJob(job: AudioJob): Promise<void> {
           })
           .catch(() => {
             job.status = 'error'
-            job.error = 'Falha na comunicação com o servidor.'
+            job.error = t('localStatus.serverCommunication')
             syncHistory(job)
           })
       }
@@ -273,21 +269,22 @@ function exportAll(): void {
 <template>
   <div class="audio-view" data-module="audio">
     <TopBar
-      :title="activeJob?.file.name ?? 'Nenhum áudio selecionado'"
+      :title="activeJob?.file.name ?? t('actions.noAudioSelected')"
       show-back
       @back="$emit('back')"
     >
       <template #actions>
         <AppButton variant="outline" @click="pickFiles">
           <template #icon><Upload :size="15" /></template>
-          Importar
+          {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringCount" @click="runAll">
-          Processar todos
+          <template #icon><Sparkles :size="15" /></template>
+          {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneCount" @click="exportAll">
           <template #icon><Download :size="15" /></template>
-          Exportar tudo
+          {{ t('actions.exportAll') }}
         </AppButton>
       </template>
     </TopBar>
@@ -304,8 +301,7 @@ function exportAll(): void {
         class="upload-fill"
         :error="importError"
         :loading="uploading"
-        title="Arraste áudios aqui"
-        subtitle="ou use os botões abaixo — voz e música são identificadas automaticamente"
+        :title="t('upload.audioTitle')"
         :formats="['MP3', 'WAV', 'FLAC', 'M4A', 'OGG', 'OPUS']"
         @pick-files="pickFiles"
         @pick-folder="pickFolder"
@@ -317,7 +313,7 @@ function exportAll(): void {
         class="editor-shell"
         :items="editorItems"
         :active-id="activeId"
-        add-label="Adicionar áudio"
+        :add-label="t('audio.addAudio')"
         @select="activeId = $event"
         @remove="removeById"
         @add="pickFiles"
@@ -338,41 +334,41 @@ function exportAll(): void {
 
             <div v-else-if="activeJob.status === 'configuring'" class="panel-section">
               <CollapsiblePanel
-                title="Processamento"
-                description="Como o áudio é processado pelo modelo"
+                :title="t('audio.processingTitle')"
+                :description="t('audio.processingDescription')"
                 :icon="Cpu"
               >
                 <div class="field">
-                  <label class="field-label">Conteúdo detectado</label>
+                  <label class="field-label">{{ t('audio.detectedContent') }}</label>
                   <AppSelect
                     :model-value="activeJob.contentType"
-                    :options="CONTENT_TYPE_OPTIONS"
+                    :options="contentTypeOptions"
                     @update:model-value="(v) => (activeJob!.contentType = v as ContentType)"
                   />
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Esforço do processamento</label>
+                  <label class="field-label">{{ t('audio.effort') }}</label>
                   <AppSelect
                     :model-value="activeJob.profile"
-                    :options="PROFILE_OPTIONS"
+                    :options="profiles"
                     @update:model-value="(v) => (activeJob!.profile = v as Profile)"
                   />
                 </div>
 
                 <div class="field">
-                  <label class="field-label">Onde processar</label>
+                  <label class="field-label">{{ t('imageEditor.whereToProcess') }}</label>
                   <AppSelect
                     :model-value="activeJob.device"
-                    :options="DEVICE_OPTIONS"
+                    :options="devices"
                     @update:model-value="(v) => (activeJob!.device = String(v))"
                   />
                 </div>
               </CollapsiblePanel>
 
-              <AppButton variant="primary" size="lg" @click="runJob(activeJob)"
-                >Processar</AppButton
-              >
+              <AppButton variant="primary" size="lg" @click="runJob(activeJob)">{{
+                t('imageEditor.process')
+              }}</AppButton>
             </div>
 
             <div v-else class="panel-section">
@@ -392,7 +388,7 @@ function exportAll(): void {
                 @click="cancelJob(activeJob)"
               >
                 <template #icon><CircleX :size="14" /></template>
-                Cancelar
+                {{ t('imageEditor.cancel') }}
               </AppButton>
               <div v-else-if="activeJob.status === 'done'" class="done-row">
                 <StatusBadge state="done" />
@@ -403,7 +399,7 @@ function exportAll(): void {
                   @click="api.showItemInFolder(activeJob.outputPath!)"
                 >
                   <template #icon><FolderOpen :size="14" /></template>
-                  Abrir pasta
+                  {{ t('actions.openFolder') }}
                 </AppButton>
               </div>
               <StatusBadge

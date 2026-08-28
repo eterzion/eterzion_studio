@@ -2,12 +2,15 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { NavKey } from '../types'
+import type { SupportEndpoints } from '../constants/support'
+import { configuredSupportLinks } from '../constants/support'
 import AppButton from './atoms/AppButton.vue'
 import {
   Home,
   Image,
   Film,
   Music,
+  Minimize2,
   History,
   Settings,
   Moon,
@@ -49,26 +52,28 @@ const items = computed<{ key: NavKey; label: string; icon: unknown; module?: str
   { key: 'imagem', label: t('nav.image'), icon: Image, module: 'image' },
   { key: 'video', label: t('nav.video'), icon: Film, module: 'video' },
   { key: 'audio', label: t('nav.audio'), icon: Music, module: 'audio' },
+  { key: 'compressao', label: t('nav.compression'), icon: Minimize2, module: 'compression' },
   { key: 'historico', label: t('nav.history'), icon: History }
 ])
 
-// TODO(config): substituir pelos endereços reais antes de publicar — estes
-// são placeholders para o módulo de suporte não abrir links inexistentes.
-const supportLinks = computed<{ label: string; icon: unknown; url: string }[]>(() => [
-  { label: t('sidebar.links.site'), icon: Globe, url: 'https://example.com/eterzion-studio' },
-  { label: t('sidebar.links.discord'), icon: MessageCircle, url: 'https://discord.gg/example' },
-  {
-    label: t('sidebar.links.faq'),
-    icon: HelpCircle,
-    url: 'https://example.com/eterzion-studio/faq'
-  },
-  {
-    label: t('sidebar.links.help'),
-    icon: LifeBuoy,
-    url: 'https://example.com/eterzion-studio/help'
-  },
-  { label: t('sidebar.links.email'), icon: Mail, url: 'mailto:suporte@example.com' }
-])
+// Só aparece o canal que tem endereço em constants/support.ts — o rótulo vem do
+// i18n (Princípio XIV), o ícone daqui, e o endereço de lá. Nenhum link para
+// lugar nenhum: se a lista sair vazia, o bloco Suporte inteiro não é renderizado.
+const SUPPORT_ICONS: Record<keyof SupportEndpoints, unknown> = {
+  site: Globe,
+  discord: MessageCircle,
+  faq: HelpCircle,
+  help: LifeBuoy,
+  email: Mail
+}
+
+const supportLinks = computed<{ label: string; icon: unknown; url: string }[]>(() =>
+  configuredSupportLinks().map(({ key, url }) => ({
+    label: t(`sidebar.links.${key}`),
+    icon: SUPPORT_ICONS[key],
+    url
+  }))
+)
 
 const collapsed = ref(localStorage.getItem('eterzion-studio:sidebar-collapsed') === '1')
 const supportOpen = ref(false)
@@ -141,7 +146,9 @@ function openExternal(url: string): void {
     </nav>
 
     <div class="sidebar-footer">
-      <div class="support-block">
+      <!-- Sem nenhum canal configurado não há o que abrir, e um menu vazio é
+           pior do que a ausência do item — ver constants/support.ts -->
+      <div v-if="supportLinks.length > 0" class="support-block">
         <button
           class="nav-item support-toggle"
           :class="{ active: supportOpen && !collapsed }"

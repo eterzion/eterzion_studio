@@ -16,6 +16,13 @@ import {
 import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
+import { pushReactive } from './reactiveInsert'
+import { i18n } from '../i18n'
+
+// A store has no component instance, so useI18n() does not apply here.
+// Calling through the global instance per message is also what makes a
+// language change take effect immediately rather than at the next reload.
+const t = i18n.global.t
 
 // ------------------------------------------------------------------------- //
 // Data model — mirrors the Spec Kit's Job/ScaleConfig/QueueState, adapted to
@@ -28,7 +35,13 @@ import { settingsState } from './settings'
 export type JobStatus = 'configuring' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
 export type ExportState = 'idle' | 'exporting' | 'exported' | 'error'
 
-export const MIN_DIMENSION = 16
+// 1, not 16. The 16px floor rejected legitimate work — game and UI sprite
+// sheets are routinely 8x8 or 12x10, and upscaling exactly that kind of art is
+// a reason someone reaches for this app. It was a client-side rule with nothing
+// behind it: the API accepts and enqueues an 8x8 job the same as any other
+// (verified against the running server). What remains is the only floor that
+// means anything — a side of zero is not a picture.
+export const MIN_DIMENSION = 1
 export const MAX_OUTPUT_DIMENSION = 32000
 export const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024
 
@@ -36,7 +49,7 @@ export interface ScaleConfig {
   /** 'original' keeps the source resolution and never runs the model — the job
       becomes a plain re-encode, which is what the Exportar screen already does
       for files that only need a different format or a smaller size. */
-  mode: 'preset' | 'custom' | 'original'
+  mode: 'preset' | 'custom'
   presetFactor: 2 | 4
   customWidth: number | null
   customHeight: number | null
@@ -89,6 +102,8 @@ export interface Job {
   processingEndedAt?: number
   exportState: ExportState
   exportError?: string
+  /** The last export failed because the name was taken. */
+  exportConflicted?: boolean
   lastExportPath?: string
   thumbnail?: string
 }
@@ -147,40 +162,59 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
   const duplicates: string[] = []
   const added: Job[] = []
 
+  // Two passes on purpose.
+  //
+  // The checks that depend on accumulated state — is this a duplicate of one
+  // already in the queue, or of an earlier file in this same batch — have to
+  // run in order, one after another. They are pure comparisons, so that costs
+  // nothing.
+  //
+  // Reading each image's dimensions does not. It decodes the file to ask how
+  // big it is, and doing that inside the sequential loop meant file N waited
+  // for all N-1 before it. Worse, content-type detection is fired right after,
+  // so the last file's detection could not even start until every earlier
+  // image had finished decoding — which is what made "Detectando…" sit there
+  // on a batch. The API answers detection in about 10ms; the waiting was all
+  // on this side.
+  const candidates: DescribedFile[] = []
   for (const f of described) {
     if (f.kind !== 'Imagem') {
-      rejected.push({
-        name: f.name,
-        reason: 'Formato não suportado (apenas imagens: PNG, JPG, TIFF, WEBP, BMP).'
-      })
+      rejected.push({ name: f.name, reason: t('errors.job.unsupportedFormat') })
       continue
     }
-    if (queueState.jobs.some((j) => j.sourcePath === f.path)) {
+    if (
+      queueState.jobs.some((j) => j.sourcePath === f.path) ||
+      candidates.some((c) => c.path === f.path)
+    ) {
       duplicates.push(f.name)
       continue
     }
     if (f.size > MAX_FILE_SIZE_BYTES) {
       rejected.push({
         name: f.name,
-        reason: `Arquivo maior que o limite de ${MAX_FILE_SIZE_BYTES / (1024 * 1024)} MB.`
+        reason: t('validation.tooLargeFile', { mb: MAX_FILE_SIZE_BYTES / (1024 * 1024) })
       })
       continue
     }
+    candidates.push(f)
+  }
 
-    const thumbnail = hasNativeApi ? api.toFileUrl(f.path) : undefined
-    const dims = thumbnail ? await loadImageDimensions(thumbnail) : null
+  // All the decoding at once. Order is preserved because Promise.all resolves
+  // positionally, so the queue still lists files as the person picked them.
+  const measured = await Promise.all(
+    candidates.map(async (f) => {
+      const thumbnail = hasNativeApi ? api.toFileUrl(f.path) : undefined
+      return { f, thumbnail, dims: thumbnail ? await loadImageDimensions(thumbnail) : null }
+    })
+  )
+
+  for (const { f, thumbnail, dims } of measured) {
     if (dims && (dims.width < MIN_DIMENSION || dims.height < MIN_DIMENSION)) {
-      rejected.push({
-        name: f.name,
-        reason: `Resolução muito baixa (mínimo ${MIN_DIMENSION}×${MIN_DIMENSION}px).`
-      })
+      rejected.push({ name: f.name, reason: t('validation.tooSmall', { min: MIN_DIMENSION }) })
       continue
     }
     if (dims && (dims.width > 10000 || dims.height > 10000)) {
-      rejected.push({
-        name: f.name,
-        reason: 'Resolução de entrada muito alta (acima de 10000px); o upscale pode não ser viável.'
-      })
+      rejected.push({ name: f.name, reason: t('errors.job.resolutionTooHigh') })
       continue
     }
 
@@ -203,15 +237,18 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       createdAt: Date.now(),
       thumbnail
     }
-    queueState.jobs.push(job)
-    added.push(job)
+    // pushReactive, not push: the array holds Vue's proxy and `job` is the raw
+    // object underneath, so the detection callback below has to write through
+    // the proxy or nothing re-renders. See store/reactiveInsert.ts.
+    const stored = pushReactive(queueState.jobs, job)
+    added.push(stored)
 
     // FR-096: detect automatically, but leave it fully editable — a failed
     // detection just leaves contentType null, and the UI/validateScaleConfig
     // requires the person to pick one manually before processing.
     detectContentType(f.path, 'image')
       .then((detected) => {
-        job.scaleConfig.contentType = detected
+        stored.scaleConfig.contentType = detected
       })
       .catch(() => {
         // left null on purpose — see comment above
@@ -235,6 +272,18 @@ export function getActiveJob(): Job | undefined {
 
 export function setActiveJob(id: string): void {
   queueState.activeJobId = id
+}
+
+/** Move one job to a new index. processAll() submits in array order, so this
+ *  array decides which image the backend is handed first — but only for jobs
+ *  not yet submitted. Once a job is queued server-side its position comes from
+ *  the API (job.queuePosition), and moving it here would change nothing. */
+export function reorderJob(fromIndex: number, toIndex: number): void {
+  const list = queueState.jobs
+  if (fromIndex < 0 || fromIndex >= list.length) return
+  if (toIndex < 0 || toIndex >= list.length) return
+  const [moved] = list.splice(fromIndex, 1)
+  list.splice(toIndex, 0, moved)
 }
 
 export function removeJob(id: string): void {
@@ -278,6 +327,54 @@ export function ensureCustomSizeDefaults(job: Job): void {
   if (!dims) return
   job.scaleConfig.customWidth = dims.width
   job.scaleConfig.customHeight = dims.height
+}
+
+/** Which model pass a job should ask for.
+ *
+ *  'original' and 'pixel' never run a model at all — '1x' tells the backend to
+ *  skip it (Upscaler.process_without_model).
+ *
+ *  'preset' is whatever the person picked, 2x or 4x.
+ *
+ *  'custom' derives it from the target actually typed, which is the point: the
+ *  mode used to send whichever preset factor happened to be selected, so asking
+ *  for a 2x-sized output while the preset sat on 4x ran the 4x model and threw
+ *  most of it away in a downscale. Now a target up to 2x uses the 2x pass and
+ *  anything beyond it uses 4x, so the model always works at or above the size
+ *  being asked for — never below, which would mean interpolating up afterwards.
+ */
+/** Content types that run no model at all — the client-side mirror of the
+ *  backend's licensing.MODEL_FREE_CONTENT_TYPES. */
+const MODEL_FREE_CONTENT_TYPES = ['pixel_art', 'no_model']
+
+export function scaleForJob(job: Job): '1x' | '2x' | '4x' {
+  const { mode, presetFactor, contentType } = job.scaleConfig
+  // '1x' is what tells the backend to skip the model. It used to be decided by
+  // the scale mode, which put "should a model run" among the sizes; it is the
+  // content type's answer to give.
+  if (contentType && MODEL_FREE_CONTENT_TYPES.includes(contentType)) return '1x'
+  if (mode !== 'custom') return `${presetFactor}x` as '2x' | '4x'
+
+  const { width: srcW, height: srcH } = job.sourceMeta
+  const { customWidth, customHeight } = job.scaleConfig
+  if (!srcW || !srcH || !customWidth || !customHeight) return `${presetFactor}x` as '2x' | '4x'
+
+  const factor = Math.max(customWidth / srcW, customHeight / srcH)
+  return factor <= 2 ? '2x' : '4x'
+}
+
+/** Proposes an exact doubling for art drawn on a grid.
+ *
+ *  Whole multiples are what this mode is for: at 2x every source pixel becomes
+ *  a clean 2x2 block. A fractional factor makes some pixels wider than others,
+ *  which on pixel art is visible as an uneven, wobbling grid — the one artefact
+ *  this path exists to avoid. Nothing forbids typing another number; this is
+ *  just the starting point that is right far more often than not. */
+export function proposePixelSize(job: Job): void {
+  const { width: srcW, height: srcH } = job.sourceMeta
+  if (!srcW || !srcH) return
+  job.scaleConfig.customWidth = Math.min(srcW * 2, MAX_OUTPUT_DIMENSION)
+  job.scaleConfig.customHeight = Math.min(srcH * 2, MAX_OUTPUT_DIMENSION)
 }
 
 /** Entering 'original' starts from the source's own size — the mode's whole
@@ -332,20 +429,20 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
   // Original mode resolves no model (it travels as scale '1x'), so the content
   // type — which exists only to pick one — cannot block it. Requiring it here is
   // what left Processar disabled on the one mode that never needed it.
-  if (job.scaleConfig.mode !== 'original' && !job.scaleConfig.contentType)
-    return { valid: false, reason: 'Tipo de conteúdo ainda não detectado — selecione manualmente.' }
+  if (!job.scaleConfig.contentType)
+    return { valid: false, reason: t('errors.job.contentTypeMissing') }
 
   const { width: srcW, height: srcH } = job.sourceMeta
   if (job.scaleConfig.mode === 'preset') {
     if (![2, 4].includes(job.scaleConfig.presetFactor))
-      return { valid: false, reason: 'Escolha um fator de escala.' }
+      return { valid: false, reason: t('errors.job.scaleMissing') }
     if (srcW && srcH) {
       const outW = srcW * job.scaleConfig.presetFactor
       const outH = srcH * job.scaleConfig.presetFactor
       if (outW > MAX_OUTPUT_DIMENSION || outH > MAX_OUTPUT_DIMENSION) {
         return {
           valid: false,
-          reason: `Saída excederia o limite de ${MAX_OUTPUT_DIMENSION}px por lado.`
+          reason: t('validation.outputTooLarge', { max: MAX_OUTPUT_DIMENSION })
         }
       }
     }
@@ -354,32 +451,15 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 
   const w = job.scaleConfig.customWidth
   const h = job.scaleConfig.customHeight
-  if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: 'Informe largura e altura.' }
-
-  // 'original' is the mirror of 'custom': it exists precisely to NOT enlarge, so
-  // its target may only shrink. Everything else about the job — filters, face
-  // recovery, denoise — runs exactly the same way in both modes.
-  if (job.scaleConfig.mode === 'original') {
-    if (w < MIN_DIMENSION || h < MIN_DIMENSION) {
-      return { valid: false, reason: `Mínimo de ${MIN_DIMENSION}px por lado.` }
-    }
-    if (srcW && srcH && (w > srcW || h > srcH)) {
-      return {
-        valid: false,
-        reason:
-          'No modo Original o tamanho não pode passar do original — para ampliar, use Predefinido ou Custom.'
-      }
-    }
-    return { valid: true }
-  }
+  if (!w || !h || w <= 0 || h <= 0) return { valid: false, reason: t('errors.job.sizeMissing') }
 
   if (w > MAX_OUTPUT_DIMENSION || h > MAX_OUTPUT_DIMENSION) {
-    return { valid: false, reason: `Máximo de ${MAX_OUTPUT_DIMENSION}px por lado.` }
+    return { valid: false, reason: t('validation.maxSide', { max: MAX_OUTPUT_DIMENSION }) }
   }
   if (srcW && srcH && (w < srcW || h < srcH)) {
     return {
       valid: false,
-      reason: 'O tamanho customizado não pode ser menor que o original (isto é um upscaler).'
+      reason: t('errors.job.customTooSmall')
     }
   }
   return { valid: true }
@@ -388,7 +468,7 @@ export function validateScaleConfig(job: Job): { valid: boolean; reason?: string
 export function estimatedOutputSize(job: Job): { width: number; height: number } | null {
   const { width: srcW, height: srcH } = job.sourceMeta
   if (!srcW || !srcH) return null
-  if (job.scaleConfig.mode === 'original') {
+  if (job.scaleConfig.mode === 'custom') {
     const { customWidth, customHeight } = job.scaleConfig
     return customWidth && customHeight
       ? { width: customWidth, height: customHeight }
@@ -427,7 +507,9 @@ function stopWatching(backendJobId: string): void {
 function notifyDone(job: Job): void {
   if (typeof document === 'undefined' || document.hasFocus()) return
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  new Notification('Eterzion Studio', { body: `${job.fileName} foi processada com sucesso.` })
+  new Notification('Eterzion Studio', {
+    body: t('errors.job.notificationDone', { file: job.fileName })
+  })
 }
 
 function applyApiStatus(job: Job, status: ApiJobStatus): void {
@@ -463,7 +545,7 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
     notifyDone(job)
   } else if (status.status === 'error') {
     job.status = 'error'
-    job.errorMessage = status.error ?? 'Falha no processamento.'
+    job.errorMessage = status.error ?? t('errors.job.processingFailed')
     job.errorCategory = status.error_category ?? undefined
   } else if (status.status === 'cancelled') {
     job.status = 'cancelled'
@@ -504,7 +586,7 @@ export async function startProcessing(job: Job): Promise<void> {
         operation: 'enhance',
         // '1x' tells the backend to skip the model entirely and just run the
         // filters (and any reduction) — see Upscaler.process_without_model.
-        scale: job.scaleConfig.mode === 'original' ? '1x' : `${job.scaleConfig.presetFactor}x`,
+        scale: scaleForJob(job),
         profile: job.scaleConfig.profile,
         content_type_override: job.scaleConfig.contentType,
         input_path: job.sourcePath,
@@ -535,7 +617,7 @@ export async function startProcessing(job: Job): Promise<void> {
           .then((status) => applyApiStatus(job, status))
           .catch(() => {
             job.status = 'error'
-            job.errorMessage = 'Falha na comunicação com o servidor durante o processamento.'
+            job.errorMessage = t('errors.job.connectionLost')
             recordJob(job, job.status)
           })
       }
@@ -543,7 +625,7 @@ export async function startProcessing(job: Job): Promise<void> {
     jobUnsubscribers.set(backendJobId, unsubscribe)
   } catch (error) {
     job.status = 'error'
-    job.errorMessage = error instanceof Error ? error.message : 'Falha ao criar o job.'
+    job.errorMessage = error instanceof Error ? error.message : t('errors.job.createFailed')
     recordJob(job, job.status)
   }
 }
@@ -580,9 +662,10 @@ export async function exportOne(
   job: Job,
   options: ExportOptions
 ): Promise<{ ok: boolean; path?: string; error?: string }> {
-  if (!job.backendJobId) return { ok: false, error: 'Job sem processamento associado.' }
+  if (!job.backendJobId) return { ok: false, error: t('errors.job.noBackendJob') }
   job.exportState = 'exporting'
   job.exportError = undefined
+  job.exportConflicted = false
   const request: ExportRequest = {
     format: options.format,
     quality: options.quality,
@@ -596,11 +679,13 @@ export async function exportOne(
     job.lastExportPath = path
     return { ok: true, path }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Falha ao exportar.'
+    const message = error instanceof Error ? error.message : t('validation.exportFailed')
     job.exportState = 'error'
-    job.exportError = message.startsWith('CONFLICT:')
-      ? 'Já existe um arquivo com esse nome no destino.'
-      : message
+    // The flag, not the message, is what callers branch on: useExportPanel
+    // used to compare against this exact sentence, which a translation breaks
+    // the moment it is no longer written in Portuguese.
+    job.exportConflicted = message.startsWith('CONFLICT:')
+    job.exportError = job.exportConflicted ? t('validation.nameConflict') : message
     return { ok: false, error: job.exportError }
   }
 }

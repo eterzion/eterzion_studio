@@ -1,16 +1,28 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ArrowRight, FolderOpen, Trash2 } from '@lucide/vue'
 import CategoryIcon from '../components/CategoryIcon.vue'
 import FileQueueItem from '../components/FileQueueItem.vue'
-import SummaryCards from '../components/SummaryCards.vue'
-import { queueState, removeJob, setActiveJob } from '../store/jobs'
+import { setActiveJob } from '../store/jobs'
+import {
+  allEntries,
+  clearAll,
+  queueGroups,
+  removeEntry,
+  reorderEntry,
+  canReorder,
+  kindLabel,
+  type MediaKind,
+  type QueueEntry
+} from '../store/mediaQueue'
+import { videoQueue } from '../store/videoQueue'
+import { audioQueue } from '../store/audioQueue'
 import type { NavKey } from '../types'
 
 const { t } = useI18n()
 const emit = defineEmits<{ navigate: [key: NavKey] }>()
-type CategoryVariant = 'imagem' | 'video' | 'audio'
+type CategoryVariant = 'imagem' | 'video' | 'audio' | 'compressao'
 const CATEGORIES = computed<
   { key: NavKey; label: string; variant: CategoryVariant; tint: string }[]
 >(() => [
@@ -18,29 +30,93 @@ const CATEGORIES = computed<
   // so a card and the screen it opens are literally the same colour.
   { key: 'imagem', label: t('nav.image'), variant: 'imagem', tint: 'var(--accent-image)' },
   { key: 'video', label: t('nav.video'), variant: 'video', tint: 'var(--accent-video)' },
-  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' }
+  { key: 'audio', label: t('nav.audio'), variant: 'audio', tint: 'var(--accent-audio)' },
+  {
+    key: 'compressao',
+    label: t('nav.compression'),
+    variant: 'compressao',
+    tint: 'var(--accent-compression)'
+  }
 ])
-const jobs = computed(() => queueState.jobs)
+// All three queues, not just images: videos and audio were simply absent from
+// this list before, because it read store/jobs.ts and that store only ever held
+// images.
+const jobs = allEntries
 const fileCount = computed(() => jobs.value.length)
-const totalSizeLabel = computed(
-  () =>
-    `${(jobs.value.reduce((sum, job) => sum + job.sourceMeta.sizeBytes, 0) / (1024 * 1024)).toFixed(2)} MB`
-)
-const statusLabel = computed(() => {
-  if (jobs.value.some((job) => job.status === 'processing')) return t('home.status.processing')
-  if (jobs.value.length && jobs.value.every((job) => job.status === 'done'))
-    return t('home.status.done')
-  if (jobs.value.some((job) => job.status === 'error')) return t('home.status.errors')
-  if (jobs.value.some((job) => job.status === 'queued')) return t('home.status.queued')
-  if (jobs.value.length) return t('home.status.configuring')
-  return t('home.status.empty')
-})
 function clearQueue(): void {
-  for (const job of [...jobs.value]) removeJob(job.id)
+  clearAll()
 }
-function openImage(id?: string): void {
-  if (id) setActiveJob(id)
-  emit('navigate', 'imagem')
+
+const NAV_FOR_KIND: Record<MediaKind, NavKey> = {
+  image: 'imagem',
+  video: 'video',
+  audio: 'audio'
+}
+
+/** Open the item on the screen that owns it, and select it there — clicking a
+ *  video used to land on the Imagem screen, which held none of these files. */
+function openEntry(entry: QueueEntry): void {
+  if (entry.kind === 'image') setActiveJob(entry.id)
+  else if (entry.kind === 'video') videoQueue.activeId = entry.id
+  else audioQueue.activeId = entry.id
+  emit('navigate', NAV_FOR_KIND[entry.kind])
+}
+
+// ------------------------------- drag to reorder ------------------------------- //
+//
+// Plain HTML drag-and-drop rather than a library: the list is short, the drop
+// target is a sibling row, and the whole interaction is three events.
+//
+// A drag is confined to one kind. Processing is serial within each screen, so
+// moving a video above an image changes nothing that runs — offering the drop
+// would promise an effect the app cannot deliver.
+
+const dragging = ref<{ kind: MediaKind; index: number } | null>(null)
+const dropTarget = ref<{ kind: MediaKind; index: number; after: boolean } | null>(null)
+
+function onDragStart(event: DragEvent, kind: MediaKind, index: number): void {
+  dragging.value = { kind, index }
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    // Firefox refuses to start a drag without data set.
+    event.dataTransfer.setData('text/plain', String(index))
+  }
+}
+
+function onDragOver(event: DragEvent, kind: MediaKind, index: number, entry: QueueEntry): void {
+  if (!dragging.value || dragging.value.kind !== kind || !canReorder(entry)) return
+  event.preventDefault()
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'move'
+  // Which half of the row the cursor is on decides whether the item lands
+  // before or after it — without this the last position is unreachable.
+  const box = (event.currentTarget as HTMLElement).getBoundingClientRect()
+  dropTarget.value = { kind, index, after: event.clientY > box.top + box.height / 2 }
+}
+
+function onDrop(kind: MediaKind): void {
+  const from = dragging.value
+  const to = dropTarget.value
+  if (from && to && from.kind === kind && to.kind === kind) {
+    let target = to.after ? to.index + 1 : to.index
+    // Removing the dragged row first shifts everything after it up by one.
+    if (from.index < target) target -= 1
+    if (target !== from.index) reorderEntry(kind, from.index, target)
+  }
+  endDrag()
+}
+
+function endDrag(): void {
+  dragging.value = null
+  dropTarget.value = null
+}
+
+function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
+  const target = dropTarget.value
+  return {
+    dragging: dragging.value?.kind === kind && dragging.value.index === index,
+    'drop-before': !!target && target.kind === kind && target.index === index && !target.after,
+    'drop-after': !!target && target.kind === kind && target.index === index && target.after
+  }
 }
 </script>
 
@@ -48,7 +124,7 @@ function openImage(id?: string): void {
   <main class="home-view">
     <div class="home-panel">
       <h1 class="home-title">{{ t('home.title') }}</h1>
-      <div class="category-grid">
+      <div class="category-grid" :style="{ '--categorias': CATEGORIES.length }">
         <button
           v-for="category in CATEGORIES"
           :key="category.key"
@@ -72,33 +148,45 @@ function openImage(id?: string): void {
           <div class="queue-heading">
             <div class="queue-icon icon-chip"><FolderOpen :size="22" :stroke-width="1.8" /></div>
             <div>
-              <h2 id="queue-title" class="queue-title">Fila de processamento</h2>
+              <h2 id="queue-title" class="queue-title">{{ t('queue.title') }}</h2>
               <p class="queue-subtitle">
-                <span class="queue-dot" />{{ fileCount }} arquivo{{ fileCount === 1 ? '' : 's' }}
+                <!-- t(key, n) picks the plural form from the locale. The previous
+                     `fileCount === 1 ? '' : 's'` only worked for languages whose
+                     plural is "add an s" — Russian needs three forms, and
+                     Japanese, Korean and Chinese need none. -->
+                <span class="queue-dot" />{{ t('queue.fileCountLabel', fileCount) }}
               </p>
             </div>
           </div>
           <button class="clear-button" type="button" :disabled="!jobs.length" @click="clearQueue">
-            <Trash2 :size="17" :stroke-width="1.8" /> Limpar fila
+            <Trash2 :size="17" :stroke-width="1.8" /> {{ t('queue.clear') }}
           </button>
         </header>
         <div v-if="jobs.length" class="queue-list">
-          <FileQueueItem
-            v-for="(job, index) in jobs"
-            :key="job.id"
-            :job="job"
-            :style="{ animationDelay: Math.min(index, 10) * 25 + 'ms' }"
-            @remove="removeJob"
-            @click="openImage(job.id)"
-          />
+          <!-- Grouped by kind, and labelled once there is more than one group:
+               a drag only travels within its own group, and an unexplained
+               refusal to drop reads as a bug. -->
+          <template v-for="group in queueGroups" :key="group.kind">
+            <p v-if="queueGroups.length > 1" class="queue-group-label">
+              {{ kindLabel(group.kind) }}
+            </p>
+            <FileQueueItem
+              v-for="(entry, index) in group.entries"
+              :key="entry.id"
+              :entry="entry"
+              :class="rowClass(group.kind, index)"
+              :style="{ animationDelay: Math.min(index, 10) * 25 + 'ms' }"
+              :allow-reorder="canReorder(entry)"
+              @dragstart="onDragStart($event, group.kind, index)"
+              @dragover="onDragOver($event, group.kind, index, entry)"
+              @drop="onDrop(group.kind)"
+              @dragend="endDrag"
+              @remove="removeEntry"
+              @click="openEntry(entry)"
+            />
+          </template>
         </div>
       </section>
-      <SummaryCards
-        :file-count="fileCount"
-        :total-size-label="totalSizeLabel"
-        :status-label="statusLabel"
-        quality-label="Pronto para melhorar"
-      />
     </div>
   </main>
 </template>
@@ -143,10 +231,11 @@ function openImage(id?: string): void {
 }
 .category-grid {
   display: grid;
-  /* One column per card, so the row always ends where the panel does. The count
-     is tied to the number of categories — it was still 4 after Exportar was
-     removed, which is what left a card-sized hole on the right. */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* Uma coluna por cartão, para a linha terminar onde o painel termina. A
+     contagem vem de `CATEGORIES.length` via variável CSS, e não de um número
+     escrito aqui: já ficou em 4 depois de "Exportar" sair, deixando um buraco do
+     tamanho de um cartão, e voltaria a divergir agora que a Central entrou. */
+  grid-template-columns: repeat(var(--categorias, 3), minmax(0, 1fr));
   gap: clamp(8px, 0.9vw, 12px);
   margin-bottom: 16px;
 }
@@ -230,7 +319,6 @@ function openImage(id?: string): void {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  margin-bottom: 16px;
   overflow: hidden;
   border: 1px solid var(--surface-border);
   border-radius: 11px;
@@ -306,6 +394,15 @@ function openImage(id?: string): void {
   cursor: default;
   opacity: 0.82;
 }
+.queue-group-label {
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding-top: var(--space-1);
+}
+
 .queue-list {
   display: flex;
   flex: 1;

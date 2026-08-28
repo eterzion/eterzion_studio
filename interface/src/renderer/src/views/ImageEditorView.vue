@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import RangeSlider from '../components/RangeSlider.vue'
-import { PROFILE_OPTIONS, DEVICE_OPTIONS } from '../constants/processing'
+import { profileOptions, deviceOptions } from '../constants/processing'
 import CompareSlider from '../components/CompareSlider.vue'
 import ComparisonStats from '../components/ComparisonStats.vue'
 import BatchExportModal from '../components/BatchExportModal.vue'
 import AppSelect from '../components/AppSelect.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
-import ResolutionStepper from '../components/ResolutionStepper.vue'
+import NumberStepper from '../components/NumberStepper.vue'
+import ModeTabs from '../components/ModeTabs.vue'
 import ImageInfoPanel from '../components/ImageInfoPanel.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import ProgressBar from '../components/atoms/ProgressBar.vue'
@@ -34,11 +36,12 @@ import {
   XCircle,
   Columns2,
   GalleryHorizontal,
-  RotateCcw
+  RotateCcw,
+  Sparkles
 } from '@lucide/vue'
 import { api, hasNativeApi } from '../services/native'
 import { type ContentType, type Profile } from '../services/api'
-import { ERROR_CATEGORY_COPY } from '../services/api'
+import { errorCategoryCopy, getImageExportOptions, type ImageExportOptions } from '../services/api'
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
@@ -52,7 +55,6 @@ import {
   estimatedOutputSize,
   estimatedOutputBytes,
   ensureCustomSizeDefaults,
-  clampSizeToSource,
   syncCustomSizeToPreset,
   effectiveCustomScale,
   MAX_OUTPUT_DIMENSION,
@@ -66,6 +68,11 @@ import {
 defineEmits<{
   back: []
 }>()
+
+const { t } = useI18n()
+
+const profiles = computed(() => profileOptions())
+const devices = computed(() => deviceOptions())
 
 const panelOpen = ref(false)
 const showBatchModal = ref(false)
@@ -103,30 +110,84 @@ const {
 // only two valid content types are photo <-> anime_image.
 const importError = ref<string | null>(null)
 
-const CONTENT_TYPE_OPTIONS: { value: ContentType; label: string; description: string }[] = [
-  {
-    value: 'photo',
-    label: 'Foto',
-    description: 'Fotografias reais — retratos, paisagens, produtos'
-  },
-  {
-    value: 'anime_image',
-    label: 'Anime/Ilustração',
-    description: 'Arte digital, anime, ilustração com traços definidos'
-  }
-]
-const contentTypeOptions = computed(() =>
-  CONTENT_TYPE_OPTIONS.map((o) => ({ value: o.value, label: o.label, description: o.description }))
+const contentTypeOptions = computed<{ value: ContentType; label: string; description: string }[]>(
+  // "Sem modelo" leads the list because it is the choice that changes the most
+  // about what happens — everything below it runs a model, it does not. The
+  // selected value still comes from detection; only the order is fixed here.
+  () => [
+    {
+      value: 'no_model',
+      label: t('imageEditor.noModelLabel'),
+      description: t('imageEditor.noModelDescription')
+    },
+    {
+      value: 'photo',
+      label: t('imageEditor.photoLabel'),
+      description: t('imageEditor.photoDescription')
+    },
+    {
+      value: 'anime_image',
+      label: t('imageEditor.animeLabel'),
+      description: t('imageEditor.animeDescription')
+    },
+    {
+      value: 'pixel_art',
+      label: t('imageEditor.pixelArtLabel'),
+      description: t('imageEditor.pixelArtDescription')
+    }
+  ]
 )
 
 // The descriptions carry what the field hints used to say, so removing those
 // lines costs no information — they are read while choosing instead of after.
 
-const exportFormatOptions = [
-  { value: 'png', label: '.png' },
-  { value: 'jpg', label: '.jpg' },
-  { value: 'webp', label: '.webp' }
-]
+// Quais formatos a tela oferece. Quais deles a MÁQUINA consegue escrever é
+// outra pergunta, e quem responde é GET /image/export-options — a exportação
+// re-codifica pelo OpenCV, e builds de OpenCV diferem em quais codecs carregam
+// (WebP e TIFF são opcionais; headless não é a mesma build que a completa).
+// Oferecer um que a build não escreve faz a exportação falhar depois da escolha,
+// que é o que o Princípio XIII proíbe. Mesmo desenho do painel de vídeo.
+const OFFERED_EXPORT_FORMATS = ['png', 'jpg', 'webp'] as const
+
+const imageExportOptions = ref<ImageExportOptions | null>(null)
+
+onMounted(async () => {
+  try {
+    imageExportOptions.value = await getImageExportOptions()
+  } catch {
+    // Null quer dizer "ainda não sei", e aí nada é desabilitado: bloquear a
+    // exportação porque a consulta falhou seria pior do que deixar tentar.
+    imageExportOptions.value = null
+  }
+})
+
+function formatIsAvailable(value: string): boolean {
+  const known = imageExportOptions.value?.formats.find((f) => f.value === value)
+  return known ? known.available : true
+}
+
+const exportFormatOptions = computed(() =>
+  OFFERED_EXPORT_FORMATS.map((value) => ({
+    value,
+    label: `.${value}`,
+    disabled: !formatIsAvailable(value),
+    // Chave, nunca o nome da biblioteca — o Princípio V vale nesta superfície
+    // como em qualquer outra.
+    description: formatIsAvailable(value) ? undefined : t('imageEditor.formatUnavailable')
+  }))
+)
+
+const noExportFormatAvailable = computed(() =>
+  OFFERED_EXPORT_FORMATS.every((value) => !formatIsAvailable(value))
+)
+
+// Se o formato escolhido não pode ser escrito aqui, cair num que pode em vez de
+// deixar o botão pronto para falhar.
+watch(exportFormatOptions, (options) => {
+  if (formatIsAvailable(exportFormat.value)) return
+  const usable = options.find((option) => !option.disabled)
+  if (usable) exportFormat.value = usable.value
+})
 const conflictOptions = [
   { value: 'rename', label: 'Renomear automaticamente' },
   { value: 'overwrite', label: 'Sobrescrever' },
@@ -135,7 +196,7 @@ const conflictOptions = [
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const {
-  DENOISE_PRESETS,
+  denoisePresets,
   denoiseActivePresetKey,
   denoisePreview,
   denoisePreviewLoading,
@@ -169,13 +230,29 @@ onUnmounted(() => {
 })
 
 // ------------------------------- scale config helpers ------------------------------- //
-function switchScaleMode(j: Job, mode: 'preset' | 'custom' | 'original'): void {
+type ScaleMode = 'preset' | 'custom'
+
+const scaleModeOptions = computed(() => [
+  { value: 'preset', label: t('imageEditor.modePreset') },
+  { value: 'custom', label: t('imageEditor.modeCustom') }
+])
+
+/** Whether this job will run a model at all — the content type decides. */
+const usesModel = computed(() => {
+  const ct = job.value?.scaleConfig.contentType
+  return ct !== 'pixel_art' && ct !== 'no_model'
+})
+
+function switchScaleMode(j: Job, mode: 'preset' | 'custom'): void {
+  const from = j.scaleConfig.mode
   j.scaleConfig.mode = mode
-  if (mode === 'custom') ensureCustomSizeDefaults(j)
-  // Coming from a 2x/4x preset, the custom target is still the enlarged one —
-  // invalid the moment Original is entered, and it is what the size and scale
-  // readouts are computed from, so it has to be brought back to the source.
-  if (mode === 'original') clampSizeToSource(j)
+  // Arriving at Medida exata from Ampliar starts at the size Ampliar was going
+  // to produce: switching between two ways of saying "how big" should not
+  // change how big. ensureCustomSizeDefaults alone did not do it — it returns
+  // early once the fields hold anything at all, so a value left from an
+  // earlier visit survived and the 4x the person had just chosen was ignored.
+  if (mode === 'custom' && from === 'preset') syncCustomSizeToPreset(j)
+  else if (mode === 'custom') ensureCustomSizeDefaults(j)
 }
 
 function setPresetFactor(j: Job, factor: 2 | 4): void {
@@ -230,6 +307,13 @@ const customBeyondNative = computed(() => {
   const j = job.value
   const factor = customFactor.value
   if (!j || factor == null) return false
+  // The warning is about asking a model for more than the factor it was
+  // trained at, so the surplus comes from interpolation. Pixel art runs no
+  // model and has no native factor: repeating pixels gives the same result at
+  // any whole multiple, and the sentence would be describing something that
+  // does not happen.
+  const ct = j.scaleConfig.contentType
+  if (ct === 'pixel_art' || ct === 'no_model') return false
   return factor > j.scaleConfig.presetFactor + 0.01
 })
 
@@ -267,7 +351,7 @@ async function importFiles(): Promise<void> {
   const result = await api.selectFiles(['image'])
   if (result.canceled) return
   importError.value = result.rejected.length
-    ? `${result.rejected.length} arquivo(s) não puderam ser importados (formato não suportado ou ilegível).`
+    ? t('importing.rejected', result.rejected.length)
     : null
   const upload = await addFiles(result.files)
   if (!job.value && upload.added[0]) setActiveJob(upload.added[0].id)
@@ -286,7 +370,7 @@ function reportImportResult(result: {
   if (result.rejected.length) {
     importError.value = result.rejected.map((r) => `${r.name}: ${r.reason}`).join(' · ')
   } else if (!result.added.length && result.duplicates.length) {
-    importError.value = `Este(s) arquivo(s) já está(ão) na fila: ${result.duplicates.join(', ')}.`
+    importError.value = t('importing.alreadyQueued', { files: result.duplicates.join(', ') })
   } else {
     importError.value = null
   }
@@ -295,7 +379,7 @@ function reportImportResult(result: {
 
 async function pickFiles(): Promise<void> {
   if (!hasNativeApi) {
-    importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
+    importError.value = t('importing.filesDesktopOnly')
     return
   }
   uploading.value = true
@@ -304,7 +388,7 @@ async function pickFiles(): Promise<void> {
     if (result.canceled) return
     reportImportResult(await addFiles(result.files))
   } catch (error) {
-    importError.value = error instanceof Error ? error.message : 'Falha ao selecionar arquivos.'
+    importError.value = error instanceof Error ? error.message : t('importing.pickFilesFailed')
   } finally {
     uploading.value = false
   }
@@ -312,7 +396,7 @@ async function pickFiles(): Promise<void> {
 
 async function pickFolder(): Promise<void> {
   if (!hasNativeApi) {
-    importError.value = 'Seleção de pasta disponível apenas no aplicativo desktop.'
+    importError.value = t('importing.folderDesktopOnly')
     return
   }
   uploading.value = true
@@ -320,12 +404,12 @@ async function pickFolder(): Promise<void> {
     const result = await api.selectFolder(['image'])
     if (result.canceled) return
     if (result.files.length === 0) {
-      importError.value = 'Nenhuma imagem compatível foi encontrada nessa pasta.'
+      importError.value = t('importing.noImagesInFolder')
       return
     }
     reportImportResult(await addFiles(result.files))
   } catch (error) {
-    importError.value = error instanceof Error ? error.message : 'Falha ao selecionar a pasta.'
+    importError.value = error instanceof Error ? error.message : t('importing.pickFolderFailed')
   } finally {
     uploading.value = false
   }
@@ -333,7 +417,7 @@ async function pickFolder(): Promise<void> {
 
 async function handleFilesDropped(dropped: File[]): Promise<void> {
   if (!hasNativeApi) {
-    importError.value = 'Arraste e solte disponível apenas no aplicativo desktop.'
+    importError.value = t('importing.dropDesktopOnly')
     return
   }
   uploading.value = true
@@ -375,18 +459,19 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
 <template>
   <div class="editor-view" data-module="image">
-    <TopBar :title="job?.fileName ?? 'Nenhuma imagem selecionada'" show-back @back="$emit('back')">
+    <TopBar :title="job?.fileName ?? t('actions.noImageSelected')" show-back @back="$emit('back')">
       <template #actions>
         <AppButton variant="outline" @click="importFiles">
           <template #icon><Upload :size="15" /></template>
-          Importar
+          {{ t('actions.import') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!configuringJobs.length" @click="processAll">
-          Processar todos
+          <template #icon><Sparkles :size="15" /></template>
+          {{ t('actions.processAll') }}
         </AppButton>
         <AppButton variant="outline" :disabled="!doneJobs.length" @click="showBatchModal = true">
           <template #icon><Download :size="15" /></template>
-          Exportar tudo
+          {{ t('actions.exportAll') }}
         </AppButton>
       </template>
     </TopBar>
@@ -468,7 +553,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
         </div>
 
         <p v-if="job.status === 'done'" class="hold-space-hint">
-          Segure Espaço para alternar rapidamente antes/depois
+          {{ t('imageEditor.holdSpace') }}
         </p>
 
         <div class="preview-footer">
@@ -494,7 +579,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 {{ level }}%
               </button>
               <button class="preset-btn" type="button" @click="resetView">
-                <Maximize2 :size="12" /> Ajustar
+                <Maximize2 :size="12" /> {{ t('imageEditor.fit') }}
               </button>
             </div>
             <div v-if="job.status === 'done'" class="view-mode-toggle">
@@ -502,7 +587,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 class="mode-btn"
                 :class="{ active: viewMode === 'slider' }"
                 type="button"
-                title="Slider antes/depois"
+                :title="t('imageEditor.sliderView')"
                 @click="viewMode = 'slider'"
               >
                 <GalleryHorizontal :size="14" />
@@ -511,7 +596,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 class="mode-btn"
                 :class="{ active: viewMode === 'side-by-side' }"
                 type="button"
-                title="Lado a lado"
+                :title="t('imageEditor.sideBySide')"
                 @click="viewMode = 'side-by-side'"
               >
                 <Columns2 :size="14" />
@@ -581,22 +666,22 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <span>
                 {{
                   job.errorCategory
-                    ? ERROR_CATEGORY_COPY[job.errorCategory].message
+                    ? errorCategoryCopy(job.errorCategory).message
                     : job.errorMessage
                 }}
                 <template v-if="job.errorCategory">
-                  {{ ERROR_CATEGORY_COPY[job.errorCategory].action }}</template
+                  {{ errorCategoryCopy(job.errorCategory).action }}</template
                 >
               </span>
             </p>
             <TechnicalDetails
               v-if="job.errorCategory && job.errorMessage"
-              summary="Detalhes técnicos"
+              :summary="t('imageEditor.technicalDetails')"
               :text="job.errorMessage"
             />
           </div>
           <p v-if="job.status === 'cancelled'" class="banner-info">
-            <XCircle :size="14" /> Processamento cancelado.
+            <XCircle :size="14" /> {{ t('imageEditor.cancelled') }}
           </p>
 
           <!-- One panel, not three: each of these is a single select, and split
@@ -606,67 +691,53 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                '1x'), so none of them applies there. Ajustes below stays separate:
                its filters run in both modes. -->
           <CollapsiblePanel
-            v-if="job.scaleConfig.mode !== 'original'"
-            title="Processamento"
-            description="Como a imagem é processada pelo modelo"
+            :title="t('imageEditor.processingTitle')"
+            :description="t('imageEditor.processingDescription')"
             :icon="Cpu"
           >
             <div class="field">
-              <label class="field-label">Conteúdo detectado</label>
+              <label class="field-label">{{ t('imageEditor.detectedContent') }}</label>
               <AppSelect
                 :model-value="job.scaleConfig.contentType"
                 :options="contentTypeOptions"
-                placeholder="Detectando…"
+                :placeholder="t('imageEditor.detecting')"
                 @update:model-value="(v) => (job!.scaleConfig.contentType = v as ContentType)"
               />
             </div>
 
-            <div class="field">
-              <label class="field-label">Esforço do processamento</label>
+            <!-- Esforço e dispositivo descrevem COMO o modelo roda, e sem
+                 modelo não descrevem nada. O tipo de conteúdo continua aqui: é
+                 por ele que se sai de "Sem modelo", e escondê-lo junto deixava
+                 a escolha sem volta. -->
+            <div v-if="usesModel" class="field">
+              <label class="field-label">{{ t('imageEditor.effort') }}</label>
               <AppSelect
                 :model-value="job.scaleConfig.profile"
-                :options="PROFILE_OPTIONS"
+                :options="profiles"
                 @update:model-value="(v) => (job!.scaleConfig.profile = v as Profile)"
               />
             </div>
 
-            <div class="field">
-              <label class="field-label">Onde processar</label>
+            <div v-if="usesModel" class="field">
+              <label class="field-label">{{ t('imageEditor.whereToProcess') }}</label>
               <AppSelect
                 :model-value="job.scaleConfig.device"
-                :options="DEVICE_OPTIONS"
+                :options="devices"
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
             </div>
           </CollapsiblePanel>
 
-          <CollapsiblePanel title="Escala" description="Tamanho final da imagem" :icon="Expand">
-            <div class="scale-mode-tabs">
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'original' }"
-                type="button"
-                @click="switchScaleMode(job, 'original')"
-              >
-                Original
-              </button>
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'preset' }"
-                type="button"
-                @click="switchScaleMode(job, 'preset')"
-              >
-                Predefinido
-              </button>
-              <button
-                class="mode-tab"
-                :class="{ active: job.scaleConfig.mode === 'custom' }"
-                type="button"
-                @click="switchScaleMode(job, 'custom')"
-              >
-                Custom
-              </button>
-            </div>
+          <CollapsiblePanel
+            :title="t('imageEditor.scaleTitle')"
+            :description="t('imageEditor.scaleDescription')"
+            :icon="Expand"
+          >
+            <ModeTabs
+              :model-value="job.scaleConfig.mode"
+              :options="scaleModeOptions"
+              @update:model-value="switchScaleMode(job!, $event as ScaleMode)"
+            />
 
             <div v-if="job.scaleConfig.mode === 'preset'" class="scale-buttons">
               <button
@@ -683,66 +754,53 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 
             <div v-else class="field">
               <div class="field-label-row">
-                <label class="field-label">{{
-                  job.scaleConfig.mode === 'original' ? 'Reduzir para' : 'Largura e altura'
-                }}</label>
+                <label class="field-label">{{ t('imageEditor.sizeLabel') }}</label>
                 <button
                   class="link-btn"
                   type="button"
                   :aria-pressed="job.scaleConfig.lockAspectRatio"
                   :title="
                     job.scaleConfig.lockAspectRatio
-                      ? 'Proporção travada — clique para destravar'
-                      : 'Proporção livre — clique para travar'
+                      ? t('imageEditor.aspectLocked')
+                      : t('imageEditor.aspectFree')
                   "
                   @click="toggleAspectLock(job)"
                 >
                   <component :is="job.scaleConfig.lockAspectRatio ? Link : Unlink" :size="13" />
-                  {{ job.scaleConfig.lockAspectRatio ? 'Travada' : 'Livre' }}
+                  {{
+                    job.scaleConfig.lockAspectRatio
+                      ? t('imageEditor.locked')
+                      : t('imageEditor.free')
+                  }}
                 </button>
               </div>
               <div class="steppers-row">
-                <ResolutionStepper
-                  label="Largura"
+                <NumberStepper
+                  :label="t('imageEditor.width')"
                   :model-value="job.scaleConfig.customWidth ?? job.sourceMeta.width ?? 0"
-                  :min="
-                    job.scaleConfig.mode === 'original'
-                      ? MIN_DIMENSION
-                      : (job.sourceMeta.width ?? 1)
-                  "
-                  :max="
-                    job.scaleConfig.mode === 'original'
-                      ? (job.sourceMeta.width ?? MAX_OUTPUT_DIMENSION)
-                      : MAX_OUTPUT_DIMENSION
-                  "
+                  :min="MIN_DIMENSION"
+                  :max="MAX_OUTPUT_DIMENSION"
                   @update:model-value="(v) => onCustomWidthInput(job!, String(v))"
                 />
-                <ResolutionStepper
-                  label="Altura"
+                <NumberStepper
+                  :label="t('imageEditor.height')"
                   :model-value="job.scaleConfig.customHeight ?? job.sourceMeta.height ?? 0"
-                  :min="
-                    job.scaleConfig.mode === 'original'
-                      ? MIN_DIMENSION
-                      : (job.sourceMeta.height ?? 1)
-                  "
-                  :max="
-                    job.scaleConfig.mode === 'original'
-                      ? (job.sourceMeta.height ?? MAX_OUTPUT_DIMENSION)
-                      : MAX_OUTPUT_DIMENSION
-                  "
+                  :min="MIN_DIMENSION"
+                  :max="MAX_OUTPUT_DIMENSION"
                   @update:model-value="(v) => onCustomHeightInput(job!, String(v))"
                 />
               </div>
               <div v-if="customFactor" class="scale-multiplier">
-                <span class="scale-multiplier-label">Multiplicador de resolução</span>
+                <span class="scale-multiplier-label">{{
+                  t('imageEditor.resolutionMultiplier')
+                }}</span>
                 <span class="scale-multiplier-value">{{ customFactor.toFixed(1) }}×</span>
               </div>
               <p v-if="!job.scaleConfig.lockAspectRatio" class="field-warning">
-                A imagem será distorcida.
+                {{ t('imageEditor.willDistort') }}
               </p>
               <p v-if="customBeyondNative" class="field-warning">
-                Alvo acima do fator nativo ({{ job.scaleConfig.presetFactor }}x) — o excedente é
-                interpolação, com menos ganho de detalhe.
+                {{ t('imageEditor.beyondNative', { factor: job.scaleConfig.presetFactor }) }}
               </p>
             </div>
 
@@ -760,12 +818,12 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                OpenCV post-processing, and in Original mode they ARE the
                processing. See Upscaler.process_without_model(). -->
           <CollapsiblePanel
-            title="Ajustes"
-            description="Ajustes finos de qualidade"
+            :title="t('imageEditor.adjustmentsTitle')"
+            :description="t('imageEditor.adjustmentsDescription')"
             :icon="SlidersHorizontal"
           >
             <div class="toggle-row">
-              <label class="field-label">Filtro de redução de ruído</label>
+              <label class="field-label">{{ t('imageEditor.denoiseLabel') }}</label>
               <button
                 class="switch"
                 :class="{ on: job.scaleConfig.denoiseFilterEnabled }"
@@ -778,7 +836,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <div v-if="job.scaleConfig.denoiseFilterEnabled" class="denoise-filter-panel">
               <div class="denoise-preset-row">
                 <button
-                  v-for="preset in DENOISE_PRESETS"
+                  v-for="preset in denoisePresets"
                   :key="preset.key"
                   type="button"
                   class="preset-btn"
@@ -800,11 +858,10 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 />
               </div>
               <p class="field-hint">
-                Remove granulação e marcas de compressão sem borrar os contornos. Útil em fotos de
-                celular, com pouca luz, ou salvas em JPG muitas vezes.
+                {{ t('imageEditor.denoiseHint') }}
               </p>
               <div v-if="!hasNativeApi" class="field-hint">
-                Prévia indisponível fora do app desktop.
+                {{ t('imageEditor.previewDesktopOnly') }}
               </div>
               <div v-else class="denoise-preview">
                 <AppSpinner v-if="denoisePreviewLoading" :size="16" />
@@ -816,14 +873,14 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                     <span class="denoise-preview-label">Antes</span>
                     <img
                       :src="`data:image/png;base64,${denoisePreview.before}`"
-                      alt="Antes da redução de ruído"
+                      :alt="t('imageEditor.denoiseBeforeAlt')"
                     />
                   </div>
                   <div class="denoise-preview-item">
                     <span class="denoise-preview-label">Depois</span>
                     <img
                       :src="`data:image/png;base64,${denoisePreview.after}`"
-                      alt="Depois da redução de ruído"
+                      :alt="t('imageEditor.denoiseAfterAlt')"
                     />
                   </div>
                 </div>
@@ -831,7 +888,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             </div>
 
             <div class="toggle-row">
-              <label class="field-label">Nitidez</label>
+              <label class="field-label">{{ t('imageEditor.sharpenLabel') }}</label>
               <button
                 class="switch"
                 :class="{ on: job.scaleConfig.sharpenEnabled }"
@@ -848,13 +905,12 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </div>
               <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="50" />
               <p class="field-hint">
-                Realça os contornos para dar impressão de foco. Em excesso, cria halos claros em
-                volta das bordas.
+                {{ t('imageEditor.sharpenHint') }}
               </p>
             </div>
 
             <div class="toggle-row">
-              <label class="field-label">Recuperação de faces</label>
+              <label class="field-label">{{ t('imageEditor.faceRecoveryLabel') }}</label>
               <button
                 class="switch"
                 :class="{ on: job.scaleConfig.faceRecovery }"
@@ -871,8 +927,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               </div>
               <RangeSlider v-model="job.scaleConfig.faceRecoveryStrength" :default-value="80" />
               <p class="field-hint">
-                Reconstrói rostos, que perdem detalhe antes do resto da imagem. Se nenhum rosto for
-                encontrado, a imagem sai inalterada.
+                {{ t('imageEditor.faceRecoveryHint') }}
               </p>
             </div>
           </CollapsiblePanel>
@@ -883,7 +938,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             :disabled="configuringJobs.length < 2"
             @click="applyConfigToAll(job)"
           >
-            Aplicar esta configuração a todos ({{ configuringJobs.length }})
+            {{ t('imageEditor.applyToAll', { n: configuringJobs.length }) }}
           </AppButton>
 
           <AppButton
@@ -895,8 +950,8 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           >
             {{
               job.status === 'error' || job.status === 'cancelled'
-                ? 'Tentar novamente'
-                : 'Processar'
+                ? t('imageEditor.retry')
+                : t('imageEditor.process')
             }}
           </AppButton>
         </template>
@@ -906,14 +961,22 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           <div class="processing-panel">
             <AppSpinner :size="28" />
             <p v-if="job.status === 'queued'" class="processing-label">
-              Na fila{{ job.queuePosition ? ` (posição ${job.queuePosition})` : '' }}
+              {{
+                job.queuePosition
+                  ? t('imageEditor.queuedAt', { position: job.queuePosition })
+                  : t('imageEditor.queued')
+              }}
             </p>
-            <p v-else class="processing-label">Processando… {{ job.progress }}%</p>
+            <p v-else class="processing-label">
+              {{ t('imageEditor.processingProgress', { progress: job.progress }) }}
+            </p>
             <p v-if="job.stage" class="processing-stage">{{ job.stage }}</p>
-            <p v-if="elapsedLabel" class="processing-stage">Tempo decorrido: {{ elapsedLabel }}</p>
+            <p v-if="elapsedLabel" class="processing-stage">
+              {{ t('imageEditor.elapsed', { time: elapsedLabel }) }}
+            </p>
             <ProgressBar :value="job.status === 'queued' ? 0 : job.progress" />
             <AppButton variant="outline" class="mt-2 text-state-danger" @click="cancel(job)">
-              Cancelar
+              {{ t('imageEditor.cancel') }}
             </AppButton>
           </div>
         </template>
@@ -921,38 +984,49 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
         <!-- ---------------------------- DONE ---------------------------- -->
         <template v-else-if="job.status === 'done'">
           <CollapsiblePanel
-            title="Resultado"
-            description="Comparação e estatísticas do processamento"
+            :title="t('imageEditor.resultTitle')"
+            :description="t('imageEditor.resultDescription')"
             :icon="ChartNoAxesColumn"
           >
             <ComparisonStats :job="job" />
           </CollapsiblePanel>
 
-          <CollapsiblePanel title="Exportar" description="Formato, destino e nome" :icon="Download">
+          <CollapsiblePanel
+            :title="t('imageEditor.exportTitle')"
+            :description="t('imageEditor.exportDescription')"
+            :icon="Download"
+          >
             <div class="field">
-              <label class="field-label">Formato</label>
+              <label class="field-label">{{ t('imageEditor.format') }}</label>
               <AppSelect
                 :model-value="exportFormat"
                 :options="exportFormatOptions"
+                :disabled="noExportFormatAvailable"
                 @update:model-value="(v) => (exportFormat = v as 'png' | 'jpg' | 'webp')"
               />
             </div>
 
+            <!-- No momento em que ajuda: antes de escolher, não depois de
+                 falhar. Mesmo desenho do painel de vídeo. -->
+            <p v-if="noExportFormatAvailable" class="banner-error">
+              <AlertCircle :size="14" /> {{ t('imageEditor.noFormatAvailable') }}
+            </p>
+
             <div v-if="exportFormat !== 'png'" class="field">
               <div class="slider-head">
-                <label class="field-label">Qualidade</label>
+                <label class="field-label">{{ t('imageEditor.quality') }}</label>
                 <span class="slider-value">{{ exportQuality }}</span>
               </div>
               <RangeSlider v-model="exportQuality" :default-value="90" :min="1" :max="100" />
             </div>
 
             <div class="field">
-              <label class="field-label">Pasta de destino</label>
+              <label class="field-label">{{ t('imageEditor.destinationFolder') }}</label>
               <div class="folder-row">
                 <input
                   class="select folder-input"
                   type="text"
-                  :value="exportDestFolder ?? 'Mesma pasta do original'"
+                  :value="exportDestFolder ?? t('imageEditor.sameAsSource')"
                   readonly
                 />
                 <AppButton variant="secondary" icon-only @click="pickExportFolder">
@@ -962,18 +1036,18 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             </div>
 
             <div class="field">
-              <label class="field-label">Nome do arquivo</label>
+              <label class="field-label">{{ t('imageEditor.fileName') }}</label>
               <input
                 class="select"
                 type="text"
-                :placeholder="`${job.fileName.replace(/\\.[^.]+$/, '')}_upscaled.${exportFormat}`"
+                :placeholder="`${job.fileName.replace(/\.[^.]+$/, '')}.${exportFormat}`"
                 :value="exportFilename ?? ''"
                 @input="exportFilename = ($event.target as HTMLInputElement).value || null"
               />
             </div>
 
             <div class="field">
-              <label class="field-label">Em caso de conflito</label>
+              <label class="field-label">{{ t('imageEditor.onConflict') }}</label>
               <AppSelect
                 :model-value="exportConflict"
                 :options="conflictOptions"
@@ -982,7 +1056,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             </div>
 
             <div v-if="conflictPrompt" class="conflict-prompt">
-              <p>Já existe um arquivo com esse nome. O que fazer?</p>
+              <p>{{ t('imageEditor.conflictPrompt') }}</p>
               <div class="conflict-actions">
                 <AppButton
                   variant="outline"
@@ -1012,7 +1086,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               variant="primary"
               size="lg"
               class="w-full"
-              :disabled="job.exportState === 'exporting'"
+              :disabled="job.exportState === 'exporting' || noExportFormatAvailable"
               @click="runExport(job)"
             >
               <template #icon>
@@ -1610,31 +1684,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   border-radius: var(--radius-sm);
   padding: 8px 10px;
   font-size: var(--fs-label);
-}
-
-.scale-mode-tabs {
-  display: flex;
-  gap: 4px;
-  background: var(--surface-3);
-  border-radius: var(--radius-sm);
-  padding: 3px;
-}
-
-.mode-tab {
-  flex: 1;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-medium);
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.mode-tab.active {
-  background: var(--surface-1);
-  color: var(--text-primary);
 }
 
 .scale-buttons {

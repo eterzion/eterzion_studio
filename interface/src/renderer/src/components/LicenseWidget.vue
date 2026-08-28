@@ -1,41 +1,37 @@
 <script setup lang="ts">
 import { computed, onMounted, onBeforeUnmount, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { KeyRound, ShieldCheck, ShieldAlert, ShieldQuestion, Loader2 } from '@lucide/vue'
-import { licenseState, activateLicense, deactivateLicense } from '../store/license'
+import { licenseState, deactivateLicense } from '../store/license'
 import AppButton from './atoms/AppButton.vue'
 
+const { t } = useI18n()
+
 const open = ref(false)
-const licenseInput = ref('')
 const root = ref<HTMLElement | null>(null)
 
 const meta = computed(() => {
   switch (licenseState.status) {
     case 'active':
-      return { icon: ShieldCheck, label: 'Licença ativa', tone: 'success' }
+      return { icon: ShieldCheck, label: t('license.active'), tone: 'success' }
     case 'offline_tolerance':
-      return { icon: ShieldCheck, label: 'Ativa (offline)', tone: 'success' }
+      return { icon: ShieldCheck, label: t('license.activeOffline'), tone: 'success' }
     case 'offline_expiring':
-      return { icon: ShieldAlert, label: 'Verifique sua conexão', tone: 'warning' }
+      return { icon: ShieldAlert, label: t('license.checkConnection'), tone: 'warning' }
     case 'checking':
-      return { icon: Loader2, label: 'Verificando…', tone: 'neutral' }
+      return { icon: Loader2, label: t('license.checking'), tone: 'neutral' }
     case 'error':
-      return { icon: ShieldAlert, label: 'Erro de licença', tone: 'danger' }
+      return { icon: ShieldAlert, label: t('license.error'), tone: 'danger' }
     case 'blocked':
-      return { icon: ShieldAlert, label: 'Licença bloqueada', tone: 'danger' }
+      return { icon: ShieldAlert, label: t('license.blocked'), tone: 'danger' }
     case 'not_activated':
-      return { icon: KeyRound, label: 'Não ativada', tone: 'warning' }
+      return { icon: KeyRound, label: t('license.notActivated'), tone: 'warning' }
     case 'not_configured':
-      return { icon: KeyRound, label: 'Sem licenciamento', tone: 'neutral' }
+      return { icon: KeyRound, label: t('license.notConfigured'), tone: 'neutral' }
     default:
-      return { icon: ShieldQuestion, label: 'Licenciamento', tone: 'neutral' }
+      return { icon: ShieldQuestion, label: t('license.generic'), tone: 'neutral' }
   }
 })
-
-async function submit(): Promise<void> {
-  if (!licenseInput.value.trim()) return
-  await activateLicense(licenseInput.value.trim())
-  if (licenseState.status === 'active') licenseInput.value = ''
-}
 
 function onDocClick(e: MouseEvent): void {
   if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false
@@ -50,7 +46,7 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
       class="license-pill"
       :class="'tone-' + meta.tone"
       type="button"
-      title="Licença"
+      :title="t('license.title')"
       @click="open = !open"
     >
       <component
@@ -62,12 +58,27 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
     </button>
 
     <div v-if="open" class="license-popover">
-      <p class="popover-title">Licença</p>
-      <p v-if="licenseState.installationsLimit" class="popover-detail">
-        Instalações: {{ licenseState.installationsUsed }}/{{ licenseState.installationsLimit }}
+      <p class="popover-title">{{ t('license.title') }}</p>
+      <!-- The state in words. Without it the popover can open showing nothing
+           but its own title: installations, offline days and the deactivate
+           button are all conditional, and none of them applies to, say, a
+           licence that is simply not configured. -->
+      <p class="popover-detail" :class="'tone-' + meta.tone">
+        <component :is="meta.icon" :size="13" />
+        {{ meta.label }}
       </p>
+      <p v-if="licenseState.installationsLimit" class="popover-detail">
+        {{
+          t('license.installations', {
+            used: licenseState.installationsUsed,
+            limit: licenseState.installationsLimit
+          })
+        }}
+      </p>
+      <!-- Pluralised rather than "dia(s)": Russian needs three forms and
+           Japanese none, and neither is expressible with a parenthesised s. -->
       <p v-if="licenseState.offlineDaysRemaining != null" class="popover-detail">
-        Tolerância offline: {{ licenseState.offlineDaysRemaining }} dia(s) restante(s)
+        {{ t('license.offlineDays', licenseState.offlineDaysRemaining) }}
       </p>
 
       <template
@@ -77,34 +88,20 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
           licenseState.status === 'offline_expiring'
         "
       >
-        <p class="popover-detail success"><ShieldCheck :size="13" /> Ativa nesta instalação</p>
+        <p class="popover-detail success">
+          <ShieldCheck :size="13" /> {{ t('license.activeHere') }}
+        </p>
         <AppButton variant="danger" class="mt-1" @click="deactivateLicense">
-          Desativar nesta instalação
+          {{ t('license.deactivate') }}
         </AppButton>
       </template>
 
-      <template v-else>
-        <label class="popover-label" for="license-id-input">ID da licença</label>
-        <input
-          id="license-id-input"
-          v-model="licenseInput"
-          type="text"
-          placeholder="lic_..."
-          class="popover-input"
-          :disabled="licenseState.status === 'checking'"
-          @keydown.enter="submit"
-        />
-        <p class="popover-hint">Enviado por e-mail após a compra.</p>
-        <p v-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
-        <AppButton
-          variant="primary"
-          class="mt-1"
-          :disabled="!licenseInput.trim() || licenseState.status === 'checking'"
-          @click="submit"
-        >
-          {{ licenseState.status === 'checking' ? 'Ativando…' : 'Ativar' }}
-        </AppButton>
-      </template>
+      <!-- No activation form here. `not_activated` and `blocked` are hard
+           blocks (isHardBlocked in store/license.ts): LicenseActivationView
+           takes over the whole window, so this popover is unreachable in
+           exactly the states a form would serve. What is left for it to say is
+           whether the licence is working — and, when it is not, why. -->
+      <p v-else-if="licenseState.error" class="popover-error">{{ licenseState.error }}</p>
     </div>
   </div>
 </template>
@@ -216,6 +213,18 @@ onBeforeUnmount(() => document.removeEventListener('mousedown', onDocClick))
 .popover-hint {
   font-size: 11px;
   color: var(--text-tertiary);
+}
+
+.popover-detail.tone-success {
+  color: var(--color-success);
+}
+
+.popover-detail.tone-warning {
+  color: var(--color-warning);
+}
+
+.popover-detail.tone-danger {
+  color: var(--color-danger);
 }
 
 .popover-error {

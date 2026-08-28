@@ -1,4 +1,5 @@
 import { ref, type Ref } from 'vue'
+import { i18n } from '../i18n'
 import { api, hasNativeApi, type DescribedFile, type MediaKind } from '../services/native'
 
 // Consolidates the native "pick files → per-file callback" shell that was
@@ -30,7 +31,7 @@ export function usePickFiles(
 
   async function pickFiles(): Promise<void> {
     if (!hasNativeApi) {
-      importError.value = 'Seleção de arquivos disponível apenas no aplicativo desktop.'
+      importError.value = i18n.global.t('importing.filesDesktopOnly')
       return
     }
     uploading.value = true
@@ -40,7 +41,8 @@ export function usePickFiles(
       importError.value = null
       for (const f of result.files) await addFile(f)
     } catch (error) {
-      importError.value = error instanceof Error ? error.message : 'Falha ao selecionar arquivos.'
+      importError.value =
+        error instanceof Error ? error.message : i18n.global.t('importing.pickFilesFailed')
     } finally {
       uploading.value = false
     }
@@ -48,7 +50,7 @@ export function usePickFiles(
 
   async function pickFolder(): Promise<void> {
     if (!hasNativeApi) {
-      importError.value = 'Seleção de pasta disponível apenas no aplicativo desktop.'
+      importError.value = i18n.global.t('importing.folderDesktopOnly')
       return
     }
     uploading.value = true
@@ -56,13 +58,14 @@ export function usePickFiles(
       const result = await api.selectFolder(kinds)
       if (result.canceled) return
       if (result.files.length === 0) {
-        importError.value = 'Nenhum arquivo compatível foi encontrado nessa pasta.'
+        importError.value = i18n.global.t('importing.noFilesInFolder')
         return
       }
       importError.value = null
       for (const f of result.files) await addFile(f)
     } catch (error) {
-      importError.value = error instanceof Error ? error.message : 'Falha ao selecionar a pasta.'
+      importError.value =
+        error instanceof Error ? error.message : i18n.global.t('importing.pickFolderFailed')
     } finally {
       uploading.value = false
     }
@@ -70,7 +73,7 @@ export function usePickFiles(
 
   async function handleFilesDropped(dropped: File[]): Promise<void> {
     if (!hasNativeApi) {
-      importError.value = 'Arraste e solte disponível apenas no aplicativo desktop.'
+      importError.value = i18n.global.t('importing.dropDesktopOnly')
       return
     }
     uploading.value = true

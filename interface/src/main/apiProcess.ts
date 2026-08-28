@@ -2,20 +2,47 @@ import { spawn, ChildProcess } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
-export const API_BASE_URL = 'http://127.0.0.1:8765'
+// A porta vem por variável, e não fixada: o app empacotado e uma execução de
+// desenvolvimento precisam poder ficar abertos ao mesmo tempo sem um recusar
+// iniciar. 8051 é o padrão do empacotado; o desenvolvimento usa 8050, definido
+// em electron.vite.config.ts e repassado ao processo Python como ASTROS_PORT.
+export const API_PORT = process.env.ASTROS_API_PORT || '8051'
+export const API_BASE_URL = `http://127.0.0.1:${API_PORT}`
+
+// Fixados no runtime do app empacotado: a URL do licenciamento e a chave
+// pública que verifica as respostas dele. Deixá-los como variável de ambiente
+// permitiria apontar o app para outro servidor de licença.
 export const LICENSING_SERVICE_URL = 'https://license.eterzion.com'
 export const LICENSING_SERVICE_PUBLIC_KEY_B64 =
   '2zo5YW9vKdQdBPNCELH/+ukuMlJkZhObsY6N8Qu4wpA='
 
-/** Locates the bundled FFmpeg binary's directory (electron-builder extraResources,
- *  see electron-builder.yml win/linux `extraResources: ... to: ffmpeg`), if one was
- *  packaged for this platform. Returns null in dev or on platforms without a
- *  bundled build (currently macOS — see docs/models/MODEL_LICENSES.md §5) so the
- *  Python backend falls back to a PATH-installed ffmpeg. */
-export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
+/** Locates the FFmpeg binary's directory: the packaged one first (electron-builder
+ *  extraResources, see electron-builder.yml win/linux `extraResources: ... to:
+ *  ffmpeg`), then the one `npm run fetch:ffmpeg` leaves in the repo for
+ *  development.
+ *
+ *  The dev fallback is not a convenience. Without it, a developer run resolved
+ *  ffmpeg from PATH — a different binary from the one users get, usually a GPL
+ *  build — and that gap is where three separate defects lived unnoticed: a GPL
+ *  encoder default, two GPL filters absent from the LGPL build, and an ffprobe
+ *  the bundle did not carry. On a machine with no system FFmpeg it was worse
+ *  than a gap: every import failed with `unreadable`, because nothing answered
+ *  the probe at all.
+ *
+ *  Still returns null on platforms without a bundled build (currently macOS —
+ *  see docs/models/MODEL_LICENSES.md §5), where PATH remains the only option. */
+export function resolveBundledFfmpegDir(resourcesPath: string, repoRoot?: string): string | null {
   const binaryName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
-  const dir = join(resourcesPath, 'ffmpeg')
-  return existsSync(join(dir, binaryName)) ? dir : null
+  const packaged = join(resourcesPath, 'ffmpeg')
+  if (existsSync(join(packaged, binaryName))) return packaged
+
+  if (repoRoot) {
+    // Same layout fetch-ffmpeg.mjs writes: resources/ffmpeg/<platform>/.
+    const platformDir = process.platform === 'win32' ? 'win32' : 'linux'
+    const dev = join(repoRoot, 'interface', 'resources', 'ffmpeg', platformDir)
+    if (existsSync(join(dev, binaryName))) return dev
+  }
+  return null
 }
 
 export function resolveBundledApiExecutable(resourcesPath: string): string | null {
@@ -103,11 +130,14 @@ export async function ensureApiRunning(
       ready: false,
       baseUrl: API_BASE_URL,
       startedByApp: false,
-      error: 'A porta local 8765 já está em uso por outro processo. Feche-o e abra o aplicativo novamente.'
+      error: `A porta local ${API_PORT} já está em uso por outro processo. Feche-o e abra o aplicativo novamente.`
     }
   }
 
-  const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath)
+  // O segundo argumento é o fallback para a árvore do repositório: sem ele,
+  // uma execução de desenvolvimento não acha o FFmpeg empacotado e cai num do
+  // PATH, que a máquina pode não ter.
+  const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath, repoRoot)
   const bundledModelsDir = resolveBundledModelsDir(resourcesPath)
   const storageDir = join(userDataPath, 'storage')
   mkdirSync(join(storageDir, 'uploads'), { recursive: true })
@@ -116,7 +146,14 @@ export async function ensureApiRunning(
   let command: string
   let args: string[]
   let cwd: string
-  let env = { ...process.env }
+  // ASTROS_PORT é o nome da configuração da própria API (app/config.py,
+  // env_prefix 'ASTROS_'). Passá-lo explicitamente, em vez de contar com
+  // herança, garante que o filho escute na porta para a qual este processo já
+  // está apontando.
+  // Anotado como ProcessEnv: sem o tipo, o TypeScript infere um literal com
+  // apenas as chaves escritas aqui, e as atribuições condicionais abaixo
+  // (modelos, FFmpeg, licenciamento) deixam de compilar.
+  let env: NodeJS.ProcessEnv = { ...process.env, ASTROS_PORT: API_PORT }
 
   if (bundledApi) {
     command = bundledApi
@@ -150,7 +187,6 @@ export async function ensureApiRunning(
   if (bundledFfmpegDir) env.ASTROS_FFMPEG_DIR = bundledFfmpegDir
 
   const child = spawn(command, args, { cwd, env, windowsHide: true })
-  ownedProcess = child
 
   let stderrTail = ''
   child.stderr?.on('data', (chunk: Buffer) => {

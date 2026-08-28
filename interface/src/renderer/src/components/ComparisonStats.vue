@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { formatBytes } from '../utils/formatBytes'
 import type { Job } from '../store/jobs'
 
 const props = defineProps<{ job: Job }>()
-
-function fmtBytes(bytes: number | null | undefined): string {
-  if (bytes == null) return '—'
-  return (bytes / (1024 * 1024)).toFixed(2) + ' MB'
-}
 
 function fmtDim(value: number | null | undefined): string {
   return value == null ? '—' : String(value)
@@ -30,27 +27,24 @@ const outputResolution = computed(
   () => `${fmtDim(props.job.outputMeta?.width)}×${fmtDim(props.job.outputMeta?.height)}`
 )
 
-const PROFILE_LABEL: Record<string, string> = {
-  fast: 'Rápido',
-  balanced: 'Equilibrado',
-  quality: 'Qualidade'
-}
-
 // Original mode travels as scale '1x' and resolves no model at all, so the
 // profile — which only ever tunes how hard a model pass works — describes
 // nothing that ran. Naming it here claimed work the job never did.
-const usesModel = computed(() => props.job.scaleConfig.mode !== 'original')
+const usesModel = computed(() => {
+  const ct = props.job.scaleConfig.contentType
+  return ct !== 'pixel_art' && ct !== 'no_model'
+})
 
 // What actually ran, not what the panel offers: each of these only lands in the
-// output when it was switched on, and Original mode makes them the entire
+// output when it was switched on, and a model-free job makes them the entire
 // pipeline — so "nenhum" is a real, meaningful answer here.
 const adjustmentsSummary = computed(() => {
   const c = props.job.scaleConfig
   const used: string[] = []
   if (c.denoiseFilterEnabled && c.denoiseFilterStrength > 0)
-    used.push(`Ruído ${c.denoiseFilterStrength}`)
-  if (c.sharpenEnabled && c.sharpen > 0) used.push(`Nitidez ${c.sharpen}`)
-  if (c.faceRecovery) used.push(`Faces ${c.faceRecoveryStrength}`)
+    used.push(t('stats.noise', { value: c.denoiseFilterStrength }))
+  if (c.sharpenEnabled && c.sharpen > 0) used.push(t('stats.sharpness', { value: c.sharpen }))
+  if (c.faceRecovery) used.push(t('stats.faces', { value: c.faceRecoveryStrength }))
   // null, not 'Nenhum': the row is dropped instead of stating an absence. A
   // panel that reports the run should be short when little happened.
   return used.length ? used.join(' · ') : null
@@ -62,38 +56,45 @@ const modelSummary = computed(() => {
     c.mode === 'preset'
       ? `${c.presetFactor}x`
       : `${c.customWidth ?? '—'}×${c.customHeight ?? '—'}px`
-  return `${PROFILE_LABEL[c.profile] ?? c.profile} · ${scaleLabel}`
+  // te() first: an unknown profile falls back to its raw value rather
+  // than rendering a missing-key string at the user.
+  const profile = te(`processing.profile.${c.profile}.label`)
+    ? t(`processing.profile.${c.profile}.label`)
+    : c.profile
+  return `${profile} · ${scaleLabel}`
 })
+
+const { t, te } = useI18n()
 </script>
 
 <template>
   <div class="stats-grid">
     <div class="stat">
-      <span class="stat-label">Resolução</span>
+      <span class="stat-label">{{ t('stats.resolution') }}</span>
       <span class="stat-value">
         <span>{{ sourceResolution }}</span>
         <span class="stat-after">→ {{ outputResolution }}</span>
       </span>
     </div>
     <div class="stat">
-      <span class="stat-label">Tamanho do arquivo</span>
+      <span class="stat-label">{{ t('stats.fileSize') }}</span>
       <span class="stat-value">
-        <span>{{ fmtBytes(job.sourceMeta.sizeBytes) }}</span>
-        <span class="stat-after">→ {{ fmtBytes(job.outputMeta?.sizeBytes) }}</span>
+        <span>{{ formatBytes(job.sourceMeta.sizeBytes) }}</span>
+        <span class="stat-after">→ {{ formatBytes(job.outputMeta?.sizeBytes) }}</span>
       </span>
     </div>
     <div class="stat">
-      <span class="stat-label">Tempo de processamento</span>
+      <span class="stat-label">{{ t('stats.processingTime') }}</span>
       <span class="stat-value">{{ processingLabel }}</span>
     </div>
     <div v-if="adjustmentsSummary" class="stat">
-      <span class="stat-label">Ajustes aplicados</span>
+      <span class="stat-label">{{ t('stats.adjustmentsApplied') }}</span>
       <span class="stat-value">{{ adjustmentsSummary }}</span>
     </div>
     <!-- Only when a model ran. "Sem modelo" said nothing the resolution and the
          adjustments above had not already made plain. -->
     <div v-if="usesModel" class="stat">
-      <span class="stat-label">Modelo e parâmetros</span>
+      <span class="stat-label">{{ t('stats.modelAndParams') }}</span>
       <span class="stat-value">{{ modelSummary }}</span>
     </div>
   </div>

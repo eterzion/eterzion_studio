@@ -14,7 +14,8 @@ import os
 
 import cv2
 
-from .media import ImageOpenError, even, has_ffmpeg, imread, run_ffmpeg
+from .media import (ImageOpenError, encoder_works, even, first_available_audio_encoder,
+                    first_available_encoder, has_ffmpeg, imread, run_ffmpeg)
 
 IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp', '.avif')
 _CV2_IMAGE_EXTENSIONS = ('.jpg', '.jpeg', '.png', '.webp')  # what OpenCV itself can decode/encode
@@ -22,9 +23,55 @@ VIDEO_EXTENSIONS = ('.mp4', '.mkv', '.mov', '.avi', '.webm')
 AUDIO_LOSSY_EXTENSIONS = ('.mp3', '.m4a', '.aac', '.ogg', '.opus')
 AUDIO_LOSSLESS_EXTENSIONS = ('.flac',)
 
+# Video/audio encoders permitted per container, in preference order. Every one
+# is LGPL-safe: the Constitution's Licensing and Distribution Constraints forbid
+# bundling a GPL encoder, and `libx264` — this module's default until
+# docs/technical-debt/gpl-encoder-default.md was closed — is GPL.
+#
+# Deliberately NOT imported from astros_upscale_api.app.config's
+# VIDEO_CONTAINER_ALLOWLIST, which lists the same encoders for the video-editor
+# path: the dependency runs the other way (the API imports this package, never
+# the reverse). Five short tuples repeated beats an inverted import.
+_CONTAINER_VIDEO_ENCODERS: dict[str, tuple[str, ...]] = {
+    '.mp4': ('h264_nvenc', 'h264_qsv', 'h264_amf'),
+    '.mov': ('h264_nvenc', 'h264_qsv', 'h264_amf'),
+    '.avi': ('h264_nvenc', 'h264_qsv', 'h264_amf'),
+    '.mkv': ('h264_nvenc', 'h264_qsv', 'h264_amf', 'libvpx-vp9'),
+    '.webm': ('libvpx-vp9', 'libaom-av1'),
+}
+
+_CONTAINER_AUDIO_ENCODERS: dict[str, tuple[str, ...]] = {
+    '.mp4': ('aac',),
+    '.mov': ('aac',),
+    '.avi': ('aac',),
+    '.mkv': ('libopus', 'flac'),
+    '.webm': ('libopus',),
+}
+
+# Every video encoder above takes a quantizer where lower means better quality,
+# but each spells it differently. `_quality_to_crf` still decides the number;
+# this only decides its name, so no new quality judgement enters here.
+_QUANTIZER_OPTION: dict[str, str] = {
+    'h264_nvenc': 'cq',
+    'h264_qsv': 'global_quality',
+    'h264_amf': 'qp_i',
+    'libvpx-vp9': 'crf',
+    'libaom-av1': 'crf',
+}
+
 
 class UnsupportedFormatError(ValueError):
     """Raised when the input/output extension has no optimization path."""
+
+
+class EncoderUnavailableError(RuntimeError):
+    """Raised when no permitted encoder for the requested container actually
+    works on this machine — refused before transcoding starts, never partway
+    through (Princípio XIII).
+
+    Messages never name an encoder: they surface to the client through the job
+    error field, and Princípio V keeps encoder names off that wire.
+    """
 
 
 def _quality_to_avif_crf(quality: int) -> int:
@@ -88,15 +135,74 @@ def _quality_to_crf(quality: int) -> int:
     return round(18 + (100 - quality) * 0.22)  # 100 -> crf 18 (quase sem perda), 0 -> crf 40 (bem compacto)
 
 
-def optimize_video(input_path: str, output_path: str, quality: int = 75, codec: str = 'libx264',
+def _resolve_video_encoder(output_path: str, codec: str | None) -> str:
+    """The video encoder for this output, confirmed to actually encode a frame
+    here — permitted is not present (Princípio XIII).
+
+    A caller may still name one, but it goes through the same functional probe.
+    `encoder_works()` refuses every GPL encoder unconditionally, so no argument
+    can bring `libx264` back through this door.
+    """
+    if codec is not None:
+        if not encoder_works(codec):
+            raise EncoderUnavailableError(
+                'O encoder pedido não pode ser usado aqui — indisponível nesta máquina, '
+                'ou proibido numa build distribuível.')
+        return codec
+    ext = os.path.splitext(output_path)[1].lower()
+    candidates = _CONTAINER_VIDEO_ENCODERS.get(ext)
+    if not candidates:
+        raise UnsupportedFormatError(
+            f'Otimização de vídeo não suporta {ext!r}; use mp4, mkv, mov, avi ou webm.')
+    encoder = first_available_encoder(candidates)
+    if encoder is None:
+        raise EncoderUnavailableError(
+            f'Nenhum encoder permitido para {ext.lstrip(".")} funciona nesta máquina; '
+            'escolha outro formato de saída.')
+    return encoder
+
+
+def _video_quality_options(encoder: str, quality: int) -> dict:
+    q = _quality_to_crf(quality)
+    if encoder in ('libvpx-vp9', 'libaom-av1'):
+        # These two only treat `crf` as a real quality target when the bitrate
+        # target is explicitly zero; without it they run in constrained-quality
+        # mode, where the same number means something else entirely.
+        return {'crf': q, 'b:v': '0'}
+    return {_QUANTIZER_OPTION[encoder]: q}
+
+
+def _audio_options(input_path: str, output_path: str) -> dict:
+    """Copying the source track is right for compression (same container) and
+    wrong for conversion: AAC does not go into WebM, and Opus does not go into
+    MP4. Same extension in and out means the track is already legal where it is
+    going; a different one means it has to be re-encoded."""
+    out_ext = os.path.splitext(output_path)[1].lower()
+    if os.path.splitext(input_path)[1].lower() == out_ext:
+        return {'c:a': 'copy'}
+    encoder = first_available_audio_encoder(_CONTAINER_AUDIO_ENCODERS.get(out_ext, ()))
+    if encoder is None:
+        raise EncoderUnavailableError(
+            f'Nenhum encoder de áudio permitido para {out_ext.lstrip(".")} funciona nesta '
+            'máquina; escolha outro formato de saída.')
+    return {'c:a': encoder}
+
+
+def optimize_video(input_path: str, output_path: str, quality: int = 75, codec: str | None = None,
                    resize: tuple[int, int] | None = None) -> None:
-    """Re-encode a video with a smaller bitrate target (CRF), keeping fps; audio is
-    copied as-is. ``resize`` scales the frames to exactly (w, h) — ffmpeg's own
-    scaler, never the upscaling model."""
+    """Re-encode a video with a smaller bitrate target, keeping fps; audio is
+    copied when the container does not change. ``resize`` scales the frames to
+    exactly (w, h) — ffmpeg's own scaler, never the upscaling model.
+
+    ``codec=None`` means "resolve one that works here from the output
+    container". It used to default to ``libx264``, which is GPL and must never
+    reach a shipped build — see docs/technical-debt/gpl-encoder-default.md.
+    """
     if not has_ffmpeg():
         raise RuntimeError('ffmpeg não encontrado no sistema; instale-o para otimizar vídeos.')
-    crf = _quality_to_crf(quality)
-    options = {'c:v': codec, 'crf': crf, 'preset': 'medium', 'c:a': 'copy'}
+    encoder = _resolve_video_encoder(output_path, codec)
+    options = {'c:v': encoder, **_video_quality_options(encoder, quality),
+               **_audio_options(input_path, output_path)}
     if resize is not None:
         # Encoders reject odd dimensions for common yuv420p pixel formats, so
         # round to even rather than failing deep inside ffmpeg.
@@ -135,7 +241,7 @@ def _media_category(ext: str) -> str | None:
     return None
 
 
-def optimize_file(input_path: str, output_path: str, quality: int = 80, codec: str = 'libx264',
+def optimize_file(input_path: str, output_path: str, quality: int = 80, codec: str | None = None,
                   resize: tuple[int, int] | None = None) -> None:
     """Dispatches to the right optimizer/converter based on the input/output
     extensions. Same extension -> compress (FR-025 to FR-027); different

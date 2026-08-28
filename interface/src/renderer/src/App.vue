@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ServerCrash } from '@lucide/vue'
 import AppSidebar from './components/AppSidebar.vue'
 import AppButton from './components/atoms/AppButton.vue'
@@ -8,9 +9,10 @@ import HomeView from './views/HomeView.vue'
 import ImageEditorView from './views/ImageEditorView.vue'
 import HistoryView from './views/HistoryView.vue'
 import SettingsView from './views/SettingsView.vue'
-import VideoView from './views/VideoView.vue'
+import VideoEditorView from './views/VideoEditorView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
+import CompressionView from './views/CompressionView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
@@ -46,6 +48,8 @@ onMounted(() => {
   }
   initLicense()
 })
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -61,13 +65,15 @@ onMounted(() => {
 
       <div v-if="apiStatus.checking" class="api-status-view">
         <AppSpinner :size="28" class="text-accent" />
-        <p>Conectando ao servidor da API (astros_upscale_api)…</p>
+        <p>{{ t('app.connecting') }}</p>
       </div>
       <div v-else-if="apiStatus.error" class="api-status-view error">
         <ServerCrash :size="28" />
-        <p class="api-error-title">Não foi possível conectar à API</p>
+        <p class="api-error-title">{{ t('app.apiErrorTitle') }}</p>
         <p class="api-error-detail">{{ apiStatus.error }}</p>
-        <AppButton variant="primary" size="lg" @click="checkApiStatus">Tentar novamente</AppButton>
+        <AppButton variant="primary" size="lg" @click="checkApiStatus">{{
+          t('activation.retry')
+        }}</AppButton>
       </div>
 
       <!-- Vídeo and Áudio keep their queues in component state, so switching
@@ -77,15 +83,16 @@ onMounted(() => {
            panel each screen was showing. Everything else is deliberately NOT
            cached: Histórico and Configurações load their data on mount and
            would go stale. -->
-      <KeepAlive v-else :include="['VideoView', 'AudioView']">
+      <KeepAlive v-else :include="['VideoEditorView', 'AudioView']">
         <HomeView v-if="active === 'home'" @navigate="navigate" />
         <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
         <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
         <SettingsView v-else-if="active === 'configuracoes'" />
-        <VideoView v-else-if="active === 'video'" @back="active = 'home'" />
+        <VideoEditorView v-else-if="active === 'video'" @back="active = 'home'" />
         <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />
+        <CompressionView v-else-if="active === 'compressao'" @back="active = 'home'" />
         <div v-else class="placeholder-view">
-          <p>Esta seção ainda não foi implementada nesta prévia de redesenho.</p>
+          <p>{{ t('app.notImplemented') }}</p>
         </div>
       </KeepAlive>
     </template>

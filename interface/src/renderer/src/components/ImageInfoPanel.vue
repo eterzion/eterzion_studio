@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatBytes } from '../utils/formatBytes'
+import { useI18n } from 'vue-i18n'
 import { ImageIcon, Expand, TrendingUp, TrendingDown, HardDrive } from '@lucide/vue'
 
 const props = defineProps<{
@@ -18,6 +20,8 @@ const scaleFactor = computed(() => {
   return Math.sqrt(newPixels / origPixels)
 })
 
+const { t } = useI18n()
+
 // Signed, and shown for reductions too: the Original mode resizes downward, so
 // this reports -10% as readily as +300%. A hardcoded "+" turned the first case
 // into "(+-10%)".
@@ -33,9 +37,10 @@ const percentLabel = computed(() =>
 // carries the direction is the signed percentage and this icon.
 const scaleIcon = computed(() => ((percentDelta.value ?? 0) < 0 ? TrendingDown : TrendingUp))
 
+// The estimate keeps its "≈": it is a prediction, and dropping the sign would
+// present it as a measurement.
 function fmtBytes(bytes: number | null): string {
-  if (bytes == null) return '—'
-  return '≈ ' + (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  return bytes == null ? '—' : '≈ ' + formatBytes(bytes)
 }
 </script>
 
@@ -44,7 +49,7 @@ function fmtBytes(bytes: number | null): string {
     <div class="info-row">
       <div class="info-icon icon-chip"><ImageIcon :size="15" /></div>
       <div class="info-body">
-        <span class="info-label">Resolução original</span>
+        <span class="info-label">{{ t('stats.originalResolution') }}</span>
         <span class="info-value">
           {{ originalWidth ?? '—' }} × {{ originalHeight ?? '—' }} px
         </span>
@@ -54,7 +59,7 @@ function fmtBytes(bytes: number | null): string {
     <div class="info-row highlight">
       <div class="info-icon icon-chip primary"><Expand :size="15" /></div>
       <div class="info-body">
-        <span class="info-label">Nova resolução</span>
+        <span class="info-label">{{ t('stats.newResolution') }}</span>
         <span class="info-value info-value-lg">
           {{ newWidth ?? '—' }} × {{ newHeight ?? '—' }} px
         </span>

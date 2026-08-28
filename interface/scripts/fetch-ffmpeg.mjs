@@ -11,23 +11,23 @@
  * docs/models/MODEL_LICENSES.md §5: dynamic linking, replaceable DLLs, and a
  * documented source pointer (kept below and in that doc).
  *
- * Pinned to a **dated** release tag, not to "latest".
+ * Pinned to a DATED release tag, not to "latest". Pinning the asset name and a
+ * SHA256 against a moving tag does not pin anything: BtbN re-tags "latest" every
+ * day, the bytes behind the same filename change, and the checksum stops
+ * matching. This script then refuses — correctly — and the installer cannot be
+ * built at all. That is exactly what happened on 2026-08-21, when the previous
+ * pin ("latest" + a sha from an earlier day) had already gone stale.
  *
- * "latest" is a moving tag: BtbN re-aponta ele a cada novo build, e o par
- * nome-do-arquivo + SHA256 fixado aqui envelhece sozinho. O sintoma é este
- * script recusar o download com "SHA256 mismatch" num dia em que nada mudou no
- * repositório — e o instalador Windows deixar de ser gerado por causa disso.
- *
- * Uma tag datada é imutável, então o par continua verdadeiro. Os nomes de
- * arquivo sob uma tag datada carregam o id exato do build, que é por isso que
- * são mais longos que os servidos por "latest".
+ * A dated tag is immutable, so the filename+SHA256 pair stays true. The asset
+ * names under a dated tag carry the exact build id, which is why they look
+ * longer than the ones "latest" serves.
  *
  * To move to a newer version: pick a tag from
- * https://github.com/BtbN/FFmpeg-Builds/releases, then update
- * FFMPEG_RELEASE_TAG, FFMPEG_SOURCE_VERSION, both archiveName values and both
- * sha256 values together (from the release's checksums.sha256), re-run
- * `npm run fetch:ffmpeg` and re-verify with `ffmpeg -version` per
- * docs/models/MODEL_LICENSES.md §5.
+ * https://github.com/BtbN/FFmpeg-Builds/releases, then update FFMPEG_RELEASE_TAG,
+ * FFMPEG_SOURCE_VERSION, both archiveName values and both sha256 values together
+ * (the digests are on each asset in the GitHub API, or in the release's
+ * checksums.sha256), re-run `npm run fetch:ffmpeg` and re-verify with
+ * `ffmpeg -version` per docs/models/MODEL_LICENSES.md §5.
  *
  * macOS is intentionally not covered here — BtbN does not publish macOS
  * builds and no equivalent verifiable/automatable LGPL source was found.
@@ -60,16 +60,16 @@ const TARGETS = {
   win32: {
     archiveName: 'ffmpeg-n8.1.2-44-g7c533d0f86-win64-lgpl-shared-8.1.zip',
     sha256: 'e30201900132c0e3da178c63c7dac65aa0a0dcd971779546ae964b86b47bd499',
-    // Runtime files only: ffmpeg.exe, ffprobe.exe e suas DLLs. Descarta
-    // ffplay.exe e os arquivos .def/.lib de import (só valem em tempo de link,
-    // e um app empacotado nunca compila contra eles).
+    // Runtime files only: ffmpeg.exe, ffprobe.exe and their DLLs. Drops
+    // ffplay.exe and the .def/.lib import-library files (link-time only, no use
+    // in a packaged app that never compiles against these).
     //
-    // O ffprobe era descartado aqui como "não necessário". Ele é necessário:
-    // astros_upscale.media.ffprobe_json() o invoca para toda pergunta sobre
-    // duração, taxa de quadros, resolução e trilha de áudio — o que é quase toda
-    // a importação de vídeo. Excluí-lo fazia o app empacotado cair num ffprobe
-    // do PATH que a máquina de um usuário não tem motivo para ter. Custa ~0,5 MB
-    // e reaproveita as DLLs que já estão aqui.
+    // ffprobe used to be dropped here as "not needed". It is needed:
+    // astros_upscale.media.ffprobe_json() shells out to it for every duration,
+    // frame-rate, resolution and audio-track question the product asks, which is
+    // most of video import. Excluding it meant the packaged app fell back to a
+    // PATH ffprobe that an end-user machine has no reason to have. It costs
+    // ~0.5 MB and reuses the DLLs already here.
     keepFromBinDir: (name) => /\.(exe|dll)$/i.test(name) && !/^ffplay\.exe$/i.test(name),
     binarySubpath: 'ffmpeg.exe'
   },

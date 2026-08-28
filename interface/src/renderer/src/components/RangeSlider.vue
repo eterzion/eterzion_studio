@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const props = withDefaults(
   defineProps<{
@@ -9,6 +10,11 @@ const props = withDefaults(
     step?: number
     defaultValue?: number
     disabled?: boolean
+    /** Accessible name for the range input. SettingRow renders its label as
+        plain text with no `for`, so without this every slider is an unnamed
+        control to a screen reader (FR-010 in specs/007-video-editor-player).
+        Optional so existing call sites are unaffected. */
+    ariaLabel?: string
   }>(),
   {
     min: 0,
@@ -18,6 +24,8 @@ const props = withDefaults(
     disabled: false
   }
 )
+
+const { t } = useI18n()
 
 const emit = defineEmits<{
   'update:modelValue': [value: number]
@@ -60,12 +68,13 @@ function onInput(e: Event): void {
         <div
           class="default-marker"
           :style="{ left: thumbCentre(defaultPercent) }"
-          :title="`Padrão: ${defaultValue}`"
+          :title="t('misc.defaultValue', { value: defaultValue })"
         />
       </div>
       <input
         class="range-input"
         type="range"
+        :aria-label="ariaLabel"
         :min="min"
         :max="max"
         :step="step"

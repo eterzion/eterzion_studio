@@ -183,14 +183,45 @@ class Upscaler:
 
     @staticmethod
     def _sharpen(img, strength: int):
-        """Real OpenCV unsharp mask: blur the image, then push the original away
+        """Unsharp mask on luminance only: blur, then push the original away
         from the blur by `strength`. 0 is a no-op; the amount scales up to a
-        clearly visible (but not oversharpened) edge boost at 100."""
+        clearly visible (but not oversharpened) edge boost at 100.
+
+        Sharpening each colour channel on its own moves them by different
+        amounts at an edge, and the difference between them IS colour — so the
+        filter invented chroma exactly where there was none. Measured on a
+        black-and-white icon: chroma came back from 8 to 22 at strength 100,
+        undoing what _suppress_invented_chroma had just taken out.
+
+        Separating luminance from chroma and sharpening only the first is the
+        standard answer, and it is not a compromise: the impression of
+        sharpness comes from the luminance edge. The colour planes are carried
+        through untouched, so a sharpened photo keeps its colours exactly.
+        """
         if strength <= 0:
             return img
-        blurred = cv2.GaussianBlur(img, (0, 0), sigmaX=3)
+
         amount = strength / 100 * 1.5
-        return cv2.addWeighted(img, 1 + amount, blurred, -amount, 0)
+
+        # Alpha is not colour and not luminance — it is set aside and put back.
+        alpha = img[:, :, 3:] if img.ndim == 3 and img.shape[2] == 4 else None
+        colour = img[:, :, :3] if alpha is not None else img
+
+        if colour.ndim == 3 and colour.shape[2] == 3 and colour.dtype == np.uint8:
+            ycrcb = cv2.cvtColor(colour, cv2.COLOR_BGR2YCrCb)
+            luma = ycrcb[:, :, 0]
+            blurred = cv2.GaussianBlur(luma, (0, 0), sigmaX=3)
+            ycrcb[:, :, 0] = cv2.addWeighted(luma, 1 + amount, blurred, -amount, 0)
+            sharpened = cv2.cvtColor(ycrcb, cv2.COLOR_YCrCb2BGR)
+        else:
+            # Greyscale or 16-bit: there are no separate chroma planes to
+            # protect, so the plain unsharp mask is already the right thing.
+            blurred = cv2.GaussianBlur(colour, (0, 0), sigmaX=3)
+            sharpened = cv2.addWeighted(colour, 1 + amount, blurred, -amount, 0)
+
+        if alpha is None:
+            return sharpened
+        return np.concatenate((sharpened, alpha), axis=2)
 
     # Max OpenCV filter strength ("h" in fastNlMeansDenoisingColored) at strength=100.
     # Non-local means specifically targets grain/compression noise while comparing
@@ -212,6 +243,95 @@ class Upscaler:
             return img
         h = max(1.0, strength / 100 * cls._DENOISE_MAX_H)
         return cv2.fastNlMeansDenoisingColored(img, None, h=h, hColor=h, templateWindowSize=7, searchWindowSize=21)
+
+    @staticmethod
+    def _suppress_invented_chroma(result, source, headroom: float = 1.25, floor: int = 8):
+        """Cap the output's colour at what the source had in the same place.
+
+        Measured on 2xHFA2kSPAN (the anime/illustration model) with a UI icon:
+        21% of flat-area pixels and 82% of edge pixels came out coloured, chroma
+        up to 140 — the pink and green fringing in white shapes. The photo model
+        reaches 24 on the same picture and a plain nearest-neighbour enlargement
+        18, so ~140 is invention, not detail.
+
+        The rule is local, not global. An earlier version only corrected pixels
+        whose source was neutral, and it missed exactly the case that prompted
+        this: an icon on a dark blue background (chroma 18) counted as "coloured"
+        everywhere, so the fringing where white meets that background went
+        untouched. Comparing each pixel against the strongest colour actually
+        present in its own neighbourhood handles both — a flat white area allows
+        nothing, that blue background allows its own 18, and neither allows 140.
+
+        `headroom` lets real colour intensify a little, which is legitimate
+        upscaling; `floor` keeps very slight tints from being clamped to nothing
+        by rounding. Luminance is never touched: that is where the actual
+        upscaling work lives, and only chroma is pulled back.
+        """
+        if result.dtype != np.uint8 or result.ndim != 3 or result.shape[2] not in (3, 4):
+            return result  # 16-bit and greyscale go through untouched
+        if source.ndim != 3 or source.shape[2] not in (3, 4):
+            return result
+
+        # Transparency is the normal case for the material this was written
+        # for: game and UI icons ship as RGBA with no background at all. An
+        # earlier version bailed out on any 4-channel image, which meant the
+        # correction never ran on precisely the files that motivated it.
+        #
+        # The alpha channel is carried through untouched — it is not colour and
+        # has no chroma to cap. Only the three colour channels are compared and
+        # corrected, and they are put back alongside the original alpha.
+        alpha = result[:, :, 3:] if result.shape[2] == 4 else None
+        colour = result[:, :, :3]
+        source_colour = source[:, :, :3]
+        corrected = Upscaler._cap_chroma(colour, source_colour, headroom, floor)
+        if alpha is None:
+            return corrected
+        return np.concatenate((corrected, alpha), axis=2)
+
+    @staticmethod
+    def _cap_chroma(result, source, headroom: float, floor: int):
+        """The cap itself, on three colour channels. Split out so the RGBA path
+        and the RGB path cannot drift apart."""
+
+        source_chroma = (
+            source.max(axis=2).astype(np.int16) - source.min(axis=2).astype(np.int16)
+        ).astype(np.uint8)
+
+        # The strongest colour in the neighbourhood, not in the single pixel:
+        # the model legitimately spreads a colour a little past where it started,
+        # and a per-pixel comparison would claw that back and leave halos.
+        local_max = cv2.dilate(source_chroma, np.ones((3, 3), np.uint8))
+        if (source.shape[0], source.shape[1]) != (result.shape[0], result.shape[1]):
+            local_max = cv2.resize(
+                local_max, (result.shape[1], result.shape[0]), interpolation=cv2.INTER_LINEAR
+            )
+
+        # The floor applies only where there was some colour to begin with:
+        # it exists so rounding cannot clamp a faint tint to nothing. Where the
+        # neighbourhood was strictly neutral, nothing is allowed at all — a
+        # white icon has no colour to spread, however faint.
+        local_f = local_max.astype(np.float32)
+        allowed = np.where(local_f > 0, np.maximum(local_f * headroom, float(floor)), 0.0)
+
+        out_chroma = (
+            result.max(axis=2).astype(np.int16) - result.min(axis=2).astype(np.int16)
+        ).astype(np.float32)
+
+        over = out_chroma > allowed
+        if not over.any():
+            return result
+
+        # Scale each offending pixel's colour back toward its own grey, which
+        # keeps its hue and its luminance and only reduces how saturated it is.
+        rows, cols = np.nonzero(over)
+        picked = result[rows, cols].astype(np.float32)
+        grey = picked @ np.array([0.114, 0.587, 0.299], np.float32)  # BGR luma
+        keep = (allowed[rows, cols] / np.maximum(out_chroma[rows, cols], 1e-6))[:, None]
+
+        pulled = grey[:, None] + (picked - grey[:, None]) * keep
+        result = result.copy()
+        result[rows, cols] = np.clip(pulled, 0, 255).astype(np.uint8)
+        return result
 
     def process(
         self,
@@ -255,6 +375,10 @@ class Upscaler:
 
         if target_w and target_h and (result.shape[1], result.shape[0]) != (target_w, target_h):
             result = cv2.resize(result, (int(target_w), int(target_h)), interpolation=cv2.INTER_LANCZOS4)
+
+        # Before the optional filters, so that sharpening cannot go on to
+        # emphasise colour the model invented.
+        result = self._suppress_invented_chroma(result, img)
 
         if face_recovery:
             # YuNet detection + local enhancement only operates on plain 3-channel 8-bit
@@ -309,8 +433,8 @@ class Upscaler:
         Original mode (scale '1x'). Running the model with outscale <= 1 would
         upscale 4x internally only to throw the result away, which is slow enough
         to look like the job hung; the filters below never needed it. `resize` may
-        only shrink, so this never enlarges by interpolation (the one thing the
-        model exists to avoid)."""
+        shrink, and may also enlarge -- see the interpolation choice below for
+        why enlarging here is a real answer and not a shortcut past the model."""
         if on_stage:
             on_stage('Lendo imagem')
         if on_progress:
@@ -325,7 +449,34 @@ class Upscaler:
             if (target_w, target_h) != (w_input, h_input):
                 if on_stage:
                     on_stage('Redimensionando')
-                result = cv2.resize(result, (target_w, target_h), interpolation=cv2.INTER_AREA)
+                # Shrinking and enlarging want opposite things.
+                #
+                # INTER_AREA averages the pixels it discards, which is what
+                # makes a reduction look clean.
+                #
+                # Enlarging uses INTER_NEAREST, and that is the whole point
+                # of this path for pixel art. Every super-resolution model
+                # here is trained on photographs and drawings, where
+                # softening an edge is correct; on a 32x32 icon it is not.
+                # Measured against a nearest enlargement of a real icon, the
+                # models shifted the shape by 2.4 to 6.5 mean luma levels and
+                # rounded the corners, while nearest reproduces every pixel
+                # exactly as it was authored. For art drawn pixel by pixel,
+                # inventing nothing beats any amount of clever.
+                #
+                # Pixel-art scalers were tried here and dropped: EPX and a
+                # no-blend xBR both work (each output pixel is copied, so
+                # a 39-colour icon stays 39 colours), but shown side by
+                # side against plain nearest on real icons, plain nearest
+                # was preferred. They round diagonals, and on artwork built
+                # from deliberate blocks that reads as the filter second-
+                # guessing the artist. Worth re-testing only with material
+                # that is mostly diagonals and curves.
+                enlarging = target_w > w_input or target_h > h_input
+                interpolation = cv2.INTER_NEAREST if enlarging else cv2.INTER_AREA
+                result = cv2.resize(
+                    result, (target_w, target_h), interpolation=interpolation
+                )
         if on_progress:
             on_progress(35)
 

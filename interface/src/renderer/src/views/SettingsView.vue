@@ -27,6 +27,7 @@ import {
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import SettingRow from '../components/SettingRow.vue'
+import NumberStepper from '../components/NumberStepper.vue'
 import SettingSwitch from '../components/SettingSwitch.vue'
 import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
@@ -61,16 +62,16 @@ const languageOptions = computed(() => [
 // elsewhere, e.g. ComponentsView.vue) — never derived from or exposing an
 // internal engine_ref (FR-009/FR-063).
 const CREDITS: {
-  capability: string
+  capabilityKey: string
   work: string
   author: string
   license: string
-  note?: string
+  noteKey?: string
   icon: unknown
   tint: string
 }[] = [
   {
-    capability: 'Melhoria de imagem — Foto',
+    capabilityKey: 'imagePhoto',
     work: '4xNomosWebPhoto_RealPLKSR',
     author: 'Philip Hofmann (Phhofm)',
     license: 'CC-BY-4.0',
@@ -78,7 +79,7 @@ const CREDITS: {
     tint: '#3b82f6'
   },
   {
-    capability: 'Melhoria de imagem — Anime/Ilustração',
+    capabilityKey: 'imageAnime',
     work: '2xHFA2kSPAN',
     author: 'Philip Hofmann (Phhofm)',
     license: 'CC-BY-4.0',
@@ -86,7 +87,7 @@ const CREDITS: {
     tint: '#a855f7'
   },
   {
-    capability: 'Melhoria de vídeo — Anime/Animação',
+    capabilityKey: 'videoAnime',
     work: 'Real-ESRGAN (realesr-animevideov3)',
     author: 'Xintao Wang',
     license: 'BSD-3-Clause',
@@ -94,7 +95,7 @@ const CREDITS: {
     tint: '#f59e0b'
   },
   {
-    capability: 'Melhoria de vídeo — Filmagem real',
+    capabilityKey: 'videoReal',
     work: '2xPublic_realplksr_dysample_layernorm_real',
     author: 'Philip Hofmann (Phhofm)',
     license: 'Apache-2.0',
@@ -102,7 +103,7 @@ const CREDITS: {
     tint: '#ef4444'
   },
   {
-    capability: 'Melhoria de áudio — Voz',
+    capabilityKey: 'audioSpeech',
     work: 'audiosronnx',
     author: 'TigreGotico',
     license: 'Apache-2.0',
@@ -110,16 +111,16 @@ const CREDITS: {
     tint: '#14b8a6'
   },
   {
-    capability: 'Melhoria de áudio — Música',
+    capabilityKey: 'audioMusic',
     work: 'SonicMaster',
     author: 'AMAAI Lab',
     license: 'Apache-2.0',
-    note: 'Apache-2.0 — condicional (depende do VAE do Stable Audio Open)',
+    noteKey: 'noteSonicMaster',
     icon: Music2,
     tint: '#ec4899'
   },
   {
-    capability: 'Realce de rosto (imagem)',
+    capabilityKey: 'faceEnhance',
     work: 'YuNet',
     author: 'OpenCV / libfacedetection',
     license: 'MIT',
@@ -127,11 +128,11 @@ const CREDITS: {
     tint: '#22c55e'
   },
   {
-    capability: 'Processamento de mídia',
+    capabilityKey: 'media',
     work: 'FFmpeg',
     author: 'FFmpeg developers',
     license: 'LGPL v2.1+',
-    note: '(build de distribuição)',
+    noteKey: 'noteFfmpeg',
     icon: PlayCircle,
     tint: '#3b82f6'
   }
@@ -168,10 +169,12 @@ const cacheMessage = ref<string | null>(null)
 async function clearModelsCache(): Promise<void> {
   try {
     await listComponents()
-    cacheMessage.value = 'Cache de componentes atualizado a partir da API.'
+    cacheMessage.value = t('settings.cacheRefreshed')
   } catch (error) {
     cacheMessage.value =
-      error instanceof Error ? `Falha ao atualizar: ${error.message}` : 'Falha ao atualizar cache.'
+      error instanceof Error
+        ? t('settings.cacheRefreshFailedWith', { error: error.message })
+        : t('settings.cacheRefreshFailed')
   }
   setTimeout(() => (cacheMessage.value = null), 4000)
 }
@@ -289,14 +292,14 @@ const outputFolderLabel = computed(
           <div class="group-header">
             <div class="group-icon icon-chip"><Cpu :size="18" /></div>
             <div>
-              <h2 class="group-title">Processamento</h2>
-              <p class="group-description">Padrões usados ao configurar uma nova imagem</p>
+              <h2 class="group-title">{{ t('settings.processingTitle') }}</h2>
+              <p class="group-description">{{ t('settings.processingDescription') }}</p>
             </div>
           </div>
           <div class="group-body">
             <SettingRow
-              label="Escala padrão"
-              description="Fator pré-selecionado para novas imagens"
+              :label="t('settings.defaultScale')"
+              :description="t('settings.defaultScaleDescription')"
             >
               <SegmentedControl
                 :model-value="String(settingsState.defaultScalePreset)"
@@ -308,14 +311,14 @@ const outputFolderLabel = computed(
               />
             </SettingRow>
             <SettingRow
-              label="Manter proporção automaticamente"
-              description="Trava largura/altura no modo customizado"
+              :label="t('settings.keepAspect')"
+              :description="t('settings.keepAspectDescription')"
             >
               <SettingSwitch v-model="settingsState.defaultLockAspectRatio" />
             </SettingRow>
             <SettingRow
-              label="Qualidade da imagem"
-              description="Padrão para exportação em .jpg/.webp"
+              :label="t('settings.imageQuality')"
+              :description="t('settings.imageQualityDescription')"
             >
               <div class="quality-control">
                 <RangeSlider
@@ -328,8 +331,8 @@ const outputFolderLabel = computed(
               </div>
             </SettingRow>
             <SettingRow
-              label="Tarefas simultâneas"
-              description="Fixo em 1 pela arquitetura atual do processamento (fila serial, um worker)"
+              :label="t('settings.concurrentJobs')"
+              :description="t('settings.concurrentJobsDescription')"
             >
               <span class="fixed-value">1</span>
             </SettingRow>
@@ -341,28 +344,28 @@ const outputFolderLabel = computed(
           <div class="group-header">
             <div class="group-icon icon-chip"><HistoryIcon :size="18" /></div>
             <div>
-              <h2 class="group-title">Histórico</h2>
+              <h2 class="group-title">{{ t('history.title') }}</h2>
               <p class="group-description">
-                {{ historyCount }} registro{{ historyCount === 1 ? '' : 's' }} salvos localmente
+                {{ t('history.storedCount', historyCount) }}
               </p>
             </div>
           </div>
           <div class="group-body">
             <SettingRow
-              label="Limite máximo de registros"
-              description="Os mais antigos são removidos ao ultrapassar"
+              :label="t('history.limitSettingLabel')"
+              :description="t('history.limitSettingDescription')"
             >
-              <input
-                v-model.number="settingsState.historyLimit"
-                type="number"
-                min="1"
-                max="5000"
-                class="number-input"
+              <NumberStepper
+                v-model="settingsState.historyLimit"
+                compact
+                :min="1"
+                :max="5000"
+                :aria-label="t('history.limitSettingLabel')"
               />
             </SettingRow>
             <SettingRow
-              label="Limpeza automática"
-              description="Remove registros mais antigos que o período abaixo"
+              :label="t('settings.autoCleanup')"
+              :description="t('settings.autoCleanupDescription')"
             >
               <SettingSwitch
                 :model-value="settingsState.historyAutoCleanupDays !== null"
@@ -371,36 +374,36 @@ const outputFolderLabel = computed(
             </SettingRow>
             <SettingRow
               v-if="settingsState.historyAutoCleanupDays !== null"
-              label="Manter por"
-              description="Dias antes da remoção automática"
+              :label="t('settings.keepFor')"
+              :description="t('settings.keepForDescription')"
             >
               <AppSelect
                 :model-value="String(settingsState.historyAutoCleanupDays)"
                 :options="[
-                  { value: '7', label: '7 dias' },
-                  { value: '30', label: '30 dias' },
-                  { value: '90', label: '90 dias' }
+                  { value: '7', label: t('settings.days', 7) },
+                  { value: '30', label: t('settings.days', 30) },
+                  { value: '90', label: t('settings.days', 90) }
                 ]"
                 @update:model-value="(v) => (settingsState.historyAutoCleanupDays = Number(v))"
               />
             </SettingRow>
             <SettingRow
-              label="Limpar histórico manualmente"
-              description="Remove todos os registros salvos — não afeta os arquivos exportados"
+              :label="t('settings.clearHistory')"
+              :description="t('settings.clearHistoryDescription')"
             >
               <AppButton variant="danger" :disabled="!historyCount" @click="confirmClearHistory">
                 <template #icon><Trash2 :size="14" /></template>
-                {{ clearConfirm ? 'Confirmar exclusão' : 'Limpar histórico' }}
+                {{ clearConfirm ? t('settings.confirmClear') : t('settings.clearHistoryAction') }}
               </AppButton>
             </SettingRow>
             <SettingRow
-              label="Limpar cache"
-              description="Recarrega a lista de modelos direto da API"
+              :label="t('settings.clearCache')"
+              :description="t('settings.clearCacheDescription')"
             >
               <div class="cache-row">
                 <AppButton variant="secondary" @click="clearModelsCache">
                   <template #icon><RotateCcw :size="14" /></template>
-                  Limpar cache
+                  {{ t('settings.clearCache') }}
                 </AppButton>
                 <span v-if="cacheMessage" class="cache-message"
                   ><Check :size="12" /> {{ cacheMessage }}</span
@@ -415,46 +418,52 @@ const outputFolderLabel = computed(
           <div class="group-header">
             <div class="group-icon icon-chip"><LayoutGrid :size="18" /></div>
             <div>
-              <h2 class="group-title">Interface</h2>
-              <p class="group-description">Personalize a exibição de informações e densidade</p>
+              <h2 class="group-title">{{ t('settings.interfaceTitle') }}</h2>
+              <p class="group-description">{{ t('settings.interfaceDescription') }}</p>
             </div>
           </div>
           <div class="group-body">
             <SettingRow
-              label="Mostrar descrições dos modelos"
-              description="Exibe a finalidade resumida nos cards da aba Modelos"
+              :label="t('settings.showDescriptions')"
+              :description="t('settings.showDescriptionsDescription')"
             >
               <SettingSwitch v-model="settingsState.showModelDescriptions" />
             </SettingRow>
             <SettingRow
-              label="Mostrar indicadores de uso comercial"
-              description="Badge de licença nos modelos"
+              :label="t('settings.showCommercial')"
+              :description="t('settings.showCommercialDescription')"
             >
               <SettingSwitch v-model="settingsState.showCommercialBadges" />
             </SettingRow>
-            <SettingRow label="Tamanho das miniaturas" description="Fila, editor e histórico">
+            <SettingRow
+              :label="t('settings.thumbnailSize')"
+              :description="t('settings.thumbnailSizeDescription')"
+            >
               <SegmentedControl
                 v-model="settingsState.thumbnailSize"
                 :options="[
-                  { value: 'sm', label: 'Pequenas' },
-                  { value: 'md', label: 'Médias' },
-                  { value: 'lg', label: 'Grandes' }
+                  { value: 'sm', label: t('settings.small') },
+                  { value: 'md', label: t('settings.medium') },
+                  { value: 'lg', label: t('settings.large') }
                 ]"
               />
             </SettingRow>
             <SettingRow
-              label="Ativar animações"
-              description="Transições e microanimações da interface"
+              :label="t('settings.animations')"
+              :description="t('settings.animationsDescription')"
             >
               <SettingSwitch v-model="settingsState.animationsEnabled" />
             </SettingRow>
-            <SettingRow label="Densidade da interface" description="Espaçamento entre elementos">
+            <SettingRow
+              :label="t('settings.density')"
+              :description="t('settings.densityDescription')"
+            >
               <SegmentedControl
                 v-model="settingsState.density"
                 :options="[
-                  { value: 'compact', label: 'Compacta' },
-                  { value: 'standard', label: 'Padrão' },
-                  { value: 'comfortable', label: 'Confortável' }
+                  { value: 'compact', label: t('settings.compact') },
+                  { value: 'standard', label: t('settings.standard') },
+                  { value: 'comfortable', label: t('settings.comfortable') }
                 ]"
               />
             </SettingRow>
@@ -466,15 +475,15 @@ const outputFolderLabel = computed(
           <div class="group-header">
             <div class="group-icon icon-chip"><Wrench :size="18" /></div>
             <div>
-              <h2 class="group-title">Avançado</h2>
-              <p class="group-description">Diagnóstico e informações técnicas</p>
+              <h2 class="group-title">{{ t('settings.advancedTitle') }}</h2>
+              <p class="group-description">{{ t('settings.advancedDescription') }}</p>
             </div>
           </div>
           <div class="group-body">
-            <SettingRow label="Versão do aplicativo">
+            <SettingRow :label="t('settings.appVersion')">
               <span class="fixed-value">{{ appVersion ?? '—' }}</span>
             </SettingRow>
-            <SettingRow v-if="electronVersions" label="Versões do runtime">
+            <SettingRow v-if="electronVersions" :label="t('settings.runtimeVersions')">
               <span class="fixed-value mono">
                 Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
                 Node {{ electronVersions.node }}
@@ -487,8 +496,8 @@ const outputFolderLabel = computed(
           <div class="group-header credits-header">
             <div class="group-icon icon-chip"><Award :size="18" /></div>
             <div class="credits-header-text">
-              <h2 class="group-title">Créditos</h2>
-              <p class="group-description">Atribuição obrigatória dos componentes usados.</p>
+              <h2 class="group-title">{{ t('settings.creditsTitle') }}</h2>
+              <p class="group-description">{{ t('settings.creditsDescription') }}</p>
             </div>
           </div>
           <div class="group-body credits-body">
@@ -500,11 +509,11 @@ const outputFolderLabel = computed(
                   </div>
                   <div class="credit-main">
                     <div class="credit-title-row">
-                      <span class="credit-name">{{ credit.capability }}</span>
+                      <span class="credit-name">{{ t(`credits.${credit.capabilityKey}`) }}</span>
                     </div>
                     <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
-                    <p v-if="credit.note" class="credit-note">
-                      <Info :size="12" /> {{ credit.note }}
+                    <p v-if="credit.noteKey" class="credit-note">
+                      <Info :size="12" /> {{ t(`credits.${credit.noteKey}`) }}
                     </p>
                   </div>
                   <span
@@ -518,7 +527,11 @@ const outputFolderLabel = computed(
                   <button
                     class="credit-expand-btn"
                     type="button"
-                    :title="expandedCredit === credit.work ? 'Recolher' : 'Detalhes'"
+                    :title="
+                      expandedCredit === credit.work
+                        ? t('settings.collapse')
+                        : t('settings.details')
+                    "
                     @click="toggleCredit(credit.work)"
                   >
                     <component
@@ -528,7 +541,7 @@ const outputFolderLabel = computed(
                   </button>
                 </div>
                 <p v-if="expandedCredit === credit.work" class="credit-detail">
-                  Distribuído sob licença {{ credit.license }}.
+                  {{ t('settings.distributedUnder', { license: credit.license }) }}
                 </p>
               </li>
             </ul>
@@ -536,7 +549,7 @@ const outputFolderLabel = computed(
           <div class="credits-footer">
             <ShieldCheck :size="18" class="credits-footer-icon" />
             <div class="credits-footer-text">
-              <p>Utilizamos apenas componentes de código aberto com licenças compatíveis.</p>
+              <p>{{ t('settings.openSourceOnly') }}</p>
             </div>
           </div>
         </section>
@@ -783,17 +796,6 @@ const outputFolderLabel = computed(
   text-overflow: ellipsis;
   white-space: nowrap;
   vertical-align: bottom;
-}
-
-.number-input {
-  width: 90px;
-  background: var(--surface-3);
-  border: 1px solid var(--surface-border);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 7px 10px;
-  font-size: var(--fs-label);
-  font-family: var(--font-mono);
 }
 
 .licensing-url-input {

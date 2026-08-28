@@ -154,3 +154,12 @@ models/sonicmaster/
 # `git add -A` os leva para o histórico, e um histórico não desengorda.
 interface/resources/backend/
 interface/resources/ffmpeg/
+# Fixtures de mídia dos testes (specs/007 e 008). Geradas sob demanda por
+# `python -m tests.fixtures.make_video_fixtures`, e deliberadamente fora do git:
+# alguns segundos de codificação custam menos que 3,6 MB de binário no
+# histórico, e a fixture passa a corresponder ao FFmpeg que a pessoa de fato
+# tem. Um `git add -A` já as pegou uma vez; esta linha é o que impede a próxima.
+api/astros_upscale_api/tests/fixtures/*.mp4
+api/astros_upscale_api/tests/fixtures/*.webm
+api/astros_upscale_api/tests/fixtures/*.wav
+api/astros_upscale_api/tests/fixtures/*.gif

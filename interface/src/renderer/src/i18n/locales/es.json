@@ -1,68 +1,1013 @@
 {
-  "nav": {
-    "home": "Inicio",
-    "image": "Imagen",
-    "video": "Vídeo",
-    "audio": "Audio",
-    "history": "Historial",
-    "settings": "Ajustes"
+  "actions": {
+    "decrease": "Disminuir",
+    "exportAll": "Exportar todo",
+    "import": "Importar",
+    "increase": "Aumentar",
+    "noAudioSelected": "Ningún audio seleccionado",
+    "noImageSelected": "Ninguna imagen seleccionada",
+    "noVideoSelected": "Ningún vídeo seleccionado",
+    "openFolder": "Abrir carpeta",
+    "processAll": "Procesar todos",
+    "undo": "Deshacer"
+  },
+  "activation": {
+    "blockedBody": "Tu licencia ya no está activa, o el periodo de uso sin conexión ha caducado. Revisa tu suscripción o conéctate a internet para revalidarla.",
+    "blockedTitle": "Licencia bloqueada",
+    "checkingBody": "Un momento.",
+    "checkingTitle": "Comprobando tu licencia…",
+    "copied": "Copiado.",
+    "copy": "Copiar",
+    "errorBody": "Se produjo un error al consultar el estado de la licencia. Comprueba tu conexión a internet e inténtalo de nuevo.",
+    "errorTitle": "No se pudo verificar tu licencia",
+    "fetchErrorDetail": "No pudimos conectar con nuestros servidores. Comprueba tu conexión e inténtalo de nuevo.",
+    "fetchErrorTitle": "No se pudo obtener la información",
+    "needHelp": "¿Necesitas ayuda?",
+    "notActivatedBody": "Este producto aún no se ha activado en esta instalación. Introduce el ID de licencia que recibiste por correo tras la compra.",
+    "notActivatedTitle": "Activa tu licencia",
+    "retry": "Reintentar"
+  },
+  "app": {
+    "apiCheckFailed": "No se pudo comprobar la API.",
+    "apiErrorTitle": "No se pudo conectar con la API",
+    "apiUnreachable": "No se pudo conectar con el servidor de la API.",
+    "connecting": "Conectando con el servidor de la API (astros_upscale_api)…",
+    "desktopOnly": "Solo disponible en la app de escritorio.",
+    "notImplemented": "Esta sección todavía no se ha implementado en esta vista previa."
+  },
+  "audio": {
+    "addAudio": "Añadir audio",
+    "detectedContent": "Contenido detectado",
+    "effort": "Esfuerzo de procesamiento",
+    "musicDescription": "Pista musical completa, con instrumentos y mezcla",
+    "musicLabel": "Música",
+    "processingDescription": "Cómo procesa el audio el modelo",
+    "processingTitle": "Procesamiento",
+    "speechDescription": "Locución, pódcast, entrevista: una voz en primer plano",
+    "speechLabel": "Habla / voz",
+    "unsupportedFormat": "Formato no compatible: {name}"
+  },
+  "compression": {
+    "animation": {
+      "autoColors": "Elegir los colores automáticamente",
+      "autoColorsHint": "La paleta sigue el ajuste de calidad.",
+      "colors": "Colores de la paleta",
+      "colorsHint": "Menos colores, archivo más pequeño, bandas más visibles.",
+      "dither": {
+        "bayer": "Patrón regular",
+        "floyd_steinberg": "Difusión fina",
+        "none": "Ninguno",
+        "sierra2_4a": "Difusión ligera"
+      },
+      "ditherDescription": "Cómo aproximar los colores que la paleta no tiene.",
+      "ditherHint": {
+        "bayer": "Comprime bien; el valor por defecto aquí",
+        "floyd_steinberg": "Más bonito y más grande",
+        "none": "Archivo más pequeño; bandas visibles en degradados",
+        "sierra2_4a": "Punto medio entre los dos anteriores"
+      },
+      "ditherLabel": "Difuminado",
+      "format": "Formato",
+      "formatHint": {
+        "mp4": "Mucho más pequeño, pero deja de ser una imagen animada",
+        "webm": "Mucho más pequeño, pero deja de ser una imagen animada",
+        "webp": "Suele salir más pequeño que el GIF, con los mismos colores"
+      },
+      "fps": "Fotogramas por segundo",
+      "fpsHint": "Bajar fotogramas suele ahorrar más que bajar colores.",
+      "output": "Salida",
+      "palette": "Colores",
+      "quality": "Calidad",
+      "qualityHintCodec": "Cuánto detalle conserva cada fotograma.",
+      "qualityHintPalette": "Mueve cuántos colores tiene la paleta.",
+      "resolution": "Resolución",
+      "sameAsSource": "Igual que el original",
+      "size": "Tamaño",
+      "videoNote": "Como vídeo el archivo queda mucho más pequeño, pero deja de funcionar como imagen animada donde solo se acepta GIF."
+    },
+    "audio": {
+      "advanced": "Ajustes avanzados",
+      "auto": "Automático",
+      "bitrateMode": "Modo de bitrate",
+      "bitrateModeHint": "Cómo se reparte la tasa a lo largo del archivo.",
+      "cbr": "Constante",
+      "cbrHint": "Misma tasa de principio a fin; más predecible.",
+      "channels": "Canales",
+      "format": "Formato",
+      "losslessNote": "Los formatos sin pérdida conservan todo el audio: el tamaño depende del contenido, no de una elección de calidad.",
+      "losslessTag": "sin pérdida",
+      "mono": "Mono",
+      "monoHint": "Reduce el tamaño a la mitad y junta ambos lados.",
+      "output": "Salida",
+      "quality": "Calidad",
+      "qualityHint": {
+        "balanced": "Equilibrio entre tamaño y fidelidad",
+        "high": "Bueno para música; la pérdida cuesta oírla",
+        "maximum": "Prácticamente indistinguible del original",
+        "minimum": "Muy pequeño; sirve para voz, no para música",
+        "small": "Archivo pequeño; los agudos empiezan a irse"
+      },
+      "sameAsSource": "Igual que el original",
+      "sampleRate": "Frecuencia de muestreo",
+      "sampleRateHint": "Cambiarla remuestrea el audio y se pierde información.",
+      "signal": "Señal",
+      "stereo": "Estéreo",
+      "vbr": "Variable",
+      "vbrHint": "Gasta más donde hace falta; suele sonar mejor."
+    },
+    "back": "Volver",
+    "batch": {
+      "cancelAll": "Cancelar todo",
+      "cancelOne": "Cancelar {name}",
+      "cancelled": "cancelado",
+      "progress": "{done} de {total} listos",
+      "retryFailed": "Reintentar 1 archivo | Reintentar {count} archivos",
+      "runAll": "Comprimir 1 archivo | Comprimir {count} archivos",
+      "saved": "Ahorrado {size} ({percent}%) hasta ahora",
+      "show": "Mostrar",
+      "title": "Cola de compresión",
+      "waiting": "en cola"
+    },
+    "comingSoon": "La compresión de {media} llega en las próximas etapas.",
+    "compare": {
+      "after": "Comprimido",
+      "before": "Original",
+      "keepsPosition": "Al cambiar se mantiene el punto que estás escuchando.",
+      "pause": "Pausar",
+      "pending": "Comprime para comparar.",
+      "play": "Reproducir",
+      "reset": "Ajustar",
+      "sideBySide": "Lado a lado",
+      "slider": "Superpuesto",
+      "synced": "Los dos avanzan juntos.",
+      "view": "Vista",
+      "zoom": "Zoom"
+    },
+    "estimate": {
+      "assumption": {
+        "audio_bitrate_fixed": "supone el audio en su bitrate actual",
+        "constant_quality": "en calidad constante el tamaño depende del contenido",
+        "container_overhead": "incluye un margen para el contenedor",
+        "lossless_content_dependent": "sin pérdida: el tamaño depende del contenido",
+        "sampled_crops": "medida en muestras de la imagen, no en la imagen entera",
+        "source_bitrate_unknown": "no se sondeó el bitrate de origen"
+      },
+      "belowFloor": "Este tamaño no se alcanza sin destruir el contenido.",
+      "confidence": {
+        "derived": "derivada",
+        "measured": "medida",
+        "rough": "aproximada"
+      },
+      "disclaimer": "Es una estimación. El tamaño final se mide después de comprimir.",
+      "empty": "Elige un archivo para ver la estimación.",
+      "estimated": "Estimado",
+      "growth": "Aumento",
+      "loading": "Calculando…",
+      "original": "Original",
+      "saving": "Ahorro",
+      "title": "Estimación",
+      "unknown": "no estimable",
+      "wouldGrow": "Con estos ajustes el archivo quedaría más grande que el original."
+    },
+    "export": {
+      "applyToAll": "Aplicar a todos",
+      "applyToAllHint": "Usa esta elección para todo el lote.",
+      "choose": "Elegir carpeta",
+      "conflict": {
+        "ask": "Preguntar",
+        "overwrite": "Reemplazar",
+        "rename": "Renombrar"
+      },
+      "destination": "Destino",
+      "onConflict": "Si ya existe",
+      "pattern": "Patrón de nombre",
+      "patternHint": "{filename} se sustituye por el nombre del archivo.",
+      "sameFolder": "Misma carpeta que el original",
+      "title": "Exportación"
+    },
+    "history": {
+      "clear": "Vaciar historial",
+      "empty": "Todavía no has comprimido nada.",
+      "remove": "Quitar {name} del historial",
+      "repeat": "Repetir",
+      "repeatHint": "Usa los ajustes de esa ejecución, no el preajuste actual.",
+      "showInFolder": "Mostrar {name} en la carpeta",
+      "title": "Historial"
+    },
+    "image": {
+      "advanced": "Ajustes avanzados",
+      "chroma": "Submuestreo de croma",
+      "chromaHint": "4:4:4 conserva más color; 4:2:0 da archivos más pequeños.",
+      "effort": "Esfuerzo de compresión",
+      "effortHint": "Más esfuerzo, archivo más pequeño, más tiempo.",
+      "format": {
+        "keep": "Mantener el original",
+        "label": "Formato"
+      },
+      "lossless": "Sin pérdida",
+      "losslessHint": "Conserva cada píxel; el archivo crece.",
+      "metadata": {
+        "essential_only": "Solo lo esencial",
+        "preserve_all": "Conservar todo",
+        "strip_all": "Quitar todo",
+        "strip_comments": "Quitar comentarios",
+        "strip_exif": "Quitar EXIF",
+        "strip_gps": "Quitar ubicación",
+        "strip_icc": "Quitar perfil de color"
+      },
+      "metadataHint": {
+        "essential_only": "orientación y perfil de color; quita GPS y lo demás",
+        "preserve_all": "incluidas ubicación y comentarios",
+        "strip_all": "no se conserva nada",
+        "strip_comments": "descripciones y comentarios",
+        "strip_exif": "cámara, fecha y ajustes de disparo",
+        "strip_gps": "solo la ubicación",
+        "strip_icc": "los colores pueden verse distintos"
+      },
+      "metadataPolicy": "Qué conservar",
+      "metadataPolicyHint": "La orientación y el perfil de color cambian la imagen si se quitan.",
+      "metadataTitle": "Metadatos",
+      "noAdvanced": "Este formato no tiene ajustes adicionales.",
+      "output": "Salida",
+      "pngLevel": "Nivel de compresión",
+      "pngLevelHint": "Sin pérdida: los niveles altos tardan más y no cambian la imagen.",
+      "preventUpscale": "No ampliar",
+      "preventUpscaleHint": "Ampliar nunca reduce un archivo.",
+      "progressive": "Carga progresiva",
+      "progressiveHint": "La imagen aparece entera y se va afinando.",
+      "quality": "Calidad",
+      "qualityHint": {
+        "balanced": "Equilibrio entre tamaño y apariencia",
+        "high": "Buena para la web; la diferencia es difícil de notar",
+        "maximum": "Prácticamente idéntico al original",
+        "minimum": "Muy pequeño; la pérdida es visible",
+        "small": "Archivo pequeño; la pérdida empieza a notarse"
+      },
+      "resolution": {
+        "label": "Resolución",
+        "original": "Original"
+      },
+      "size": "Tamaño",
+      "speed": "Velocidad",
+      "speedHint": "Más rápido comprime menos."
+    },
+    "info": {
+      "alpha": "Transparencia",
+      "alphaYes": "Sí",
+      "audioBitrate": "Bitrate de audio",
+      "audioCodec": "Audio",
+      "bitrate": "Bitrate",
+      "channels": "Canales",
+      "channelsCount": "{count} canales",
+      "channelsMono": "Mono",
+      "channelsStereo": "Estéreo",
+      "codec": "Códec",
+      "duration": "Duración",
+      "frameRate": "Fotogramas por segundo",
+      "frameRateVariable": "~{value} fps (variable)",
+      "resolution": "Resolución",
+      "sampleRate": "Frecuencia de muestreo",
+      "size": "Tamaño",
+      "videoBitrate": "Bitrate de vídeo",
+      "videoCodec": "Vídeo"
+    },
+    "media": {
+      "animation": "GIF / Animación",
+      "audio": "Audio",
+      "image": "Imagen",
+      "video": "Vídeo"
+    },
+    "mode": {
+      "advanced": "Avanzado",
+      "basic": "Básico"
+    },
+    "preset": {
+      "archive": "Archivo",
+      "balanced": "Equilibrado",
+      "cancel": "Cancelar",
+      "confirmSave": "Guardar",
+      "copyOf": "{name} (copia)",
+      "custom": "Personalizado",
+      "delete": "Eliminar",
+      "duplicate": "Duplicar",
+      "maximum_quality": "Máxima calidad",
+      "modified": "Modificado después de elegir el preajuste",
+      "namePlaceholder": "Nombre del preajuste",
+      "origin": {
+        "builtin": "Integrado",
+        "platform": "Plataforma",
+        "user": "Tuyo"
+      },
+      "placeholder": "Elige un preajuste",
+      "saveAs": "Guardar como preajuste",
+      "smallest_file": "Archivo más pequeño",
+      "update": "Actualizar preajuste",
+      "web": "Web"
+    },
+    "queue": {
+      "add": "Añadir",
+      "clearAll": "Vaciar todo",
+      "count": "ningún archivo | 1 archivo | {count} archivos",
+      "remove": "Quitar {name}",
+      "status": {
+        "importing": "Leyendo…",
+        "rejected": "Rechazado"
+      },
+      "title": "Archivos importados"
+    },
+    "refusal": {
+      "ceiling_exceeded": "por encima del límite de esta operación",
+      "encoder_unavailable": "este equipo no puede producir este formato",
+      "incompatible_combination": "combinación incompatible",
+      "insufficient_disk": "espacio en disco insuficiente",
+      "invalid_settings": "ajustes no válidos",
+      "not_found": "archivo no encontrado",
+      "target_below_floor": "tamaño objetivo demasiado pequeño",
+      "unknown": "falló",
+      "unreadable": "no se pudo leer",
+      "unsupported_media": "no es un archivo multimedia reconocido"
+    },
+    "result": {
+      "elapsed": "{seconds} s",
+      "grewBy": "El archivo quedó {size} más grande que el original",
+      "reveal": "Mostrar en la carpeta",
+      "saved": "Ahorró {size} ({percent}%)",
+      "title": "Resultado"
+    },
+    "run": "Comprimir",
+    "subtitle": "Reduce archivos manteniendo el control de la calidad",
+    "summary": {
+      "defaults": "Nada modificado: todo por defecto.",
+      "field": {
+        "audio_codec": "Audio",
+        "bitrate_mode": "Modo de bitrate",
+        "channels": "Canales",
+        "chroma_subsampling": "Croma",
+        "container": "Contenedor",
+        "effort": "Esfuerzo",
+        "fps": "Fotogramas por segundo",
+        "height": "Alto",
+        "lossless": "Sin pérdida",
+        "max_colors": "Colores",
+        "metadata_policy": "Metadatos",
+        "output_format": "Formato",
+        "percent": "Escala",
+        "png_compress_level": "Nivel PNG",
+        "preserve_aspect": "Mantener proporción",
+        "prevent_upscale": "No ampliar",
+        "progressive": "Progresivo",
+        "quality": "Calidad",
+        "rate_mode": "Modo de tasa",
+        "resolution": "Resolución",
+        "sample_rate": "Muestreo",
+        "speed": "Velocidad",
+        "video_codec": "Vídeo",
+        "width": "Ancho"
+      },
+      "on": "Activado",
+      "title": "Resumen"
+    },
+    "target": {
+      "hint": "La búsqueda ocurre al confirmar el valor, no en cada tecla.",
+      "label": "Tamaño objetivo",
+      "size": "Tamaño",
+      "unit": "Unidad"
+    },
+    "title": "Compresión",
+    "unavailable": {
+      "format_not_writable": "este equipo no puede escribir este formato",
+      "no_encoder_available": "este equipo no puede escribir este formato",
+      "not_supported_by_build": "no disponible en esta instalación",
+      "requires_hardware_encoder": "necesita aceleración de vídeo que este equipo no tiene"
+    },
+    "upload": {
+      "selectPrompt": "Selecciona un archivo de la cola",
+      "subtitle": "Imágenes, vídeo, audio y GIF — el tipo se reconoce por el contenido",
+      "title": "Suelta archivos para comprimir"
+    },
+    "video": {
+      "advanced": "Ajustes avanzados",
+      "audio": {
+        "bitrate": "Bitrate del audio",
+        "bitrateHint": "Por encima de 192 kbps la diferencia es difícil de oír.",
+        "codec": "Códec de audio",
+        "keep": "Mantener como está",
+        "keepHint": "Copia la pista sin recodificar: más rápido y sin pérdida.",
+        "label": "Pista de audio",
+        "recompress": "Recomprimir",
+        "remove": "Quitar",
+        "removeHint": "El vídeo queda sin sonido."
+      },
+      "audioTitle": "Audio",
+      "auto": "Automático",
+      "codec": "Códec de vídeo",
+      "codecHint": "Solo aparecen los que este formato acepta.",
+      "container": "Formato",
+      "containerHint": "Determina qué códecs se pueden usar.",
+      "encoder": {
+        "auto": "Automático",
+        "autoHint": "Prefiere calidad y compatibilidad antes que velocidad.",
+        "cpu": "Procesador",
+        "gpu": "Tarjeta gráfica",
+        "hint": "Dónde ocurre la codificación.",
+        "label": "Procesamiento",
+        "noHardware": "No hay aceleración utilizable en este equipo: se usará el procesador."
+      },
+      "fps": "Fotogramas por segundo",
+      "fpsHint": "Bajarlo ahorra poco y cambia el movimiento.",
+      "noHardwareNote": "Este equipo no tiene aceleración de vídeo utilizable, así que MP4 no está disponible. WebM y MKV comprimen igual de bien y se abren en navegadores y reproductores modernos.",
+      "output": "Salida",
+      "quality": "Calidad",
+      "qualityHint": {
+        "balanced": "Equilibrio entre tamaño y nitidez",
+        "high": "Buena para ver y publicar; la pérdida cuesta notarla",
+        "maximum": "Prácticamente idéntico al original; archivo grande",
+        "minimum": "Muy pequeño; la pérdida se ve todo el tiempo",
+        "small": "Archivo pequeño; aparecen bloques en escenas con movimiento"
+      },
+      "resolution": "Resolución",
+      "sameAsSource": "Igual que el original",
+      "size": "Tamaño",
+      "speed": {
+        "fast": "Rápida",
+        "fastHint": "Termina antes, archivo algo mayor.",
+        "hint": "Afecta al tiempo y al tamaño, no a la resolución.",
+        "label": "Velocidad de codificación",
+        "medium": "Media",
+        "slow": "Lenta",
+        "slowHint": "Archivo más pequeño, tarda más."
+      }
+    }
+  },
+  "contentType": {
+    "anime_image": "Anime/Ilustración",
+    "anime_video": "Vídeo anime",
+    "archived": "Archivado",
+    "music": "Música",
+    "no_model": "Sin modelo",
+    "photo": "Foto",
+    "pixel_art": "Pixel art",
+    "real_video": "Vídeo real",
+    "speech": "Voz"
+  },
+  "credits": {
+    "audioMusic": "Mejora de audio — Música",
+    "audioSpeech": "Mejora de audio — Voz",
+    "faceEnhance": "Mejora de rostros (imagen)",
+    "imageAnime": "Mejora de imagen — Anime/Ilustración",
+    "imagePhoto": "Mejora de imagen — Foto",
+    "media": "Procesamiento multimedia",
+    "noteFfmpeg": "(compilación de distribución)",
+    "noteSonicMaster": "Apache-2.0 — condicional (depende del VAE de Stable Audio Open)",
+    "videoAnime": "Mejora de vídeo — Anime/Animación",
+    "videoReal": "Mejora de vídeo — Imagen real"
+  },
+  "errors": {
+    "category": {
+      "corruptedInput": {
+        "action": "Quita este elemento de la cola e importa el archivo de nuevo.",
+        "message": "No se pudo leer el archivo de origen."
+      },
+      "diskFull": {
+        "action": "Elige otra carpeta de destino con más espacio libre.",
+        "message": "Espacio en disco insuficiente."
+      },
+      "hardwareInsufficient": {
+        "action": "Prueba un tamaño de salida menor o el perfil Rápido.",
+        "message": "Este equipo no tiene capacidad para este procesamiento."
+      },
+      "licenseInvalid": {
+        "action": "Comprueba el estado de tu licencia en Ajustes.",
+        "message": "Tu licencia no está activa."
+      },
+      "modelFailure": {
+        "action": "Inténtalo de nuevo — si persiste, prueba otro modelo o dispositivo.",
+        "message": "Error en el procesamiento."
+      },
+      "outOfMemory": {
+        "action": "Prueba con un factor de escala o un tamaño personalizado menor.",
+        "message": "Memoria insuficiente para este tamaño de salida."
+      }
+    },
+    "job": {
+      "connectionLost": "Se perdió la comunicación con el servidor durante el procesamiento.",
+      "contentTypeMissing": "Tipo de contenido aún no detectado — selecciónalo manualmente.",
+      "createFailed": "No se pudo crear la tarea.",
+      "customTooSmall": "El tamaño personalizado no puede ser menor que el original (esto es un escalador).",
+      "noBackendJob": "La tarea no tiene procesamiento asociado.",
+      "notificationDone": "{file} se procesó correctamente.",
+      "originalTooLarge": "En modo Original el tamaño no puede superar al original — para ampliar, usa Predefinido o Personalizado.",
+      "processingFailed": "Fallo en el procesamiento.",
+      "resolutionTooHigh": "Resolución de entrada demasiado alta (más de 10000px); el escalado puede no ser viable.",
+      "scaleMissing": "Elige un factor de escala.",
+      "sizeMissing": "Indica ancho y alto.",
+      "unsupportedFormat": "Formato no compatible (solo imágenes: PNG, JPG, TIFF, WEBP, BMP)."
+    }
+  },
+  "history": {
+    "allStatuses": "Todos los estados",
+    "allTypes": "Todos los tipos",
+    "alreadyQueued": "Este archivo ya está en la cola actual.",
+    "anyDate": "Cualquier fecha",
+    "downloadAgain": "Descargar de nuevo",
+    "emptyAction": "Procesar imagen",
+    "emptyDescription": "Las imágenes procesadas aparecerán aquí.",
+    "emptyTitle": "Aún no se ha procesado nada",
+    "errorLabel": "Error",
+    "finishedAt": "Completado el",
+    "last30": "Últimos 30 días",
+    "last7": "Últimos 7 días",
+    "limitLabel": "Límite de registros",
+    "limitSettingDescription": "Los más antiguos se eliminan al superarlo",
+    "limitSettingLabel": "Número máximo de registros",
+    "moreActions": "Más acciones",
+    "newest": "Más recientes",
+    "noFilterMatch": "Ningún elemento coincide con los filtros actuales.",
+    "notExported": "Aún no exportado",
+    "oldest": "Más antiguos",
+    "output": "Salida",
+    "removed": "«{name}» eliminado del historial.",
+    "resAsc": "Menor resolución",
+    "resDesc": "Mayor resolución",
+    "reuseImageOnly": "Reutilizar la configuración solo está disponible para entradas de imagen.",
+    "reuseSettings": "Reutilizar configuración",
+    "reuseTooOld": "Esta configuración es anterior a la actualización y ya no puede reutilizarse — configúrala de nuevo.",
+    "searchPlaceholder": "Buscar por nombre o modelo…",
+    "sizeAsc": "Menor tamaño",
+    "sizeDesc": "Mayor tamaño",
+    "source": "Origen",
+    "sourceMissing": "Archivo original no encontrado: {path}",
+    "storedCount": "{n} registro guardado localmente | {n} registros guardados localmente",
+    "title": "Historial",
+    "today": "Hoy",
+    "view": "Ver"
   },
   "home": {
-    "title": "¿Qué te gustaría mejorar hoy?",
     "openAria": "Abrir {label}",
-    "status": {
-      "processing": "Procesando",
-      "done": "Completado",
-      "errors": "Con errores",
-      "queued": "En cola",
-      "configuring": "Configurando",
-      "empty": "Vacío"
+    "title": "¿Qué te gustaría mejorar hoy?"
+  },
+  "imageEditor": {
+    "adjustmentsDescription": "Ajustes finos de calidad",
+    "adjustmentsTitle": "Ajustes",
+    "after": "Después",
+    "animeDescription": "Arte digital, anime, ilustración de trazo definido",
+    "animeLabel": "Anime/Ilustración",
+    "applyToAll": "Aplicar esta configuración a todos ({n})",
+    "aspectFree": "Proporción libre: pulsa para bloquear",
+    "aspectLocked": "Proporción bloqueada: pulsa para desbloquear",
+    "before": "Antes",
+    "beyondNative": "Objetivo por encima del factor nativo ({factor}x): el exceso es interpolación, con menos ganancia de detalle.",
+    "cancel": "Cancelar",
+    "cancelled": "Procesamiento cancelado.",
+    "conflictPrompt": "Ya existe un archivo con ese nombre. ¿Qué hacemos?",
+    "denoiseAfterAlt": "Después de la reducción de ruido",
+    "denoiseBeforeAlt": "Antes de la reducción de ruido",
+    "denoiseHint": "Elimina el grano y las marcas de compresión sin difuminar los contornos. Útil en fotos de móvil, con poca luz o guardadas muchas veces en JPG.",
+    "denoiseLabel": "Filtro de reducción de ruido",
+    "destinationFolder": "Carpeta de destino",
+    "detectedContent": "Contenido detectado",
+    "detecting": "Detectando…",
+    "effort": "Esfuerzo de procesamiento",
+    "elapsed": "Tiempo transcurrido: {time}",
+    "exportDescription": "Formato, destino y nombre",
+    "exportTitle": "Exportar",
+    "faceRecoveryHint": "Reconstruye los rostros, que pierden detalle antes que el resto de la imagen. Si no se encuentra ninguno, la imagen sale sin cambios.",
+    "faceRecoveryLabel": "Recuperación de rostros",
+    "fileName": "Nombre del archivo",
+    "fit": "Ajustar",
+    "format": "Formato",
+    "formatUnavailable": "Este equipo no puede escribir este formato",
+    "free": "Libre",
+    "height": "Alto",
+    "holdSpace": "Mantén Espacio para alternar rápido entre antes y después",
+    "locked": "Bloqueada",
+    "modeCustom": "Medida exacta",
+    "modePreset": "Ampliar 2x/4x",
+    "noFormatAvailable": "Ningún formato de exportación está disponible en este equipo.",
+    "noModelDescription": "Aplica solo los filtros y el redimensionado, sin pasar por ningún modelo de IA.",
+    "noModelLabel": "Sin modelo",
+    "onConflict": "En caso de conflicto",
+    "photoDescription": "Fotografías reales: retratos, paisajes, productos",
+    "photoLabel": "Foto",
+    "pixelArtDescription": "Iconos, sprites, arte hecho píxel a píxel. Amplía repitiendo píxeles, sin modelo: ningún borde se suaviza.",
+    "pixelArtLabel": "Pixel art",
+    "previewDesktopOnly": "La vista previa no está disponible fuera de la app de escritorio.",
+    "process": "Procesar",
+    "processingDescription": "Cómo procesa la imagen el modelo",
+    "processingProgress": "Procesando… {progress}%",
+    "processingTitle": "Procesamiento",
+    "quality": "Calidad",
+    "queued": "En cola",
+    "queuedAt": "En cola (posición {position})",
+    "reduceTo": "Reducir a",
+    "resolutionMultiplier": "Multiplicador de resolución",
+    "resultDescription": "Comparación y estadísticas del procesamiento",
+    "resultTitle": "Resultado",
+    "retry": "Reintentar",
+    "sameAsSource": "La misma carpeta que el original",
+    "scaleDescription": "Tamaño final de la imagen",
+    "scaleTitle": "Escala",
+    "sharpenHint": "Realza los contornos para dar sensación de enfoque. En exceso crea halos claros alrededor de los bordes.",
+    "sharpenLabel": "Nitidez",
+    "sideBySide": "Lado a lado",
+    "sizeLabel": "Tamaño",
+    "sliderView": "Control antes/después",
+    "strength": "Intensidad",
+    "technicalDetails": "Detalles técnicos",
+    "whereToProcess": "Dónde procesar",
+    "width": "Ancho",
+    "willDistort": "La imagen se deformará."
+  },
+  "importing": {
+    "alreadyQueued": "Ya está en la cola: {files}.",
+    "dropDesktopOnly": "Arrastrar y soltar solo está disponible en la app de escritorio.",
+    "filesDesktopOnly": "La selección de archivos solo está disponible en la app de escritorio.",
+    "folderDesktopOnly": "La selección de carpeta solo está disponible en la app de escritorio.",
+    "noFilesInFolder": "No se encontró ningún archivo compatible en esa carpeta.",
+    "noImagesInFolder": "No se encontró ninguna imagen compatible en esa carpeta.",
+    "pickFilesFailed": "No se pudieron seleccionar los archivos.",
+    "pickFolderFailed": "No se pudo seleccionar la carpeta.",
+    "rejected": "No se pudo importar {n} archivo (formato no compatible o ilegible). | No se pudieron importar {n} archivos (formato no compatible o ilegible)."
+  },
+  "jobState": {
+    "awaiting_confirmation": "Esperando confirmación",
+    "cancelled": "Cancelado",
+    "configuring": "Configurando",
+    "detecting": "Detectando el tipo de contenido",
+    "done": "Completado",
+    "error": "Error",
+    "processing": "Procesando",
+    "queuePosition": "posición {position}",
+    "queued": "En cola"
+  },
+  "license": {
+    "activate": "Activar",
+    "activating": "Activando…",
+    "active": "Licencia activa",
+    "activeHere": "Activa en esta instalación",
+    "activeOffline": "Activa (sin conexión)",
+    "blocked": "Licencia bloqueada",
+    "checkConnection": "Comprueba tu conexión",
+    "checking": "Comprobando…",
+    "deactivate": "Desactivar en esta instalación",
+    "error": "Error de licencia",
+    "generic": "Licencias",
+    "idHint": "Enviado por correo tras la compra.",
+    "idLabel": "ID de la licencia",
+    "installations": "Instalaciones: {used}/{limit}",
+    "notActivated": "Sin activar",
+    "notConfigured": "Sin licencia",
+    "offlineDays": "Tolerancia sin conexión: queda {n} día | Tolerancia sin conexión: quedan {n} días",
+    "title": "Licencia"
+  },
+  "localStatus": {
+    "configuring": "Listo para procesar",
+    "detecting": "Detectando…",
+    "done": "Completado",
+    "error": "Error",
+    "processing": "Procesando",
+    "queued": "En cola",
+    "serverCommunication": "Fallo de comunicación con el servidor."
+  },
+  "misc": {
+    "defaultValue": "Predeterminado: {value}",
+    "denoiseCustom": "Personalizado",
+    "denoiseHigh": "Alto",
+    "denoiseLow": "Bajo",
+    "denoiseMedium": "Medio",
+    "previewFailed": "No se pudo generar la vista previa.",
+    "remove": "Quitar",
+    "selectCompleted": "Elige qué imágenes terminadas exportar:"
+  },
+  "nav": {
+    "audio": "Audio",
+    "compression": "Compresión",
+    "history": "Historial",
+    "home": "Inicio",
+    "image": "Imagen",
+    "settings": "Ajustes",
+    "video": "Vídeo"
+  },
+  "processing": {
+    "device": {
+      "auto": {
+        "description": "GPU si la hay, CPU en caso contrario.",
+        "label": "Automático"
+      },
+      "cpu": {
+        "description": "Más lento, funciona en cualquier equipo.",
+        "label": "CPU"
+      },
+      "cuda": {
+        "description": "Más rápido, requiere driver NVIDIA.",
+        "label": "GPU (CUDA)"
+      }
+    },
+    "profile": {
+      "balanced": {
+        "description": "Punto medio entre detalle y tiempo",
+        "label": "Equilibrado"
+      },
+      "fast": {
+        "description": "Menos detalle, termina antes",
+        "label": "Rápido"
+      },
+      "quality": {
+        "description": "Más detalle, tarda más",
+        "label": "Calidad"
+      }
     }
   },
-  "sidebar": {
-    "support": "Soporte",
-    "collapse": "Contraer barra lateral",
-    "expand": "Expandir barra lateral",
-    "darkMode": "Modo oscuro",
-    "lightMode": "Modo claro",
-    "toggleTheme": "Alternar tema claro/oscuro",
-    "links": {
-      "site": "Sitio oficial",
-      "discord": "Discord",
-      "faq": "Preguntas frecuentes",
-      "help": "Centro de ayuda",
-      "email": "Correo de soporte"
-    }
+  "queue": {
+    "clear": "Vaciar cola",
+    "dragToReorder": "Arrastra para reordenar",
+    "empty": "Vacía",
+    "fileCountLabel": "{n} archivo | {n} archivos",
+    "kind": {
+      "audio": "Audio",
+      "image": "Imagen",
+      "video": "Vídeo"
+    },
+    "title": "Cola de procesamiento"
+  },
+  "select": {
+    "search": "Buscar…"
   },
   "settings": {
-    "title": "Ajustes",
+    "advancedDescription": "Diagnóstico e información técnica",
+    "advancedTitle": "Avanzado",
+    "animations": "Activar animaciones",
+    "animationsDescription": "Transiciones y microanimaciones de la interfaz",
+    "appVersion": "Versión de la aplicación",
+    "autoCleanup": "Limpieza automática",
+    "autoCleanupDescription": "Elimina los registros más antiguos que el periodo de abajo",
+    "cacheRefreshFailed": "No se pudo actualizar la caché.",
+    "cacheRefreshFailedWith": "No se pudo actualizar: {error}",
+    "cacheRefreshed": "Caché de componentes actualizada desde la API.",
+    "clearCache": "Vaciar caché",
+    "clearCacheDescription": "Recarga la lista de modelos directamente desde la API",
+    "clearHistory": "Borrar el historial manualmente",
+    "clearHistoryAction": "Borrar historial",
+    "clearHistoryDescription": "Elimina todos los registros guardados; no afecta a los archivos exportados",
+    "collapse": "Contraer",
+    "comfortable": "Cómoda",
+    "compact": "Compacta",
+    "concurrentJobs": "Tareas simultáneas",
+    "concurrentJobsDescription": "Fijado en 1 por la arquitectura actual del procesamiento (cola en serie, un worker)",
+    "confirmClear": "Confirmar borrado",
+    "creditsDescription": "Atribución obligatoria de los componentes utilizados.",
+    "creditsTitle": "Créditos",
+    "days": "{n} día | {n} días",
+    "defaultScale": "Escala por defecto",
+    "defaultScaleDescription": "Factor preseleccionado para imágenes nuevas",
+    "density": "Densidad de la interfaz",
+    "densityDescription": "Espaciado entre elementos",
+    "details": "Detalles",
+    "distributedUnder": "Distribuido bajo la licencia {license}.",
     "general": {
-      "title": "General",
-      "description": "Preferencias generales de la aplicación",
-      "language": {
-        "label": "Idioma",
-        "description": "Detectado automáticamente de Windows en el primer inicio"
-      },
-      "theme": {
-        "label": "Tema",
-        "description": "Apariencia clara, oscura, o siguiendo a Windows",
-        "light": "Claro",
-        "dark": "Oscuro",
-        "auto": "Automático"
-      },
       "autoUpdate": {
-        "label": "Actualizaciones automáticas",
-        "description": "Buscar nuevas versiones al iniciar (próximamente)"
+        "description": "Buscar nuevas versiones al iniciar (próximamente)",
+        "label": "Actualizaciones automáticas"
+      },
+      "description": "Preferencias generales de la aplicación",
+      "exportFormat": {
+        "description": "Preseleccionado al abrir el panel de exportación",
+        "label": "Formato de imagen predeterminado"
+      },
+      "language": {
+        "description": "Detectado automáticamente de Windows en el primer inicio",
+        "label": "Idioma"
       },
       "outputFolder": {
-        "label": "Carpeta de salida predeterminada",
         "description": "Usada como sugerencia inicial al exportar",
+        "label": "Carpeta de salida predeterminada",
         "same": "Misma carpeta que la imagen original"
       },
-      "exportFormat": {
-        "label": "Formato de imagen predeterminado",
-        "description": "Preseleccionado al abrir el panel de exportación"
-      }
+      "theme": {
+        "auto": "Automático",
+        "dark": "Oscuro",
+        "description": "Apariencia clara, oscura, o siguiendo a Windows",
+        "label": "Tema",
+        "light": "Claro"
+      },
+      "title": "General"
+    },
+    "imageQuality": "Calidad de imagen",
+    "imageQualityDescription": "Valor por defecto al exportar a .jpg/.webp",
+    "interfaceDescription": "Ajusta cuánta información se muestra y con qué densidad",
+    "interfaceTitle": "Interfaz",
+    "keepAspect": "Mantener la proporción automáticamente",
+    "keepAspectDescription": "Bloquea ancho/alto en modo personalizado",
+    "keepFor": "Conservar durante",
+    "keepForDescription": "Días antes de la eliminación automática",
+    "large": "Grandes",
+    "medium": "Medianas",
+    "openSourceOnly": "Solo usamos componentes de código abierto con licencias compatibles.",
+    "processingDescription": "Valores por defecto al configurar una imagen nueva",
+    "processingTitle": "Procesamiento",
+    "runtimeVersions": "Versiones del runtime",
+    "showCommercial": "Mostrar indicadores de uso comercial",
+    "showCommercialDescription": "Insignia de licencia en los modelos",
+    "showDescriptions": "Mostrar descripciones de los modelos",
+    "showDescriptionsDescription": "Muestra la finalidad resumida en las tarjetas de la pestaña Modelos",
+    "small": "Pequeñas",
+    "standard": "Estándar",
+    "thumbnailSize": "Tamaño de las miniaturas",
+    "thumbnailSizeDescription": "Cola, editor e historial",
+    "title": "Ajustes"
+  },
+  "sidebar": {
+    "collapse": "Contraer barra lateral",
+    "darkMode": "Modo oscuro",
+    "expand": "Expandir barra lateral",
+    "lightMode": "Modo claro",
+    "links": {
+      "discord": "Discord",
+      "email": "Correo de soporte",
+      "faq": "Preguntas frecuentes",
+      "help": "Centro de ayuda",
+      "site": "Sitio oficial"
+    },
+    "support": "Soporte",
+    "toggleTheme": "Alternar tema claro/oscuro"
+  },
+  "stats": {
+    "adjustmentsApplied": "Ajustes aplicados",
+    "faces": "Rostros {value}",
+    "fileSize": "Tamaño del archivo",
+    "modelAndParams": "Modelo y parámetros",
+    "newResolution": "Nueva resolución",
+    "noise": "Ruido {value}",
+    "originalResolution": "Resolución original",
+    "processingTime": "Tiempo de procesamiento",
+    "resolution": "Resolución",
+    "sharpness": "Nitidez {value}"
+  },
+  "status": {
+    "cancelled": "Cancelado",
+    "done": "Completado",
+    "error": "Falló",
+    "processing": "Procesando",
+    "queued": "En espera"
+  },
+  "upload": {
+    "aria": "Arrastra archivos aquí o pulsa Enter para elegir",
+    "audioTitle": "Arrastra audios aquí",
+    "dropHere": "Suelta para importar",
+    "failed": "No se pudieron importar los archivos",
+    "imagesTitle": "Arrastra imágenes aquí",
+    "importing": "Importando archivos…",
+    "limit": "hasta 500 MB por archivo",
+    "pickFiles": "Elegir archivos",
+    "pickFolder": "Elegir carpeta",
+    "subtitle": "o usa los botones de abajo",
+    "videoTitle": "Arrastra vídeos aquí"
+  },
+  "validation": {
+    "exportFailed": "No se pudo exportar.",
+    "maxSide": "Máximo {max}px por lado.",
+    "minSide": "Mínimo {min}px por lado.",
+    "nameConflict": "Ya existe un archivo con ese nombre en el destino.",
+    "outputTooLarge": "La salida superaría el límite de {max}px por lado.",
+    "tooLargeFile": "Archivo mayor que el límite de {mb} MB.",
+    "tooSmall": "Resolución demasiado baja (mínimo {min}×{min}px)."
+  },
+  "videoEditor": {
+    "editor": {
+      "addMore": "Añadir vídeos",
+      "importFailed": "No se pudo importar el vídeo.",
+      "open": "Abrir editor de vídeo",
+      "panelPending": "Los controles de edición llegan en los próximos pasos.",
+      "ready": "Listo para editar",
+      "runAll": "Procesar todos",
+      "title": "Editor de vídeo",
+      "uploadSubtitle": "o usa los botones de abajo",
+      "uploadTitle": "Arrastra vídeos aquí"
+    },
+    "edits": {
+      "adjustments": "Ajustes de imagen",
+      "blurHint": "Suaviza toda la imagen. Útil para disimular la compresión, a costa de nitidez.",
+      "blur_enabled": "Desenfoque",
+      "brightness": "Brillo",
+      "brightnessHint": "Aclara u oscurece toda la imagen por igual. En exceso, aplana las sombras y quema las luces.",
+      "clearTrim": "Usar todo",
+      "contrast": "Contraste",
+      "contrastHint": "Aleja claros y oscuros de los medios tonos. En exceso, pierde detalle en ambos extremos.",
+      "denoiseHint": "Elimina grano y ruido. En exceso, borra la textura fina junto con el ruido.",
+      "denoise_enabled": "Reducción de ruido",
+      "effects": "Efectos",
+      "flipHorizontal": "Voltear horizontalmente",
+      "flipVertical": "Voltear verticalmente",
+      "gamma": "Gamma",
+      "gammaHint": "Aclara los medios tonos sin mover el negro ni el blanco. Útil cuando la imagen se ve oscura pero no está subexpuesta.",
+      "grainHint": "Añade grano para dar textura de película. También disimula el banding en cielos y degradados.",
+      "grain_enabled": "Grano",
+      "hue_degrees": "Tono",
+      "hue_degreesHint": "Gira todos los colores en la rueda cromática. Valores pequeños corrigen dominantes; grandes cambian los colores.",
+      "notInLivePreview": "Algunos ajustes activos no aparecen en la vista previa en movimiento, solo en el archivo exportado.",
+      "outputSize": "Tamaño de salida",
+      "reset": "Volver a neutro",
+      "rotation": "Rotación",
+      "saturation": "Saturación",
+      "saturationHint": "Intensifica o vacía los colores. En exceso, la piel se vuelve anaranjada.",
+      "sharpness": "Nitidez",
+      "sharpnessHint": "Realza los bordes para dar sensación de enfoque. En exceso, crea halos claros a su alrededor.",
+      "strength": "Intensidad",
+      "transform": "Transformación",
+      "trim": "Fragmento",
+      "trimEnd": "Fin del fragmento",
+      "trimStart": "Inicio del fragmento",
+      "wholeVideo": "Vídeo completo"
+    },
+    "enhance": {
+      "animeVideo": "Anime / animación",
+      "animeVideoHint": "Anime, dibujos, motion graphics — líneas definidas y colores planos",
+      "aspectFree": "Proporción libre: pulsa para bloquear",
+      "aspectLocked": "Proporción bloqueada: pulsa para desbloquear",
+      "beyondNative": "Objetivo por encima del factor nativo ({factor}x): el exceso es interpolación, con menos ganancia de detalle.",
+      "contentType": "Tipo de contenido",
+      "device": "Procesamiento",
+      "free": "Libre",
+      "height": "Alto",
+      "locked": "Bloqueada",
+      "modeCustom": "Medida exacta",
+      "modePreset": "Ampliar 2x/4x",
+      "noModel": "Sin modelo",
+      "noModelHint": "Aplica solo los ajustes y el redimensionado, sin pasar por ningún modelo de IA.",
+      "processingDescription": "Cómo procesa el vídeo el modelo",
+      "processingTitle": "Procesamiento",
+      "profile": "Calidad",
+      "realVideo": "Vídeo real (grabación)",
+      "realVideoHint": "Cámara, grabación de pantalla, cualquier imagen captada del mundo",
+      "resolutionMultiplier": "Multiplicador de resolución",
+      "resultSize": "Resultado",
+      "scale": "Escala",
+      "scaleDescription": "Tamaño final del vídeo",
+      "scaleTitle": "Escala",
+      "sizeLabel": "Tamaño",
+      "sourceSize": "Resolución original",
+      "title": "Mejora",
+      "width": "Ancho"
+    },
+    "export": {
+      "cancel": "Cancelar",
+      "container": "Formato",
+      "destination": "Destino",
+      "done": "Archivo exportado.",
+      "profile": "Calidad",
+      "sameFolder": "Misma carpeta del original",
+      "start": "Exportar",
+      "title": "Exportar",
+      "working": "Procesando…"
+    },
+    "limits": {
+      "ceilingExceeded": "Supera el límite de {factor} de esta operación.",
+      "encoder_unavailable": "No hay codificador disponible para este formato.",
+      "factor_duration": "duración",
+      "factor_frame_count": "número de fotogramas",
+      "factor_frame_rate": "tasa de fotogramas",
+      "factor_height": "alto",
+      "factor_size_bytes": "tamaño del archivo",
+      "factor_width": "ancho",
+      "hardware_insufficient": "Este equipo no tiene capacidad para esta exportación.",
+      "noContainerAvailable": "No hay ningún formato de salida disponible en este equipo.",
+      "noEncoderAvailable": "No disponible en este equipo",
+      "source_changed": "El archivo de origen cambió. Impórtalo de nuevo.",
+      "unknown": "No se pudo iniciar la exportación."
+    },
+    "player": {
+      "frame": "Fotograma",
+      "frameUnavailable": "Fotograma no exacto (tasa variable)",
+      "mute": "Silenciar",
+      "noAudio": "Sin pista de audio",
+      "notPreviewable": "No se puede mostrar este vídeo aquí.",
+      "pause": "Pausar",
+      "play": "Reproducir",
+      "previewUnavailable": "Vista previa con ajustes no disponible en este equipo",
+      "recalculating": "Recalculando…",
+      "stepBack": "Fotograma anterior",
+      "stepForward": "Fotograma siguiente",
+      "timeline": "Línea de tiempo",
+      "transport": "Controles de reproducción",
+      "unmute": "Activar sonido",
+      "volume": "Volumen"
+    },
+    "secondary": {
+      "chapters": "Capítulos",
+      "extra_audio_tracks": "Pistas de audio adicionales",
+      "proceed": "Continuar de todos modos",
+      "subtitles": "Subtítulos incrustados",
+      "warning": "Este procesamiento descartará partes del archivo:"
+    },
+    "status": {
+      "awaiting_confirmation": "Esperando confirmación",
+      "cancelled": "Cancelado",
+      "creating": "Preparando…",
+      "done": "Completado",
+      "error": "Error",
+      "idle": "Listo",
+      "processing": "Procesando",
+      "queued": "En cola"
     }
   }
 }

@@ -18,6 +18,7 @@ import pytest
 import soundfile as sf
 
 from astros_upscale.processing import classify_audio
+from astros_upscale.media import ffmpeg_path
 
 pytestmark = pytest.mark.hardware  # loads a real torch model (silero-vad) + librosa
 
@@ -28,7 +29,7 @@ _SILERO_TEST_WAV = os.path.join(
 
 
 def _run_ffmpeg(args: list[str]) -> None:
-    result = subprocess.run(['ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
+    result = subprocess.run([ffmpeg_path() or ffmpeg_path() or 'ffmpeg', '-y', *args], capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stderr
 
 

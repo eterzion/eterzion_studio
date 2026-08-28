@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { UploadCloud, FolderOpen, FolderUp, FileWarning } from '@lucide/vue'
 import AppButton from './atoms/AppButton.vue'
 import AppSpinner from './atoms/AppSpinner.vue'
 import AppBadge from './atoms/AppBadge.vue'
 
-// Copy/format chips are props (not hardcoded) so screens that accept more than
-// images — Otimizar, which takes image/video/audio alike — can reuse this exact
-// drop zone instead of falling back to a plain button-only empty state. The
-// defaults are the original image-only wording, so ImageEditorView needs no
-// changes.
-withDefaults(
+// Copy and format chips are props so screens accepting more than images can
+// reuse this exact drop zone. The defaults now come from the locale rather than
+// from Portuguese literals: this component appears on Imagem, Vídeo and Áudio,
+// so a hardcoded string here was three screens failing to translate at once.
+const props = withDefaults(
   defineProps<{
     error?: string | null
     loading?: boolean
@@ -20,11 +20,14 @@ withDefaults(
   }>(),
   {
     loading: false,
-    title: 'Arraste imagens aqui',
-    subtitle: 'ou use os botões abaixo — imagens são identificadas automaticamente',
     formats: () => ['PNG', 'JPG', 'WEBP', 'BMP', 'TIFF']
   }
 )
+
+const { t } = useI18n()
+
+const resolvedTitle = computed(() => props.title ?? t('upload.imagesTitle'))
+const resolvedSubtitle = computed(() => props.subtitle ?? t('upload.subtitle'))
 
 const emit = defineEmits<{
   filesDropped: [files: File[]]
@@ -65,7 +68,7 @@ function onKeydown(e: KeyboardEvent): void {
     :class="{ 'drag-over': dragOver, 'has-error': !!error, loading }"
     role="button"
     tabindex="0"
-    aria-label="Arraste arquivos aqui ou pressione Enter para selecionar"
+    :aria-label="t('upload.aria')"
     @dragenter.prevent="onDragEnter"
     @dragover.prevent
     @dragleave.prevent="onDragLeave"
@@ -77,11 +80,11 @@ function onKeydown(e: KeyboardEvent): void {
 
     <template v-if="loading">
       <AppSpinner :size="26" class="icon-tile-spin" />
-      <h3 class="upload-title">Importando arquivos…</h3>
+      <h3 class="upload-title">{{ t('upload.importing') }}</h3>
     </template>
     <template v-else-if="error">
       <div class="icon-tile icon-error"><FileWarning :size="26" /></div>
-      <h3 class="upload-title">Não foi possível importar os arquivos</h3>
+      <h3 class="upload-title">{{ t('upload.failed') }}</h3>
       <p class="upload-subtitle">{{ error }}</p>
       <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
         Tentar novamente
@@ -90,18 +93,18 @@ function onKeydown(e: KeyboardEvent): void {
     <template v-else>
       <div class="icon-tile" :class="{ active: dragOver }"><UploadCloud :size="26" /></div>
       <h3 class="upload-title">
-        {{ dragOver ? 'Solte para importar' : title }}
+        {{ dragOver ? t('upload.dropHere') : resolvedTitle }}
       </h3>
-      <p class="upload-subtitle">{{ subtitle }}</p>
+      <p class="upload-subtitle">{{ resolvedSubtitle }}</p>
 
       <div class="upload-actions">
         <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
           <template #icon><FolderOpen :size="16" /></template>
-          Selecionar arquivos
+          {{ t('upload.pickFiles') }}
         </AppButton>
         <AppButton variant="secondary" size="lg" @click.stop="emit('pickFolder')">
           <template #icon><FolderUp :size="16" /></template>
-          Selecionar pasta
+          {{ t('upload.pickFolder') }}
         </AppButton>
       </div>
 
@@ -109,7 +112,7 @@ function onKeydown(e: KeyboardEvent): void {
         <div class="format-chips">
           <AppBadge v-for="fmt in formats" :key="fmt" tone="neutral">{{ fmt }}</AppBadge>
         </div>
-        <span class="upload-limit">até 500 MB por arquivo</span>
+        <span class="upload-limit">{{ t('upload.limit') }}</span>
       </div>
     </template>
   </div>
