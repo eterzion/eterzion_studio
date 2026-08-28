@@ -185,6 +185,14 @@
       "sameFolder": "Derselbe Ordner wie das Original",
       "title": "Export"
     },
+    "history": {
+      "clear": "Verlauf leeren",
+      "empty": "Noch nichts komprimiert.",
+      "remove": "{name} aus dem Verlauf entfernen",
+      "repeat": "Wiederholen",
+      "repeatHint": "Nutzt die Einstellungen dieses Durchlaufs, nicht die heutige Vorlage.",
+      "title": "Verlauf"
+    },
     "image": {
       "advanced": "Erweiterte Einstellungen",
       "chroma": "Chroma-Unterabtastung",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Archiv",
       "balanced": "Ausgewogen",
+      "cancel": "Abbrechen",
+      "confirmSave": "Speichern",
+      "copyOf": "{name} (Kopie)",
       "custom": "Benutzerdefiniert",
+      "delete": "Löschen",
+      "duplicate": "Duplizieren",
       "maximum_quality": "Höchste Qualität",
       "modified": "Nach der Auswahl der Vorlage geändert",
+      "namePlaceholder": "Name der Vorlage",
       "origin": {
         "builtin": "Mitgeliefert",
         "platform": "Plattform",
         "user": "Deine"
       },
       "placeholder": "Vorlage wählen",
+      "saveAs": "Als Vorlage speichern",
       "smallest_file": "Kleinste Datei",
+      "update": "Vorlage aktualisieren",
       "web": "Web"
     },
     "queue": {

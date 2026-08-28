@@ -185,6 +185,14 @@
       "sameFolder": "Mesma pasta do arquivo original",
       "title": "Exportação"
     },
+    "history": {
+      "clear": "Limpar histórico",
+      "empty": "Nada comprimido ainda.",
+      "remove": "Remover {name} do histórico",
+      "repeat": "Repetir",
+      "repeatHint": "Usa as configurações desta execução, não o preset atual.",
+      "title": "Histórico"
+    },
     "image": {
       "advanced": "Ajustes avançados",
       "chroma": "Subamostragem de croma",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Arquivamento",
       "balanced": "Equilibrado",
+      "cancel": "Cancelar",
+      "confirmSave": "Salvar",
+      "copyOf": "{name} (cópia)",
       "custom": "Personalizado",
+      "delete": "Excluir",
+      "duplicate": "Duplicar",
       "maximum_quality": "Máxima qualidade",
       "modified": "Alterado depois de escolher o preset",
+      "namePlaceholder": "Nome do preset",
       "origin": {
         "builtin": "Interno",
         "platform": "Plataforma",
         "user": "Seu"
       },
       "placeholder": "Escolha um preset",
+      "saveAs": "Salvar como preset",
       "smallest_file": "Menor arquivo",
+      "update": "Atualizar preset",
       "web": "Web"
     },
     "queue": {

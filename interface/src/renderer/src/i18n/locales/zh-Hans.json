@@ -185,6 +185,14 @@
       "sameFolder": "与原文件相同的文件夹",
       "title": "导出"
     },
+    "history": {
+      "clear": "清空历史",
+      "empty": "还没有压缩过任何文件。",
+      "remove": "从历史中移除 {name}",
+      "repeat": "重复",
+      "repeatHint": "使用那次运行的设置，而不是当前的预设。",
+      "title": "历史"
+    },
     "image": {
       "advanced": "高级设置",
       "chroma": "色度抽样",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "存档",
       "balanced": "均衡",
+      "cancel": "取消",
+      "confirmSave": "保存",
+      "copyOf": "{name}（副本）",
       "custom": "自定义",
+      "delete": "删除",
+      "duplicate": "复制",
       "maximum_quality": "最高质量",
       "modified": "选择预设后已修改",
+      "namePlaceholder": "预设名称",
       "origin": {
         "builtin": "内置",
         "platform": "平台",
         "user": "你的"
       },
       "placeholder": "选择预设",
+      "saveAs": "保存为预设",
       "smallest_file": "最小体积",
+      "update": "更新预设",
       "web": "网页"
     },
     "queue": {

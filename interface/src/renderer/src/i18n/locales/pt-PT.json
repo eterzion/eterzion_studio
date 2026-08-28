@@ -185,6 +185,14 @@
       "sameFolder": "Mesma pasta do ficheiro original",
       "title": "Exportação"
     },
+    "history": {
+      "clear": "Limpar histórico",
+      "empty": "Ainda não comprimiu nada.",
+      "remove": "Remover {name} do histórico",
+      "repeat": "Repetir",
+      "repeatHint": "Usa as definições desta execução, não a predefinição atual.",
+      "title": "Histórico"
+    },
     "image": {
       "advanced": "Definições avançadas",
       "chroma": "Subamostragem de croma",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Arquivo",
       "balanced": "Equilibrado",
+      "cancel": "Cancelar",
+      "confirmSave": "Guardar",
+      "copyOf": "{name} (cópia)",
       "custom": "Personalizado",
+      "delete": "Eliminar",
+      "duplicate": "Duplicar",
       "maximum_quality": "Máxima qualidade",
       "modified": "Alterado depois de escolher a predefinição",
+      "namePlaceholder": "Nome da predefinição",
       "origin": {
         "builtin": "Interna",
         "platform": "Plataforma",
         "user": "Sua"
       },
       "placeholder": "Escolha uma predefinição",
+      "saveAs": "Guardar como predefinição",
       "smallest_file": "Ficheiro mais pequeno",
+      "update": "Atualizar predefinição",
       "web": "Web"
     },
     "queue": {

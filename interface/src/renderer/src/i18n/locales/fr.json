@@ -185,6 +185,14 @@
       "sameFolder": "Même dossier que l’original",
       "title": "Export"
     },
+    "history": {
+      "clear": "Vider l’historique",
+      "empty": "Rien de compressé pour l’instant.",
+      "remove": "Retirer {name} de l’historique",
+      "repeat": "Refaire",
+      "repeatHint": "Utilise les réglages de cette exécution, pas le préréglage actuel.",
+      "title": "Historique"
+    },
     "image": {
       "advanced": "Réglages avancés",
       "chroma": "Sous-échantillonnage chroma",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Archivage",
       "balanced": "Équilibré",
+      "cancel": "Annuler",
+      "confirmSave": "Enregistrer",
+      "copyOf": "{name} (copie)",
       "custom": "Personnalisé",
+      "delete": "Supprimer",
+      "duplicate": "Dupliquer",
       "maximum_quality": "Qualité maximale",
       "modified": "Modifié après le choix du préréglage",
+      "namePlaceholder": "Nom du préréglage",
       "origin": {
         "builtin": "Intégré",
         "platform": "Plateforme",
         "user": "Le vôtre"
       },
       "placeholder": "Choisissez un préréglage",
+      "saveAs": "Enregistrer comme préréglage",
       "smallest_file": "Fichier le plus petit",
+      "update": "Mettre à jour le préréglage",
       "web": "Web"
     },
     "queue": {

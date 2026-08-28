@@ -261,11 +261,11 @@ já resolve o caso mais comum.
 
 ## Fase 8 — US7: Presets do usuário e histórico (P3)
 
-- [ ] T083 [US7] Persistência local dos presets do usuário, sobrevivendo ao reinício
-- [ ] T084 [US7] Criar, salvar, renomear, duplicar, excluir; restaurar padrões
-- [ ] T085 [US7] Histórico com `settings_snapshot`, e "repetir compressão" usando o snapshot e não
+- [X] T083 [US7] Persistência local dos presets do usuário, sobrevivendo ao reinício
+- [X] T084 [US7] Criar, salvar, renomear, duplicar, excluir; restaurar padrões
+- [X] T085 [US7] Histórico com `settings_snapshot`, e "repetir compressão" usando o snapshot e não
       o preset atual (FR-063)
-- [ ] T086 [P] [US7] Escrever `test_compression_history.py` incluindo o caso do preset alterado
+- [X] T086 [P] [US7] Escrever `test_compression_history.py` incluindo o caso do preset alterado
       depois da execução
 - [ ] T087 [US7] Rodar os cenários 20 e 21 do quickstart
 

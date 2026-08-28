@@ -24,17 +24,26 @@ import AudioCompressionSettings from '../components/compression/AudioCompression
 import CompressionAudioComparison from '../components/compression/CompressionAudioComparison.vue'
 import AnimationCompressionSettings from '../components/compression/AnimationCompressionSettings.vue'
 import CompressionQueue from '../components/compression/CompressionQueue.vue'
+import CompressionHistory from '../components/compression/CompressionHistory.vue'
 import { useCompressionQueue } from '../composables/useCompressionQueue'
 import { useCompressionSettings } from '../composables/useCompressionSettings'
 import { useCompressionEstimate } from '../composables/useCompressionEstimate'
 import { useCompressionJob } from '../composables/useCompressionJob'
 import { useCompressionBatch, type BatchRequest } from '../composables/useCompressionBatch'
 import {
+  clearHistory,
+  createPreset,
+  deleteHistoryEntry,
+  deletePreset,
+  duplicatePreset,
   getCapabilities,
+  listHistory,
   listPresets,
+  updatePreset,
   type CapabilityEntry,
   type CompressionCapabilities,
   type CompressionExport,
+  type CompressionHistoryEntry,
   type CompressionPreset
 } from '../services/compression'
 import { api, hasNativeApi } from '../services/native'
@@ -68,6 +77,7 @@ const batch = useCompressionBatch()
 
 const capabilities = ref<CompressionCapabilities | null>(null)
 const presets = ref<CompressionPreset[]>([])
+const history = ref<CompressionHistoryEntry[]>([])
 const selectedPreset = ref<string | null>(null)
 const presetModified = ref(false)
 
@@ -102,12 +112,24 @@ onMounted(async () => {
   } catch {
     capabilities.value = null
   }
+  await Promise.all([refreshPresets(), refreshHistory()])
+})
+
+async function refreshPresets(): Promise<void> {
   try {
     presets.value = (await listPresets()).presets
   } catch {
     presets.value = []
   }
-})
+}
+
+async function refreshHistory(): Promise<void> {
+  try {
+    history.value = (await listHistory()).entries
+  } catch {
+    history.value = []
+  }
+}
 
 onBeforeUnmount(() => {
   stopEstimating()
@@ -172,15 +194,17 @@ function batchRequests(): BatchRequest[] {
 
 async function runAll(): Promise<void> {
   await batch.run(batchRequests())
+  await refreshHistory()
 }
 
 async function retryFailed(): Promise<void> {
   await batch.retryFailed(batchRequests())
+  await refreshHistory()
 }
 
 async function run(): Promise<void> {
   if (!activeHandle.value) return
-  await job.run({
+  await runAndRecord({
     handleId: activeHandle.value,
     mediaKind: mediaKind.value,
     settings: payload.value,
@@ -189,6 +213,79 @@ async function run(): Promise<void> {
     presetId: selectedPreset.value,
     export: exportOptions.value
   })
+}
+
+/** Comprime e recarrega o histórico.
+ *
+ *  O backend grava a entrada; esta chamada é só para a lista na tela refletir o
+ *  que acabou de acontecer sem exigir que a pessoa reabra a Central. */
+async function runAndRecord(pedido: Parameters<typeof job.run>[0]): Promise<void> {
+  await job.run(pedido)
+  await refreshHistory()
+}
+
+async function savePreset(name: string): Promise<void> {
+  const proprio = presets.value.find((p) => p.id === selectedPreset.value && p.origin === 'user')
+  try {
+    const salvo = proprio
+      ? await updatePreset(proprio.id, { name, settings: payload.value })
+      : await createPreset({ name, media_kind: mediaKind.value, settings: payload.value })
+    await refreshPresets()
+    selectedPreset.value = salvo.id
+    // Salvar torna o preset e as configurações a mesma coisa de novo.
+    presetModified.value = false
+  } catch {
+    await refreshPresets()
+  }
+}
+
+async function duplicateExisting(pedido: { id: string; name: string }): Promise<void> {
+  try {
+    const copia = await duplicatePreset(pedido.id, pedido.name)
+    await refreshPresets()
+    selectedPreset.value = copia.id
+    presetModified.value = false
+  } catch {
+    await refreshPresets()
+  }
+}
+
+async function removePreset(id: string): Promise<void> {
+  try {
+    await deletePreset(id)
+  } finally {
+    if (selectedPreset.value === id) selectedPreset.value = null
+    await refreshPresets()
+  }
+}
+
+/** Repetir parte do **snapshot** da entrada, nunca do preset (FR-063).
+ *
+ *  O preset pode ter mudado desde a execução, e repetir por ele produziria um
+ *  resultado diferente do que a própria entrada exibe. */
+function repeatFromHistory(entry: CompressionHistoryEntry): void {
+  mediaKind.value = entry.media_kind
+  applyPreset(entry.media_kind, entry.settings_snapshot)
+  // Nenhum preset fica selecionado: o que está na tela agora veio do histórico,
+  // e apontar para um preset afirmaria uma origem que pode não bater.
+  selectedPreset.value = null
+  presetModified.value = false
+}
+
+async function removeHistoryEntry(id: string): Promise<void> {
+  try {
+    await deleteHistoryEntry(id)
+  } finally {
+    await refreshHistory()
+  }
+}
+
+async function clearAllHistory(): Promise<void> {
+  try {
+    await clearHistory()
+  } finally {
+    await refreshHistory()
+  }
 }
 
 function reveal(path: string): void {
@@ -301,6 +398,9 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
             :modified="presetModified"
             :disabled="job.running.value"
             @update:model-value="choosePreset"
+            @save="savePreset"
+            @duplicate="duplicateExisting"
+            @remove="removePreset"
           />
 
           <ImageCompressionSettings
@@ -398,6 +498,13 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
             @cancel-item="batch.cancelItem"
             @cancel-all="batch.cancelAll"
             @retry-failed="retryFailed"
+            @reveal="reveal"
+          />
+          <CompressionHistory
+            :entries="history"
+            @repeat="repeatFromHistory"
+            @remove="removeHistoryEntry"
+            @clear="clearAllHistory"
             @reveal="reveal"
           />
         </div>

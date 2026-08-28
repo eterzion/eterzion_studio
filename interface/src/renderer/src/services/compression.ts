@@ -138,7 +138,12 @@ async function toError(response: Response): Promise<CompressionError> {
     const body = (await response.json()) as { detail?: unknown }
     // FastAPI aninha em `detail`; a validação do Pydantic devolve uma lista.
     // Nos dois casos o que interessa é chegar a um objeto com `reason`.
-    if (body && typeof body.detail === 'object' && body.detail !== null && !Array.isArray(body.detail)) {
+    if (
+      body &&
+      typeof body.detail === 'object' &&
+      body.detail !== null &&
+      !Array.isArray(body.detail)
+    ) {
       detail = body.detail as Record<string, unknown>
     } else if (body) {
       detail = { pydantic: body.detail }
@@ -192,9 +197,7 @@ export async function registerMedia(path: string): Promise<CompressionMedia> {
     method: 'POST',
     body: JSON.stringify({ path })
   })
-  return request<CompressionMedia>(
-    `/compression/media/${encodeURIComponent(registrado.handle_id)}`
-  )
+  return request<CompressionMedia>(`/compression/media/${encodeURIComponent(registrado.handle_id)}`)
 }
 
 export function getCapabilities(): Promise<CompressionCapabilities> {
@@ -244,10 +247,41 @@ export function deletePreset(id: string): Promise<void> {
 }
 
 export function duplicatePreset(id: string, name: string): Promise<CompressionPreset> {
-  return request<CompressionPreset>(
-    `/compression/presets/${encodeURIComponent(id)}/duplicate`,
-    { method: 'POST', body: JSON.stringify({ name }) }
-  )
+  return request<CompressionPreset>(`/compression/presets/${encodeURIComponent(id)}/duplicate`, {
+    method: 'POST',
+    body: JSON.stringify({ name })
+  })
+}
+
+/** Uma compressão concluída, como o histórico a guarda.
+ *
+ *  `settings_snapshot` é o que **foi usado**; `preset_id` só diz de onde veio.
+ *  Repetir parte do snapshot — um preset editado depois faria a repetição
+ *  produzir algo diferente do que a entrada exibe (FR-063). */
+export interface CompressionHistoryEntry {
+  id: string
+  display_name: string
+  media_kind: MediaKind
+  settings_snapshot: CompressionSettings
+  preset_id: string | null
+  result: Record<string, unknown>
+  output_path: string | null
+  finished_at: string | null
+}
+
+export function listHistory(
+  mediaKind?: MediaKind
+): Promise<{ entries: CompressionHistoryEntry[] }> {
+  const query = mediaKind ? `?media_kind=${mediaKind}` : ''
+  return request<{ entries: CompressionHistoryEntry[] }>(`/compression/history${query}`)
+}
+
+export function deleteHistoryEntry(id: string): Promise<void> {
+  return request<void>(`/compression/history/${encodeURIComponent(id)}`, { method: 'DELETE' })
+}
+
+export function clearHistory(): Promise<void> {
+  return request<void>('/compression/history', { method: 'DELETE' })
 }
 
 export function createJob(body: CompressionJobRequest): Promise<CompressionJobResponse> {

@@ -23,6 +23,7 @@ from pydantic import BaseModel, Field
 
 from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
 from app.compression import capabilities as compression_capabilities
+from app.compression import history as compression_history
 from app.compression import estimator as compression_estimator
 from app.compression import presets as compression_presets
 from app.compression import runner as compression_runner
@@ -31,6 +32,7 @@ from app.licensing import UnresolvableRequestError
 from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvailability,
                          CompressionCapabilitiesResponse, CompressionEstimateRequest,
                          CompressionEstimateResponse, CompressionJobRequest,
+                         CompressionHistoryEntry, CompressionHistoryResponse,
                          CompressionMediaRequest, CompressionMediaResponse,
                          CompressionJobResponse, CompressionPreset,
                          CompressionPresetCreateRequest, CompressionPresetsResponse,
@@ -999,6 +1001,31 @@ _COMPRESSION_REFUSAL_STATUS = {
     'unsupported_media': 415,
     'unreadable': 415,
 }
+
+
+@compression_router.get('/history', response_model=CompressionHistoryResponse)
+def list_compression_history(media_kind: str | None = None) -> CompressionHistoryResponse:
+    """O que já foi comprimido (FR-062).
+
+    Cada entrada carrega `settings_snapshot` — o que de fato foi usado, e não o
+    preset de onde veio. É esse snapshot que "repetir compressão" usa, porque um
+    preset editado depois faria a repetição produzir algo diferente do que a
+    entrada exibe (FR-063).
+    """
+    return CompressionHistoryResponse(
+        entries=[CompressionHistoryEntry(**e)
+                 for e in compression_history.all_entries(media_kind)])
+
+
+@compression_router.delete('/history/{entry_id}', status_code=204)
+def delete_compression_history_entry(entry_id: str) -> None:
+    if not compression_history.remove(entry_id):
+        raise HTTPException(404, {'reason': 'not_found', 'message': 'Entrada não encontrada.'})
+
+
+@compression_router.delete('/history', status_code=204)
+def clear_compression_history() -> None:
+    compression_history.clear()
 
 
 @compression_router.post('/jobs', response_model=CompressionJobResponse, status_code=202)

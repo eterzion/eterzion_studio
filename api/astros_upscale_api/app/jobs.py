@@ -632,6 +632,33 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
     }
 
 
+def _record_compression_history(job: dict, medido: dict) -> None:
+    """Registra a compressão no histórico local (FR-062).
+
+    Guarda o **snapshot** das configurações, e não o `preset_id`: o preset é
+    editável, e "repetir" lendo o preset atual produziria um resultado diferente
+    do que a entrada exibe (FR-063).
+
+    Falhar aqui não pode derrubar o job. O arquivo já existe no disco e é o que
+    a pessoa pediu; um histórico que não gravou custa memória, não trabalho.
+    """
+    from app.compression import history
+
+    params = job.get('params') or {}
+    try:
+        history.record(
+            entry_id=job['id'],
+            display_name=job.get('input_file') or '',
+            media_kind=params.get('media_kind') or 'image',
+            settings_snapshot=params.get('settings') or {},
+            preset_id=params.get('preset_id'),
+            result=medido,
+            output_path=job.get('output_path'),
+            finished_at=job.get('processing_ended_at'))
+    except Exception:  # noqa: BLE001
+        logger.warning('Não foi possível gravar o histórico de compressão.', exc_info=True)
+
+
 def _run_compression(job: dict, params: dict, on_progress, on_stage) -> dict:
     """Central de Compressão (specs/008-compression-centre).
 
@@ -1163,6 +1190,7 @@ async def _process_job(job_id: str) -> None:
             # `output_meta`, que é contrato compartilhado com telas antigas.
             if 'compression' in result_meta:
                 job['compression'] = result_meta['compression']
+                _record_compression_history(job, result_meta['compression'])
         elif job.get('media_type') == 'video':
             # No separate "master" for video (unlike image) — VideoUpscaler
             # already wrote the real, final, audio-muxed file.

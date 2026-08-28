@@ -686,6 +686,34 @@ class CompressionMediaResponse(BaseModel):
     container_bitrate_bps: int | None = None
 
 
+class CompressionHistoryEntry(BaseModel):
+    """Uma compressão concluída, como o histórico a guarda (FR-062).
+
+    `settings_snapshot` é o que **foi usado**, e `preset_id` só diz de onde veio.
+    Repetir a compressão parte do snapshot: um preset editado depois faria a
+    repetição produzir algo diferente do que esta entrada exibe (FR-063).
+
+    Não há campo de caminho de origem — uma entrada é o registro do que foi
+    feito, não um atalho para um arquivo que pode ter sido movido.
+    """
+    model_config = ConfigDict(extra='forbid')
+
+    id: str
+    display_name: str
+    media_kind: MediaKind
+    settings_snapshot: dict[str, Any]
+    preset_id: str | None = None
+    result: dict[str, Any]
+    output_path: str | None = None
+    finished_at: str | None = None
+
+
+class CompressionHistoryResponse(BaseModel):
+    model_config = ConfigDict(extra='forbid')
+
+    entries: list[CompressionHistoryEntry] = []
+
+
 class CompressionJobRequest(BaseModel):
     model_config = ConfigDict(extra='forbid')
 

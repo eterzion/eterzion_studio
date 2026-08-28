@@ -185,6 +185,14 @@
       "sameFolder": "원본과 같은 폴더",
       "title": "내보내기"
     },
+    "history": {
+      "clear": "기록 지우기",
+      "empty": "아직 압축한 것이 없습니다.",
+      "remove": "{name} 기록에서 제거",
+      "repeat": "다시 실행",
+      "repeatHint": "지금의 프리셋이 아니라 그때 사용한 설정을 씁니다.",
+      "title": "기록"
+    },
     "image": {
       "advanced": "고급 설정",
       "chroma": "크로마 서브샘플링",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "보관용",
       "balanced": "균형",
+      "cancel": "취소",
+      "confirmSave": "저장",
+      "copyOf": "{name} (사본)",
       "custom": "사용자 설정",
+      "delete": "삭제",
+      "duplicate": "복제",
       "maximum_quality": "최고 품질",
       "modified": "프리셋을 고른 뒤 변경됨",
+      "namePlaceholder": "프리셋 이름",
       "origin": {
         "builtin": "기본",
         "platform": "플랫폼",
         "user": "내 프리셋"
       },
       "placeholder": "프리셋 선택",
+      "saveAs": "프리셋으로 저장",
       "smallest_file": "가장 작은 파일",
+      "update": "프리셋 업데이트",
       "web": "웹"
     },
     "queue": {

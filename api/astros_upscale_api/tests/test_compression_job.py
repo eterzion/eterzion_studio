@@ -142,6 +142,53 @@ def test_os_numeros_medidos_chegam_na_consulta_do_job(client, imagem, tmp_path):
                            'reduction_ratio', 'grew', 'elapsed_seconds'}
 
 
+def test_a_compressao_entra_no_historico_com_o_snapshot(client, imagem, tmp_path, monkeypatch):
+    """FR-062, medido no caminho real — o job grava, não um teste unitário.
+
+    Sem isto, o módulo de histórico poderia estar correto e nunca ser chamado: a
+    tela ficaria vazia e nenhum teste falharia.
+    """
+    from app.compression import history
+
+    monkeypatch.setattr(history, '_store_path',
+                        lambda: str(tmp_path / 'compression-history.json'))
+    handle = media_handles.register_media(imagem)
+    destino = tmp_path / 'saida'
+    destino.mkdir()
+    job_id = client.post('/compression/jobs', json=_pedido(
+        handle, export={'directory': str(destino)})).json()['job_id']
+    _aguardar(job_id)
+
+    entradas = history.all_entries()
+    assert len(entradas) == 1
+    entrada = entradas[0]
+    assert entrada['id'] == job_id
+    assert entrada['settings_snapshot']['output_format'] == 'jpeg'
+    assert entrada['result']['output_size_bytes'] == os.path.getsize(
+        jobs.get_job(job_id)['output_path'])
+
+
+def test_um_historico_que_nao_grava_nao_derruba_o_job(client, imagem, tmp_path, monkeypatch):
+    """O arquivo já existe no disco e é o que a pessoa pediu. Um histórico que
+    não gravou custa memória, não trabalho."""
+    from app.compression import history
+
+    def explode(**_):
+        raise OSError('disco cheio')
+
+    monkeypatch.setattr(history, 'record', explode)
+    handle = media_handles.register_media(imagem)
+    destino = tmp_path / 'saida'
+    destino.mkdir()
+    job_id = client.post('/compression/jobs', json=_pedido(
+        handle, export={'directory': str(destino)})).json()['job_id']
+    _aguardar(job_id)
+
+    job = jobs.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    assert os.path.isfile(job['output_path'])
+
+
 # ------------------------------- recusas ------------------------------- #
 
 def test_modo_basico_com_campo_tecnico_e_recusado(client, imagem):

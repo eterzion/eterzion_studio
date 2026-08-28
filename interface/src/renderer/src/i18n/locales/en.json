@@ -185,6 +185,14 @@
       "sameFolder": "Same folder as the original",
       "title": "Export"
     },
+    "history": {
+      "clear": "Clear history",
+      "empty": "Nothing compressed yet.",
+      "remove": "Remove {name} from history",
+      "repeat": "Repeat",
+      "repeatHint": "Uses this run’s settings, not the preset as it is now.",
+      "title": "History"
+    },
     "image": {
       "advanced": "Advanced settings",
       "chroma": "Chroma subsampling",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Archive",
       "balanced": "Balanced",
+      "cancel": "Cancel",
+      "confirmSave": "Save",
+      "copyOf": "{name} (copy)",
       "custom": "Custom",
+      "delete": "Delete",
+      "duplicate": "Duplicate",
       "maximum_quality": "Maximum quality",
       "modified": "Changed since the preset was chosen",
+      "namePlaceholder": "Preset name",
       "origin": {
         "builtin": "Built-in",
         "platform": "Platform",
         "user": "Yours"
       },
       "placeholder": "Choose a preset",
+      "saveAs": "Save as preset",
       "smallest_file": "Smallest file",
+      "update": "Update preset",
       "web": "Web"
     },
     "queue": {

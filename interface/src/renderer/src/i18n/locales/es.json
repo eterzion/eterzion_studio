@@ -185,6 +185,14 @@
       "sameFolder": "Misma carpeta que el original",
       "title": "Exportación"
     },
+    "history": {
+      "clear": "Vaciar historial",
+      "empty": "Todavía no has comprimido nada.",
+      "remove": "Quitar {name} del historial",
+      "repeat": "Repetir",
+      "repeatHint": "Usa los ajustes de esa ejecución, no el preajuste actual.",
+      "title": "Historial"
+    },
     "image": {
       "advanced": "Ajustes avanzados",
       "chroma": "Submuestreo de croma",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Archivo",
       "balanced": "Equilibrado",
+      "cancel": "Cancelar",
+      "confirmSave": "Guardar",
+      "copyOf": "{name} (copia)",
       "custom": "Personalizado",
+      "delete": "Eliminar",
+      "duplicate": "Duplicar",
       "maximum_quality": "Máxima calidad",
       "modified": "Modificado después de elegir el preajuste",
+      "namePlaceholder": "Nombre del preajuste",
       "origin": {
         "builtin": "Integrado",
         "platform": "Plataforma",
         "user": "Tuyo"
       },
       "placeholder": "Elige un preajuste",
+      "saveAs": "Guardar como preajuste",
       "smallest_file": "Archivo más pequeño",
+      "update": "Actualizar preajuste",
       "web": "Web"
     },
     "queue": {

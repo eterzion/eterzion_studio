@@ -185,6 +185,14 @@
       "sameFolder": "元のファイルと同じフォルダー",
       "title": "書き出し"
     },
+    "history": {
+      "clear": "履歴を消去",
+      "empty": "まだ何も圧縮していません。",
+      "remove": "{name} を履歴から削除",
+      "repeat": "もう一度",
+      "repeatHint": "現在のプリセットではなく、その実行時の設定を使います。",
+      "title": "履歴"
+    },
     "image": {
       "advanced": "詳細設定",
       "chroma": "クロマサブサンプリング",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "保存用",
       "balanced": "バランス",
+      "cancel": "キャンセル",
+      "confirmSave": "保存",
+      "copyOf": "{name}（コピー）",
       "custom": "カスタム",
+      "delete": "削除",
+      "duplicate": "複製",
       "maximum_quality": "最高品質",
       "modified": "プリセット選択後に変更されています",
+      "namePlaceholder": "プリセット名",
       "origin": {
         "builtin": "標準",
         "platform": "プラットフォーム",
         "user": "自分の"
       },
       "placeholder": "プリセットを選択",
+      "saveAs": "プリセットとして保存",
       "smallest_file": "最小サイズ",
+      "update": "プリセットを更新",
       "web": "ウェブ"
     },
     "queue": {

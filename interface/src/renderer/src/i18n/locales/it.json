@@ -185,6 +185,14 @@
       "sameFolder": "Stessa cartella dell’originale",
       "title": "Esportazione"
     },
+    "history": {
+      "clear": "Svuota cronologia",
+      "empty": "Non hai ancora compresso nulla.",
+      "remove": "Rimuovi {name} dalla cronologia",
+      "repeat": "Ripeti",
+      "repeatHint": "Usa le impostazioni di quella esecuzione, non il preset attuale.",
+      "title": "Cronologia"
+    },
     "image": {
       "advanced": "Impostazioni avanzate",
       "chroma": "Sottocampionamento croma",
@@ -275,16 +283,24 @@
     "preset": {
       "archive": "Archivio",
       "balanced": "Bilanciato",
+      "cancel": "Annulla",
+      "confirmSave": "Salva",
+      "copyOf": "{name} (copia)",
       "custom": "Personalizzato",
+      "delete": "Elimina",
+      "duplicate": "Duplica",
       "maximum_quality": "Qualità massima",
       "modified": "Modificato dopo la scelta del preset",
+      "namePlaceholder": "Nome del preset",
       "origin": {
         "builtin": "Integrato",
         "platform": "Piattaforma",
         "user": "Tuo"
       },
       "placeholder": "Scegli un preset",
+      "saveAs": "Salva come preset",
       "smallest_file": "File più piccolo",
+      "update": "Aggiorna preset",
       "web": "Web"
     },
     "queue": {
