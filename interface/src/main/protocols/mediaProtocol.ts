@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 // `http://localhost` (Vite dev server), and Chromium blocks `file://` subresource
 // loads from an `http:` page regardless of CSP. A registered "standard" scheme
 // works the same from both the dev server and the packaged `file://` build.
-export const MEDIA_SCHEME = 'astros-media'
+export const MEDIA_SCHEME = 'eterzion-media'
 
 // MUST run before app.whenReady() resolves — registerSchemesAsPrivileged() only
 // has an effect if called before the app is ready, so this executes as a module
@@ -55,14 +55,14 @@ const MIME_TYPES: Record<string, string> = {
   '.wav': 'audio/wav'
 }
 
-/** Registers the `astros-media://` request handler — call once inside
+/** Registers the `eterzion-media://` request handler — call once inside
  *  app.whenReady(), matching where this ran before the main-process split. */
 export function registerMediaProtocolHandler(): void {
   protocol.handle(MEDIA_SCHEME, async (request) => {
-    // request.url looks like "astros-media://local/C:/Users/.../file.png?v=169..." — built
+    // request.url looks like "eterzion-media://local/C:/Users/.../file.png?v=169..." — built
     // by preload's toFileUrl(). The "local" host is required: schemes registered with
     // standard: true follow generic URI syntax (scheme://host/path), and Chromium rejects
-    // a standard-scheme URL with an empty host ("astros-media:///C:/...") before it ever
+    // a standard-scheme URL with an empty host ("eterzion-media:///C:/...") before it ever
     // reaches this handler — that was exactly the "image never loads" bug. Strip the
     // query/hash (cache-busting after re-export), rebuild a file:/// URL from the path
     // part, and serve the bytes with an explicit Content-Type (net.fetch's file://

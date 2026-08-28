@@ -427,7 +427,7 @@ function stopWatching(backendJobId: string): void {
 function notifyDone(job: Job): void {
   if (typeof document === 'undefined' || document.hasFocus()) return
   if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  new Notification('Astros Upscale', { body: `${job.fileName} foi processada com sucesso.` })
+  new Notification('Eterzion Studio', { body: `${job.fileName} foi processada com sucesso.` })
 }
 
 function applyApiStatus(job: Job, status: ApiJobStatus): void {

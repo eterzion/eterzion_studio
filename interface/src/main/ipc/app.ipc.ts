@@ -4,7 +4,9 @@ import { ensureApiRunning, API_BASE_URL } from '../apiProcess'
 /** Registers the remaining 6 IPC channels (API lifecycle, shell, app info) —
  *  call once per BrowserWindow. */
 export function registerAppIpc(win: BrowserWindow, repoRoot: string): void {
-  ipcMain.handle('api:ensure', async () => ensureApiRunning(repoRoot, process.resourcesPath))
+  ipcMain.handle('api:ensure', async () =>
+    ensureApiRunning(repoRoot, process.resourcesPath, app.getPath('userData'))
+  )
 
   ipcMain.handle('shell:showItemInFolder', async (_event, path: string) => {
     shell.showItemInFolder(path)

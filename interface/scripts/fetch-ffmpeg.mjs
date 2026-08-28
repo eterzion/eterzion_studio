@@ -11,12 +11,22 @@
  * docs/models/MODEL_LICENSES.md §5: dynamic linking, replaceable DLLs, and a
  * documented source pointer (kept below and in that doc).
  *
- * Pinned to release tag "latest" / ffmpeg n8.1 (BtbN re-tags "latest" as new
- * builds land, so this script pins the exact asset filename + a hardcoded
- * SHA256 rather than trusting whatever "latest" resolves to at fetch time).
- * To move to a newer version: update FFMPEG_SOURCE_VERSION, the asset URLs
- * and the sha256 values together (from the release's checksums.sha256), then
- * re-run `npm run fetch:ffmpeg` and re-verify with `ffmpeg -version` per
+ * Pinned to a **dated** release tag, not to "latest".
+ *
+ * "latest" is a moving tag: BtbN re-aponta ele a cada novo build, e o par
+ * nome-do-arquivo + SHA256 fixado aqui envelhece sozinho. O sintoma é este
+ * script recusar o download com "SHA256 mismatch" num dia em que nada mudou no
+ * repositório — e o instalador Windows deixar de ser gerado por causa disso.
+ *
+ * Uma tag datada é imutável, então o par continua verdadeiro. Os nomes de
+ * arquivo sob uma tag datada carregam o id exato do build, que é por isso que
+ * são mais longos que os servidos por "latest".
+ *
+ * To move to a newer version: pick a tag from
+ * https://github.com/BtbN/FFmpeg-Builds/releases, then update
+ * FFMPEG_RELEASE_TAG, FFMPEG_SOURCE_VERSION, both archiveName values and both
+ * sha256 values together (from the release's checksums.sha256), re-run
+ * `npm run fetch:ffmpeg` and re-verify with `ffmpeg -version` per
  * docs/models/MODEL_LICENSES.md §5.
  *
  * macOS is intentionally not covered here — BtbN does not publish macOS
@@ -40,25 +50,33 @@ import { spawnSync } from 'node:child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const RESOURCES_ROOT = join(__dirname, '..', 'resources', 'ffmpeg')
-const RELEASE_BASE = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest'
+export const FFMPEG_RELEASE_TAG = 'autobuild-2026-08-21-13-40'
+const RELEASE_BASE = `https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_RELEASE_TAG}`
 
-export const FFMPEG_SOURCE_VERSION = 'n8.1'
+export const FFMPEG_SOURCE_VERSION = 'n8.1.2-44-g7c533d0f86'
 export const FFMPEG_SOURCE_URL = 'https://github.com/BtbN/FFmpeg-Builds'
 
 const TARGETS = {
   win32: {
-    archiveName: 'ffmpeg-n8.1-latest-win64-lgpl-shared-8.1.zip',
-    sha256: 'b1284f218de4e0c740c63c1a13f2bd09c287a7e05bb04d8f13f24ab7a7accc46',
-    // Only the runtime files: ffmpeg.exe + its DLLs. Drops ffplay.exe/ffprobe.exe
-    // (not needed) and the .def/.lib import-library files (link-time only, no
-    // use in a packaged app that never compiles against these).
-    keepFromBinDir: (name) => /\.(exe|dll)$/i.test(name) && !/^ff(play|probe)\.exe$/i.test(name),
+    archiveName: 'ffmpeg-n8.1.2-44-g7c533d0f86-win64-lgpl-shared-8.1.zip',
+    sha256: 'e30201900132c0e3da178c63c7dac65aa0a0dcd971779546ae964b86b47bd499',
+    // Runtime files only: ffmpeg.exe, ffprobe.exe e suas DLLs. Descarta
+    // ffplay.exe e os arquivos .def/.lib de import (só valem em tempo de link,
+    // e um app empacotado nunca compila contra eles).
+    //
+    // O ffprobe era descartado aqui como "não necessário". Ele é necessário:
+    // astros_upscale.media.ffprobe_json() o invoca para toda pergunta sobre
+    // duração, taxa de quadros, resolução e trilha de áudio — o que é quase toda
+    // a importação de vídeo. Excluí-lo fazia o app empacotado cair num ffprobe
+    // do PATH que a máquina de um usuário não tem motivo para ter. Custa ~0,5 MB
+    // e reaproveita as DLLs que já estão aqui.
+    keepFromBinDir: (name) => /\.(exe|dll)$/i.test(name) && !/^ffplay\.exe$/i.test(name),
     binarySubpath: 'ffmpeg.exe'
   },
   linux: {
-    archiveName: 'ffmpeg-n8.1-latest-linux64-lgpl-shared-8.1.tar.xz',
-    sha256: '9bcd549b0c1277796235b813ed593de5337c7f11228a35ea4a35c8fa1ba803fa',
-    keepFromBinDir: (name) => name === 'ffmpeg',
+    archiveName: 'ffmpeg-n8.1.2-44-g7c533d0f86-linux64-lgpl-shared-8.1.tar.xz',
+    sha256: '70cd8561aa1d216f803caaa51b58c62bdb6e7fabe0871ebf23adee0316ee3426',
+    keepFromBinDir: (name) => name === 'ffmpeg' || name === 'ffprobe',
     binarySubpath: 'ffmpeg'
   }
 }

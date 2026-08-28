@@ -1,8 +1,11 @@
 import { spawn, ChildProcess } from 'node:child_process'
-import { existsSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 export const API_BASE_URL = 'http://127.0.0.1:8765'
+export const LICENSING_SERVICE_URL = 'https://license.eterzion.com'
+export const LICENSING_SERVICE_PUBLIC_KEY_B64 =
+  '2zo5YW9vKdQdBPNCELH/+ukuMlJkZhObsY6N8Qu4wpA='
 
 /** Locates the bundled FFmpeg binary's directory (electron-builder extraResources,
  *  see electron-builder.yml win/linux `extraResources: ... to: ffmpeg`), if one was
@@ -13,6 +16,17 @@ export function resolveBundledFfmpegDir(resourcesPath: string): string | null {
   const binaryName = process.platform === 'win32' ? 'ffmpeg.exe' : 'ffmpeg'
   const dir = join(resourcesPath, 'ffmpeg')
   return existsSync(join(dir, binaryName)) ? dir : null
+}
+
+export function resolveBundledApiExecutable(resourcesPath: string): string | null {
+  if (process.platform !== 'win32') return null
+  const executable = join(resourcesPath, 'backend', 'eterzion-studio-api.exe')
+  return existsSync(executable) ? executable : null
+}
+
+export function resolveBundledModelsDir(resourcesPath: string): string | null {
+  const modelsDir = join(resourcesPath, 'models')
+  return existsSync(modelsDir) ? modelsDir : null
 }
 
 /** Locates the astros_upscale repo root — the directory that has both an `api/`
@@ -74,29 +88,68 @@ export interface ApiReadyResult {
  *  FFmpeg, if any, for this platform. */
 export async function ensureApiRunning(
   repoRoot: string,
-  resourcesPath: string
+  resourcesPath: string,
+  userDataPath: string
 ): Promise<ApiReadyResult> {
+  const bundledApi = resolveBundledApiExecutable(resourcesPath)
   if (await pingHealth(800)) {
-    return { ready: true, baseUrl: API_BASE_URL, startedByApp: false }
-  }
-
-  const apiDir = join(repoRoot, 'api', 'astros_upscale_api')
-  const runScript = join(apiDir, 'run.py')
-  if (!existsSync(runScript)) {
+    if (!bundledApi) {
+      return { ready: true, baseUrl: API_BASE_URL, startedByApp: false }
+    }
+    if (ownedProcess && ownedProcess.exitCode === null) {
+      return { ready: true, baseUrl: API_BASE_URL, startedByApp: true }
+    }
     return {
       ready: false,
       baseUrl: API_BASE_URL,
       startedByApp: false,
-      error: `Servidor da API não encontrado em ${runScript}.`
+      error: 'A porta local 8765 já está em uso por outro processo. Feche-o e abra o aplicativo novamente.'
     }
   }
 
-  const python = resolvePythonExecutable(repoRoot)
   const bundledFfmpegDir = resolveBundledFfmpegDir(resourcesPath)
-  const env = bundledFfmpegDir
-    ? { ...process.env, ASTROS_FFMPEG_DIR: bundledFfmpegDir }
-    : process.env
-  const child = spawn(python, [runScript], { cwd: apiDir, env })
+  const bundledModelsDir = resolveBundledModelsDir(resourcesPath)
+  const storageDir = join(userDataPath, 'storage')
+  mkdirSync(join(storageDir, 'uploads'), { recursive: true })
+  mkdirSync(join(storageDir, 'outputs'), { recursive: true })
+
+  let command: string
+  let args: string[]
+  let cwd: string
+  let env = { ...process.env }
+
+  if (bundledApi) {
+    command = bundledApi
+    args = []
+    cwd = join(resourcesPath, 'backend')
+    env = {
+      ...env,
+      ASTROS_LICENSING_SERVICE_URL: LICENSING_SERVICE_URL,
+      ASTROS_LICENSING_SERVICE_PUBLIC_KEY_B64: LICENSING_SERVICE_PUBLIC_KEY_B64,
+      ASTROS_DEV_ALLOW_UNLICENSED: 'false',
+      ASTROS_UPLOADS_DIR: join(storageDir, 'uploads'),
+      ASTROS_OUTPUTS_DIR: join(storageDir, 'outputs')
+    }
+    if (bundledModelsDir) env.ASTROS_MODELS_DIR = bundledModelsDir
+  } else {
+    const apiDir = join(repoRoot, 'api', 'astros_upscale_api')
+    const runScript = join(apiDir, 'run.py')
+    if (!existsSync(runScript)) {
+      return {
+        ready: false,
+        baseUrl: API_BASE_URL,
+        startedByApp: false,
+        error: `Servidor da API não encontrado em ${runScript}.`
+      }
+    }
+    command = resolvePythonExecutable(repoRoot)
+    args = [runScript]
+    cwd = apiDir
+  }
+
+  if (bundledFfmpegDir) env.ASTROS_FFMPEG_DIR = bundledFfmpegDir
+
+  const child = spawn(command, args, { cwd, env, windowsHide: true })
   ownedProcess = child
 
   let stderrTail = ''

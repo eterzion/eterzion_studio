@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from astros_upscale import __version__
 from astros_upscale.processing import HardwareCapability, detect_hardware
 
 from app.config import settings
@@ -131,6 +132,10 @@ def days_since_last_success(now_epoch: float | None = None) -> float | None:
 # can carry. Only 'active' passes the gate — anything else (suspended,
 # refunded, revoked, ...) is a real reason to block, per FR-060.
 _ACTIVE_STATUS = 'active'
+_HTTP_HEADERS = {
+    'Accept': 'application/json',
+    'User-Agent': f'EterzionStudio/{__version__}',
+}
 
 
 @dataclass
@@ -144,7 +149,8 @@ class GateResult:
 
 
 def _http_get(url: str, timeout: float = 5.0) -> dict:
-    with urllib.request.urlopen(url, timeout=timeout) as resp:  # noqa: S310 - fixed, config-provided base_url
+    request = urllib.request.Request(url, headers=_HTTP_HEADERS)
+    with urllib.request.urlopen(request, timeout=timeout) as resp:  # noqa: S310 - fixed, config-provided base_url
         return json.loads(resp.read().decode('utf-8'))
 
 

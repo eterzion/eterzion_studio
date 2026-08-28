@@ -10,7 +10,7 @@ import { i18n, setLocale, detectSystemLocale, type SupportedLocale } from './i18
 
 applyTheme(getInitialTheme())
 
-const STORAGE_KEY = 'astros-upscale:settings'
+const STORAGE_KEY = 'eterzion-studio:settings'
 function getInitialLocale(): SupportedLocale {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)

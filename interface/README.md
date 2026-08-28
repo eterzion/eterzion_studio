@@ -100,12 +100,25 @@ forçada (Princípio X da constituição do projeto).
 
 ```bash
 cd ../api/astros_upscale_api
-pip install pyinstaller
-pyinstaller pyinstaller.spec        # gera dist/astros-upscale-api(.exe)
+python -m pip install -r requirements.txt
+python -m pip install --no-deps -e ..
+python -m pip install pyinstaller==6.14.1
 
 cd ../../interface
-pnpm run build:win     # ou build:mac / build:linux — empacota tudo com electron-builder
+pnpm install
+pnpm run build:win
 ```
+
+O build Windows gera primeiro um backend FastAPI `onedir` com PyInstaller e o
+inclui no instalador NSIS junto dos modelos versionados e do FFmpeg. O usuário
+final não precisa instalar Python. O binário empacotado aponta exclusivamente
+para `https://license.eterzion.com`, fixa a chave pública de assinatura e inicia
+com `ASTROS_DEV_ALLOW_UNLICENSED=false`; o modo de desenvolvimento local continua
+permissivo e usa o `run.py` do checkout.
+
+O instalador inicial é deliberadamente não assinado. O workflow
+`.github/workflows/release.yml` executa o build em Windows, publica o `.exe` no
+GitHub Releases e encerra sem reconstruir quando a tag da versão já existe.
 
 `build:win`/`build:linux` também baixam o ffmpeg empacotado automaticamente
 (`pnpm run fetch:ffmpeg:win`/`fetch:ffmpeg:linux`, ver

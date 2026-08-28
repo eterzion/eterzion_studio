@@ -55,27 +55,27 @@ const items = computed<{ key: NavKey; label: string; icon: unknown; module?: str
 // TODO(config): substituir pelos endereços reais antes de publicar — estes
 // são placeholders para o módulo de suporte não abrir links inexistentes.
 const supportLinks = computed<{ label: string; icon: unknown; url: string }[]>(() => [
-  { label: t('sidebar.links.site'), icon: Globe, url: 'https://example.com/astros-upscale' },
+  { label: t('sidebar.links.site'), icon: Globe, url: 'https://example.com/eterzion-studio' },
   { label: t('sidebar.links.discord'), icon: MessageCircle, url: 'https://discord.gg/example' },
   {
     label: t('sidebar.links.faq'),
     icon: HelpCircle,
-    url: 'https://example.com/astros-upscale/faq'
+    url: 'https://example.com/eterzion-studio/faq'
   },
   {
     label: t('sidebar.links.help'),
     icon: LifeBuoy,
-    url: 'https://example.com/astros-upscale/help'
+    url: 'https://example.com/eterzion-studio/help'
   },
   { label: t('sidebar.links.email'), icon: Mail, url: 'mailto:suporte@example.com' }
 ])
 
-const collapsed = ref(localStorage.getItem('astros-upscale:sidebar-collapsed') === '1')
+const collapsed = ref(localStorage.getItem('eterzion-studio:sidebar-collapsed') === '1')
 const supportOpen = ref(false)
 
 function toggleCollapsed(): void {
   collapsed.value = !collapsed.value
-  localStorage.setItem('astros-upscale:sidebar-collapsed', collapsed.value ? '1' : '0')
+  localStorage.setItem('eterzion-studio:sidebar-collapsed', collapsed.value ? '1' : '0')
   if (collapsed.value) supportOpen.value = false
 }
 
@@ -101,7 +101,7 @@ function openExternal(url: string): void {
       <div class="brand-icon">
         <img
           :src="brandLogoUrl"
-          alt="Astros Upscale"
+          alt="Eterzion Studio"
           width="32"
           height="32"
           decoding="async"
@@ -109,7 +109,7 @@ function openExternal(url: string): void {
         />
       </div>
       <div v-if="!collapsed" class="brand-text">
-        <span class="brand-name">Astros Upscale</span>
+        <span class="brand-name">Eterzion Studio</span>
       </div>
       <AppButton
         variant="ghost"

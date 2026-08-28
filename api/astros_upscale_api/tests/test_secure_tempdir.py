@@ -12,7 +12,7 @@ from app import security as secure_tempdir
 
 @pytest.fixture(autouse=True)
 def isolated_root(tmp_path, monkeypatch):
-    root = tmp_path / 'astros-upscale-worker'
+    root = tmp_path / 'eterzion-studio-worker'
     monkeypatch.setattr(secure_tempdir, '_base_root', lambda: str(root))
     return root
 

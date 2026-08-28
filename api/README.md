@@ -157,7 +157,7 @@ do worker e se deparar com ela no ambiente do subprocesso.
 
 ## Empacotamento (PyInstaller / Docker)
 
-`astros_upscale_api` tem os dois: `pyinstaller.spec` (para embarcar no
+`astros_upscale_api` tem os dois: `astros-upscale-api.spec` (para embarcar no
 instalador do app desktop — ver
 [interface/README.md](../interface/README.md#empacotar-um-instalador)) e um
 `Dockerfile` próprio (`python:3.13-slim`, para rodar como serviço standalone,
