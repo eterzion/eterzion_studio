@@ -109,7 +109,10 @@ async function chooseDirectory(): Promise<void> {
 }
 
 .pattern-input {
-  width: 180px;
+  /* Teto, não medida: num painel estreito uma largura fixa estoura a coluna e o
+     controle sai da tela. */
+  width: min(180px, 100%);
+  min-width: 0;
   padding: var(--space-1) var(--space-1-5);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-sm);

@@ -149,6 +149,16 @@ function sincronizarDe(origem: 'antes' | 'depois'): void {
   grid-template-columns: 1fr;
 }
 
+/* Abaixo de ~900px os dois vídeos lado a lado ficam pequenos demais para
+   comparar — que é a única coisa que este componente faz. Empilhados, cada um
+   ocupa a largura inteira. */
+@media (max-width: 900px) {
+  .stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
 figure {
   margin: 0;
   min-height: 0;

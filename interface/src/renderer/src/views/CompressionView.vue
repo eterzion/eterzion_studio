@@ -537,6 +537,15 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+/* Num notebook estreito o subtítulo é a primeira coisa dispensável: o título e
+   o alternador de modo precisam caber, e a explicação da tela não. */
+@media (max-width: 760px) {
+  .compression-header p {
+    display: none;
+  }
 }
 
 .header-text {

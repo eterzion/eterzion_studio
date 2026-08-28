@@ -191,6 +191,7 @@
       "remove": "Quitar {name} del historial",
       "repeat": "Repetir",
       "repeatHint": "Usa los ajustes de esa ejecución, no el preajuste actual.",
+      "showInFolder": "Mostrar {name} en la carpeta",
       "title": "Historial"
     },
     "image": {

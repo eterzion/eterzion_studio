@@ -191,6 +191,7 @@
       "remove": "Rimuovi {name} dalla cronologia",
       "repeat": "Ripeti",
       "repeatHint": "Usa le impostazioni di quella esecuzione, non il preset attuale.",
+      "showInFolder": "Mostra {name} nella cartella",
       "title": "Cronologia"
     },
     "image": {

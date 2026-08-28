@@ -225,6 +225,14 @@ const ready = computed(() => Boolean(props.outputPath && hasNativeApi))
   font-variant-numeric: tabular-nums;
 }
 
+/* Mesma razão do vídeo: comparar dois recortes minúsculos não compara nada. */
+@media (max-width: 900px) {
+  .side-by-side {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+}
+
 .comparison-empty {
   margin: 0;
   font-size: var(--fs-body-sm);

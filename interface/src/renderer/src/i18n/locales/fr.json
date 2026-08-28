@@ -191,6 +191,7 @@
       "remove": "Retirer {name} de l’historique",
       "repeat": "Refaire",
       "repeatHint": "Utilise les réglages de cette exécution, pas le préréglage actuel.",
+      "showInFolder": "Afficher {name} dans le dossier",
       "title": "Historique"
     },
     "image": {

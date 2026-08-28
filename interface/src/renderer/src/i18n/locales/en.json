@@ -191,6 +191,7 @@
       "remove": "Remove {name} from history",
       "repeat": "Repeat",
       "repeatHint": "Uses this run’s settings, not the preset as it is now.",
+      "showInFolder": "Show {name} in folder",
       "title": "History"
     },
     "image": {

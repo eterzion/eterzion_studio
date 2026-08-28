@@ -191,6 +191,7 @@
       "remove": "从历史中移除 {name}",
       "repeat": "重复",
       "repeatHint": "使用那次运行的设置，而不是当前的预设。",
+      "showInFolder": "在文件夹中显示 {name}",
       "title": "历史"
     },
     "image": {

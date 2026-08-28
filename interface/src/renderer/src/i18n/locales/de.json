@@ -191,6 +191,7 @@
       "remove": "{name} aus dem Verlauf entfernen",
       "repeat": "Wiederholen",
       "repeatHint": "Nutzt die Einstellungen dieses Durchlaufs, nicht die heutige Vorlage.",
+      "showInFolder": "{name} im Ordner anzeigen",
       "title": "Verlauf"
     },
     "image": {

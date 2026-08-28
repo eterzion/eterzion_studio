@@ -88,6 +88,8 @@ const rows = computed<Linha[]>(() =>
             v-if="row.entry.output_path"
             type="button"
             class="item-action"
+            :title="t('compression.history.showInFolder', { name: row.entry.display_name })"
+            :aria-label="t('compression.history.showInFolder', { name: row.entry.display_name })"
             @click="emit('reveal', row.entry.output_path!)"
           >
             <FolderOpen :size="13" />

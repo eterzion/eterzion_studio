@@ -191,6 +191,7 @@
       "remove": "{name} 기록에서 제거",
       "repeat": "다시 실행",
       "repeatHint": "지금의 프리셋이 아니라 그때 사용한 설정을 씁니다.",
+      "showInFolder": "{name} 폴더에서 보기",
       "title": "기록"
     },
     "image": {

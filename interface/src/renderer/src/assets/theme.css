@@ -252,7 +252,9 @@ body {
   justify-content: center;
   color: var(--chip-tone, var(--color-primary));
   background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
-  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent));
+  filter: drop-shadow(
+    0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent)
+  );
 }
 
 * {
@@ -280,3 +282,21 @@ button {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--surface-border);
 }
+
+/* Foco visível em todo controle que o teclado alcança (FR-071).
+ *
+ * Estava faltando no aplicativo inteiro, e não só na Central: quem navega por
+ * teclado não tinha como saber onde estava. `:focus-visible` e não `:focus` é o
+ * que mantém o anel fora do caminho de quem usa o mouse — o navegador só o
+ * aplica quando a navegação foi por teclado.
+ *
+ * A regra é global de propósito. Repeti-la em cada componente daria o mesmo
+ * resultado hoje e divergiria no primeiro componente que alguém esquecesse. */
+:where(button, [role='button'], a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* `:where` tem especificidade zero, então um componente que precise de um foco
+ * diferente sobrescreve sem precisar de `!important`. */

@@ -191,6 +191,7 @@
       "remove": "Remover {name} do histórico",
       "repeat": "Repetir",
       "repeatHint": "Usa as definições desta execução, não a predefinição atual.",
+      "showInFolder": "Mostrar {name} na pasta",
       "title": "Histórico"
     },
     "image": {

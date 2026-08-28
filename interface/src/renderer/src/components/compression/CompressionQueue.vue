@@ -103,6 +103,7 @@ const percent = computed(() => {
             type="button"
             class="item-cancel"
             :title="t('compression.batch.cancelOne', { name: item.fileName })"
+            :aria-label="t('compression.batch.cancelOne', { name: item.fileName })"
             @click="emit('cancelItem', item.queueId)"
           >
             <X :size="12" />

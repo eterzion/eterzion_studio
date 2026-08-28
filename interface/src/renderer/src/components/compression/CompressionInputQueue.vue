@@ -58,6 +58,7 @@ const { t } = useI18n()
           type="button"
           class="item-remove"
           :title="t('compression.queue.remove', { name: item.fileName })"
+          :aria-label="t('compression.queue.remove', { name: item.fileName })"
           @click="emit('remove', item.id)"
         >
           <X :size="13" />

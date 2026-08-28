@@ -191,6 +191,7 @@
       "remove": "{name} を履歴から削除",
       "repeat": "もう一度",
       "repeatHint": "現在のプリセットではなく、その実行時の設定を使います。",
+      "showInFolder": "{name} をフォルダーで表示",
       "title": "履歴"
     },
     "image": {

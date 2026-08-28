@@ -182,8 +182,10 @@ termo técnico.
 ### Verificação da fatia
 
 - [ ] T049 [US1] Rodar os cenários 1, 10, 13, 14 e 18 do quickstart
-- [ ] T050 [US2] Rodar os cenários 2, 3 e 4 do quickstart — o **2 pode reprovar a fórmula**
+      → Cenários 10, 13 e 18 provados em `test_quickstart_scenarios.py`; **1 e 14 exigem a janela** (nenhum termo técnico em tela; controles que mudam com o formato)
+- [X] T050 [US2] Rodar os cenários 2, 3 e 4 do quickstart — o **2 pode reprovar a fórmula**
 - [ ] T051 [US1] Confirmar SC-001: a jornada inteira sem um termo técnico
+      → **Exige a janela**: percorrer a jornada inteira lendo a tela
 
 **Checkpoint**: 🎯 **Imagem é utilizável de ponta a ponta.** Se o trabalho parar aqui, a Central
 já resolve o caso mais comum.
@@ -209,7 +211,7 @@ já resolve o caso mais comum.
 - [X] T059 [US3] Comparação de vídeo com o player existente, sincronizando os dois (FR-055)
 - [X] T060 [P] [US3] Tooltips de todo parâmetro técnico (FR-042)
 - [X] T061 [P] [US3] i18n nos 11 locales
-- [ ] T062 [US3] Rodar os cenários 5, 6, 7, 8, 9, 11 e 12 do quickstart — **o 5 é o que verifica a
+- [X] T062 [US3] Rodar os cenários 5, 6, 7, 8, 9, 11 e 12 do quickstart — **o 5 é o que verifica a
       condição 4 da exceção constitucional, por hash**
 
 **Checkpoint**: vídeo utilizável, e a exceção constitucional verificada na prática.
@@ -227,7 +229,7 @@ já resolve o caso mais comum.
 - [X] T067 [US4] Comparação de áudio: alternar original ⇄ resultado com duração, bitrate, codec,
       tamanho e sample rate (FR-056)
 - [X] T068 [P] [US4] i18n nos 11 locales
-- [ ] T069 [US4] Rodar o cenário 15 do quickstart
+- [X] T069 [US4] Rodar o cenário 15 do quickstart
 
 ---
 
@@ -242,7 +244,7 @@ já resolve o caso mais comum.
 - [X] T074 [US5] `AnimationCompressionSettings.vue`: qualidade, resolução, FPS, cores, dithering,
       otimização de quadros
 - [X] T075 [P] [US5] i18n nos 11 locales
-- [ ] T076 [US5] Rodar os cenários 16 e 17 do quickstart
+- [X] T076 [US5] Rodar os cenários 16 e 17 do quickstart
 
 ---
 
@@ -255,7 +257,7 @@ já resolve o caso mais comum.
 - [X] T080 [P] [US6] Escrever `test_compression_queue.py`: cancelar um não afeta os outros; erro
       não para a fila
 - [X] T081 [US6] Progresso individual e geral, com velocidade e economia obtida
-- [ ] T082 [US6] Rodar os cenários 11 e 19 do quickstart
+- [X] T082 [US6] Rodar os cenários 11 e 19 do quickstart
 
 ---
 
@@ -267,7 +269,7 @@ já resolve o caso mais comum.
       o preset atual (FR-063)
 - [X] T086 [P] [US7] Escrever `test_compression_history.py` incluindo o caso do preset alterado
       depois da execução
-- [ ] T087 [US7] Rodar os cenários 20 e 21 do quickstart
+- [X] T087 [US7] Rodar os cenários 20 e 21 do quickstart
 
 ---
 
@@ -276,20 +278,24 @@ já resolve o caso mais comum.
 - [X] T088 Erros compreensíveis, com a saída bruta do FFmpeg numa área recolhível (FR-065)
 - [X] T089 [P] Logs técnicos estruturados: job, arquivo, encoder, codec, parâmetros, duração,
       status, erro — fora da interface comum (FR-066)
-- [ ] T090 [P] Acessibilidade: rótulo, foco, teclado, contraste em todo controle (FR-071)
-- [ ] T091 [P] Responsividade desktop/notebook/telas menores (§57)
+- [X] T090 [P] Acessibilidade: rótulo, foco, teclado, contraste em todo controle (FR-071)
+- [X] T091 [P] Responsividade desktop/notebook/telas menores (§57)
 - [ ] T092 Verificar SC-010: interface responsiva com arquivo de ≥1 GB
+      → **Exige a janela**: arquivo de ≥1 GB com a interface aberta
 - [ ] T093 [P] Rodar os cenários 22, 23 e 24 do quickstart
+      → Cenário 24 provado em `test_quickstart_scenarios.py`; **22 e 23 exigem a janela** (idiomas, teclado)
 - [ ] T093a Confirmar o SC-008 exaustivamente: **percorrer toda opção selecionável** das quatro
       mídias, nos dois modos, e verificar que nenhuma falha por indisponibilidade do ambiente.
       Acrescentado pelo `/speckit.analyze` — o SC-008 era o único critério de sucesso sem nenhuma
       tarefa que o verificasse
+      → **Exige a janela**: percorrer toda opção selecionável
 - [X] T094 Confirmar que nenhuma opção da interface existe sem implementação (FR-068) — varredura
       por controle, não por amostragem
 - [X] T095 Confirmar que nada fora da Central mudou (FR-069): `git diff` contra o estado inicial,
       arquivo por arquivo
 - [ ] T096 Rodar lint, typecheck, vitest, pytest do core e pytest da API, **contra a build LGPL
       empacotada** e com o PATH limpo
+      → Lint, typecheck, vitest e pytest da API rodados contra o FFmpeg empacotado; **falta o pytest do core** (5 módulos de áudio bloqueados por política do Windows nesta máquina)
 
 ---
 
