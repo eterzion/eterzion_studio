@@ -40,9 +40,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-// Official brand logo served by assets.ericinacio.com (see astros_assets'
+// Official brand logo served by assets.eterzion.com (see eterzion_assets'
 // own BrandMark.vue, which uses the same file as its main site logo).
-const brandLogoUrl = 'https://assets.ericinacio.com/branding/logo-256.webp'
+const brandLogoUrl = 'https://assets.eterzion.com/branding/logo-256.webp'
 
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the
 // active item is tinted with the same colour as the screen it opens. Entries

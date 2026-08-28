@@ -163,3 +163,8 @@ api/astros_upscale_api/tests/fixtures/*.mp4
 api/astros_upscale_api/tests/fixtures/*.webm
 api/astros_upscale_api/tests/fixtures/*.wav
 api/astros_upscale_api/tests/fixtures/*.gif
+
+# O projeto usa pnpm. Um package-lock.json aqui não é redundância inofensiva:
+# quem rodar `npm install` monta uma árvore diferente da que o pnpm-lock.yaml
+# descreve, e o pacote sai com dependências que ninguém escolheu.
+interface/package-lock.json
