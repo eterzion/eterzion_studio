@@ -233,15 +233,15 @@ já resolve o caso mais comum.
 
 ## Fase 6 — US5: GIF e animação (P3)
 
-- [ ] T070 [US5] `app/compression/animation.py` com a cadeia `palettegen`/`paletteuse` medida na
+- [X] T070 [US5] `app/compression/animation.py` com a cadeia `palettegen`/`paletteuse` medida na
       Decisão 2, mais `libwebp_anim` para WebP animado
-- [ ] T071 [US5] Detecção: GIF de um quadro é `image`, não `animation` (caso de borda registrado)
-- [ ] T072 [P] [US5] Escrever `test_animation_compression.py`: resultado continua animado, ordem
+- [X] T071 [US5] Detecção: GIF de um quadro é `image`, não `animation` (caso de borda registrado)
+- [X] T072 [P] [US5] Escrever `test_animation_compression.py`: resultado continua animado, ordem
       de quadros preservada, um-quadro classificado como imagem
-- [ ] T073 [US5] Conversão GIF → WebP/MP4/WebM quando suportada, e ausente quando não
-- [ ] T074 [US5] `AnimationCompressionSettings.vue`: qualidade, resolução, FPS, cores, dithering,
+- [X] T073 [US5] Conversão GIF → WebP/MP4/WebM quando suportada, e ausente quando não
+- [X] T074 [US5] `AnimationCompressionSettings.vue`: qualidade, resolução, FPS, cores, dithering,
       otimização de quadros
-- [ ] T075 [P] [US5] i18n nos 11 locales
+- [X] T075 [P] [US5] i18n nos 11 locales
 - [ ] T076 [US5] Rodar os cenários 16 e 17 do quickstart
 
 ---

@@ -48,6 +48,43 @@
     "unsupportedFormat": "未対応の形式: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "色を自動で決める",
+      "autoColorsHint": "パレットは品質設定に従います。",
+      "colors": "パレットの色数",
+      "colorsHint": "色が少ないほど小さく、階調の段差が目立ちます。",
+      "dither": {
+        "bayer": "規則的なパターン",
+        "floyd_steinberg": "細かい拡散",
+        "none": "なし",
+        "sierra2_4a": "軽い拡散"
+      },
+      "ditherDescription": "パレットにない色をどう近似するか。",
+      "ditherHint": {
+        "bayer": "よく縮みます。この画面の既定です",
+        "floyd_steinberg": "見た目はよく、サイズは大きめ",
+        "none": "最小サイズ。グラデーションに段差が出ます",
+        "sierra2_4a": "上の2つの中間"
+      },
+      "ditherLabel": "ディザ",
+      "format": "形式",
+      "formatHint": {
+        "mp4": "かなり小さくなりますが、動く画像ではなくなります",
+        "webm": "かなり小さくなりますが、動く画像ではなくなります",
+        "webp": "同じ色数で GIF より小さくなることが多いです"
+      },
+      "fps": "フレームレート",
+      "fpsHint": "コマ数を減らすほうが色数を減らすより効くことが多いです。",
+      "output": "出力",
+      "palette": "色",
+      "quality": "品質",
+      "qualityHintCodec": "各フレームがどれだけ細部を残すか。",
+      "qualityHintPalette": "パレットの色数を調整します。",
+      "resolution": "解像度",
+      "sameAsSource": "元のまま",
+      "size": "サイズ",
+      "videoNote": "動画にするとかなり小さくなりますが、GIF しか受け付けない場所では動かなくなります。"
+    },
     "audio": {
       "advanced": "詳細設定",
       "auto": "自動",

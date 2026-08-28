@@ -35,10 +35,10 @@ const rows = computed<Row[]>(() => {
     'frameRate',
     m.frame_rate != null
       ? m.frame_rate_is_variable
-        // Um número exato para uma taxa variável seria uma afirmação falsa: o
-        // arquivo não tem "uma" taxa, e apresentá-la limpa esconde justamente o
-        // que a pessoa precisaria saber.
-        ? t('compression.info.frameRateVariable', { value: n(round(m.frame_rate, 2)) })
+        ? // Um número exato para uma taxa variável seria uma afirmação falsa: o
+          // arquivo não tem "uma" taxa, e apresentá-la limpa esconde justamente o
+          // que a pessoa precisaria saber.
+          t('compression.info.frameRateVariable', { value: n(round(m.frame_rate, 2)) })
         : `${n(round(m.frame_rate, 2))} fps`
       : null
   )
@@ -72,7 +72,9 @@ function round(value: number, casas: number): number {
 }
 
 function bitrate(bps: number): string {
-  return bps >= 1_000_000 ? `${(bps / 1_000_000).toFixed(1)} Mbps` : `${Math.round(bps / 1000)} kbps`
+  return bps >= 1_000_000
+    ? `${(bps / 1_000_000).toFixed(1)} Mbps`
+    : `${Math.round(bps / 1000)} kbps`
 }
 
 function duration(segundos: number): string {

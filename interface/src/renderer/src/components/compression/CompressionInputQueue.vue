@@ -25,12 +25,7 @@ const { t } = useI18n()
           <Plus :size="14" />
           {{ t('compression.queue.add') }}
         </button>
-        <button
-          type="button"
-          class="queue-action"
-          :disabled="!items.length"
-          @click="emit('clear')"
-        >
+        <button type="button" class="queue-action" :disabled="!items.length" @click="emit('clear')">
           {{ t('compression.queue.clearAll') }}
         </button>
       </div>

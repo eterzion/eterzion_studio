@@ -155,3 +155,4 @@ models/sonicmaster/
 api/astros_upscale_api/tests/fixtures/*.mp4
 api/astros_upscale_api/tests/fixtures/*.webm
 api/astros_upscale_api/tests/fixtures/*.wav
+api/astros_upscale_api/tests/fixtures/*.gif

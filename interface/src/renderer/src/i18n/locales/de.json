@@ -48,6 +48,43 @@
     "unsupportedFormat": "Nicht unterstütztes Format: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "Farben automatisch wählen",
+      "autoColorsHint": "Die Palette folgt der Qualitätseinstellung.",
+      "colors": "Palettenfarben",
+      "colorsHint": "Weniger Farben, kleinere Datei, sichtbarere Streifen.",
+      "dither": {
+        "bayer": "Regelmäßiges Muster",
+        "floyd_steinberg": "Feine Streuung",
+        "none": "Keins",
+        "sierra2_4a": "Leichte Streuung"
+      },
+      "ditherDescription": "Wie fehlende Palettenfarben angenähert werden.",
+      "ditherHint": {
+        "bayer": "Komprimiert gut; die Vorgabe hier",
+        "floyd_steinberg": "Schöner und größer",
+        "none": "Kleinste Datei; sichtbare Streifen in Verläufen",
+        "sierra2_4a": "Zwischen den beiden oben"
+      },
+      "ditherLabel": "Dithering",
+      "format": "Format",
+      "formatHint": {
+        "mp4": "Deutlich kleiner, aber kein animiertes Bild mehr",
+        "webm": "Deutlich kleiner, aber kein animiertes Bild mehr",
+        "webp": "Meist kleiner als GIF, gleiche Farben"
+      },
+      "fps": "Bildrate",
+      "fpsHint": "Weniger Bilder spart meist mehr als weniger Farben.",
+      "output": "Ausgabe",
+      "palette": "Farben",
+      "quality": "Qualität",
+      "qualityHintCodec": "Wie viel Detail jedes Bild behält.",
+      "qualityHintPalette": "Steuert, wie viele Farben die Palette hat.",
+      "resolution": "Auflösung",
+      "sameAsSource": "Wie im Original",
+      "size": "Größe",
+      "videoNote": "Als Video wird die Datei deutlich kleiner — funktioniert aber nicht mehr als animiertes Bild, wo nur GIF akzeptiert wird."
+    },
     "audio": {
       "advanced": "Erweiterte Einstellungen",
       "auto": "Automatisch",

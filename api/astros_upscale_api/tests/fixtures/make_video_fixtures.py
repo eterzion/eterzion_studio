@@ -141,6 +141,33 @@ def build_curto_wav(path: Path) -> None:
           '-ac', '2', str(path)])
 
 
+def build_animado_gif(path: Path) -> None:
+    """GIF de verdade — 20 quadros, com movimento (specs/008).
+
+    Duas propriedades da fixture importam, e as duas foram descobertas por um
+    teste que passou sem provar nada:
+
+    - **movimento**: um GIF de quadros idênticos comprime ao mínimo em qualquer
+      configuração, e um teste sobre paleta e dithering aprovaria tudo;
+    - **tamanho acima de 480p**: numa fixture pequena, pedir "reduza para 480p"
+      não reduz nada — ela já cabe — e o teste de redução comparava um arquivo
+      recodificado contra o original, que às vezes sai maior.
+    """
+    _run(['-f', 'lavfi', '-i', 'testsrc=duration=2:size=640x480:rate=10',
+          '-vf', 'split[a][b];[a]palettegen[p];[b][p]paletteuse',
+          '-loop', '0', str(path)])
+
+
+def build_um_quadro_gif(path: Path) -> None:
+    """GIF de **um quadro só** — o caso de borda do FR-007.
+
+    Um arquivo assim é uma imagem, não uma animação, e a diferença decide quais
+    controles a tela oferece.
+    """
+    _run(['-f', 'lavfi', '-i', 'color=c=orange:size=64x64:d=1',
+          '-frames:v', '1', str(path)])
+
+
 def build_longo(path: Path) -> None:
     """Over the 2 h ceiling. Cheap to encode despite its length: a static
     source at a low frame rate and tiny resolution — what matters is the
@@ -155,6 +182,8 @@ BUILDERS = {
     'vfr.mp4': build_vfr,
     'curto.webm': build_curto_webm,
     'curto.wav': build_curto_wav,
+    'animado.gif': build_animado_gif,
+    'um_quadro.gif': build_um_quadro_gif,
 }
 
 OPTIONAL_BUILDERS = {'longo.mp4': build_longo}

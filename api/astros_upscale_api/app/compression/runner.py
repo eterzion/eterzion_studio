@@ -13,7 +13,7 @@ import shutil
 import time
 from typing import Any, Callable
 
-from . import audio, capabilities, config, image, video, workspace
+from . import animation, audio, capabilities, config, image, video, workspace
 
 
 class CompressionRefused(ValueError):
@@ -249,7 +249,12 @@ def _compress(media_kind: str, source_path: str, output_path: str, settings: dic
                                   on_progress=on_progress, on_stage=on_stage)
         except audio.AudioCompressionError as error:
             raise CompressionRefused(error.reason, str(error), error.detail) from error
-    # Animação chega na Fase 6. Levantar aqui é melhor que uma implementação
-    # parcial que produza arquivo errado em silêncio.
+    if media_kind == 'animation':
+        try:
+            return animation.compress(source_path, output_path,
+                                      animation.AnimationSettings.from_dict(settings),
+                                      on_progress=on_progress, on_stage=on_stage)
+        except animation.AnimationCompressionError as error:
+            raise CompressionRefused(error.reason, str(error), error.detail) from error
     raise CompressionRefused(
         'unsupported_media', f'A compressão de {media_kind} ainda não está disponível.')

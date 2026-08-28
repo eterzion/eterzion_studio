@@ -48,6 +48,43 @@
     "unsupportedFormat": "Formato non supportato: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "Scegli i colori automaticamente",
+      "autoColorsHint": "La tavolozza segue l’impostazione di qualità.",
+      "colors": "Colori della tavolozza",
+      "colorsHint": "Meno colori, file più piccolo, bande più visibili.",
+      "dither": {
+        "bayer": "Trama regolare",
+        "floyd_steinberg": "Diffusione fine",
+        "none": "Nessuno",
+        "sierra2_4a": "Diffusione leggera"
+      },
+      "ditherDescription": "Come approssimare i colori che la tavolozza non ha.",
+      "ditherHint": {
+        "bayer": "Comprime bene; il valore predefinito qui",
+        "floyd_steinberg": "Più bello e più grande",
+        "none": "File più piccolo; bande visibili nelle sfumature",
+        "sierra2_4a": "Via di mezzo tra i due sopra"
+      },
+      "ditherLabel": "Dithering",
+      "format": "Formato",
+      "formatHint": {
+        "mp4": "Molto più piccolo, ma non è più un’immagine animata",
+        "webm": "Molto più piccolo, ma non è più un’immagine animata",
+        "webp": "Di solito più piccolo del GIF, stessi colori"
+      },
+      "fps": "Fotogrammi al secondo",
+      "fpsHint": "Ridurre i fotogrammi di solito rende più che ridurre i colori.",
+      "output": "Output",
+      "palette": "Colori",
+      "quality": "Qualità",
+      "qualityHintCodec": "Quanto dettaglio conserva ogni fotogramma.",
+      "qualityHintPalette": "Regola quanti colori ha la tavolozza.",
+      "resolution": "Risoluzione",
+      "sameAsSource": "Come l’originale",
+      "size": "Dimensione",
+      "videoNote": "Come video il file diventa molto più piccolo, ma smette di funzionare come immagine animata dove si accetta solo il GIF."
+    },
     "audio": {
       "advanced": "Impostazioni avanzate",
       "auto": "Automatico",

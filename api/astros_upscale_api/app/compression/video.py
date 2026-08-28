@@ -143,6 +143,7 @@ def compress(source_path: str, output_path: str, settings: VideoSettings, *,
             {'codec': codec})
 
     opcoes: dict[str, Any] = {'c:v': encoder}
+    opcoes.update(_pixel_format_options(origem))
     opcoes.update(_rate_options(codec, encoder, settings))
     opcoes.update(_speed_options(encoder, settings.encoding_preset))
     opcoes.update(_audio_options(container, settings, origem))
@@ -215,6 +216,7 @@ def _probe(path: str) -> dict[str, Any]:
         'duration_seconds': float(duracao) if duracao else None,
         'has_audio': audio is not None,
         'audio_codec': audio.get('codec_name') if audio else None,
+        'pix_fmt': video.get('pix_fmt'),
     }
 
 
@@ -255,6 +257,30 @@ def _resolve_codec(container: str, settings: VideoSettings) -> str:
     raise VideoCompressionError(
         'encoder_unavailable', 'Este computador não consegue produzir nenhum codec deste formato.',
         {'container': container})
+
+
+# Formatos de pixel que nenhum encoder de vídeo comum aceita: paletizados (o de
+# um GIF) e com canal alfa. Deixá-los passar não degrada nada — faz o FFmpeg
+# recusar antes de escrever o primeiro quadro, com "Invalid argument", que não
+# diz nada sobre a origem ser um GIF.
+_PIXEL_FORMATS_NEEDING_CONVERSION = frozenset({
+    'pal8', 'bgra', 'rgba', 'argb', 'abgr', 'ya8', 'gray8a',
+    'yuva420p', 'yuva422p', 'yuva444p',
+})
+
+
+def _pixel_format_options(origem: dict[str, Any]) -> dict[str, Any]:
+    """Converte para `yuv420p` **só** quando a origem tem paleta ou alfa.
+
+    Forçar `yuv420p` sempre seria mais simples e destruiria informação: uma
+    origem 10 bits (`yuv420p10le`) seria rebaixada para 8 sem ninguém pedir, e a
+    perda apareceria como banding em gradientes — o tipo de degradação que se
+    atribui à compressão e não à conversão.
+    """
+    pix_fmt = origem.get('pix_fmt')
+    if pix_fmt and pix_fmt in _PIXEL_FORMATS_NEEDING_CONVERSION:
+        return {'pix_fmt': 'yuv420p'}
+    return {}
 
 
 def _rate_options(codec: str, encoder: str, settings: VideoSettings) -> dict[str, Any]:

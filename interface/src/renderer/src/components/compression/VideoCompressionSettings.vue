@@ -79,24 +79,20 @@ const containerOptions = computed(() => entryOptions(video.value?.containers ?? 
  *  chegaria depois de a pessoa montar o resto. */
 const videoCodecOptions = computed(() => {
   const todos = video.value?.video_codecs ?? []
-  const permitidos = props.settings.container && container.value !== 'auto'
-    ? video.value?.compatibility?.[container.value]?.video
-    : undefined
-  return entryOptions(
-    permitidos ? todos.filter((c) => permitidos.includes(c.value)) : todos,
-    true
-  )
+  const permitidos =
+    props.settings.container && container.value !== 'auto'
+      ? video.value?.compatibility?.[container.value]?.video
+      : undefined
+  return entryOptions(permitidos ? todos.filter((c) => permitidos.includes(c.value)) : todos, true)
 })
 
 const audioCodecOptions = computed(() => {
   const todos = video.value?.audio_codecs ?? []
-  const permitidos = props.settings.container && container.value !== 'auto'
-    ? video.value?.compatibility?.[container.value]?.audio
-    : undefined
-  return entryOptions(
-    permitidos ? todos.filter((c) => permitidos.includes(c.value)) : todos,
-    true
-  )
+  const permitidos =
+    props.settings.container && container.value !== 'auto'
+      ? video.value?.compatibility?.[container.value]?.audio
+      : undefined
+  return entryOptions(permitidos ? todos.filter((c) => permitidos.includes(c.value)) : todos, true)
 })
 
 /** Aceleração: Automático, CPU ou GPU (FR-047).
@@ -178,9 +174,7 @@ const qualityHint = computed(() => {
 
 /** Aviso honesto e não alarme: dizer que nenhum formato precisa de hardware está
  *  disponível é diferente de dizer que a máquina é incapaz. */
-const noHardware = computed(
-  () => video.value !== null && !video.value.hardware.available
-)
+const noHardware = computed(() => video.value !== null && !video.value.hardware.available)
 
 function set(field: string, value: unknown): void {
   emit('set', field, value)

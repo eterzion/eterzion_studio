@@ -48,6 +48,43 @@
     "unsupportedFormat": "Formato no compatible: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "Elegir los colores automáticamente",
+      "autoColorsHint": "La paleta sigue el ajuste de calidad.",
+      "colors": "Colores de la paleta",
+      "colorsHint": "Menos colores, archivo más pequeño, bandas más visibles.",
+      "dither": {
+        "bayer": "Patrón regular",
+        "floyd_steinberg": "Difusión fina",
+        "none": "Ninguno",
+        "sierra2_4a": "Difusión ligera"
+      },
+      "ditherDescription": "Cómo aproximar los colores que la paleta no tiene.",
+      "ditherHint": {
+        "bayer": "Comprime bien; el valor por defecto aquí",
+        "floyd_steinberg": "Más bonito y más grande",
+        "none": "Archivo más pequeño; bandas visibles en degradados",
+        "sierra2_4a": "Punto medio entre los dos anteriores"
+      },
+      "ditherLabel": "Difuminado",
+      "format": "Formato",
+      "formatHint": {
+        "mp4": "Mucho más pequeño, pero deja de ser una imagen animada",
+        "webm": "Mucho más pequeño, pero deja de ser una imagen animada",
+        "webp": "Suele salir más pequeño que el GIF, con los mismos colores"
+      },
+      "fps": "Fotogramas por segundo",
+      "fpsHint": "Bajar fotogramas suele ahorrar más que bajar colores.",
+      "output": "Salida",
+      "palette": "Colores",
+      "quality": "Calidad",
+      "qualityHintCodec": "Cuánto detalle conserva cada fotograma.",
+      "qualityHintPalette": "Mueve cuántos colores tiene la paleta.",
+      "resolution": "Resolución",
+      "sameAsSource": "Igual que el original",
+      "size": "Tamaño",
+      "videoNote": "Como vídeo el archivo queda mucho más pequeño, pero deja de funcionar como imagen animada donde solo se acepta GIF."
+    },
     "audio": {
       "advanced": "Ajustes avanzados",
       "auto": "Automático",

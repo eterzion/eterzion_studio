@@ -22,6 +22,7 @@ import VideoCompressionSettings from '../components/compression/VideoCompression
 import CompressionVideoComparison from '../components/compression/CompressionVideoComparison.vue'
 import AudioCompressionSettings from '../components/compression/AudioCompressionSettings.vue'
 import CompressionAudioComparison from '../components/compression/CompressionAudioComparison.vue'
+import AnimationCompressionSettings from '../components/compression/AnimationCompressionSettings.vue'
 import { useCompressionQueue } from '../composables/useCompressionQueue'
 import { useCompressionSettings } from '../composables/useCompressionSettings'
 import { useCompressionEstimate } from '../composables/useCompressionEstimate'
@@ -50,9 +51,8 @@ import type { MediaKind } from '../constants/compression'
 // exceção do Princípio V exige que quem nunca abrir o Avançado jamais encontre
 // um nome de codec.
 //
-// **GIF e animação ainda não comprimem**, e a tela diz isso em vez de oferecer
-// um botão que falha. Um botão sem função é pior que a sua ausência: a pessoa
-// monta as configurações inteiras antes de descobrir.
+// Os quatro tipos comprimem. O que ainda não existe — lote, presets do usuário e
+// histórico — chega nas fases seguintes, e a tela não finge tê-los.
 
 defineEmits<{ back: [] }>()
 
@@ -127,9 +127,7 @@ watch(payload, () => {
   if (selectedPreset.value) presetModified.value = true
 })
 
-const presetsForKind = computed(() =>
-  presets.value.filter((p) => p.media_kind === mediaKind.value)
-)
+const presetsForKind = computed(() => presets.value.filter((p) => p.media_kind === mediaKind.value))
 
 function choosePreset(id: string | null): void {
   selectedPreset.value = id
@@ -141,12 +139,7 @@ function choosePreset(id: string | null): void {
 
 const imageFormats = computed<CapabilityEntry[]>(() => capabilities.value?.image.formats ?? [])
 
-/** Imagem, vídeo e áudio comprimem. Animação chega na fase 6. */
-const supported = computed(() => mediaKind.value !== 'animation')
-
-const canRun = computed(
-  () => Boolean(activeHandle.value) && supported.value && !job.running.value
-)
+const canRun = computed(() => Boolean(activeHandle.value) && !job.running.value)
 
 async function run(): Promise<void> {
   if (!activeHandle.value) return
@@ -265,82 +258,87 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
 
           <CompressionFileInfo v-if="activeMedia" :media="activeMedia" />
 
-          <template v-if="supported">
-            <CompressionPresetSelector
-              :presets="presetsForKind"
-              :model-value="selectedPreset"
-              :modified="presetModified"
-              :disabled="job.running.value"
-              @update:model-value="choosePreset"
-            />
+          <CompressionPresetSelector
+            :presets="presetsForKind"
+            :model-value="selectedPreset"
+            :modified="presetModified"
+            :disabled="job.running.value"
+            @update:model-value="choosePreset"
+          />
 
-            <ImageCompressionSettings
-              v-if="mediaKind === 'image'"
-              :settings="settings"
-              :target="target"
-              :mode="mode"
-              :formats="imageFormats"
-              :disabled="job.running.value"
-              @set="set"
-              @update:target="setTarget"
-            />
+          <ImageCompressionSettings
+            v-if="mediaKind === 'image'"
+            :settings="settings"
+            :target="target"
+            :mode="mode"
+            :formats="imageFormats"
+            :disabled="job.running.value"
+            @set="set"
+            @update:target="setTarget"
+          />
 
-            <VideoCompressionSettings
-              v-else-if="mediaKind === 'video'"
-              :settings="settings"
-              :target="target"
-              :mode="mode"
-              :capabilities="capabilities"
-              :disabled="job.running.value"
-              @set="set"
-              @update:target="setTarget"
-            />
+          <VideoCompressionSettings
+            v-else-if="mediaKind === 'video'"
+            :settings="settings"
+            :target="target"
+            :mode="mode"
+            :capabilities="capabilities"
+            :disabled="job.running.value"
+            @set="set"
+            @update:target="setTarget"
+          />
 
-            <AudioCompressionSettings
-              v-else-if="mediaKind === 'audio'"
-              :settings="settings"
-              :target="target"
-              :mode="mode"
-              :capabilities="capabilities"
-              :disabled="job.running.value"
-              @set="set"
-              @update:target="setTarget"
-            />
+          <AudioCompressionSettings
+            v-else-if="mediaKind === 'audio'"
+            :settings="settings"
+            :target="target"
+            :mode="mode"
+            :capabilities="capabilities"
+            :disabled="job.running.value"
+            @set="set"
+            @update:target="setTarget"
+          />
 
-            <CompressionEstimatePanel
-              :estimate="estimate"
-              :loading="estimating"
-              :error="estimateError"
-            />
+          <AnimationCompressionSettings
+            v-else
+            :settings="settings"
+            :target="target"
+            :mode="mode"
+            :capabilities="capabilities"
+            :disabled="job.running.value"
+            @set="set"
+            @update:target="setTarget"
+          />
 
-            <CompressionSummary :settings="payload" :media-kind="mediaKind" :mode="mode" />
+          <CompressionEstimatePanel
+            :estimate="estimate"
+            :loading="estimating"
+            :error="estimateError"
+          />
 
-            <CollapsiblePanel :title="t('compression.export.title')" :default-open="false">
-              <CompressionExportPanel v-model="exportOptions" />
-            </CollapsiblePanel>
+          <CompressionSummary :settings="payload" :media-kind="mediaKind" :mode="mode" />
 
-            <AppButton
-              variant="primary"
-              :disabled="!canRun"
-              :loading="job.running.value"
-              @click="run"
-            >
-              <Zap :size="15" />
-              {{ t('compression.run') }}
-            </AppButton>
+          <CollapsiblePanel :title="t('compression.export.title')" :default-open="false">
+            <CompressionExportPanel v-model="exportOptions" />
+          </CollapsiblePanel>
 
-            <ProgressBar v-if="job.running.value" :value="job.progress.value" />
+          <AppButton
+            variant="primary"
+            :disabled="!canRun"
+            :loading="job.running.value"
+            @click="run"
+          >
+            <Zap :size="15" />
+            {{ t('compression.run') }}
+          </AppButton>
 
-            <p v-if="job.error.value" class="panel-error">
-              {{ t(`compression.refusal.${job.error.value}`) }}
-            </p>
+          <ProgressBar v-if="job.running.value" :value="job.progress.value" />
 
-            <CompressionResult v-if="job.result.value" :result="job.result.value" @reveal="reveal" />
-          </template>
-
-          <p v-else class="panel-pending">
-            {{ t('compression.comingSoon', { media: t(`compression.media.${mediaKind}`) }) }}
+          <p v-if="job.error.value" class="panel-error">
+            {{ t(`compression.refusal.${job.error.value}`) }}
           </p>
+
+          <CompressionResult v-if="job.result.value" :result="job.result.value" @reveal="reveal" />
         </div>
       </template>
     </MediaEditorShell>

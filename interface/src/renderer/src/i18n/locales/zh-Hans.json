@@ -48,6 +48,43 @@
     "unsupportedFormat": "不支持的格式：{name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "自动选择颜色",
+      "autoColorsHint": "调色板跟随质量设置。",
+      "colors": "调色板颜色数",
+      "colorsHint": "颜色越少体积越小，色带也越明显。",
+      "dither": {
+        "bayer": "规则图案",
+        "floyd_steinberg": "细腻扩散",
+        "none": "不使用",
+        "sierra2_4a": "轻度扩散"
+      },
+      "ditherDescription": "如何近似调色板中没有的颜色。",
+      "ditherHint": {
+        "bayer": "压缩效果好，本页的默认选项",
+        "floyd_steinberg": "更好看，也更大",
+        "none": "体积最小，渐变处出现色带",
+        "sierra2_4a": "介于上面两者之间"
+      },
+      "ditherLabel": "抖动",
+      "format": "格式",
+      "formatHint": {
+        "mp4": "小得多，但不再是动图",
+        "webm": "小得多，但不再是动图",
+        "webp": "同样的颜色下通常比 GIF 更小"
+      },
+      "fps": "帧率",
+      "fpsHint": "减少帧数通常比减少颜色更省体积。",
+      "output": "输出",
+      "palette": "颜色",
+      "quality": "质量",
+      "qualityHintCodec": "每帧保留多少细节。",
+      "qualityHintPalette": "调整调色板中的颜色数量。",
+      "resolution": "分辨率",
+      "sameAsSource": "与原文件相同",
+      "size": "尺寸",
+      "videoNote": "转成视频后体积小很多，但在只接受 GIF 的地方就无法使用了。"
+    },
     "audio": {
       "advanced": "高级设置",
       "auto": "自动",

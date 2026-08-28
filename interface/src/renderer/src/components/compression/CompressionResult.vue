@@ -42,7 +42,11 @@ const percent = computed(() => {
 </script>
 
 <template>
-  <section class="result" :class="{ grew: result.grew }" :aria-label="t('compression.result.title')">
+  <section
+    class="result"
+    :class="{ grew: result.grew }"
+    :aria-label="t('compression.result.title')"
+  >
     <header class="result-header">
       <span class="result-title">{{ t('compression.result.title') }}</span>
       <span class="result-time">

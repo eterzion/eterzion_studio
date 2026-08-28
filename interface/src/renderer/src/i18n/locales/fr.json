@@ -48,6 +48,43 @@
     "unsupportedFormat": "Format non pris en charge : {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "Choisir les couleurs automatiquement",
+      "autoColorsHint": "La palette suit le réglage de qualité.",
+      "colors": "Couleurs de la palette",
+      "colorsHint": "Moins de couleurs, fichier plus petit, bandes plus visibles.",
+      "dither": {
+        "bayer": "Motif régulier",
+        "floyd_steinberg": "Diffusion fine",
+        "none": "Aucun",
+        "sierra2_4a": "Diffusion légère"
+      },
+      "ditherDescription": "Comment approcher les couleurs absentes de la palette.",
+      "ditherHint": {
+        "bayer": "Compresse bien ; le choix par défaut ici",
+        "floyd_steinberg": "Plus joli et plus lourd",
+        "none": "Fichier le plus léger ; bandes visibles dans les dégradés",
+        "sierra2_4a": "Entre les deux ci-dessus"
+      },
+      "ditherLabel": "Tramage",
+      "format": "Format",
+      "formatHint": {
+        "mp4": "Bien plus petit, mais ce n’est plus une image animée",
+        "webm": "Bien plus petit, mais ce n’est plus une image animée",
+        "webp": "Souvent plus petit que le GIF, mêmes couleurs"
+      },
+      "fps": "Fréquence d’images",
+      "fpsHint": "Baisser les images gagne souvent plus que baisser les couleurs.",
+      "output": "Sortie",
+      "palette": "Couleurs",
+      "quality": "Qualité",
+      "qualityHintCodec": "Le niveau de détail conservé par image.",
+      "qualityHintPalette": "Règle le nombre de couleurs de la palette.",
+      "resolution": "Résolution",
+      "sameAsSource": "Comme l’original",
+      "size": "Taille",
+      "videoNote": "En vidéo le fichier devient bien plus léger — mais il cesse de fonctionner comme image animée là où seul le GIF est accepté."
+    },
     "audio": {
       "advanced": "Réglages avancés",
       "auto": "Automatique",

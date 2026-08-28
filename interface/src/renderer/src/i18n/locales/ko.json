@@ -48,6 +48,43 @@
     "unsupportedFormat": "지원하지 않는 형식: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "색상 자동 선택",
+      "autoColorsHint": "팔레트가 품질 설정을 따릅니다.",
+      "colors": "팔레트 색상 수",
+      "colorsHint": "색이 적을수록 파일은 작아지고 띠가 더 보입니다.",
+      "dither": {
+        "bayer": "규칙적인 패턴",
+        "floyd_steinberg": "고운 확산",
+        "none": "없음",
+        "sierra2_4a": "가벼운 확산"
+      },
+      "ditherDescription": "팔레트에 없는 색을 어떻게 근사할지.",
+      "ditherHint": {
+        "bayer": "잘 압축됩니다. 이 화면의 기본값",
+        "floyd_steinberg": "더 보기 좋고 더 큽니다",
+        "none": "가장 작은 파일. 그라데이션에 띠가 보입니다",
+        "sierra2_4a": "위 둘의 중간"
+      },
+      "ditherLabel": "디더링",
+      "format": "형식",
+      "formatHint": {
+        "mp4": "훨씬 작지만 더 이상 움직이는 이미지가 아닙니다",
+        "webm": "훨씬 작지만 더 이상 움직이는 이미지가 아닙니다",
+        "webp": "같은 색으로 GIF보다 작아지는 경우가 많습니다"
+      },
+      "fps": "프레임 레이트",
+      "fpsHint": "프레임을 줄이는 쪽이 색을 줄이는 것보다 효과가 큰 편입니다.",
+      "output": "출력",
+      "palette": "색상",
+      "quality": "품질",
+      "qualityHintCodec": "프레임마다 얼마나 세부를 남길지.",
+      "qualityHintPalette": "팔레트의 색상 수를 조절합니다.",
+      "resolution": "해상도",
+      "sameAsSource": "원본과 동일",
+      "size": "크기",
+      "videoNote": "동영상으로 만들면 훨씬 작아지지만, GIF만 받는 곳에서는 동작하지 않습니다."
+    },
     "audio": {
       "advanced": "고급 설정",
       "auto": "자동",

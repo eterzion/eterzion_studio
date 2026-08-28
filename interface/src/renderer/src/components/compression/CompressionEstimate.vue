@@ -74,9 +74,7 @@ const grew = computed(() => (props.estimate ? props.estimate.estimated_saving_by
           <span class="number-label">
             {{ grew ? t('compression.estimate.growth') : t('compression.estimate.saving') }}
           </span>
-          <span class="number-value" :class="{ warn: grew }">
-            {{ n(Math.abs(reduction)) }}%
-          </span>
+          <span class="number-value" :class="{ warn: grew }"> {{ n(Math.abs(reduction)) }}% </span>
         </div>
       </div>
 

@@ -33,9 +33,7 @@ function label(preset: CompressionPreset): string {
 }
 
 const options = computed<SelectOption[]>(() => {
-  const grupos: SelectOption[] = [
-    { value: '', label: t('compression.preset.custom') }
-  ]
+  const grupos: SelectOption[] = [{ value: '', label: t('compression.preset.custom') }]
   for (const preset of props.presets) {
     grupos.push({
       value: preset.id,

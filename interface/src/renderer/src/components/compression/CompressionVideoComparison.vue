@@ -35,9 +35,7 @@ let ajustando = false
 
 const pronto = computed(() => Boolean(props.outputPath && hasNativeApi))
 
-const antesSrc = computed(() =>
-  hasNativeApi ? api.toFileUrl(props.sourcePath) : ''
-)
+const antesSrc = computed(() => (hasNativeApi ? api.toFileUrl(props.sourcePath) : ''))
 const depoisSrc = computed(() =>
   hasNativeApi && props.outputPath ? api.toFileUrl(props.outputPath) : ''
 )

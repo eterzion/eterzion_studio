@@ -209,7 +209,10 @@ function set(field: string, value: unknown): void {
       </template>
 
       <template v-else-if="format === 'jpeg'">
-        <SettingRow :label="t('compression.image.chroma')" :description="t('compression.image.chromaHint')">
+        <SettingRow
+          :label="t('compression.image.chroma')"
+          :description="t('compression.image.chromaHint')"
+        >
           <AppSelect
             :model-value="String(settings.chroma_subsampling ?? '4:2:0')"
             :options="[

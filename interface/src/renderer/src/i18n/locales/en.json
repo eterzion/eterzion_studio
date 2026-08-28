@@ -48,6 +48,43 @@
     "unsupportedFormat": "Unsupported format: {name}"
   },
   "compression": {
+    "animation": {
+      "autoColors": "Choose colours automatically",
+      "autoColorsHint": "The palette follows the quality setting.",
+      "colors": "Palette colours",
+      "colorsHint": "Fewer colours, smaller file, more visible banding.",
+      "dither": {
+        "bayer": "Regular pattern",
+        "floyd_steinberg": "Fine diffusion",
+        "none": "None",
+        "sierra2_4a": "Light diffusion"
+      },
+      "ditherDescription": "How to approximate colours the palette does not have.",
+      "ditherHint": {
+        "bayer": "Compresses well; this screen’s default",
+        "floyd_steinberg": "Nicer looking and larger",
+        "none": "Smallest file; visible banding in gradients",
+        "sierra2_4a": "Between the two above"
+      },
+      "ditherLabel": "Dithering",
+      "format": "Format",
+      "formatHint": {
+        "mp4": "Much smaller, but no longer an animated image",
+        "webm": "Much smaller, but no longer an animated image",
+        "webp": "Usually smaller than GIF, same colours"
+      },
+      "fps": "Frame rate",
+      "fpsHint": "Fewer frames usually saves more than fewer colours.",
+      "output": "Output",
+      "palette": "Colours",
+      "quality": "Quality",
+      "qualityHintCodec": "How much detail each frame keeps.",
+      "qualityHintPalette": "Moves how many colours the palette holds.",
+      "resolution": "Resolution",
+      "sameAsSource": "Same as source",
+      "size": "Size",
+      "videoNote": "As video the file gets far smaller — but it stops working as an animated image where only GIF is accepted."
+    },
     "audio": {
       "advanced": "Advanced settings",
       "auto": "Automatic",
