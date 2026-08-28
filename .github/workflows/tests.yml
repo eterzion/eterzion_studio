@@ -3,6 +3,12 @@ name: Tests
 on:
   push:
     branches: [main]
+  # Sem isto, nenhum PR deste repositório era testado: os testes só rodavam
+  # depois, quando o código já estava na main. Um Dependabot sem esta linha é
+  # passivo, não ajuda — ele abre bumps que ninguém consegue avaliar, e a quebra
+  # aparece na main.
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -11,6 +17,14 @@ permissions:
 jobs:
   licensing-service-tests:
     name: Licensing service (pytest)
+    # Os dois jobs de pytest rodam em runner **auto-hospedado**, e um runner
+    # desses executa o que o PR mandar na máquina de quem o hospeda. Para PR do
+    # próprio repositório isso é aceitável — quem abriu já tem acesso de escrita.
+    # De um fork, não é: seria dar a máquina a qualquer pessoa que abrir um PR.
+    # O job do desktop roda em runner da GitHub e não precisa da guarda.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
@@ -40,6 +54,14 @@ jobs:
 
   upscale-api-tests:
     name: Upscale API (pytest)
+    # Os dois jobs de pytest rodam em runner **auto-hospedado**, e um runner
+    # desses executa o que o PR mandar na máquina de quem o hospeda. Para PR do
+    # próprio repositório isso é aceitável — quem abriu já tem acesso de escrita.
+    # De um fork, não é: seria dar a máquina a qualquer pessoa que abrir um PR.
+    # O job do desktop roda em runner da GitHub e não precisa da guarda.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     # setup-python's toolcache persists between jobs on this self-hosted runner.
     # A unique venv prevents dependencies from another run or former repository
     # name from contaminating the tested PyTorch stack.
