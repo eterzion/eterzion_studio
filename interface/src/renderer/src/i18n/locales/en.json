@@ -116,6 +116,18 @@
       "vbrHint": "Spends more where it is needed; usually sounds better."
     },
     "back": "Back",
+    "batch": {
+      "cancelAll": "Cancel all",
+      "cancelOne": "Cancel {name}",
+      "cancelled": "cancelled",
+      "progress": "{done} of {total} done",
+      "retryFailed": "Retry 1 file | Retry {count} files",
+      "runAll": "Compress 1 file | Compress {count} files",
+      "saved": "Saved {size} ({percent}%) so far",
+      "show": "Show",
+      "title": "Compression queue",
+      "waiting": "queued"
+    },
     "comingSoon": "{media} compression arrives in the next stages.",
     "compare": {
       "after": "Compressed",

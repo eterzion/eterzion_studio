@@ -116,6 +116,18 @@
       "vbrHint": "필요한 곳에 더 씁니다. 보통 더 낫습니다."
     },
     "back": "뒤로",
+    "batch": {
+      "cancelAll": "모두 취소",
+      "cancelOne": "{name} 취소",
+      "cancelled": "취소됨",
+      "progress": "{total}개 중 {done}개 완료",
+      "retryFailed": "{count}개 다시 시도",
+      "runAll": "{count}개 압축",
+      "saved": "지금까지 {size}({percent}%) 절감",
+      "show": "보기",
+      "title": "압축 대기열",
+      "waiting": "대기 중"
+    },
     "comingSoon": "{media} 압축은 다음 단계에서 추가됩니다.",
     "compare": {
       "after": "압축본",

@@ -248,13 +248,13 @@ já resolve o caso mais comum.
 
 ## Fase 7 — US6: Lote e fila (P3)
 
-- [ ] T077 [US6] "Aplicar a todos" no cliente — N pedidos com as mesmas configurações, e não uma
+- [X] T077 [US6] "Aplicar a todos" no cliente — N pedidos com as mesmas configurações, e não uma
       rota em lote que esconderia qual arquivo falhou (registrado em contracts/api.md)
-- [ ] T078 [US6] Configuração individual por arquivo
-- [ ] T079 [US6] Cancelar item e cancelar fila; tentar novamente item com erro
-- [ ] T080 [P] [US6] Escrever `test_compression_queue.py`: cancelar um não afeta os outros; erro
+- [X] T078 [US6] Configuração individual por arquivo
+- [X] T079 [US6] Cancelar item e cancelar fila; tentar novamente item com erro
+- [X] T080 [P] [US6] Escrever `test_compression_queue.py`: cancelar um não afeta os outros; erro
       não para a fila
-- [ ] T081 [US6] Progresso individual e geral, com velocidade e economia obtida
+- [X] T081 [US6] Progresso individual e geral, com velocidade e economia obtida
 - [ ] T082 [US6] Rodar os cenários 11 e 19 do quickstart
 
 ---

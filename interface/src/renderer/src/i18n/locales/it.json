@@ -116,6 +116,18 @@
       "vbrHint": "Spende di più dove serve; di solito rende meglio."
     },
     "back": "Indietro",
+    "batch": {
+      "cancelAll": "Annulla tutto",
+      "cancelOne": "Annulla {name}",
+      "cancelled": "annullato",
+      "progress": "{done} di {total} completati",
+      "retryFailed": "Riprova 1 file | Riprova {count} file",
+      "runAll": "Comprimi 1 file | Comprimi {count} file",
+      "saved": "Risparmiati {size} ({percent}%) finora",
+      "show": "Mostra",
+      "title": "Coda di compressione",
+      "waiting": "in coda"
+    },
     "comingSoon": "La compressione di {media} arriva nelle prossime fasi.",
     "compare": {
       "after": "Compresso",

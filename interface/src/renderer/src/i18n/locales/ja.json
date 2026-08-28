@@ -116,6 +116,18 @@
       "vbrHint": "必要な場所に多く割り当てます。多くの場合こちらが有利です。"
     },
     "back": "戻る",
+    "batch": {
+      "cancelAll": "すべて中止",
+      "cancelOne": "{name} を中止",
+      "cancelled": "中止",
+      "progress": "{total} 件中 {done} 件完了",
+      "retryFailed": "{count} 件を再試行",
+      "runAll": "{count} 件を圧縮",
+      "saved": "これまでに {size}（{percent}%）削減",
+      "show": "表示",
+      "title": "圧縮キュー",
+      "waiting": "待機中"
+    },
     "comingSoon": "{media}の圧縮は次の段階で追加されます。",
     "compare": {
       "after": "圧縮後",

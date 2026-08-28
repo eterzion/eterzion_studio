@@ -116,6 +116,18 @@
       "vbrHint": "Gibt mehr aus, wo es nötig ist; klingt meist besser."
     },
     "back": "Zurück",
+    "batch": {
+      "cancelAll": "Alles abbrechen",
+      "cancelOne": "{name} abbrechen",
+      "cancelled": "abgebrochen",
+      "progress": "{done} von {total} fertig",
+      "retryFailed": "1 Datei erneut versuchen | {count} Dateien erneut versuchen",
+      "runAll": "1 Datei komprimieren | {count} Dateien komprimieren",
+      "saved": "Bisher {size} ({percent} %) gespart",
+      "show": "Anzeigen",
+      "title": "Komprimier-Warteschlange",
+      "waiting": "wartet"
+    },
     "comingSoon": "Die {media}-Komprimierung kommt in den nächsten Schritten.",
     "compare": {
       "after": "Komprimiert",

@@ -116,6 +116,18 @@
       "vbrHint": "在需要的地方多分配，通常效果更好。"
     },
     "back": "返回",
+    "batch": {
+      "cancelAll": "全部取消",
+      "cancelOne": "取消 {name}",
+      "cancelled": "已取消",
+      "progress": "已完成 {done} / {total}",
+      "retryFailed": "重试 {count} 个文件",
+      "runAll": "压缩 {count} 个文件",
+      "saved": "目前已节省 {size}（{percent}%）",
+      "show": "显示",
+      "title": "压缩队列",
+      "waiting": "排队中"
+    },
     "comingSoon": "{media}压缩将在后续阶段加入。",
     "compare": {
       "after": "压缩后",

@@ -23,10 +23,12 @@ import CompressionVideoComparison from '../components/compression/CompressionVid
 import AudioCompressionSettings from '../components/compression/AudioCompressionSettings.vue'
 import CompressionAudioComparison from '../components/compression/CompressionAudioComparison.vue'
 import AnimationCompressionSettings from '../components/compression/AnimationCompressionSettings.vue'
+import CompressionQueue from '../components/compression/CompressionQueue.vue'
 import { useCompressionQueue } from '../composables/useCompressionQueue'
 import { useCompressionSettings } from '../composables/useCompressionSettings'
 import { useCompressionEstimate } from '../composables/useCompressionEstimate'
 import { useCompressionJob } from '../composables/useCompressionJob'
+import { useCompressionBatch, type BatchRequest } from '../composables/useCompressionBatch'
 import {
   getCapabilities,
   listPresets,
@@ -62,6 +64,7 @@ const queue = useCompressionQueue()
 const { mediaKind, mode, settings, target, payload, set, setTarget, applyPreset } =
   useCompressionSettings()
 const job = useCompressionJob()
+const batch = useCompressionBatch()
 
 const capabilities = ref<CompressionCapabilities | null>(null)
 const presets = ref<CompressionPreset[]>([])
@@ -109,6 +112,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   stopEstimating()
   job.stop()
+  batch.stop()
 })
 
 watch(
@@ -139,7 +143,40 @@ function choosePreset(id: string | null): void {
 
 const imageFormats = computed<CapabilityEntry[]>(() => capabilities.value?.image.formats ?? [])
 
-const canRun = computed(() => Boolean(activeHandle.value) && !job.running.value)
+/** Quantos arquivos prontos existem do tipo aberto agora. Comprimir "todos"
+ *  significa todos os do tipo em foco — misturar tipos numa passada aplicaria a
+ *  um MP3 as configurações montadas para uma imagem. */
+const readyOfKind = computed(() =>
+  queue.ready.value.filter((i) => i.media?.media_kind === mediaKind.value)
+)
+
+const busy = computed(() => job.running.value || batch.running.value)
+const canRun = computed(() => Boolean(activeHandle.value) && !busy.value)
+const canRunAll = computed(() => readyOfKind.value.length > 1 && !busy.value)
+
+function batchRequests(): BatchRequest[] {
+  return readyOfKind.value.map((item) => ({
+    queueId: item.id,
+    fileName: item.fileName,
+    handleId: item.media!.handle_id,
+    mediaKind: mediaKind.value,
+    // As mesmas configurações para todos — é o que "aplicar a todos" quer dizer
+    // (FR-035). Configuração individual continua sendo comprimir um por vez.
+    settings: payload.value,
+    target: target.value,
+    mode: mode.value,
+    presetId: selectedPreset.value,
+    export: exportOptions.value
+  }))
+}
+
+async function runAll(): Promise<void> {
+  await batch.run(batchRequests())
+}
+
+async function retryFailed(): Promise<void> {
+  await batch.retryFailed(batchRequests())
+}
 
 async function run(): Promise<void> {
   if (!activeHandle.value) return
@@ -332,6 +369,16 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
             {{ t('compression.run') }}
           </AppButton>
 
+          <AppButton
+            v-if="canRunAll"
+            variant="outline"
+            :disabled="busy"
+            :loading="batch.running.value"
+            @click="runAll"
+          >
+            {{ t('compression.batch.runAll', readyOfKind.length) }}
+          </AppButton>
+
           <ProgressBar v-if="job.running.value" :value="job.progress.value" />
 
           <p v-if="job.error.value" class="panel-error">
@@ -339,6 +386,20 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
           </p>
 
           <CompressionResult v-if="job.result.value" :result="job.result.value" @reveal="reveal" />
+          <CompressionQueue
+            v-if="batch.items.value.length"
+            :items="batch.items.value"
+            :running="batch.running.value"
+            :overall-progress="batch.overallProgress.value"
+            :saved-bytes="batch.savedBytes.value"
+            :original-bytes="batch.originalBytes.value"
+            :failed-count="batch.failed.value.length"
+            :finished-count="batch.finished.value"
+            @cancel-item="batch.cancelItem"
+            @cancel-all="batch.cancelAll"
+            @retry-failed="retryFailed"
+            @reveal="reveal"
+          />
         </div>
       </template>
     </MediaEditorShell>

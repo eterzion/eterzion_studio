@@ -116,6 +116,18 @@
       "vbrHint": "Gasta mais onde é preciso; costuma render melhor."
     },
     "back": "Voltar",
+    "batch": {
+      "cancelAll": "Cancelar tudo",
+      "cancelOne": "Cancelar {name}",
+      "cancelled": "cancelado",
+      "progress": "{done} de {total} concluídos",
+      "retryFailed": "Tentar de novo 1 ficheiro | Tentar de novo {count} ficheiros",
+      "runAll": "Comprimir 1 ficheiro | Comprimir {count} ficheiros",
+      "saved": "Poupou {size} ({percent}%) até agora",
+      "show": "Mostrar",
+      "title": "Fila de compressão",
+      "waiting": "na fila"
+    },
     "comingSoon": "A compressão de {media} chega nas próximas etapas.",
     "compare": {
       "after": "Comprimido",

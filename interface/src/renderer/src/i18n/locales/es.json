@@ -116,6 +116,18 @@
       "vbrHint": "Gasta más donde hace falta; suele sonar mejor."
     },
     "back": "Volver",
+    "batch": {
+      "cancelAll": "Cancelar todo",
+      "cancelOne": "Cancelar {name}",
+      "cancelled": "cancelado",
+      "progress": "{done} de {total} listos",
+      "retryFailed": "Reintentar 1 archivo | Reintentar {count} archivos",
+      "runAll": "Comprimir 1 archivo | Comprimir {count} archivos",
+      "saved": "Ahorrado {size} ({percent}%) hasta ahora",
+      "show": "Mostrar",
+      "title": "Cola de compresión",
+      "waiting": "en cola"
+    },
     "comingSoon": "La compresión de {media} llega en las próximas etapas.",
     "compare": {
       "after": "Comprimido",
