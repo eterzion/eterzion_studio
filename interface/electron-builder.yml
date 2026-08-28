@@ -30,7 +30,11 @@ win:
   #
   # Para um build local de desenvolvimento, sem certificado, é preciso pedir
   # explicitamente:
-  #     pnpm exec electron-builder --win --config.forceCodeSigning=false
+  #     pnpm run build:win:unsigned
+  #
+  # A sobrescrita pela linha de comando precisa do caminho completo
+  # (`--config.win.forceCodeSigning=false`): sem o `win.` o electron-builder
+  # ignora a flag em silêncio e falha dizendo que a opção continua ligada.
   # Pedir explicitamente é o ponto — quem faz isso sabe que o resultado não pode
   # ser distribuído.
   forceCodeSigning: true

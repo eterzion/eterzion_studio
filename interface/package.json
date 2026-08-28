@@ -20,7 +20,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && npm run build:backend:win && npm run fetch:ffmpeg:win && electron-builder --win",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && npm run fetch:ffmpeg:linux && electron-builder --linux"
+    "build:linux": "npm run build && npm run fetch:ffmpeg:linux && electron-builder --linux",
+    "build:win:unsigned": "npm run build && npm run build:backend:win && npm run fetch:ffmpeg:win && electron-builder --win --config.win.forceCodeSigning=false --config.nsis.artifactName=${name}-${version}-setup-NAO-ASSINADO.${ext}"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.2",
