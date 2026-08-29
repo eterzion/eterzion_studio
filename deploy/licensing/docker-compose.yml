@@ -13,6 +13,11 @@ services:
       - ./storage:/var/lib/eterzion-studio
     networks:
       - astros_proxy
+      # Durante a transicao o licensing fica nas duas: o nginx ainda esta em
+      # ambas, e sair da antiga antes de entrar na nova deixaria license.
+      # eterzion.com fora do ar entre um deploy e outro. A antiga sai no
+      # commit que remove astros_proxy de todos os projetos.
+      - eterzion_proxy
     read_only: true
     tmpfs:
       - /tmp:size=64m,mode=1777
@@ -29,4 +34,6 @@ services:
 
 networks:
   astros_proxy:
+    external: true
+  eterzion_proxy:
     external: true
