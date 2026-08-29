@@ -295,7 +295,19 @@ já resolve o caso mais comum.
       arquivo por arquivo
 - [ ] T096 Rodar lint, typecheck, vitest, pytest do core e pytest da API, **contra a build LGPL
       empacotada** e com o PATH limpo
-      → Lint, typecheck, vitest e pytest da API rodados contra o FFmpeg empacotado; **falta o pytest do core** (5 módulos de áudio bloqueados por política do Windows nesta máquina)
+      → Lint, typecheck e vitest rodados e verdes (2026-08-29, contra TypeScript 6 e
+      `@types/node` 26, com build do app concluindo). **O pytest do core continua sem rodar,
+      e a causa agora está medida:** o `ffmpeg.exe` empacotado não executa nesta máquina —
+      `An Application Control policy has blocked this file`, confirmado pelo PowerShell.
+      Não é permissão de arquivo nem falta de dependência: é a mesma política que recusa o
+      instalador não assinado.
+      **A consequência é maior do que "faltam 5 módulos".** A política bloqueia executável
+      não assinado em geral, então o app instalado aqui também não processaria nada — o
+      FFmpeg que ele carrega é este. Assinar destrava as duas coisas de uma vez.
+      **Cuidado ao reproduzir:** esta máquina tem um FFmpeg de sistema no PATH com
+      `--enable-gpl`, `libx264` e `libx265`. Rodar o teste sem limpar o PATH usa esse, e
+      passa por encoders que a build LGPL empacotada não tem — que é exatamente o que este
+      T096 existe para não deixar acontecer.
 
 ---
 
