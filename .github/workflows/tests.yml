@@ -14,6 +14,20 @@ on:
 permissions:
   contents: read
 
+# Ligar o gatilho de pull_request colocou dez PRs abertos na fila de uma vez, e
+# dois dos tres jobs rodam num unico runner auto-hospedado — eles nao paralelizam,
+# enfileiram. Sem isto, cada push novo num PR soma uma corrida em vez de
+# substituir a anterior, e a fila cresce mais rapido do que drena.
+#
+# **Cancela so o que ficou obsoleto, e so em PR.** O grupo inclui a ref, entao
+# PRs diferentes nunca cancelam um ao outro; e `cancel-in-progress` fica falso
+# fora de pull_request, porque uma corrida da main validando o que ja foi
+# integrado nao deve ser interrompida por causa do commit seguinte — e dela que
+# sai o sinal de que a main esta sa.
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   licensing-service-tests:
     name: Licensing service (pytest)
