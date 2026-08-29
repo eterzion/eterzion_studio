@@ -76,8 +76,13 @@ jobs:
             api
             models
             # fetch-ffmpeg.mjs only — it imports nothing but node builtins, so
-            # the rest of interface/ stays out of this Windows checkout.
+            # the rest of interface/ stays out of this checkout.
             interface/scripts
+            # test_status_enum_is_single_source.py le o api.ts do renderer para
+            # comparar o enum de status dos dois lados. Sem este caminho o teste
+            # falha em FileNotFoundError, que parece bug de teste e e' recorte
+            # do checkout.
+            interface/src/renderer/src/services
           sparse-checkout-cone-mode: true
       # Test against the binary the USER receives, not against whatever ffmpeg
       # the runner happens to provide.
