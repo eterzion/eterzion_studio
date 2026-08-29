@@ -6,7 +6,7 @@
 # SonicMaster, commit c4c0869c14bada6c5cb7d3decbcdc00e6a3050f5). Atualizados em 2026-08-13 para as
 # versões estáveis mais recentes de cada pacote (torch==2.13.0/torchaudio==2.11.0/
 # torchvision==0.28.0 — a mesma combinação já validada no `.venv` principal do projeto;
-# transformers==5.5.0 e diffusers==0.38.0 — majors bem à frente dos pins originais 4.44.0/0.30.0).
+# transformers==5.16.1 e diffusers==0.40.0 — majors bem à frente dos pins originais 4.44.0/0.30.0).
 # Validado com um smoke test real: instalação completa + import de todo o código vendorizado +
 # instanciação de `TangoFlux` a partir do config (862.987.328 parâmetros) sem erro. Continua num
 # venv isolado, nunca instalado no ambiente principal — FR-023 exige esse isolamento
@@ -26,8 +26,8 @@
 torch==2.13.0
 torchaudio==2.11.0
 torchvision==0.28.0
-transformers==5.5.0
-diffusers==0.38.0
+transformers==5.16.1
+diffusers==0.40.0
 torchlibrosa==0.1.0
 librosa==0.11.0
 soundfile
