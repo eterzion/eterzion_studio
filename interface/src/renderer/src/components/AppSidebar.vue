@@ -28,7 +28,7 @@ import {
   Tag
 } from '@lucide/vue'
 
-defineProps<{
+const props = defineProps<{
   active: NavKey
   darkMode: boolean
 }>()
@@ -40,9 +40,23 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-// Official brand logo served by assets.eterzion.com (see eterzion_assets'
-// own BrandMark.vue, which uses the same file as its main site logo).
-const brandLogoUrl = 'https://assets.eterzion.com/branding/logo-256.webp'
+// Official brand logo served by assets.eterzion.com.
+//
+// **O sufixo nomeia o tema a que a arte serve, não a cor da tinta dela.**
+// `logo-dark` tem traço claro (luminância média 201/255) e existe para fundo
+// escuro; `logo-light` tem traço escuro (73/255), para fundo claro. Ler o nome
+// ao contrário desenha o logo na cor do fundo — ele não some com erro nenhum,
+// simplesmente deixa de ser visível, e o console fica limpo.
+//
+// O caminho anterior (`/branding/logo-256.webp`) não existia no CDN e nunca
+// existiu: a convenção de lá é um diretório por variante. Pior que o 404, a
+// raiz do host tem fallback de SPA — pedir uma imagem devolvia `200 text/html`,
+// então nem o código de status denunciava o engano.
+const brandLogoUrl = computed(() =>
+  props.darkMode
+    ? 'https://assets.eterzion.com/branding/astros-logo-dark/logo-256.webp'
+    : 'https://assets.eterzion.com/branding/astros-logo-light/logo-256.webp'
+)
 
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the
 // active item is tinted with the same colour as the screen it opens. Entries
