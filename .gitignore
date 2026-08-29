@@ -168,3 +168,6 @@ api/astros_upscale_api/tests/fixtures/*.gif
 # quem rodar `npm install` monta uma árvore diferente da que o pnpm-lock.yaml
 # descreve, e o pacote sai com dependências que ninguém escolheu.
 interface/package-lock.json
+
+# Cache incremental do TypeScript: artefato de build local.
+*.tsbuildinfo
