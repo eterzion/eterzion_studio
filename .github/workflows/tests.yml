@@ -76,8 +76,13 @@ jobs:
             api
             models
             # fetch-ffmpeg.mjs only — it imports nothing but node builtins, so
-            # the rest of interface/ stays out of this Windows checkout.
+            # the rest of interface/ stays out of this checkout.
             interface/scripts
+            # test_status_enum_is_single_source.py le o api.ts do renderer para
+            # comparar o enum de status dos dois lados. Sem este caminho o teste
+            # falha em FileNotFoundError, que parece bug de teste e e' recorte
+            # do checkout.
+            interface/src/renderer/src/services
           sparse-checkout-cone-mode: true
       # Test against the binary the USER receives, not against whatever ffmpeg
       # the runner happens to provide.
@@ -129,7 +134,12 @@ jobs:
       # PyPI padrao, e' um build compilado contra outro torch. Os dois carregam
       # sem erro e a falha aparece so no primeiro uso, como
       # "RuntimeError: operator torchvision::nms does not exist".
-      - run: uv pip install --system torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
+      #
+      # E --reinstall porque este runner e self-hosted: o `--system` escreve
+      # no tool cache do setup-python, que sobrevive entre execucoes. Sem a
+      # flag, o uv ve o requisito ja satisfeito por uma versao incompativel
+      # deixada por um job anterior e nao instala a do indice CPU.
+      - run: uv pip install --system --reinstall torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
       - run: uv pip install --system -r requirements-dev.txt
       # astros_upscale is a real dependency of app.processing/app.routes —
       # installed editable from its new home in api/ instead of the sys.path

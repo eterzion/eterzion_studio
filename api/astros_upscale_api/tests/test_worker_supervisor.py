@@ -395,6 +395,15 @@ class TestAudioWorkerIdleWatchdog:
         monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
 
 
+@pytest.mark.skipif(
+    os.name != 'nt',
+    reason=(
+        'WorkerSupervisor abre um Listener AF_PIPE (app/jobs.py), que so existe '
+        'no Windows. O supervisor roda junto do app Electron na maquina do '
+        'usuario, entao isso e projeto e nao limitacao: no Linux estes testes '
+        'nao tem o que exercitar.'
+    ),
+)
 class TestSpawnFailureIsNotCalledATimeout:
     """Um filho que **já morreu** não é um timeout.
 
