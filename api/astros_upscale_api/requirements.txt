@@ -12,7 +12,7 @@ pillow
 opencv-python-headless
 cryptography
 psutil>=7.2
-nvidia-ml-py>=13.0
+nvidia-ml-py>=13.610.43
 # The astros_upscale core package (imported via sys.path by conftest.py, not
 # pip-installed as a package) needs its own real dependencies here too —
 # `realesrgan` (and its broken, unmaintained `basicsr` transitive dependency)
