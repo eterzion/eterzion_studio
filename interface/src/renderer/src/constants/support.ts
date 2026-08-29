@@ -44,7 +44,9 @@ export interface SupportLink {
 /** Os canais que têm endereço, na ordem de exibição. O e-mail sai daqui já como
  * `mailto:` porque é o que `window.open` precisa receber; guardá-lo assim na
  * config faria a entrada parecer uma URL, que não é. */
-export function configuredSupportLinks(endpoints: SupportEndpoints = SUPPORT_ENDPOINTS): SupportLink[] {
+export function configuredSupportLinks(
+  endpoints: SupportEndpoints = SUPPORT_ENDPOINTS
+): SupportLink[] {
   return DISPLAY_ORDER.map((key) => {
     const value = endpoints[key].trim()
     return { key, url: key === 'email' && value ? `mailto:${value}` : value }
