@@ -30,12 +30,7 @@ export interface VideoAdjustments {
 }
 
 export type AdjustmentKey =
-  | 'brightness'
-  | 'contrast'
-  | 'saturation'
-  | 'gamma'
-  | 'hue_degrees'
-  | 'sharpness'
+  'brightness' | 'contrast' | 'saturation' | 'gamma' | 'hue_degrees' | 'sharpness'
 
 export const ADJUSTMENT_NEUTRAL: Record<AdjustmentKey, number> = {
   brightness: 0,

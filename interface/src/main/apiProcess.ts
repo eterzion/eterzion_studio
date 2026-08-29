@@ -13,8 +13,7 @@ export const API_BASE_URL = `http://127.0.0.1:${API_PORT}`
 // pública que verifica as respostas dele. Deixá-los como variável de ambiente
 // permitiria apontar o app para outro servidor de licença.
 export const LICENSING_SERVICE_URL = 'https://license.eterzion.com'
-export const LICENSING_SERVICE_PUBLIC_KEY_B64 =
-  '2zo5YW9vKdQdBPNCELH/+ukuMlJkZhObsY6N8Qu4wpA='
+export const LICENSING_SERVICE_PUBLIC_KEY_B64 = '2zo5YW9vKdQdBPNCELH/+ukuMlJkZhObsY6N8Qu4wpA='
 
 /** Locates the FFmpeg binary's directory: the packaged one first (electron-builder
  *  extraResources, see electron-builder.yml win/linux `extraResources: ... to:

@@ -11,7 +11,9 @@ const filled: SupportEndpoints = {
 
 describe('configuredSupportLinks', () => {
   it('não devolve nada quando nenhum canal tem endereço', () => {
-    expect(configuredSupportLinks({ site: '', discord: '', faq: '', help: '', email: '' })).toEqual([])
+    expect(configuredSupportLinks({ site: '', discord: '', faq: '', help: '', email: '' })).toEqual(
+      []
+    )
   })
 
   it('devolve só os canais preenchidos, na ordem de exibição', () => {
@@ -26,7 +28,9 @@ describe('configuredSupportLinks', () => {
   })
 
   it('trata espaço em branco como endereço ausente', () => {
-    expect(configuredSupportLinks({ ...filled, site: '   ' }).some((link) => link.key === 'site')).toBe(false)
+    expect(
+      configuredSupportLinks({ ...filled, site: '   ' }).some((link) => link.key === 'site')
+    ).toBe(false)
   })
 
   it('nunca deixa um endereço de exemplo chegar à sidebar', () => {
