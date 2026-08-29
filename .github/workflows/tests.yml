@@ -97,9 +97,19 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-      - run: node interface/scripts/fetch-ffmpeg.mjs win32
+      # Alvo linux, nao win32: este job roda no runner Linux self-hosted. O
+      # build LGPL e o mesmo conjunto de codecs em qualquer plataforma, que e
+      # o que estes testes verificam -- e o .zip do Windows nem extrai aqui,
+      # porque o tar do Linux e GNU tar e nao le zip.
+      - run: node interface/scripts/fetch-ffmpeg.mjs linux
         working-directory: ${{ github.workspace }}
-      - run: echo "ASTROS_FFMPEG_DIR=${{ github.workspace }}\interface\resources\ffmpeg\win32" >> $env:GITHUB_ENV
+      # LD_LIBRARY_PATH e necessario: o RPATH gravado no binario do BtbN e
+      # literalmente "-Wl:../lib" -- a flag do linker vazou para dentro do
+      # campo em vez de $ORIGIN. Confirmado com readelf -d. Sem isto o
+      # ffmpeg nao carrega libavdevice.so.62 nem estando ao lado dela.
+      - run: echo "ASTROS_FFMPEG_DIR=${{ github.workspace }}/interface/resources/ffmpeg/linux" >> "$GITHUB_ENV"
+        working-directory: ${{ github.workspace }}
+      - run: echo "LD_LIBRARY_PATH=${{ github.workspace }}/interface/resources/ffmpeg/linux" >> "$GITHUB_ENV"
         working-directory: ${{ github.workspace }}
       - uses: actions/setup-python@v7
         with:

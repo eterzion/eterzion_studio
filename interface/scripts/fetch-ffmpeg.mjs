@@ -40,6 +40,7 @@ import {
   rmSync,
   chmodSync,
   readdirSync,
+  symlinkSync,
   copyFileSync,
   readFileSync,
   writeFileSync
@@ -193,6 +194,27 @@ function findSingleTopLevelDir(dir) {
   return join(dir, entries[0].name)
 }
 
+/**
+ * Recria os symlinks de soname (libfoo.so.62 -> libfoo.so.62.28.102).
+ *
+ * O tar os extrai, mas copyDirFiltered copia apenas `entry.isFile()` e os
+ * descarta em silencio. Sem eles o binario nao carrega: o rpath encontra o
+ * diretorio e procura ali pelo soname exato, que nao existe como arquivo.
+ * O resultado e um ffmpeg que falha so em runtime, depois de o download e a
+ * verificacao de SHA terem passado.
+ *
+ * No Windows nao ha equivalente: DLLs sao referenciadas pelo nome completo.
+ */
+function createSonameLinks(dir) {
+  for (const name of readdirSync(dir)) {
+    const match = /^(.+\.so\.\d+)\..+$/u.exec(name)
+    if (!match) continue
+    const link = join(dir, match[1])
+    if (existsSync(link)) continue
+    symlinkSync(name, link)
+  }
+}
+
 function copyDirFiltered(srcDir, destDir, keep) {
   mkdirSync(destDir, { recursive: true })
   for (const entry of readdirSync(srcDir, { withFileTypes: true })) {
@@ -249,16 +271,20 @@ async function fetchPlatform(platform, { force }) {
   copyDirFiltered(binDir, outDir, target.keepFromBinDir)
   // Windows bin/ already contains the DLLs the exe needs — nothing else to copy.
   // Linux ships the runtime .so files under lib/ instead (bin/ only has the ELF
-  // binaries): the ffmpeg binary's rpath includes both $ORIGIN and
-  // $ORIGIN/../lib (verified via the linker flags embedded in the binary), so
-  // the .so* files can sit flat next to the ffmpeg executable, same layout as
-  // the Windows DLLs. Only .so* files are taken — skip any .a/.la link-time
+  // binaries), e aqui elas ficam planas ao lado do executavel, mesmo layout das
+  // DLLs do Windows. Only .so* files are taken — skip any .a/.la link-time
   // artifacts that might ship alongside them.
+  //
+  // ATENCAO: no Linux isso NAO basta para executar. O RPATH gravado no binario
+  // do BtbN e literalmente "-Wl:../lib" -- a flag do linker vazou para dentro
+  // do campo em vez de $ORIGIN (confirmado com readelf -d). Quem for executar
+  // esses binarios precisa de LD_LIBRARY_PATH apontando para este diretorio.
   if (platform !== 'win32' && existsSync(libDir)) {
     copyDirFiltered(libDir, outDir, (name) => name.includes('.so'))
   }
 
   if (platform !== 'win32') {
+    createSonameLinks(outDir)
     chmodSync(binaryOut, 0o755)
   }
 
