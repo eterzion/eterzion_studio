@@ -1,19 +1,23 @@
-# Atualização automática — o que existe e o que falta
-
-Levantado durante a migração de domínio para `eterzion.com`, quando foi
-preciso saber quanto tempo uma correção leva para alcançar a base instalada.
+# Atualização automática
 
 ## O estado atual
 
-**Não existe atualização automática.** Não é um feed mal configurado: é
-funcionalidade ausente.
+Implementada. `electron-updater` verifica ao abrir e a cada seis horas,
+baixa em segundo plano e instala quando o app é fechado. O feed é o de
+releases do GitHub (`provider: github`, `eterzion/eterzion_studio`), então
+não há infraestrutura própria a manter.
 
-- `electron-updater` não está nas dependências de `interface/package.json`;
-- não há `autoUpdater` em nenhum lugar do processo principal;
-- `electron-builder.yml` e `dev-app-update.yml` trazem
-  `publish: provider: generic, url: https://example.com/auto-updates`, que é
-  o valor de template do electron-vite — nunca foi apontado para lugar
-  nenhum.
+O comportamento é deliberadamente discreto: nenhum diálogo interrompe um
+upscale em andamento e nada força reinício. Falha de rede é registrada e
+ignorada — ficar sem internet ou atrás de um proxy corporativo é normal e
+não pode impedir ninguém de usar o programa.
+
+## O que havia antes
+
+Nada. Não era feed mal configurado: `electron-updater` não estava nas
+dependências, não havia `autoUpdater` no processo principal, e o
+`publish: url: https://example.com/auto-updates` era valor de template do
+electron-vite, nunca apontado para lugar nenhum.
 
 ## Por que isso importa mais do que parece
 
@@ -26,29 +30,25 @@ Isso apareceu de forma concreta na migração de domínio: o CSP em
 `assets.eterzion.com` mesmo depois de o servidor passar a respondê-lo.
 Nenhuma mudança de infraestrutura conserta uma cópia instalada.
 
-## O que foi feito agora
+## Sobre o domínio
 
-O CSP passa a aceitar os dois domínios e o logo aponta para o novo. Isso não
-conserta nada retroativamente — vale para a próxima versão que alguém
-instalar. Enquanto houver base relevante em versões antigas,
-`assets.ericinacio.com` precisa continuar respondendo.
+O CSP passou a aceitar `assets.eterzion.com` e o logo aponta para lá. Isso
+vale para quem instalar dali em diante, não retroativamente — e é exatamente
+por isso que `assets.ericinacio.com` precisa continuar respondendo até a base
+instalada girar.
 
-## O que falta, e por que não foi feito junto
+## O que ainda falta
 
-Implementar atualização automática é funcionalidade, não configuração:
+**Assinatura de código.** Sem ela, o Windows mostra aviso do SmartScreen na
+instalação e o macOS recusa abrir sem intervenção do usuário. O atualizador
+funciona, mas cada atualização faz o usuário passar por um alerta — o que na
+prática reduz quem atualiza. Exige certificado adquirido e configuração no
+`electron-builder.yml`.
 
-1. adicionar `electron-updater`;
-2. instanciar o `autoUpdater` no processo principal, tratando os eventos de
-   verificação, download e erro;
-3. decidir a interface: silencioso, aviso, ou pergunta;
-4. apontar `publish` para `provider: github` — os releases já são publicados
-   pela organização, então não é preciso hospedar feed;
-5. assinar os artefatos, sem o que o Windows e o macOS reclamam na instalação;
-6. testar o caminho de atualização de verdade, entre duas versões.
-
-Fazer isso sob a pressão de uma janela de migração é como se entrega um
-atualizador quebrado para usuários que, justamente por isso, não podem
-receber a correção. Merece o seu próprio ciclo.
+**A primeira versão ainda é manual.** Quem está numa build antiga não recebe
+esta por atualização automática, porque a build antiga não sabe procurar.
+Essa versão precisa ser distribuída à mão, uma última vez. Da próxima em
+diante o caminho se resolve sozinho.
 
 ## A identidade do app
 

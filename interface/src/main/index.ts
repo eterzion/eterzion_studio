@@ -5,6 +5,7 @@ import { registerMediaProtocolHandler } from './protocols/mediaProtocol'
 import { createWindow } from './windows/mainWindow'
 import { registerDialogIpc } from './ipc/dialog.ipc'
 import { registerAppIpc } from './ipc/app.ipc'
+import { initializeUpdater, stopUpdater } from './updater'
 
 const repoRoot = resolveRepoRoot()
 
@@ -19,7 +20,10 @@ function initWindow(): void {
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
   // Set app user model id for windows
-  electronApp.setAppUserModelId('com.electron')
+  // Precisa bater com o appId do electron-builder. Com 'com.electron', o
+  // valor de template, o Windows agrupa a janela e as notificacoes sob uma
+  // identidade que nao e' a do app.
+  electronApp.setAppUserModelId('com.astrosupscale.app')
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
@@ -31,6 +35,8 @@ app.whenReady().then(() => {
   registerMediaProtocolHandler()
 
   initWindow()
+
+  initializeUpdater()
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
@@ -49,5 +55,6 @@ app.on('window-all-closed', () => {
 })
 
 app.on('before-quit', () => {
+  stopUpdater()
   stopOwnedApiProcess()
 })
