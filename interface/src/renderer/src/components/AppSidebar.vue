@@ -48,14 +48,23 @@ const { t } = useI18n()
 // ao contrário desenha o logo na cor do fundo — ele não some com erro nenhum,
 // simplesmente deixa de ser visível, e o console fica limpo.
 //
-// O caminho anterior (`/branding/logo-256.webp`) não existia no CDN e nunca
-// existiu: a convenção de lá é um diretório por variante. Pior que o 404, a
-// raiz do host tem fallback de SPA — pedir uma imagem devolvia `200 text/html`,
-// então nem o código de status denunciava o engano.
+// O caminho anterior era `assets.ericinacio.com/branding/logo-256.webp`, e
+// ele **existia** — foi removido do CDN em 13/08/2026, quando a marca do
+// site passou a ter um diretório por variante (eterzion_assets 4c9610bf1,
+// `11856 -> 0 bytes`). A convenção de lá hoje é um diretório por variante, e
+// um caminho de segmento único cai no fallback de SPA da raiz do host: pedir
+// uma imagem devolve `200 text/html`, então nem o código de status denuncia
+// o engano.
+//
+// Consequência para quem tem uma cópia antiga instalada: o logo dela está
+// quebrado desde aquela remoção, e nenhuma mudança de servidor conserta --
+// o CSP empacotado só aceita o host antigo, que hoje nem responde. Manter
+// `assets.ericinacio.com` no ar também não resolveria, porque o arquivo que
+// aquelas builds pedem não existe mais.
 const brandLogoUrl = computed(() =>
   props.darkMode
-    ? 'https://assets.eterzion.com/branding/astros-logo-dark/logo-256.webp'
-    : 'https://assets.eterzion.com/branding/astros-logo-light/logo-256.webp'
+    ? 'https://assets.eterzion.com/branding/ez-logo-white/logo-256.webp'
+    : 'https://assets.eterzion.com/branding/ez-logo-black/logo-256.webp'
 )
 
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the

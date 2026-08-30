@@ -33,11 +33,11 @@ function logoSrc(darkMode: boolean): string {
 
 describe('AppSidebar — logo da marca', () => {
   it('usa a arte de traço claro no tema escuro', () => {
-    expect(logoSrc(true)).toBe(`${BASE}/astros-logo-dark/logo-256.webp`)
+    expect(logoSrc(true)).toBe(`${BASE}/ez-logo-white/logo-256.webp`)
   })
 
   it('usa a arte de traço escuro no tema claro', () => {
-    expect(logoSrc(false)).toBe(`${BASE}/astros-logo-light/logo-256.webp`)
+    expect(logoSrc(false)).toBe(`${BASE}/ez-logo-black/logo-256.webp`)
   })
 
   it('nunca aponta para a raiz do host, onde o fallback de SPA devolve HTML', () => {

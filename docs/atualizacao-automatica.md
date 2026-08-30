@@ -33,9 +33,26 @@ Nenhuma mudança de infraestrutura conserta uma cópia instalada.
 ## Sobre o domínio
 
 O CSP passou a aceitar `assets.eterzion.com` e o logo aponta para lá. Isso
-vale para quem instalar dali em diante, não retroativamente — e é exatamente
-por isso que `assets.ericinacio.com` precisa continuar respondendo até a base
-instalada girar.
+vale para quem instalar dali em diante, não retroativamente.
+
+Esta seção dizia que `assets.ericinacio.com` precisava continuar respondendo
+até a base instalada girar. **Medido em 30/08/2026, isso já não protege
+nada.** O arquivo que as builds antigas pedem,
+`assets.ericinacio.com/branding/logo-256.webp`, foi removido do CDN em
+13/08/2026 (`eterzion_assets` 4c9610bf1, `11856 -> 0 bytes`), quando a marca
+do site passou a ter um diretório por variante. O logo dessas cópias está
+quebrado desde então — semanas antes de o subdomínio parar de responder.
+
+O host hoje resolve no DNS (177.107.64.5) mas não completa o TLS: o vhost
+saiu junto dos outros subdomínios antigos. Ressuscitá-lo não devolveria o
+logo, porque o arquivo pedido não existe mais.
+
+Redirecionar também não é opção, e vale registrar por quê: o CSP empacotado
+das cópias antigas libera apenas `assets.ericinacio.com` no `img-src`. Um 301
+para `assets.eterzion.com` seria bloqueado pelo próprio CSP. Para servir
+aquelas cópias seria preciso o host antigo **entregar os bytes**, sob o
+caminho antigo — o que significa manter um caminho de marca aposentado vivo
+por tempo indeterminado, para consertar um logo. Não vale.
 
 ## O que ainda falta
 
