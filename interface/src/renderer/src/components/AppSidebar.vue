@@ -54,8 +54,8 @@ const { t } = useI18n()
 // então nem o código de status denunciava o engano.
 const brandLogoUrl = computed(() =>
   props.darkMode
-    ? 'https://assets.eterzion.com/branding/astros-logo-dark/logo-256.webp'
-    : 'https://assets.eterzion.com/branding/astros-logo-light/logo-256.webp'
+    ? 'https://assets.eterzion.com/branding/ez-logo-white/logo-256.webp'
+    : 'https://assets.eterzion.com/branding/ez-logo-black/logo-256.webp'
 )
 
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the
