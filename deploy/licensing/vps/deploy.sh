@@ -36,7 +36,7 @@ start_release() {
   git checkout --quiet --detach "$release_sha"
   test -s .licensing-image.env
   test -s .env
-  docker network inspect astros_proxy >/dev/null
+  docker network inspect eterzion_proxy >/dev/null
   docker compose --env-file .licensing-image.env pull licensing
   docker compose --env-file .licensing-image.env up -d --remove-orphans licensing
   wait_until_healthy
