@@ -58,6 +58,6 @@ docker exec eterzion-studio-licensing python -c \
   "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8766/public-key').read().decode())"
 ```
 
-The reverse proxy must join the existing external `astros_proxy` Docker network
+The reverse proxy must join the existing external `eterzion_proxy` Docker network
 and forward `license.eterzion.com` to `eterzion-studio-licensing:8766`. The
 container intentionally publishes no host port.
