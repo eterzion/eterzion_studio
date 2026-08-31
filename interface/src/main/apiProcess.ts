@@ -55,7 +55,7 @@ export function resolveBundledModelsDir(resourcesPath: string): string | null {
   return existsSync(modelsDir) ? modelsDir : null
 }
 
-/** Locates the astros_upscale repo root — the directory that has both an `api/`
+/** Locates the eterzion_upscale repo root — the directory that has both an `api/`
  *  and an `interface/` subfolder, per the api/+interface/ repository layout — from
  *  the compiled main process location (out/main) or, in dev, from process.cwd().
  *  This folder is `interface/` itself now (there's no astros_upscale_app/ nesting
@@ -107,9 +107,9 @@ export interface ApiReadyResult {
   error?: string
 }
 
-/** Ensures the astros_upscale_api FastAPI server is reachable at API_BASE_URL — reuses
+/** Ensures the eterzion_upscale_api FastAPI server is reachable at API_BASE_URL — reuses
  *  it if the user already started it manually (e.g. `python run.py` in a terminal),
- *  otherwise spawns it from the repo's api/astros_upscale_api/ folder using the shared .venv.
+ *  otherwise spawns it from the repo's api/eterzion_upscale_api/ folder using the shared .venv.
  *  `resourcesPath` (Electron's `process.resourcesPath`) is used to locate a bundled
  *  FFmpeg, if any, for this platform. */
 export async function ensureApiRunning(
@@ -168,7 +168,7 @@ export async function ensureApiRunning(
     }
     if (bundledModelsDir) env.ASTROS_MODELS_DIR = bundledModelsDir
   } else {
-    const apiDir = join(repoRoot, 'api', 'astros_upscale_api')
+    const apiDir = join(repoRoot, 'api', 'eterzion_upscale_api')
     const runScript = join(apiDir, 'run.py')
     if (!existsSync(runScript)) {
       return {

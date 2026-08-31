@@ -7,7 +7,7 @@
 
 ## O que era
 
-[`optimize_video()`](../../api/astros_upscale/optimize.py) declarava:
+[`optimize_video()`](../../api/eterzion_upscale/optimize.py) declarava:
 
 ```python
 def optimize_video(input_path, output_path, quality=75, codec='libx264', ...)
@@ -26,7 +26,7 @@ empacotamento. **Era pior do que isso.** Duas descobertas ao corrigir:
 
 - `optimize_file()` tinha o **mesmo** `codec='libx264'` — o registro só nomeava
   `optimize_video`.
-- `_run_compress_convert()` em [`jobs.py`](../../api/astros_upscale_api/app/jobs.py)
+- `_run_compress_convert()` em [`jobs.py`](../../api/eterzion_upscale_api/app/jobs.py)
   chama `optimize_file(...)` **sem passar `codec`**. Ou seja: a tela de
   compressão/conversão não tinha um padrão GPL esperando o empacotamento — ela
   já produzia H.264 por libx264, em todo vídeo, hoje.
@@ -111,7 +111,7 @@ contrário a recusa chega depois de o usuário esperar, não antes de escolher.
 ### Se a decisão for revista
 
 1. Adotando `libopenh264` ou um encoder licenciado, acrescentá-lo em
-   `VIDEO_CONTAINER_ALLOWLIST` ([`config.py`](../../api/astros_upscale_api/app/config.py))
+   `VIDEO_CONTAINER_ALLOWLIST` ([`config.py`](../../api/eterzion_upscale_api/app/config.py))
    **e** em `_CONTAINER_VIDEO_ENCODERS` (`optimize.py`) — as duas listas, ou os
    dois caminhos divergem.
 2. Passando a exigir hardware, dizer isso na página de compra e no instalador,

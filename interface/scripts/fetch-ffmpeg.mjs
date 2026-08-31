@@ -76,7 +76,7 @@ const TARGETS = {
     // in a packaged app that never compiles against these).
     //
     // ffprobe used to be dropped here as "not needed". It is needed:
-    // astros_upscale.media.ffprobe_json() shells out to it for every duration,
+    // eterzion_upscale.media.ffprobe_json() shells out to it for every duration,
     // frame-rate, resolution and audio-track question the product asks, which is
     // most of video import. Excluding it meant the packaged app fell back to a
     // PATH ffprobe that an end-user machine has no reason to have. It costs

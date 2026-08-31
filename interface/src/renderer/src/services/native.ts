@@ -26,7 +26,7 @@ export interface ApiReadyResult {
  *  False when previewed in a plain browser tab (e.g. during UI development). */
 export const hasNativeApi = typeof window !== 'undefined' && !!window.api
 
-/** Electron-side bridge: native dialogs, local filesystem, and the astros_upscale_api
+/** Electron-side bridge: native dialogs, local filesystem, and the eterzion_upscale_api
  *  FastAPI server lifecycle. For talking to the API itself (models, jobs), see services/api.ts. */
 export const api = {
   ensureApi: (): Promise<ApiReadyResult> => window.api.ensureApi(),

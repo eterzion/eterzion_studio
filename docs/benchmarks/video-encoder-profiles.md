@@ -78,7 +78,7 @@ máquinas reais os encoders de hardware funcionam antes de decidir — esta é u
 ## Como reproduzir
 
 ```bash
-cd api/astros_upscale_api/tests/fixtures && python -m tests.fixtures.make_video_fixtures
+cd api/eterzion_upscale_api/tests/fixtures && python -m tests.fixtures.make_video_fixtures
 ```
 
 ```bash

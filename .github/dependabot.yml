@@ -64,7 +64,7 @@ updates:
   # dezenas de minutos. Um PR por semana gastaria mais tempo de runner do que a
   # atualização vale.
   - package-ecosystem: pip
-    directory: /api/astros_upscale_api
+    directory: /api/eterzion_upscale_api
     schedule:
       interval: monthly
     open-pull-requests-limit: 3
@@ -90,7 +90,7 @@ updates:
   # produção, e um PR que o toque merece ser lido sabendo disso — e não diluído
   # num lote com dependências do aplicativo desktop.
   - package-ecosystem: pip
-    directory: /api/astros_licensing_service
+    directory: /api/eterzion_licensing_service
     schedule:
       interval: monthly
     open-pull-requests-limit: 3

@@ -40,7 +40,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
-!api/astros_upscale_api/eterzion-studio-api.spec
+!api/eterzion_upscale_api/eterzion-studio-api.spec
 
 # Installer logs
 pip-log.txt
@@ -159,10 +159,10 @@ interface/resources/ffmpeg/
 # alguns segundos de codificação custam menos que 3,6 MB de binário no
 # histórico, e a fixture passa a corresponder ao FFmpeg que a pessoa de fato
 # tem. Um `git add -A` já as pegou uma vez; esta linha é o que impede a próxima.
-api/astros_upscale_api/tests/fixtures/*.mp4
-api/astros_upscale_api/tests/fixtures/*.webm
-api/astros_upscale_api/tests/fixtures/*.wav
-api/astros_upscale_api/tests/fixtures/*.gif
+api/eterzion_upscale_api/tests/fixtures/*.mp4
+api/eterzion_upscale_api/tests/fixtures/*.webm
+api/eterzion_upscale_api/tests/fixtures/*.wav
+api/eterzion_upscale_api/tests/fixtures/*.gif
 
 # O projeto usa pnpm. Um package-lock.json aqui não é redundância inofensiva:
 # quem rodar `npm install` monta uma árvore diferente da que o pnpm-lock.yaml

@@ -12,7 +12,7 @@ if (platform !== 'win32') {
 
 const interfaceDir = resolve(import.meta.dirname, '..')
 const repoRoot = resolve(interfaceDir, '..')
-const apiDir = resolve(repoRoot, 'api', 'astros_upscale_api')
+const apiDir = resolve(repoRoot, 'api', 'eterzion_upscale_api')
 const specPath = resolve(apiDir, 'eterzion-studio-api.spec')
 const distPath = resolve(interfaceDir, 'resources', 'backend', platform)
 const workPath = resolve(apiDir, 'build', 'pyinstaller')

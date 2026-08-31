@@ -2,7 +2,7 @@
 per {photo, anime_image} content type that T024 locks into profile_resolver.py.
 
 Methodology (research.md R3): classic SR degrade-and-restore protocol. For each
-candidate model already in astros_upscale.core.MODELS under the relevant
+candidate model already in eterzion_upscale.core.MODELS under the relevant
 category, a synthetic high-resolution reference image is downscaled by that
 model's native scale, the model restores it, and the restoration is compared
 against the original at the same resolution:
@@ -11,7 +11,7 @@ against the original at the same resolution:
     looking worse), but a candidate that clearly falls apart here is flagged.
   - Perceptual metric, primary (FR-088): LPIPS (AlexNet backbone) — dev-only
     tool per research.md R3, never shipped to the product; not installed as a
-    runtime dependency of astros_upscale itself.
+    runtime dependency of eterzion_upscale itself.
 
 Honesty notes, disclosed rather than hidden:
   - Reference images are procedurally generated (gradients/noise for "photo",
@@ -39,7 +39,7 @@ import torch
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
 
-from astros_upscale.core import MODELS, load_model
+from eterzion_upscale.core import MODELS, load_model
 
 HR_SIZE = 96  # keep CPU runtime bounded; still enough structure to differentiate models
 CATEGORIES = {'photo': 'Fotos', 'anime_image': 'Anime'}

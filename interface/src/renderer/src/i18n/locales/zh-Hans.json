@@ -31,7 +31,7 @@
     "apiCheckFailed": "无法检查 API。",
     "apiErrorTitle": "无法连接到 API",
     "apiUnreachable": "无法连接到 API 服务器。",
-    "connecting": "正在连接 API 服务器（astros_upscale_api）…",
+    "connecting": "正在连接 API 服务器（eterzion_upscale_api）…",
     "desktopOnly": "仅在桌面应用中可用。",
     "notImplemented": "此部分在本次改版预览中尚未实现。"
   },

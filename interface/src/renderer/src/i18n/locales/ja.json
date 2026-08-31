@@ -31,7 +31,7 @@
     "apiCheckFailed": "API を確認できませんでした。",
     "apiErrorTitle": "API に接続できませんでした",
     "apiUnreachable": "API サーバーに接続できませんでした。",
-    "connecting": "API サーバー（astros_upscale_api）に接続しています…",
+    "connecting": "API サーバー（eterzion_upscale_api）に接続しています…",
     "desktopOnly": "デスクトップアプリでのみ利用できます。",
     "notImplemented": "このセクションは、このリデザイン版ではまだ実装されていません。"
   },

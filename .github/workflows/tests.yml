@@ -42,7 +42,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
-        working-directory: api/astros_licensing_service
+        working-directory: api/eterzion_licensing_service
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -51,7 +51,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          cache-dependency-glob: api/astros_licensing_service/requirements*.txt
+          cache-dependency-glob: api/eterzion_licensing_service/requirements*.txt
       - name: Create isolated Python environment
         run: |
           ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-licensing"
@@ -64,7 +64,7 @@ jobs:
         if: always()
         with:
           name: licensing-service-coverage
-          path: api/astros_licensing_service/coverage.xml
+          path: api/eterzion_licensing_service/coverage.xml
 
   upscale-api-tests:
     name: Upscale API (pytest)
@@ -82,7 +82,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, hostinger]
     defaults:
       run:
-        working-directory: api/astros_upscale_api
+        working-directory: api/eterzion_upscale_api
     steps:
       - uses: actions/checkout@v7
         with:
@@ -136,7 +136,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          cache-dependency-glob: api/astros_upscale_api/requirements*.txt
+          cache-dependency-glob: api/eterzion_upscale_api/requirements*.txt
       # CI runners have no GPU — the CUDA torch/torchaudio wheels pulled by
       # requirements.txt's unpinned `torch`/`torchaudio` are several GB and
       # dominate the job's runtime. Installing the CPU wheels first satisfies
@@ -155,7 +155,7 @@ jobs:
       # deixada por um job anterior e nao instala a do indice CPU.
       - run: uv pip install --system --reinstall torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
       - run: uv pip install --system -r requirements-dev.txt
-      # astros_upscale is a real dependency of app.processing/app.routes —
+      # eterzion_upscale is a real dependency of app.processing/app.routes —
       # installed editable from its new home in api/ instead of the sys.path
       # climbing conftest.py used to do (see
       # specs/002-api-interface-split/research.md Decisão 3).
@@ -183,7 +183,7 @@ jobs:
       # vanish at `-n 4`. Runners have 4 cores, so `-n auto` is already `-n 4`
       # here; cap it yourself locally.
       - run: pytest -m "not slow" -n auto --durations=20 --cov-report=xml
-      # The core library has its own suite (api/astros_upscale/tests, 81 tests)
+      # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)
       # and the step above never reached it: pytest.ini here sets
       # `testpaths = tests`, which is this package's tests and nothing else. It
       # needs its own step run from api/, whose pyproject.toml points pytest at
@@ -195,7 +195,7 @@ jobs:
         if: always()
         with:
           name: upscale-api-coverage
-          path: api/astros_upscale_api/coverage.xml
+          path: api/eterzion_upscale_api/coverage.xml
 
   frontend-lint-and-typecheck:
     name: Desktop app — lint, typecheck + tests

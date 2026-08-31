@@ -31,7 +31,7 @@
     "apiCheckFailed": "Could not check the API.",
     "apiErrorTitle": "Could not connect to the API",
     "apiUnreachable": "Could not reach the API server.",
-    "connecting": "Connecting to the API server (astros_upscale_api)…",
+    "connecting": "Connecting to the API server (eterzion_upscale_api)…",
     "desktopOnly": "Only available in the desktop app.",
     "notImplemented": "This section has not been built in this redesign preview yet."
   },

@@ -69,7 +69,7 @@ describe('useCompressionSettings', () => {
     // A duplicação existe porque não há geração de tipos entre Python e
     // TypeScript. Enquanto existir, ela precisa desta verificação.
     const fonte = readFileSync(
-      resolve(__dirname, '../../../../../../api/astros_upscale_api/app/compression/runner.py'),
+      resolve(__dirname, '../../../../../../api/eterzion_upscale_api/app/compression/runner.py'),
       'utf-8'
     )
     const bloco = fonte.match(/_ADVANCED_ONLY_FIELDS = frozenset\(\{([\s\S]*?)\}\)/)

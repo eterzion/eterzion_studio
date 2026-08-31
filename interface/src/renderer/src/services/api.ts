@@ -1,4 +1,4 @@
-// Client for the astros_upscale_api FastAPI server (api/astros_upscale_api).
+// Client for the eterzion_upscale_api FastAPI server (api/eterzion_upscale_api).
 // Mirrors app/models/schemas.py — keep the two in sync when either changes.
 
 // Inlined at build time by electron.vite.config.ts's `define`. The renderer has
@@ -87,7 +87,7 @@ export interface MediaRequest {
   edits?: unknown
 }
 
-/** Espelha `JobStatusValue` de `api/astros_upscale_api/app/schemas.py`. As duas
+/** Espelha `JobStatusValue` de `api/eterzion_upscale_api/app/schemas.py`. As duas
     listas são verificadas uma contra a outra por `test_status_enum_is_single_source.py`
     — um status novo no backend que não chegasse aqui viraria um estado que a
     interface não sabe desenhar. */

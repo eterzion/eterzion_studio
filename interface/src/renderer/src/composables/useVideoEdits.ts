@@ -2,7 +2,7 @@ import { computed, reactive, ref, type Ref } from 'vue'
 
 // T043 (specs/007-video-editor-player) — the five edit families, per video.
 //
-// Neutral values and ranges mirror api/astros_upscale_api/app/schemas.py, which
+// Neutral values and ranges mirror api/eterzion_upscale_api/app/schemas.py, which
 // in turn mirrors FFmpeg's `eq` filter. The three have to agree: the schema
 // validates, the filter graph applies, and the shader previews. A bound changed
 // in one place and not the others makes the preview lie (FR-015).
