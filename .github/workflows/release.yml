@@ -18,9 +18,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Os jobs Linux caem no runner auto-hospedado quando ele esta online e no
+  # ubuntu-24.04 quando nao esta. Nao ha guarda de fork aqui porque este
+  # workflow so dispara em push para main e workflow_dispatch.
+  # O instalador do Windows continua em windows-latest: o runner local e Linux.
   prepare:
     name: Prepare release
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     outputs:
       exists: ${{ steps.release.outputs.exists }}
       tag: ${{ steps.version.outputs.tag }}
@@ -58,7 +62,7 @@ jobs:
     name: Build Python package
     needs: prepare
     if: needs.prepare.outputs.exists != 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -183,7 +187,7 @@ jobs:
     name: Publish GitHub release
     needs: [prepare, python-package, windows-installer]
     if: needs.prepare.outputs.exists != 'true'
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/download-artifact@v8
         with:
