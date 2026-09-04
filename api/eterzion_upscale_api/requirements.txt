@@ -19,7 +19,7 @@ nvidia-ml-py>=13.610.43
 # was never actually imported by any code in this repo (eterzion_upscale.processing
 # loads models through spandrel, per pyproject.toml's own description "sem
 # dependência de BasicSR") and was breaking `pip install` in CI.
-spandrel>=0.4
+spandrel>=0.4.2
 python-ffmpeg>=2.0
 numpy>=2.5.2
 librosa>=1.0
