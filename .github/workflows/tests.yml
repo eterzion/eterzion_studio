@@ -111,11 +111,6 @@ jobs:
         working-directory: api/eterzion_upscale_api
     steps:
       - uses: actions/checkout@v7
-      # Cache do uv no disco do runner persistente, em vez do cache do
-      # Actions. Escrito por um passo, e nao por `env:`, porque o contexto
-      # `runner` so existe em step -- em `env` de workflow ou de job o
-      # GitHub recusa o arquivo inteiro, e a run aparece sem nenhum job.
-      - run: printf 'UV_CACHE_DIR=%s\n' "${RUNNER_TOOL_CACHE}/uv-cache" >> "$GITHUB_ENV"
         with:
           sparse-checkout: |
             api
@@ -129,6 +124,11 @@ jobs:
             # do checkout.
             interface/src/renderer/src/services
           sparse-checkout-cone-mode: true
+      # Cache do uv no disco do runner persistente, em vez do cache do
+      # Actions. Escrito por um passo, e nao por `env:`, porque o contexto
+      # `runner` so existe em step -- em `env` de workflow ou de job o
+      # GitHub recusa o arquivo inteiro, e a run aparece sem nenhum job.
+      - run: printf 'UV_CACHE_DIR=%s\n' "${RUNNER_TOOL_CACHE}/uv-cache" >> "$GITHUB_ENV"
       # Test against the binary the USER receives, not against whatever ffmpeg
       # the runner happens to provide.
       #
