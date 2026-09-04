@@ -29,7 +29,7 @@ env:
 jobs:
   validate:
     name: Validate licensing
-    runs-on: [self-hosted, linux, x64, hostinger]
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,7 +56,7 @@ jobs:
     name: Publish and promote licensing
     if: github.event_name != 'pull_request'
     needs: validate
-    runs-on: [self-hosted, linux, x64, hostinger]
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/checkout@v7
         with:
