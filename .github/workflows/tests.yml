@@ -14,6 +14,26 @@ on:
 permissions:
   contents: read
 
+# O cache do Actions existe para runner EFEMERO, que nasce vazio. Os dois jobs
+# de pytest rodam no runner auto-hospedado, que e' a propria VPS e persiste --
+# usar o cache do Actions ali significa subir e baixar ~547 MiB pela rede para
+# uma maquina que ja tinha os arquivos em disco.
+#
+# Medido em 04/09/2026: 52 caches somando 9,97 GiB contra o limite de 10 GiB
+# do repositorio, 7,71 GiB deles do setup-uv. Estourado, o GitHub despeja os
+# mais antigos para caber -- inclusive o que a proxima execucao procuraria.
+# O passo do setup-uv gastava 76s baixando tudo de novo, quase sempre.
+#
+# UV_CACHE_DIR aponta para disco local do runner. Fora dele (o job do desktop
+# roda em runner da GitHub) a variavel e' inofensiva: o uv nem participa.
+env:
+  UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
+  # Versao fixa: sem ela o setup-uv resolve "a mais recente" pela rede a cada
+  # execucao, o que alem de lento ja derrubou a CI uma vez com
+  # "Manifest fetch failed". Com versao fixa ele acha no tool cache do runner
+  # e nao toca na rede.
+  UV_VERSION: '0.12.9'
+
 # Ligar o gatilho de pull_request colocou dez PRs abertos na fila de uma vez, e
 # dois dos tres jobs rodam num unico runner auto-hospedado — eles nao paralelizam,
 # enfileiram. Sem isto, cada push novo num PR soma uma corrida em vez de
@@ -50,8 +70,10 @@ jobs:
           python-version: '3.13'
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          enable-cache: true
-          cache-dependency-glob: api/eterzion_licensing_service/requirements*.txt
+          version: ${{ env.UV_VERSION }}
+          # enable-cache omitido de proposito: ver o comentario em `env:`.
+          # O cache do uv vive em UV_CACHE_DIR, no disco do runner.
+          enable-cache: false
       - name: Create isolated Python environment
         run: |
           ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-licensing"
@@ -135,8 +157,10 @@ jobs:
           python-version: '3.13'
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          enable-cache: true
-          cache-dependency-glob: api/eterzion_upscale_api/requirements*.txt
+          version: ${{ env.UV_VERSION }}
+          # enable-cache omitido de proposito: ver o comentario em `env:`.
+          # O cache do uv vive em UV_CACHE_DIR, no disco do runner.
+          enable-cache: false
       # CI runners have no GPU — the CUDA torch/torchaudio wheels pulled by
       # requirements.txt's unpinned `torch`/`torchaudio` are several GB and
       # dominate the job's runtime. Installing the CPU wheels first satisfies
@@ -149,17 +173,28 @@ jobs:
       # sem erro e a falha aparece so no primeiro uso, como
       # "RuntimeError: operator torchvision::nms does not exist".
       #
-      # E --reinstall porque este runner e self-hosted: o `--system` escreve
-      # no tool cache do setup-python, que sobrevive entre execucoes. Sem a
-      # flag, o uv ve o requisito ja satisfeito por uma versao incompativel
-      # deixada por um job anterior e nao instala a do indice CPU.
-      - run: uv pip install --system --reinstall torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
-      - run: uv pip install --system -r requirements-dev.txt
+      # O --reinstall que ficava aqui existia porque o `--system` escrevia no
+      # tool cache do setup-python, compartilhado entre execucoes: sem a flag,
+      # o uv via o requisito ja satisfeito por uma versao incompativel deixada
+      # por um job anterior. A flag tratava o sintoma e custava ~19s por
+      # execucao reinstalando o que quase sempre ja estava certo.
+      #
+      # A causa era o `--system`. Um venv proprio por execucao -- o mesmo
+      # padrao que o job do licensing acima ja usa -- nao tem o que herdar,
+      # entao nao precisa reinstalar nada. O cache do uv em UV_CACHE_DIR vive
+      # no disco do runner, e as wheels vem de la sem rede.
+      - name: Create isolated Python environment
+        run: |
+          ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-upscale"
+          printf 'CI_VENV=%s\n' "$ci_venv" >> "$GITHUB_ENV"
+          uv venv --clear "$ci_venv" --python python
+      - run: uv pip install --python "$CI_VENV/bin/python" torch torchaudio torchvision --index-url https://download.pytorch.org/whl/cpu
+      - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
       # eterzion_upscale is a real dependency of app.processing/app.routes —
       # installed editable from its new home in api/ instead of the sys.path
       # climbing conftest.py used to do (see
       # specs/002-api-interface-split/research.md Decisão 3).
-      - run: uv pip install --system --no-deps -e ..
+      - run: uv pip install --python "$CI_VENV/bin/python" --no-deps -e ..
       # Deselect `slow` (real subprocess/model-inference) tests from the
       # required CI run — they run real ffmpeg/model workloads unsuited to a
       # tight time budget. Run them locally or in a separate scheduled job
@@ -170,7 +205,8 @@ jobs:
       # generator encoded with libx264 — GPL, and absent from any LGPL ffmpeg —
       # so it failed and nobody noticed: a skipped test reports success. It uses
       # mpeg4 now and runs anywhere. ~15 s for the whole export path under test.
-      - run: python tests/fixtures/make_video_fixtures.py
+      - run: >-
+          "$CI_VENV/bin/python" tests/fixtures/make_video_fixtures.py
       # Deselect `slow` (real subprocess/model-inference) tests from the
       # required CI run — they run real ffmpeg/model workloads unsuited to a
       # tight time budget. Run them locally or in a separate scheduled job
@@ -182,14 +218,16 @@ jobs:
       # machine loses. That shows up as a dozen unrelated-looking failures that
       # vanish at `-n 4`. Runners have 4 cores, so `-n auto` is already `-n 4`
       # here; cap it yourself locally.
-      - run: pytest -m "not slow" -n auto --durations=20 --cov-report=xml
+      - run: >-
+          "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto --durations=20 --cov-report=xml
       # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)
       # and the step above never reached it: pytest.ini here sets
       # `testpaths = tests`, which is this package's tests and nothing else. It
       # needs its own step run from api/, whose pyproject.toml points pytest at
       # the other directory. Without this, the encoder/licensing guards in
       # test_optimize.py only ever ran on a developer machine.
-      - run: pytest -p no:cacheprovider
+      - run: >-
+          "$CI_VENV/bin/python" -m pytest -p no:cacheprovider
         working-directory: api
       - uses: actions/upload-artifact@v7
         if: always()
