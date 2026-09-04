@@ -1,7 +1,7 @@
-# astros_upscale
+# eterzion_upscale
 
 Aumente a resolução de **imagens e vídeos** com inteligência artificial. O
-`astros_upscale` amplia fotos, ilustrações, anime e vídeos em 2x ou 4x,
+`eterzion_upscale` amplia fotos, ilustrações, anime e vídeos em 2x ou 4x,
 recuperando detalhes e removendo ruído — via um **app desktop** (Electron +
 Vue) que fala com uma **API local** (FastAPI + PyTorch) rodando na própria
 máquina do usuário.
@@ -35,7 +35,7 @@ dia a dia. Veja [interface/README.md](interface/README.md) para instalação,
 desenvolvimento e empacotamento do instalador.
 
 Além da API de processamento, o app tem uma tela de ativação/status de
-licença que fala com `api/astros_licensing_service` — um segundo serviço
+licença que fala com `api/eterzion_licensing_service` — um segundo serviço
 FastAPI, processo separado, dono do seu próprio banco de licenças/instalações
 e integrado a Stripe/Mercado Pago para pagamentos.
 
@@ -54,7 +54,7 @@ ou adulterado é descartado automaticamente. A lista completa e sempre
 atualizada, com o que já está baixado e o tamanho de cada um, aparece na tela
 de **Modelos** do app.
 
-O registro (`api/astros_upscale/processing.py`, `MODELS`) hoje tem **um único
+O registro (`api/eterzion_upscale/processing.py`, `MODELS`) hoje tem **um único
 modelo por `content_type`**, escolhido por um benchmark real de qualidade
 perceptual (LPIPS/PSNR/SSIM — ver
 [docs/models/BENCHMARK_RESULTS.md](docs/models/BENCHMARK_RESULTS.md)) entre
@@ -115,7 +115,7 @@ remoção, pedindo para reprocessar com um perfil atual:
 ### Origem, autoria e licença de cada modelo
 
 Os modelos vêm de projetos e autores da comunidade — cada um com sua própria
-licença. `astros_upscale` só os carrega para uso; a licença de cada arquivo
+licença. `eterzion_upscale` só os carrega para uso; a licença de cada arquivo
 continua sendo a do autor original.
 
 | Modelo(s) | Autor(es) | Licença | Fonte |
@@ -151,7 +151,7 @@ espelhamento **uma vez**, apontando para o seu próprio repositório:
 ```bash
 # requer o GitHub CLI instalado e autenticado: https://cli.github.com/
 gh auth login
-python scripts/mirror_models.py --repo seu-usuario/astros_upscale
+python scripts/mirror_models.py --repo seu-usuario/eterzion_upscale
 ```
 
 Isso baixa cada modelo, confere o checksum, publica os arquivos como assets
@@ -172,7 +172,7 @@ Use `python scripts/mirror_models.py --help` para ver todas as opções
 
 ## Licença
 
-O código do `astros_upscale` (backend em `api/` e app desktop em `interface/`)
+O código do `eterzion_upscale` (backend em `api/` e app desktop em `interface/`)
 é distribuído sob uma licença de **uso pessoal e não comercial** (veja o texto
 completo em [LICENSE](LICENSE)). Em resumo:
 

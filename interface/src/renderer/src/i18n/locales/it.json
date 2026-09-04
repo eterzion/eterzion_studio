@@ -31,7 +31,7 @@
     "apiCheckFailed": "Impossibile verificare l’API.",
     "apiErrorTitle": "Impossibile connettersi all’API",
     "apiUnreachable": "Impossibile raggiungere il server dell’API.",
-    "connecting": "Connessione al server dell’API (astros_upscale_api)…",
+    "connecting": "Connessione al server dell’API (eterzion_upscale_api)…",
     "desktopOnly": "Disponibile solo nell’app desktop.",
     "notImplemented": "Questa sezione non è ancora stata realizzata in questa anteprima."
   },

@@ -7,7 +7,7 @@
 
 ## O que era
 
-[`video_edits.py`](../../api/astros_upscale_api/app/video_edits.py) montava a
+[`video_edits.py`](../../api/eterzion_upscale_api/app/video_edits.py) montava a
 cadeia de filtros com dois nomes que **só existem em builds `--enable-gpl`**:
 
 | Filtro | Servia para |

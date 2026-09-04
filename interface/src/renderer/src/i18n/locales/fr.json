@@ -31,7 +31,7 @@
     "apiCheckFailed": "Impossible de vérifier l’API.",
     "apiErrorTitle": "Impossible de se connecter à l’API",
     "apiUnreachable": "Impossible de joindre le serveur de l’API.",
-    "connecting": "Connexion au serveur de l’API (astros_upscale_api)…",
+    "connecting": "Connexion au serveur de l’API (eterzion_upscale_api)…",
     "desktopOnly": "Disponible uniquement dans l’application de bureau.",
     "notImplemented": "Cette section n’est pas encore implémentée dans cet aperçu."
   },

@@ -3,7 +3,7 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "astros_upscale"
+name = "eterzion_upscale"
 version = "1.0.2"
 description = "Upscale de imagens e vídeos com IA, sem dependência de BasicSR"
 readme = "README.md"
@@ -44,15 +44,15 @@ audio = [
     # deliberately NOT listed here: its upstream repo (github.com/AMAAI-Lab/SonicMaster) has no
     # setup.py/pyproject.toml, so `pip install git+...` never worked (T001, specs/
     # 006-audio-engine-masterizacao). It runs from a vendored subset in
-    # astros_upscale_api/vendor/sonicmaster/, installed into its own isolated environment via
-    # astros_upscale_api/audio_worker_requirements.txt — never as part of this extra.
+    # eterzion_upscale_api/vendor/sonicmaster/, installed into its own isolated environment via
+    # eterzion_upscale_api/audio_worker_requirements.txt — never as part of this extra.
 ]
 
 [tool.setuptools.packages.find]
-include = ["astros_upscale*"]
+include = ["eterzion_upscale*"]
 
 [tool.pytest.ini_options]
-addopts = "astros_upscale/tests/"
+addopts = "eterzion_upscale/tests/"
 
 [tool.yapf]
 based_on_style = "pep8"
@@ -60,4 +60,4 @@ column_limit = 120
 
 [tool.isort]
 line_length = 120
-known_first_party = ["astros_upscale"]
+known_first_party = ["eterzion_upscale"]

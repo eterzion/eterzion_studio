@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 """Mirror every registered model to a GitHub Release of your own repository.
 
-Run this ONCE (and again whenever you add/change a model in astros_upscale.core.MODELS)
+Run this ONCE (and again whenever you add/change a model in eterzion_upscale.core.MODELS)
 to publish your own copy of every model file as assets of a GitHub Release, and
-generate ``models.json`` — the mirror map astros_upscale reads to prefer your
+generate ``models.json`` — the mirror map eterzion_upscale reads to prefer your
 release over the original upstream URLs (falling back to upstream automatically
 if your mirror is ever unreachable).
 
@@ -12,9 +12,9 @@ Requirements:
     - push access to the target repository
 
 Usage:
-    python scripts/mirror_models.py --repo your-user/astros_upscale
-    python scripts/mirror_models.py --repo your-user/astros_upscale --tag models-v1
-    python scripts/mirror_models.py --repo your-user/astros_upscale --only nomos-webphoto dejpg
+    python scripts/mirror_models.py --repo your-user/eterzion_upscale
+    python scripts/mirror_models.py --repo your-user/eterzion_upscale --tag models-v1
+    python scripts/mirror_models.py --repo your-user/eterzion_upscale --only nomos-webphoto dejpg
 
 This script does NOT commit the .pth files to git — they are uploaded as
 release assets. Only the generated ``models.json`` (a small text file with
@@ -37,8 +37,8 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from astros_upscale.core import MODELS  # noqa: E402
-from astros_upscale.utils.download import load_file_from_url, sha256_of_file  # noqa: E402
+from eterzion_upscale.core import MODELS  # noqa: E402
+from eterzion_upscale.utils.download import load_file_from_url, sha256_of_file  # noqa: E402
 
 # Author/license attribution for every model, confirmed against each model's
 # original page (Real-ESRGAN's own LICENSE file, and the OpenModelDB API /
@@ -75,7 +75,7 @@ def ensure_release(repo: str, tag: str) -> None:
                             capture_output=True).returncode == 0
     if not exists:
         run(['gh', 'release', 'create', tag, '--repo', repo,
-            '--title', tag, '--notes', 'Espelho dos modelos usados pelo astros_upscale.'])
+            '--title', tag, '--notes', 'Espelho dos modelos usados pelo eterzion_upscale.'])
 
 
 def mirror_models(repo: str, tag: str, only: list[str] | None, staging_dir: str) -> dict:
@@ -116,7 +116,7 @@ def mirror_models(repo: str, tag: str, only: list[str] | None, staging_dir: str)
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('--repo', required=True, help='Repositório GitHub de destino, ex.: seu-usuario/astros_upscale')
+    parser.add_argument('--repo', required=True, help='Repositório GitHub de destino, ex.: seu-usuario/eterzion_upscale')
     parser.add_argument('--tag', default='models-v1', help='Nome do release de destino (padrão: models-v1)')
     parser.add_argument('--only', nargs='+', default=None, help='Espelhar só estes modelos (padrão: todos)')
     parser.add_argument('--output', default='models.json', help='Onde salvar o mapa gerado (padrão: models.json)')

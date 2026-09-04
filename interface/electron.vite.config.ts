@@ -26,7 +26,7 @@ const DEV_API_PORT = process.env.ASTROS_API_PORT || '8050'
 process.env.ASTROS_API_PORT = DEV_API_PORT
 
 // A porta do app empacotado. Espelha `port` em
-// api/astros_upscale_api/app/config.py e `API_PORT` em src/main/apiProcess.ts —
+// api/eterzion_upscale_api/app/config.py e `API_PORT` em src/main/apiProcess.ts —
 // os três precisam concordar, e é por isso que este arquivo os documenta juntos.
 const PACKAGED_API_PORT = '8051'
 

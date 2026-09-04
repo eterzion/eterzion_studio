@@ -4,13 +4,13 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - api/astros_licensing_service/**
+      - api/eterzion_licensing_service/**
       - deploy/licensing/**
       - .github/workflows/licensing-production.yml
   push:
     branches: [main]
     paths:
-      - api/astros_licensing_service/**
+      - api/eterzion_licensing_service/**
       - deploy/licensing/**
       - .github/workflows/licensing-production.yml
   workflow_dispatch:
@@ -42,10 +42,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          cache-dependency-glob: api/astros_licensing_service/requirements*.txt
+          cache-dependency-glob: api/eterzion_licensing_service/requirements*.txt
 
       - name: Test licensing service in an isolated environment
-        working-directory: api/astros_licensing_service
+        working-directory: api/eterzion_licensing_service
         run: |
           ci_venv="${RUNNER_TEMP}/eterzion-studio-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}-licensing-production"
           uv venv --clear "$ci_venv" --python python
@@ -75,7 +75,7 @@ jobs:
       - name: Build and publish immutable image
         uses: docker/build-push-action@v7
         with:
-          context: api/astros_licensing_service
+          context: api/eterzion_licensing_service
           push: true
           tags: ${{ env.IMAGE }}:${{ github.sha }}
 

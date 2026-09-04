@@ -162,7 +162,7 @@ A feature MUST ser renomeada: não pode continuar prometendo "recuperação faci
 
 ### Ações obrigatórias decorrentes
 
-1. Remover `astros_upscale/face_restore.py` e a dependência `gfpgan`/pesos GFPGAN
+1. Remover `eterzion_upscale/face_restore.py` e a dependência `gfpgan`/pesos GFPGAN
 2. **Remover a dependência `facexlib` por completo** (risco GPL-3.0, independente do GFPGAN)
 3. Auditar o bundle do Electron/PyInstaller para confirmar que nenhum dos dois é empacotado
 
@@ -303,7 +303,7 @@ e não foi escolhido.
 
 O repositório de origem (`github.com/AMAAI-Lab/SonicMaster`) não é instalável via `pip` — não tem
 `setup.py`/`pyproject.toml`, é uma coleção de scripts de pesquisa. Um subconjunto mínimo necessário
-só para inferência foi vendorizado em `api/astros_upscale_api/vendor/sonicmaster/`:
+só para inferência foi vendorizado em `api/eterzion_upscale_api/vendor/sonicmaster/`:
 
 | Arquivo | Origem (commit `c4c0869c14bada6c5cb7d3decbcdc00e6a3050f5`) |
 |---|---|
@@ -314,7 +314,7 @@ só para inferência foi vendorizado em `api/astros_upscale_api/vendor/sonicmast
 
 Código de treinamento (`train_ptload_inference.py`, `preencode_latents_acce2.py`) **não** foi
 vendorizado — só estudado para entender a arquitetura (ver `research.md` da feature). Roda num
-ambiente Python isolado (`api/astros_upscale_api/audio_worker_requirements.txt`), nunca no
+ambiente Python isolado (`api/eterzion_upscale_api/audio_worker_requirements.txt`), nunca no
 ambiente principal do backend — ver `api/README.md`.
 
 ---
@@ -418,7 +418,7 @@ se o hash não bater.
 empacotado via `extraResources` (win/linux); o processo principal do Electron
 (`src/main/apiProcess.ts`, `resolveBundledFfmpegDir`) detecta esse binário e passa seu diretório
 ao backend Python via a variável de ambiente `ASTROS_FFMPEG_DIR`.
-`api/astros_upscale/media.py` (`ffmpeg_path()`) prefere esse binário quando presente e cai
+`api/eterzion_upscale/media.py` (`ffmpeg_path()`) prefere esse binário quando presente e cai
 de volta para `shutil.which('ffmpeg')` (PATH do sistema) quando ausente — preservando o
 comportamento anterior em modo dev ou em plataformas sem build empacotada.
 
@@ -543,7 +543,7 @@ configuration: --enable-gpl --enable-version3 ... --enable-libx264 --enable-libx
 `interface/electron-builder.yml` e de `dist/win-unpacked/`, que o instalador
 **não embute nenhum binário `ffmpeg`/`ffmpeg.exe` próprio** — o único `ffmpeg.dll` presente no
 build do Electron é o do próprio Chromium (mídia HTML5), não o binário CLI que
-`api/astros_upscale/media.py` invoca via `shutil.which('ffmpeg')`. O backend Python
+`api/eterzion_upscale/media.py` invoca via `shutil.which('ffmpeg')`. O backend Python
 continua dependendo inteiramente de um `ffmpeg` já instalado no PATH da máquina do usuário final.
 
 Isso significa duas coisas distintas:
@@ -567,7 +567,7 @@ fora do escopo desta verificação técnica.
 ## 6. Resumo executivo
 
 > **Nota (T023/T024, posterior a esta auditoria):** o registro `MODELS` em
-> `api/astros_upscale/processing.py` foi reduzido a um único modelo por
+> `api/eterzion_upscale/processing.py` foi reduzido a um único modelo por
 > `content_type`, escolhido por benchmark real de qualidade perceptual (ver
 > [BENCHMARK_RESULTS.md](BENCHMARK_RESULTS.md)) entre os candidatos já
 > aprovados aqui — não por motivo de licença. Das 7 variantes Real-ESRGAN

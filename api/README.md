@@ -3,15 +3,15 @@
 Três subprojetos Python, cada um com responsabilidade própria:
 
 ```
-astros_upscale/           # biblioteca de processamento: modelos, upscale, tiling,
+eterzion_upscale/           # biblioteca de processamento: modelos, upscale, tiling,
                            # detecção foto/anime, recuperação facial, hardware,
                            # áudio/vídeo/imagem, engines de mídia (processing.py, media.py, optimize.py)
-astros_upscale_api/       # API FastAPI local que o app desktop consome (porta 8765)
-astros_licensing_service/ # serviço de licenciamento — processo FastAPI separado (porta 8766)
+eterzion_upscale_api/       # API FastAPI local que o app desktop consome (porta 8765)
+eterzion_licensing_service/ # serviço de licenciamento — processo FastAPI separado (porta 8766)
 ```
 
-`astros_upscale_api` importa `astros_upscale` diretamente (mesmo processo).
-`astros_licensing_service` é um processo totalmente separado — a API local só
+`eterzion_upscale_api` importa `eterzion_upscale` diretamente (mesmo processo).
+`eterzion_licensing_service` é um processo totalmente separado — a API local só
 fala com ele por HTTP, nunca importa nada dele. Veja
 [docs/processing-protection-architecture.md](../docs/processing-protection-architecture.md)
 para o porquê dessa separação (proteção do processamento contra pirataria).
@@ -24,33 +24,33 @@ e um venv na raiz do repositório (`.venv/`).
 
 ```bash
 cd api
-pip install -r astros_upscale_api/requirements-dev.txt
-pip install -r astros_licensing_service/requirements-dev.txt
-pip install -e .   # instala astros_upscale em modo editável (consumido pelas duas APIs acima)
+pip install -r eterzion_upscale_api/requirements-dev.txt
+pip install -r eterzion_licensing_service/requirements-dev.txt
+pip install -e .   # instala eterzion_upscale em modo editável (consumido pelas duas APIs acima)
 
 # API de processamento (porta 8765) — é a que o Electron sobe sozinho em dev
-cd astros_upscale_api && python run.py
+cd eterzion_upscale_api && python run.py
 
 # serviço de licenciamento (porta 8766) — NÃO é subido automaticamente pelo
 # Electron; suba à parte para testar ativação de licença em desenvolvimento
-cd astros_licensing_service && python run.py
+cd eterzion_licensing_service && python run.py
 ```
 
-O `interface/` (app desktop) só sobe `astros_upscale_api` automaticamente ao
+O `interface/` (app desktop) só sobe `eterzion_upscale_api` automaticamente ao
 abrir — veja [interface/README.md](../interface/README.md).
 
 ## Testes
 
 **Sempre com `-n auto`** (pytest-xdist) — sem isso a suíte de
-`astros_upscale_api` sozinha varia de ~40s a vários minutos dependendo do
+`eterzion_upscale_api` sozinha varia de ~40s a vários minutos dependendo do
 ambiente. As três subpastas não podem rodar numa única invocação `pytest`
-(`astros_upscale_api` e `astros_licensing_service` definem, cada uma, seu
+(`eterzion_upscale_api` e `eterzion_licensing_service` definem, cada uma, seu
 próprio pacote `app`, e a coleta colide entre os dois `sys.path`):
 
 ```bash
 cd api
-../.venv/Scripts/python.exe -m pytest astros_upscale_api/tests -m "not slow" -n auto --no-cov -q
-../.venv/Scripts/python.exe -m pytest astros_upscale/tests astros_licensing_service/tests \
+../.venv/Scripts/python.exe -m pytest eterzion_upscale_api/tests -m "not slow" -n auto --no-cov -q
+../.venv/Scripts/python.exe -m pytest eterzion_upscale/tests eterzion_licensing_service/tests \
   -m "not slow" -n auto --no-cov -q
 ```
 
@@ -68,10 +68,10 @@ Windows), `Licensing service (pytest)` e `Desktop app — lint + typecheck`
 
 Cada serviço lê seu próprio arquivo `.env` (não commitado), via
 `pydantic-settings` — na raiz de onde o processo é iniciado (ex.:
-`api/astros_upscale_api/.env`, não dentro do pacote Python `app/`). As mais
+`api/eterzion_upscale_api/.env`, não dentro do pacote Python `app/`). As mais
 relevantes para produção:
 
-**`astros_upscale_api`** (prefixo `ASTROS_`, ver `app/config.py`):
+**`eterzion_upscale_api`** (prefixo `ASTROS_`, ver `app/config.py`):
 
 | Variável | Padrão | Descrição |
 |---|---|---|
@@ -80,22 +80,22 @@ relevantes para produção:
 | `ASTROS_CORS_ORIGINS` | dev origins | Origens permitidas (CORS) |
 | `ASTROS_MODELS_DIR` / `ASTROS_UPLOADS_DIR` / `ASTROS_OUTPUTS_DIR` | pastas locais | Onde ficam modelos, uploads e saídas |
 | `ASTROS_MAX_UPLOAD_MB` | `200` | Limite de upload |
-| `ASTROS_LICENSING_SERVICE_URL` | *(vazio)* | URL do `astros_licensing_service`; vazio desabilita o carregamento protegido |
+| `ASTROS_LICENSING_SERVICE_URL` | *(vazio)* | URL do `eterzion_licensing_service`; vazio desabilita o carregamento protegido |
 | `ASTROS_LICENSING_SERVICE_PUBLIC_KEY_B64` | *(vazio)* | Chave pública do serviço de licenciamento, fixada em build de produção (senão é obtida via TOFU de `/public-key`, aceitável só em dev) |
 | `ASTROS_DEV_ALLOW_UNLICENSED` | `true` | **Deve ser `false` em qualquer build de produção** — `true` permite rodar sem licença válida (default pensado para dev/testes) |
-| `ASTROS_FFMPEG_DIR` | *(vazio)* | Diretório do ffmpeg empacotado. Lida diretamente do ambiente do processo (`os.environ`, em `astros_upscale/media.py`), não é um campo de `Settings` — **não pode ser setada via `.env`**, só como variável de ambiente real. Normalmente setada pelo processo principal do Electron (`apiProcess.ts`), nunca manualmente |
+| `ASTROS_FFMPEG_DIR` | *(vazio)* | Diretório do ffmpeg empacotado. Lida diretamente do ambiente do processo (`os.environ`, em `eterzion_upscale/media.py`), não é um campo de `Settings` — **não pode ser setada via `.env`**, só como variável de ambiente real. Normalmente setada pelo processo principal do Electron (`apiProcess.ts`), nunca manualmente |
 | `ASTROS_AUDIO_WORKER_PYTHON` | *(vazio)* | Caminho do `python.exe` de um venv **separado**, isolado, com `audio_worker_requirements.txt` instalado — habilita a restauração/masterização de música por IA (SonicMaster). Vazio = os modos `auto_master`/`restore`/`restore_master` caem automaticamente para DSP puro (FR-020) |
 | `ASTROS_AUDIO_WORKER_CHECKPOINT` | `models/sonicmaster/model.safetensors` | Caminho do checkpoint do SonicMaster (~3,29 GB, baixado sob demanda, nunca commitado) |
 
 ### Configurando o audio-worker (restauração de música por IA, opcional)
 
 Os modos de masterização/restauração assistida por IA (`specs/006-audio-engine-masterizacao`) usam
-o SonicMaster, vendorizado em `astros_upscale_api/vendor/sonicmaster/` (ver `NOTICE.md` lá dentro
+o SonicMaster, vendorizado em `eterzion_upscale_api/vendor/sonicmaster/` (ver `NOTICE.md` lá dentro
 para atribuição). Ele roda num processo/venv completamente separado do backend principal — nunca
 instale `audio_worker_requirements.txt` no `.venv` raiz do projeto:
 
 ```bash
-cd api/astros_upscale_api
+cd api/eterzion_upscale_api
 python -m venv .audio_worker_venv
 .audio_worker_venv/Scripts/pip install -r audio_worker_requirements.txt
 ```
@@ -117,7 +117,7 @@ pip install --force-reinstall --no-deps torch==2.13.0+cu130 torchaudio==2.11.0+c
 ```
 
 Depois, aponte `ASTROS_AUDIO_WORKER_PYTHON` para
-`api/astros_upscale_api/.audio_worker_venv/Scripts/python.exe`. O checkpoint do modelo
+`api/eterzion_upscale_api/.audio_worker_venv/Scripts/python.exe`. O checkpoint do modelo
 (`model.safetensors`, ~3,29 GB) é baixado sob demanda no caminho configurado em
 `ASTROS_AUDIO_WORKER_CHECKPOINT` (default: `models/sonicmaster/model.safetensors`), e o VAE que ele
 usa (`stabilityai/stable-audio-open-1.0`) exige uma conta Hugging Face com os termos aceitos e a
@@ -143,7 +143,7 @@ autenticar o IPC entre os dois. Setá-la manualmente não tem efeito (é
 sobrescrita a cada execução); documentada aqui só para quem for ler os logs
 do worker e se deparar com ela no ambiente do subprocesso.
 
-**`astros_licensing_service`** (prefixo `ASTROS_LICENSING_`, ver `app/config.py`):
+**`eterzion_licensing_service`** (prefixo `ASTROS_LICENSING_`, ver `app/config.py`):
 
 | Variável | Padrão | Descrição |
 |---|---|---|
@@ -157,10 +157,10 @@ do worker e se deparar com ela no ambiente do subprocesso.
 
 ## Empacotamento (PyInstaller / Docker)
 
-`astros_upscale_api` tem os dois: `astros-upscale-api.spec` (para embarcar no
+`eterzion_upscale_api` tem os dois: `astros-upscale-api.spec` (para embarcar no
 instalador do app desktop — ver
 [interface/README.md](../interface/README.md#empacotar-um-instalador)) e um
 `Dockerfile` próprio (`python:3.13-slim`, para rodar como serviço standalone,
-independente do desktop). `astros_licensing_service` só tem `Dockerfile` —
+independente do desktop). `eterzion_licensing_service` só tem `Dockerfile` —
 esse serviço nunca é embarcado no app desktop, sempre roda como um processo
 remoto/standalone separado.

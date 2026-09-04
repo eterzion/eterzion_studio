@@ -37,7 +37,7 @@ jobs:
           set -euo pipefail
           package_version="$(node -p "require('./interface/package.json').version")"
           python_version="$(python -c "import tomllib; print(tomllib.load(open('api/pyproject.toml','rb'))['project']['version'])")"
-          module_version="$(sed -nE "s/^__version__ = '([^']+)'$/\1/p" api/astros_upscale/__init__.py)"
+          module_version="$(sed -nE "s/^__version__ = '([^']+)'$/\1/p" api/eterzion_upscale/__init__.py)"
           test "$package_version" = "$python_version"
           test "$package_version" = "$module_version"
           echo "tag=v$package_version" >> "$GITHUB_OUTPUT"
@@ -102,7 +102,7 @@ jobs:
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-          cache-dependency-glob: api/astros_upscale_api/requirements*.txt
+          cache-dependency-glob: api/eterzion_upscale_api/requirements*.txt
       - uses: pnpm/action-setup@v6.0.10
         with:
           version: 11
@@ -123,7 +123,7 @@ jobs:
       - name: Install backend build dependencies
         shell: pwsh
         run: |
-          uv pip install --python .venv/Scripts/python.exe -r api/astros_upscale_api/requirements.txt
+          uv pip install --python .venv/Scripts/python.exe -r api/eterzion_upscale_api/requirements.txt
           uv pip install --python .venv/Scripts/python.exe --no-deps -e api
           uv pip install --python .venv/Scripts/python.exe pyinstaller==6.14.1
       - name: Install desktop dependencies

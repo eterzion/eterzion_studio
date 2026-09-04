@@ -26,7 +26,7 @@ const t = i18n.global.t
 
 // ------------------------------------------------------------------------- //
 // Data model — mirrors the Spec Kit's Job/ScaleConfig/QueueState, adapted to
-// the real astros_upscale_api contract. 'configuring' is entirely client-side
+// the real eterzion_upscale_api contract. 'configuring' is entirely client-side
 // (the backend job is only created once the user clicks "Processar", which
 // creates it and enqueues it in one step — see startProcessing()). From
 // 'queued' onward, status mirrors the backend job 1:1.
@@ -299,7 +299,7 @@ export function removeJob(id: string): void {
 
 /** The multiplier a custom size represents relative to the source — max of the two
  *  axis ratios, the same rule the backend uses to pick the model pass before the
- *  final resize (see astros_upscale_api Upscaler.process). */
+ *  final resize (see eterzion_upscale_api Upscaler.process). */
 export function effectiveCustomScale(job: Job): number | null {
   const { width: srcW, height: srcH } = job.sourceMeta
   const w = job.scaleConfig.customWidth

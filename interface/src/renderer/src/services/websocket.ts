@@ -1,4 +1,4 @@
-// WebSocket job-progress client for astros_upscale_api (api/astros_upscale_api).
+// WebSocket job-progress client for eterzion_upscale_api (api/eterzion_upscale_api).
 // Extracted from services/api.ts (formerly apiClient.ts) — socket lifecycle
 // (open/onmessage/onerror/close) is a genuinely separable responsibility from the
 // request/response HTTP functions there (research.md Audit c/d).

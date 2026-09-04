@@ -31,7 +31,7 @@
     "apiCheckFailed": "Не удалось проверить API.",
     "apiErrorTitle": "Не удалось подключиться к API",
     "apiUnreachable": "Не удалось связаться с сервером API.",
-    "connecting": "Подключение к серверу API (astros_upscale_api)…",
+    "connecting": "Подключение к серверу API (eterzion_upscale_api)…",
     "desktopOnly": "Доступно только в настольном приложении.",
     "notImplemented": "Этот раздел ещё не реализован в этом предпросмотре."
   },

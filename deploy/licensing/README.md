@@ -25,7 +25,7 @@ secret configuration:
 sudo install -d -o deploy -g deploy -m 0750 /opt/eterzion-studio-licensing
 sudo install -d -o 10001 -g 10001 -m 0700 /opt/eterzion-studio-licensing/storage
 sudo -u deploy install -m 0600 \
-  /opt/eterzion-studio-licensing/api/astros_licensing_service/.env.example \
+  /opt/eterzion-studio-licensing/api/eterzion_licensing_service/.env.example \
   /opt/eterzion-studio-licensing/.env
 ```
 
