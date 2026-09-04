@@ -24,6 +24,7 @@ import argparse
 import os
 import shutil
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 FIXTURES_DIR = Path(__file__).resolve().parent
@@ -199,15 +200,40 @@ def main() -> int:
     if args.with_long:
         builders.update(OPTIONAL_BUILDERS)
 
+    pendentes = []
     for name, build in builders.items():
         path = FIXTURES_DIR / name
         if path.exists() and not args.force:
             print(f'{name}: já existe, pulando')
             continue
-        print(f'{name}: gerando...')
-        build(path)
-        print(f'{name}: {path.stat().st_size} bytes')
-    return 0
+        pendentes.append((name, build, path))
+
+    if not pendentes:
+        return 0
+
+    # Cada fixture é uma chamada de ffmpeg independente das outras, e em série
+    # elas dominavam o passo: 19s dos 3m10s do job na CI, sem um único teste
+    # ter rodado. São subprocessos, então threads bastam -- o GIL não segura
+    # quem está esperando um processo externo.
+    #
+    # Threads, e não cache: fixture cacheada envelhece em silêncio quando o
+    # gerador ou o ffmpeg muda, e o sintoma seria um teste falhando por um
+    # motivo que não está no diff de ninguém. Gerar sempre, só que rápido.
+    erros: list[str] = []
+    with ThreadPoolExecutor(max_workers=min(len(pendentes), os.cpu_count() or 4)) as pool:
+        futuros = {pool.submit(build, path): (name, path) for name, build, path in pendentes}
+        for futuro in as_completed(futuros):
+            name, path = futuros[futuro]
+            try:
+                futuro.result()
+            except Exception as erro:  # noqa: BLE001 -- relatar todas, não só a primeira
+                erros.append(f'{name}: {erro}')
+            else:
+                print(f'{name}: {path.stat().st_size} bytes')
+
+    for erro in erros:
+        print(erro, file=sys.stderr)
+    return 1 if erros else 0
 
 
 if __name__ == '__main__':
