@@ -22,7 +22,17 @@
  * names under a dated tag carry the exact build id, which is why they look
  * longer than the ones "latest" serves.
  *
- * To move to a newer version: pick a tag from
+ * IMMUTABLE IS NOT THE SAME AS RETAINED, and that gap broke CI on 04/09/2026:
+ * autobuild-2026-08-21-13-40 stopped existing and every job that fetches
+ * FFmpeg started failing with HTTP 404 -- on pull requests that had nothing to
+ * do with FFmpeg. BtbN keeps daily autobuilds for roughly two weeks.
+ *
+ * PIN ONLY TO A MONTH-END AUTOBUILD. Those are kept indefinitely: at the time
+ * of writing the releases list runs 2025-10-31, 2025-11-30, 2025-12-31,
+ * 2026-01-31 ... 2026-07-31, and then only the last two weeks of dailies. A
+ * mid-month tag is a time bomb with a two-week fuse, however immutable it is.
+ *
+ * To move to a newer version: pick a MONTH-END tag from
  * https://github.com/BtbN/FFmpeg-Builds/releases, then update FFMPEG_RELEASE_TAG,
  * FFMPEG_SOURCE_VERSION, both archiveName values and both sha256 values together
  * (the digests are on each asset in the GitHub API, or in the release's
@@ -51,16 +61,16 @@ import { spawnSync } from 'node:child_process'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const RESOURCES_ROOT = join(__dirname, '..', 'resources', 'ffmpeg')
-export const FFMPEG_RELEASE_TAG = 'autobuild-2026-08-21-13-40'
+export const FFMPEG_RELEASE_TAG = 'autobuild-2026-08-31-13-27'
 const RELEASE_BASE = `https://github.com/BtbN/FFmpeg-Builds/releases/download/${FFMPEG_RELEASE_TAG}`
 
-export const FFMPEG_SOURCE_VERSION = 'n8.1.2-44-g7c533d0f86'
+export const FFMPEG_SOURCE_VERSION = 'n8.1.2-50-g1a748fe2cd'
 export const FFMPEG_SOURCE_URL = 'https://github.com/BtbN/FFmpeg-Builds'
 
 const TARGETS = {
   win32: {
-    archiveName: 'ffmpeg-n8.1.2-44-g7c533d0f86-win64-lgpl-shared-8.1.zip',
-    sha256: 'e30201900132c0e3da178c63c7dac65aa0a0dcd971779546ae964b86b47bd499',
+    archiveName: 'ffmpeg-n8.1.2-50-g1a748fe2cd-win64-lgpl-shared-8.1.zip',
+    sha256: 'e9712ffbdb03ef71bbab660c75b835bfe698ef6fad0247c76d8d394a39a3db63',
     // Runtime files only: ffmpeg.exe, ffprobe.exe and their DLLs. Drops
     // ffplay.exe and the .def/.lib import-library files (link-time only, no use
     // in a packaged app that never compiles against these).
@@ -75,8 +85,8 @@ const TARGETS = {
     binarySubpath: 'ffmpeg.exe'
   },
   linux: {
-    archiveName: 'ffmpeg-n8.1.2-44-g7c533d0f86-linux64-lgpl-shared-8.1.tar.xz',
-    sha256: '70cd8561aa1d216f803caaa51b58c62bdb6e7fabe0871ebf23adee0316ee3426',
+    archiveName: 'ffmpeg-n8.1.2-50-g1a748fe2cd-linux64-lgpl-shared-8.1.tar.xz',
+    sha256: '5634d61d98fd647acb3b2d8f08f20e7ab858c5f5341f1cea36069d8ef45c48c4',
     keepFromBinDir: (name) => name === 'ffmpeg' || name === 'ffprobe',
     binarySubpath: 'ffmpeg'
   }
