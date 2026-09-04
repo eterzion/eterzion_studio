@@ -52,15 +52,16 @@ jobs:
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, linux, x64, hostinger]
-    env:
-      # Disco do runner persistente, em vez do cache do Actions: ver o
-      # comentario acima de `env:`.
-      UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
     defaults:
       run:
         working-directory: api/eterzion_licensing_service
     steps:
       - uses: actions/checkout@v7
+      # Cache do uv no disco do runner persistente, em vez do cache do
+      # Actions. Escrito por um passo, e nao por `env:`, porque o contexto
+      # `runner` so existe em step -- em `env` de workflow ou de job o
+      # GitHub recusa o arquivo inteiro, e a run aparece sem nenhum job.
+      - run: printf 'UV_CACHE_DIR=%s\n' "${RUNNER_TOOL_CACHE}/uv-cache" >> "$GITHUB_ENV"
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
@@ -72,7 +73,7 @@ jobs:
       # enable-cache desligado de proposito: o cache do Actions e' para runner
       # EFEMERO. Este roda na VPS, que persiste -- cachear ali era subir e
       # baixar ~547 MiB para uma maquina que ja tinha os arquivos. O cache do
-      # uv vive em UV_CACHE_DIR, definido no `env` deste job.
+      # uv vive em UV_CACHE_DIR, escrito pelo passo logo apos o checkout.
       - uses: astral-sh/setup-uv@v10.0.1
         with:
           version: '0.12.9'
@@ -105,15 +106,16 @@ jobs:
     # A unique venv prevents dependencies from another run or former repository
     # name from contaminating the tested PyTorch stack.
     runs-on: [self-hosted, linux, x64, hostinger]
-    env:
-      # Disco do runner persistente, em vez do cache do Actions: ver o
-      # comentario acima de `env:`.
-      UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
     defaults:
       run:
         working-directory: api/eterzion_upscale_api
     steps:
       - uses: actions/checkout@v7
+      # Cache do uv no disco do runner persistente, em vez do cache do
+      # Actions. Escrito por um passo, e nao por `env:`, porque o contexto
+      # `runner` so existe em step -- em `env` de workflow ou de job o
+      # GitHub recusa o arquivo inteiro, e a run aparece sem nenhum job.
+      - run: printf 'UV_CACHE_DIR=%s\n' "${RUNNER_TOOL_CACHE}/uv-cache" >> "$GITHUB_ENV"
         with:
           sparse-checkout: |
             api
