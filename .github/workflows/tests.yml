@@ -225,8 +225,13 @@ jobs:
       # A note for local runs: the fixture-backed tests shell out to ffmpeg, and
       # `-n auto` on a 16-core workstation starts 16 of them at once, which the
       # machine loses. That shows up as a dozen unrelated-looking failures that
-      # vanish at `-n 4`. Runners have 4 cores, so `-n auto` is already `-n 4`
-      # here; cap it yourself locally.
+      # vanish at `-n 4`. Cap it yourself locally.
+      #
+      # Este runner NAO tem 4 cores, ao contrario do que esta linha afirmava:
+      # o pytest reporta `created: 2/2 workers` para 879 testes, medido em
+      # 04/09/2026. `-n auto` aqui e' `-n 2`, e os ~128s do passo sao o teto
+      # de duas CPUs. Aumentar workers alem disso nao ajuda; mais cores na
+      # VPS, ou dividir a suite entre runners, ajudaria.
       - run: >-
           "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto --durations=20 --cov-report=xml
       # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)

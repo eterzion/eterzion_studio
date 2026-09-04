@@ -211,10 +211,15 @@ def main() -> int:
     if not pendentes:
         return 0
 
-    # Cada fixture é uma chamada de ffmpeg independente das outras, e em série
-    # elas dominavam o passo: 19s dos 3m10s do job na CI, sem um único teste
-    # ter rodado. São subprocessos, então threads bastam -- o GIL não segura
-    # quem está esperando um processo externo.
+    # Cada fixture é uma chamada de ffmpeg independente das outras. São
+    # subprocessos, então threads bastam -- o GIL não segura quem está
+    # esperando um processo externo.
+    #
+    # O ganho é local, e vale medir antes de esperar mais: numa máquina de
+    # desenvolvimento isto cai de ~15s para ~1,4s. **No runner da CI não
+    # muda quase nada** -- ele tem 2 CPUs (o pytest reporta 2 workers), e
+    # codificar vídeo é CPU-bound, então dois em paralelo em dois cores
+    # rende ~1s. Medido em 04/09/2026: 19s antes, 18s depois.
     #
     # Threads, e não cache: fixture cacheada envelhece em silêncio quando o
     # gerador ou o ffmpeg muda, e o sintoma seria um teste falhando por um
