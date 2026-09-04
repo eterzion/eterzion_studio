@@ -26,14 +26,6 @@ permissions:
 #
 # UV_CACHE_DIR aponta para disco local do runner. Fora dele (o job do desktop
 # roda em runner da GitHub) a variavel e' inofensiva: o uv nem participa.
-env:
-  UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
-  # Versao fixa: sem ela o setup-uv resolve "a mais recente" pela rede a cada
-  # execucao, o que alem de lento ja derrubou a CI uma vez com
-  # "Manifest fetch failed". Com versao fixa ele acha no tool cache do runner
-  # e nao toca na rede.
-  UV_VERSION: '0.12.9'
-
 # Ligar o gatilho de pull_request colocou dez PRs abertos na fila de uma vez, e
 # dois dos tres jobs rodam num unico runner auto-hospedado — eles nao paralelizam,
 # enfileiram. Sem isto, cada push novo num PR soma uma corrida em vez de
@@ -60,6 +52,10 @@ jobs:
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [self-hosted, linux, x64, hostinger]
+    env:
+      # Disco do runner persistente, em vez do cache do Actions: ver o
+      # comentario acima de `env:`.
+      UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
     defaults:
       run:
         working-directory: api/eterzion_licensing_service
@@ -68,11 +64,18 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      # Versao fixa: sem ela o setup-uv resolve "a mais recente" pela rede a
+      # cada execucao, o que alem de lento derrubou esta CI em 04/09/2026 com
+      # "Manifest fetch failed". Fixada, ele acha no tool cache do runner
+      # persistente e nao toca na rede.
+      #
+      # enable-cache desligado de proposito: o cache do Actions e' para runner
+      # EFEMERO. Este roda na VPS, que persiste -- cachear ali era subir e
+      # baixar ~547 MiB para uma maquina que ja tinha os arquivos. O cache do
+      # uv vive em UV_CACHE_DIR, definido no `env` deste job.
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: ${{ env.UV_VERSION }}
-          # enable-cache omitido de proposito: ver o comentario em `env:`.
-          # O cache do uv vive em UV_CACHE_DIR, no disco do runner.
+          version: '0.12.9'
           enable-cache: false
       - name: Create isolated Python environment
         run: |
@@ -102,6 +105,10 @@ jobs:
     # A unique venv prevents dependencies from another run or former repository
     # name from contaminating the tested PyTorch stack.
     runs-on: [self-hosted, linux, x64, hostinger]
+    env:
+      # Disco do runner persistente, em vez do cache do Actions: ver o
+      # comentario acima de `env:`.
+      UV_CACHE_DIR: ${{ runner.tool_cache }}/uv-cache
     defaults:
       run:
         working-directory: api/eterzion_upscale_api
@@ -155,11 +162,11 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: '3.13'
+      # Versao fixa e cache em disco local: ver o comentario no job de
+      # licensing acima.
       - uses: astral-sh/setup-uv@v10.0.1
         with:
-          version: ${{ env.UV_VERSION }}
-          # enable-cache omitido de proposito: ver o comentario em `env:`.
-          # O cache do uv vive em UV_CACHE_DIR, no disco do runner.
+          version: '0.12.9'
           enable-cache: false
       # CI runners have no GPU — the CUDA torch/torchaudio wheels pulled by
       # requirements.txt's unpinned `torch`/`torchaudio` are several GB and
