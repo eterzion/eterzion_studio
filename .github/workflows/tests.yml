@@ -15,9 +15,9 @@ permissions:
   contents: read
 
 # O cache do Actions existe para runner EFEMERO, que nasce vazio. Os dois jobs
-# de pytest rodam no runner auto-hospedado, que e' a propria VPS e persiste --
-# usar o cache do Actions ali significa subir e baixar ~547 MiB pela rede para
-# uma maquina que ja tinha os arquivos em disco.
+# de pytest rodam no runner auto-hospedado -- desde 04/09/2026 um desktop, nao
+# mais a VPS -- e ele persiste: usar o cache do Actions ali significa subir e
+# baixar ~547 MiB pela rede para uma maquina que ja tinha os arquivos em disco.
 #
 # Medido em 04/09/2026: 52 caches somando 9,97 GiB contra o limite de 10 GiB
 # do repositorio, 7,71 GiB deles do setup-uv. Estourado, o GitHub despeja os
@@ -222,18 +222,21 @@ jobs:
       # before release. `-n auto` (pytest-xdist) spreads the rest across the
       # runner's cores instead of running ~30 test files serially.
       #
-      # A note for local runs: the fixture-backed tests shell out to ffmpeg, and
-      # `-n auto` on a 16-core workstation starts 16 of them at once, which the
-      # machine loses. That shows up as a dozen unrelated-looking failures that
-      # vanish at `-n 4`. Cap it yourself locally.
+      # Os testes com fixture chamam ffmpeg por subprocesso, e o numero de
+      # workers e' limitado por isso, nao pelo numero de CPUs. O comentario
+      # anterior ja registrava que `-n auto` numa workstation de 16 nucleos
+      # produz "uma duzia de falhas de aparencia nao relacionada que somem em
+      # `-n 4`" -- e era seguido de uma nota afirmando que este runner tinha 2
+      # cores, verdadeira quando o runner auto-hospedado era a VPS.
       #
-      # Este runner NAO tem 4 cores, ao contrario do que esta linha afirmava:
-      # o pytest reporta `created: 2/2 workers` para 879 testes, medido em
-      # 04/09/2026. `-n auto` aqui e' `-n 2`, e os ~128s do passo sao o teto
-      # de duas CPUs. Aumentar workers alem disso nao ajuda; mais cores na
-      # VPS, ou dividir a suite entre runners, ajudaria.
+      # Desde 04/09/2026 o runner e' um desktop de 32 threads, e `-n auto`
+      # passou a abrir 32 workers: a sondagem de encoder do ffmpeg passa a
+      # falhar (test_encoder_availability pula libx264 que existe na maquina),
+      # o webm de test_video_progress_is_real nao chega a ser escrito, e o
+      # historico de test_compression_job vaza entre workers. Fixar em 4 e' o
+      # valor que o comentario original ja apontava como estavel.
       - run: >-
-          "$CI_VENV/bin/python" -m pytest -m "not slow" -n auto --durations=20 --cov-report=xml
+          "$CI_VENV/bin/python" -m pytest -m "not slow" -n 4 --durations=20 --cov-report=xml
       # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)
       # and the step above never reached it: pytest.ini here sets
       # `testpaths = tests`, which is this package's tests and nothing else. It
