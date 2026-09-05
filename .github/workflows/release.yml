@@ -143,6 +143,22 @@ jobs:
       - name: Install desktop dependencies
         working-directory: interface
         run: pnpm install --frozen-lockfile
+
+      # O PyInstaller empacotando o PyTorch e' ~4,5 dos ~7 minutos do release
+      # inteiro, e o executavel so muda quando o codigo Python, o `.spec` ou os
+      # requirements mudam. A chave cobre exatamente essas entradas: um release
+      # que mexeu so no frontend restaura em segundos.
+      #
+      # A pasta e' grande (PyTorch empacotado), entao a primeira gravacao custa
+      # alguns minutos. Compensa porque a maioria dos releases nao toca o
+      # backend; se um dia tocar sempre, o cache vira so custo e vale medir de
+      # novo.
+      - name: Cache do backend empacotado
+        uses: actions/cache@v4
+        with:
+          path: interface/resources/backend/win32
+          key: backend-win32-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
+
       - name: Detect signing credentials
         id: signing
         shell: pwsh
@@ -173,6 +189,7 @@ jobs:
         shell: pwsh
         env:
           PYTHON_EXE: ${{ github.workspace }}\.venv\Scripts\python.exe
+          REUSE_BACKEND_BUILD: "1"
         run: pnpm run build:win
 
       - name: Build NSIS installer (sem assinatura)
@@ -181,6 +198,7 @@ jobs:
         shell: pwsh
         env:
           PYTHON_EXE: ${{ github.workspace }}\.venv\Scripts\python.exe
+          REUSE_BACKEND_BUILD: "1"
         # O `electron-builder.yml` traz `forceCodeSigning: true`, entao o script
         # normal falha sem certificado mesmo com o gate do workflow liberado. O
         # projeto ja previa esse caminho: `build:win:unsigned` desliga a flag
