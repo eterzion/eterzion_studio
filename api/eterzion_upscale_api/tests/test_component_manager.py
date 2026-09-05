@@ -115,6 +115,10 @@ class TestAudioComponentsInstallViaRealPip:
         monkeypatch.setattr(processing.subprocess, 'run', fake_run)
 
         result = processing.install_component('speech')
+        # `install_component` dispara e retorna; o pip roda na thread de fundo.
+        # Sem esperar, esta asserção corria contra ela e vencia quase sempre --
+        # até nao vencer, com `-n 2` sob carga.
+        _wait_for_background('speech')
 
         assert len(calls) == 1
         cmd = calls[0]
@@ -139,6 +143,7 @@ class TestAudioComponentsInstallViaRealPip:
         monkeypatch.setattr(processing.subprocess, 'run', fake_run)
 
         processing.update_component('speech')
+        _wait_for_background('speech')
 
         assert '--upgrade' in calls[0]
 

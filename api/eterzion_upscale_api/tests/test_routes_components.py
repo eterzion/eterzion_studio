@@ -115,6 +115,11 @@ class TestInstallUpdate:
         res = client.post('/components/speech/install')
         assert res.status_code == 200
         assert res.json()['id'] == 'speech'
+        # A thread de fundo escreve em `_INSTALLING`/`_INSTALL_ERRORS`, que sao
+        # estado de processo: deixa-la viva vaza para o proximo teste que
+        # consultar `speech`, e o `monkeypatch` do `subprocess.run` ja teria
+        # sido desfeito -- ou seja, um `pip install` de verdade.
+        _wait_for_background('speech')
 
     def test_install_unknown_component_returns_404(self, client):
         res = client.post('/components/not-real/install')
