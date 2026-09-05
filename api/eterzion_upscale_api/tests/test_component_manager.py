@@ -5,10 +5,27 @@ temporary models_dir so it can perform a genuine download + SHA-256 verify
 without touching the shared models/ cache other tests rely on."""
 from __future__ import annotations
 
+import time
+
 import pytest
 
 from app import processing
 from app.config import settings
+
+
+def _wait_for_background(component_id: str, timeout: float = 10.0) -> None:
+    """Espera a thread de instalação terminar.
+
+    O `install_component` retorna assim que a valida e dispara — esperar aqui
+    é o que permite afirmar sobre o resultado sem tornar o teste dependente de
+    tempo de relógio."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with processing._INSTALL_LOCK:
+            if component_id not in processing._INSTALLING:
+                return
+        time.sleep(0.01)
+    raise AssertionError(f'instalação de {component_id} não terminou em {timeout}s')
 from app.processing import (
     CAPABILITY_LABELS,
     ComponentActionUnsupportedError,
@@ -148,7 +165,11 @@ class TestAudioComponentsInstallViaRealPip:
             processing.update_component('music')
         assert not calls
 
-    def test_install_raises_with_real_pip_output_on_failure(self, monkeypatch):
+    def test_install_surfaces_real_pip_output_on_failure(self, monkeypatch):
+        """A saída real do pip continua chegando a quem clicou, mas por outro
+        caminho: o install roda em segundo plano, então a falha não pode mais
+        vir como exceção da requisição que o iniciou. Ela fica no `error`, que
+        só a rota de detalhes expõe — a listagem não pode carregar stderr."""
         def fake_run(cmd, **kwargs):
             class Result:
                 returncode = 1
@@ -159,8 +180,9 @@ class TestAudioComponentsInstallViaRealPip:
 
         monkeypatch.setattr(processing.subprocess, 'run', fake_run)
 
-        with pytest.raises(ComponentActionUnsupportedError, match='sonicmaster'):
-            processing.install_component('speech')
+        processing.install_component('speech')
+        _wait_for_background('speech')
+        assert 'sonicmaster' in (processing.get_component_details('speech').error or '')
 
     def test_install_refuses_when_no_source_checkout_present(self, tmp_path, monkeypatch):
         """A packaged build has neither pip nor this repo's pyproject.toml

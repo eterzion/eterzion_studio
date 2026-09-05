@@ -44,6 +44,16 @@ win:
   extraResources:
     - from: resources/backend/win32/eterzion-studio-api
       to: backend
+    # Os 134 MB de modelos continuam embarcados POR ENQUANTO. Eles são só um
+    # cache pré-preenchido: `resolve_model` sempre passa por
+    # `download_with_fallback` (SHA256 + espelhos), e todo item de `MODELS` tem
+    # `urls`. O `1xDeH264_realplksr` ja nao vem no pacote e e' baixado assim.
+    #
+    # Tirá-los daqui depende de duas coisas que ainda faltam na tela de
+    # Componentes: remoção (nao ha rota DELETE) e progresso de download (o
+    # `POST /install` e' sincrono e nao reporta bytes). Sem elas, o usuario
+    # trocaria 134 MB de instalador por uma tela congelada na primeira vez que
+    # usa cada capacidade, e por arquivos que se acumulam sem forma de limpar.
     - from: ../models
       to: models
       filter:

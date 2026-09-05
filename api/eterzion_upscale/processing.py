@@ -56,6 +56,17 @@ REMOVED_MODEL_IDENTIFIERS: dict[str, str] = {
     'realesrnet-x4': 'Substituído pelo resultado do benchmark de perfis',
     'nomos2-dat2': 'Substituído pelo resultado do benchmark de perfis',
     'realesrgan-anime': 'Substituído pelo resultado do benchmark de perfis',
+    # Resíduo da mesma redução: continuaram em MODELS depois do T023/T024, mas
+    # nenhum content_type os aponta, e o nome que chega ao load_model é sempre
+    # `pipeline.engine_ref` (jobs.py) — vindo de _CONTENT_TYPE_IMPLEMENTATIONS.
+    # Ou seja: estavam no catálogo, tinham licença registrada, e nenhum caminho
+    # de execução chegava neles. Dois dos quatro arquivos ainda iam embarcados
+    # no instalador (66 MB) sem nunca serem carregados.
+    'hfa2k-avc': 'Substituído pelo resultado do benchmark de perfis',
+    'nomosuni-span': 'Substituído pelo resultado do benchmark de perfis',
+    'denoise': 'A limpeza 1x saiu do registro: nenhum content_type a seleciona',
+    'dejpg': 'A limpeza 1x saiu do registro: nenhum content_type a seleciona',
+    'deh264': 'A limpeza 1x saiu do registro: nenhum content_type a seleciona',
 }
 
 
@@ -692,23 +703,6 @@ MODELS = {
         'description': 'Oficial Real-ESRGAN, leve, feito para vídeo de anime',
         'architecture': 'SRVGGNetCompact',
     },
-    'hfa2k-avc': {
-        'urls': ['https://huggingface.co/Phips/2xHFA2kAVCCompact/resolve/main/2xHFA2kAVCCompact.safetensors'],
-        'sha256': ['2a4bedce982752395a16e5fd29961d62783385018158e5db9e63864077a5973e'],
-        'scale': 2,
-        'category': 'Vídeo/Anime',
-        'description': 'Compact que trata degradação h264 (streaming/web)',
-        'architecture': 'SRVGGNetCompact',
-    },
-    'nomosuni-span': {
-        'urls': ['https://huggingface.co/Phips/2xNomosUni_span_multijpg_ldl/resolve/main/2xNomosUni_span_multijpg_ldl.safetensors'],
-        'sha256': ['a3d35e01b8b71b4b3041ad1686f8ebd7bc4e1f3a10378319c2ac61c78b67012a'],
-        'scale': 2,
-        'category': 'Vídeo/Anime',
-        'description': 'SPAN universal e leve, tolera múltiplos níveis de recompressão JPEG',
-        'architecture': 'SPAN',
-    },
-    # -------------------------- Vídeo Real -------------------------- #
     # T045: docs/models/MODEL_LICENSES.md §3-ter — Apache-2.0 em código e
     # pesos, dataset 100% domínio público (CC0), sem ressalva de licença.
     # Variante sem denoise (mais estável entre quadros que a alternativa com
@@ -726,33 +720,6 @@ MODELS = {
     # (nmkd-siax, nmkd-superscale) removidos por licença —
     # ver docs/models/MODEL_LICENSES.md §1/§6. `real_video` é reintroduzido
     # com um modelo aprovado em uma fase posterior (ver tasks.md T045).
-    # ------------------ Limpeza (1x, sem upscale) ------------------ #
-    'denoise': {
-        'urls': ['https://github.com/Phhofm/models/releases/download/1xDeNoise_realplksr_otf/'
-                 '1xDeNoise_realplksr_otf.pth'],
-        'sha256': ['f4774fbe13ceaa9df390343c2baaa980061458ef27292fa6aca6740d87608a8e'],
-        'scale': 1,
-        'category': 'Limpeza',
-        'description': 'Remove ruído fotográfico; trata leve compressão JPEG',
-        'architecture': 'RealPLKSR',
-    },
-    'dejpg': {
-        'urls': ['https://github.com/Phhofm/models/releases/download/1xDeJPG_realplksr_otf/'
-                 '1xDeJPG_realplksr_otf.pth'],
-        'sha256': ['3bf4959fbd4b39b8877e73ea97a54d4280755371fe4bd64a2836c707d7fd485b'],
-        'scale': 1,
-        'category': 'Limpeza',
-        'description': 'Remove artefatos JPEG (treinado até qualidade 40)',
-        'architecture': 'RealPLKSR',
-    },
-    'deh264': {
-        'urls': ['https://huggingface.co/Phips/1xDeH264_realplksr/resolve/main/1xDeH264_realplksr.safetensors'],
-        'sha256': ['91f054af6308e37b81c261ecf775a58be5fa1d37a816709db5d0fea6fceb24b8'],
-        'scale': 1,
-        'category': 'Limpeza',
-        'description': 'Remove artefatos de compressão H264 (pré-limpeza antes de outro modelo)',
-        'architecture': 'RealPLKSR',
-    },
 }
 
 # Old model names kept as aliases for backward compatibility. The photo/anime

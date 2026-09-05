@@ -575,6 +575,7 @@ def _to_details(info: processing.ComponentInfo) -> ComponentDetails:
     return ComponentDetails(
         id=info.id, capability_label=info.capability_label, size_mb=info.size_mb,
         install_state=info.install_state, update_available=info.update_available,
+        error=info.error,
         technical_name=info.technical_name, version=info.version, provenance=info.provenance,
         license=info.license,
     )
@@ -607,6 +608,19 @@ def install_component(component_id: str):
 def update_component(component_id: str):
     try:
         return _to_component(processing.update_component(component_id))
+    except processing.ComponentNotFoundError:
+        raise HTTPException(404, 'Componente não encontrado.')
+    except processing.ComponentActionUnsupportedError as error:
+        raise HTTPException(422, str(error))
+
+
+# A rota que faltava para o `install/update/delete` que o cabeçalho deste bloco
+# ja anunciava. Sem ela, uma capacidade instalada ocupava disco para sempre — e
+# a tela mostra `size_mb` justamente para a pessoa poder decidir liberar.
+@components_router.delete('/{component_id}', response_model=Component)
+def uninstall_component(component_id: str):
+    try:
+        return _to_component(processing.uninstall_component(component_id))
     except processing.ComponentNotFoundError:
         raise HTTPException(404, 'Componente não encontrado.')
     except processing.ComponentActionUnsupportedError as error:
