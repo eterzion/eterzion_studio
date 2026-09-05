@@ -93,12 +93,19 @@ def test_leaves_the_source_untouched(client, handle_id, source):
 
 
 @needs_ffmpeg
-def test_no_temporary_file_survives(client, handle_id):
+def test_no_temporary_file_survives(client, handle_id, tmp_path, monkeypatch):
     """FR-022. One pair of frames per slider movement would accumulate fast, and
     a failure partway is the case that leaves them behind."""
     import glob
     import os
     import tempfile
+
+    # O glob varria o tempdir do processo inteiro, entao sob pytest-xdist outro
+    # worker gerando um preview ao mesmo tempo aparecia aqui como vazamento e
+    # derrubava este teste por trabalho alheio. A rota chama mkdtemp() sem
+    # `dir=`, logo apontar tempfile.tempdir para um diretorio proprio do teste
+    # faz a aplicacao e a observacao olharem para o mesmo lugar isolado.
+    monkeypatch.setattr(tempfile, 'tempdir', str(tmp_path))
 
     pattern = os.path.join(tempfile.gettempdir(), 'astros_preview_*')
     before = set(glob.glob(pattern))
