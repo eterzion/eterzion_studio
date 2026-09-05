@@ -28,3 +28,27 @@ overrides:
   # GHSA-mwcw-c2x4-8c55 — postcss's nanoid dependency, custom generators loop
   # indefinitely when size is zero. Fixed upstream in nanoid 3.3.18.
   nanoid@<3.3.18: '>=3.3.18'
+
+  # fast-uri chega por ajv <- app-builder-lib <- electron-builder, e xmldom por
+  # plist pela mesma raiz. Só devDependency: nada disto vai no app empacotado,
+  # o alcance é a máquina que builda (a CI e a sua).
+  #
+  # Override e não bump do pai porque não há bump: electron-builder e ajv já
+  # estão nas versões mais recentes, e é a mais recente que traz a versão
+  # vulnerável. As correções cabem nos ranges pedidos (ajv: `^3.0.1`, plist:
+  # `^0.8.8`), então isto não força incompatibilidade — só impede a resolução
+  # de escolher uma versão vulnerável dentro do range que já era aceito.
+  #
+  # O teto (`<4`, `<0.9`) é o que mantém essa promessa: sem ele o pnpm
+  # resolveu fast-uri 4.1.4 e xmldom 0.9.12, ambos FORA do que os pais
+  # pedem — deixando de ser uma correção de segurança dentro do range
+  # para virar um salto de major imposto a uma dependência de terceiro.
+  #
+  # GHSA-5jgf-p345-68v8, GHSA-f65p-4m7j-42xc, GHSA-fph4-wmhf-6fwf,
+  # GHSA-jqff-g426-hqxp — SSRF e confusão de host por normalização de IDN,
+  # IPv6 malformado e esquema percent-encoded.
+  fast-uri@<3.1.6: '>=3.1.6 <4'
+
+  # GHSA-6gmq-8vp8-gcm6 — injeção de fragmento XML por EntityReference.nodeName
+  # inválido.
+  '@xmldom/xmldom@<0.8.15': '>=0.8.15 <0.9'
