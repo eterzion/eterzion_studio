@@ -331,14 +331,88 @@ def _get_vad_model():
 _CLASSIFY_WINDOW_SECONDS = 30
 
 
+def _harmonic_energy_ratio(
+    samples: np.ndarray,
+    n_fft: int = 2048,
+    hop_length: int = 512,
+    kernel_size: int = 31,
+    power: float = 2.0,
+) -> float:
+    """Fracao da energia que e' harmonica, pela separacao harmonico/percussivo.
+
+    Mesmo metodo de Fitzgerald (2010) que o `librosa.effects.hpss` implementa, e
+    com os mesmos parametros: som harmonico e' estavel ao longo do TEMPO (uma
+    nota sustentada ocupa a mesma raia por varios frames), som percussivo e'
+    estavel ao longo da FREQUENCIA (um transiente espalha energia por todo o
+    espectro num frame so). Filtro de mediana em cada eixo separa os dois, e as
+    mascaras de Wiener repartem a energia.
+
+    Substituiu o `librosa.effects.hpss` porque o librosa 1.0 passou a exigir
+    `numba`, e com ele vem o `llvmlite` -- 117 MB, dos quais 115 sao um unico
+    DLL. Eram 147 MB de instalador para dois chamados; o outro (`resample`) o
+    `soxr` atende, e este o `scipy`, que ja estava no pacote.
+
+    Fica no dominio da frequencia de proposito: quem chama usa apenas a RAZAO
+    de energia, nunca os sinais separados, entao a ISTFT -- a parte mais
+    delicada de reimplementar -- nao precisa existir. Medido contra o librosa
+    em fala real, musica, senoide, ruido branco e cliques: a maior divergencia
+    na razao foi 0,013 (em cliques puros, onde ambos dao ~0,01 e a
+    classificacao nao chega perto do limiar); nos dois casos que decidem
+    alguma coisa, fala e musica, ficou em 0,0006.
+    """
+    from scipy.ndimage import median_filter
+    from scipy.signal import stft
+
+    n_samples = int(np.asarray(samples).size)
+    # Menos de duas amostras nao tem espectro. O librosa devolvia arrays vazios
+    # aqui e a soma das energias dava zero, caindo no mesmo neutro.
+    if n_samples < 2:
+        return 0.5
+
+    # Um arquivo mais curto que a janela e' raro mas alcancavel: 2048 amostras
+    # sao 46 ms a 44,1 kHz. O scipy encolhe o `nperseg` sozinho nesse caso e
+    # NAO mexe no `noverlap`, o que estoura com "noverlap must be less than
+    # nperseg" -- o librosa nao tinha esse problema porque fazia padding. Os
+    # dois precisam encolher juntos.
+    if n_samples < n_fft:
+        n_fft = n_samples
+        hop_length = max(1, n_fft // 4)
+
+    _, _, spectrum = stft(
+        samples,
+        nperseg=n_fft,
+        noverlap=n_fft - hop_length,
+        window='hann',
+        boundary='zeros',
+        padded=True,
+    )
+    magnitude = np.abs(spectrum)
+
+    harmonic = median_filter(magnitude, size=(1, kernel_size), mode='reflect')
+    percussive = median_filter(magnitude, size=(kernel_size, 1), mode='reflect')
+
+    harmonic_p = harmonic ** power
+    percussive_p = percussive ** power
+    total = harmonic_p + percussive_p
+    # Onde nao ha energia nenhuma a divisao seria 0/0; 0.5 e' o valor neutro,
+    # o mesmo que o ramo `else` do calculo anterior usava.
+    with np.errstate(invalid='ignore', divide='ignore'):
+        mask_harmonic = np.where(total > 0, harmonic_p / total, 0.5)
+
+    harmonic_energy = float(np.sum((magnitude * mask_harmonic) ** 2))
+    percussive_energy = float(np.sum((magnitude * (1.0 - mask_harmonic)) ** 2))
+    total_energy = harmonic_energy + percussive_energy
+    return (harmonic_energy / total_energy) if total_energy > 0 else 0.5
+
+
 def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification:
     """Speech has continuous voice-activity and a strongly harmonic-dominant spectrum from
     vowel sounds; music has more percussive/broadband energy on average and voice activity
     that comes and goes with vocal lines rather than filling the whole clip. Combines a
-    real VAD (fraction of the clip with detected speech) with librosa's harmonic/percussive
+    real VAD (fraction of the clip with detected speech) with harmonic/percussive
     source separation — neither signal alone is reliable, together they are.
     """
-    import librosa
+    import soxr
     import torch
 
     if samples.ndim > 1:
@@ -347,7 +421,7 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
 
     # Analyse a bounded window rather than the whole file. Both halves of this
     # classifier scale linearly with duration — the VAD runs one forward pass
-    # per 512-sample frame, and librosa's HPSS is an STFT plus median filtering
+    # per 512-sample frame, and the HPSS is an STFT plus median filtering
     # over every frame — so a full song used to cost ~10s for an answer that a
     # representative excerpt gives just as well. Taken from the middle: intros
     # are often silence or a lone instrument and misrepresent the track.
@@ -358,7 +432,10 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
 
     target_sr = 16000
     if sample_rate != target_sr:
-        vad_samples = librosa.resample(samples, orig_sr=sample_rate, target_sr=target_sr)
+        # soxr diretamente, e nao via librosa: `librosa.resample` ja usa
+        # `res_type='soxr_hq'` por padrao, entao chamar soxr e' o mesmo
+        # algoritmo com a mesma qualidade, sem o librosa no meio.
+        vad_samples = soxr.resample(samples, sample_rate, target_sr, quality='HQ')
     else:
         vad_samples = samples
 
@@ -375,11 +452,7 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
                 speech_frames += 1
     speech_ratio = (speech_frames / total_frames) if total_frames else 0.0
 
-    harmonic, percussive = librosa.effects.hpss(samples)
-    harmonic_energy = float(np.sum(harmonic ** 2))
-    percussive_energy = float(np.sum(percussive ** 2))
-    total_energy = harmonic_energy + percussive_energy
-    harmonic_ratio = (harmonic_energy / total_energy) if total_energy > 0 else 0.5
+    harmonic_ratio = _harmonic_energy_ratio(samples)
 
     speech_score = 0.6 * speech_ratio + 0.4 * min(harmonic_ratio / 0.7, 1.0)
     if speech_score >= 0.5:

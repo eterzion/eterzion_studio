@@ -22,7 +22,13 @@ nvidia-ml-py>=13.610.43
 spandrel>=0.4.2
 python-ffmpeg>=2.0
 numpy>=2.5.2
-librosa>=1.0.0
+# soxr no lugar do librosa: o classify_audio usava dele apenas `resample` e
+# `effects.hpss`. O primeiro o soxr atende (o proprio librosa chamava soxr
+# por baixo, com `res_type='soxr_hq'`), e o segundo virou STFT + filtro de
+# mediana com scipy, que ja estava no pacote. O librosa 1.0 passou a exigir
+# `numba`, que arrasta `llvmlite` -- 117 MB, 115 deles num unico DLL. Eram
+# ~147 MB no instalador para dois chamados.
+soxr>=1.0
 tqdm
 # audio_engine's own DSP measurement (LUFS/True Peak, ITU-R BS.1770-4) — MIT,
 # already approved in docs/models/MODEL_LICENSES.md §4. Kept in the main

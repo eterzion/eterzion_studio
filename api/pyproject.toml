@@ -30,7 +30,9 @@ dependencies = [
     "tqdm",
     "psutil>=7.2",
     "nvidia-ml-py>=13.0",
-    "librosa>=1.0",
+    # Ver a nota em eterzion_upscale_api/requirements.txt: substituiu o
+    # librosa, cuja dependencia dura de numba/llvmlite custava ~147 MB.
+    "soxr>=1.0",
 ]
 
 [project.optional-dependencies]
