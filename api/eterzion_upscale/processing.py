@@ -347,10 +347,11 @@ def _harmonic_energy_ratio(
     espectro num frame so). Filtro de mediana em cada eixo separa os dois, e as
     mascaras de Wiener repartem a energia.
 
-    Substituiu o `librosa.effects.hpss` porque o librosa 1.0 passou a exigir
-    `numba`, e com ele vem o `llvmlite` -- 117 MB, dos quais 115 sao um unico
-    DLL. Eram 147 MB de instalador para dois chamados; o outro (`resample`) o
-    `soxr` atende, e este o `scipy`, que ja estava no pacote.
+    Substituiu o `librosa.effects.hpss` pelo peso que o librosa 1.0 arrasta:
+    `numba` (e com ele o `llvmlite`, 117 MB num unico DLL), `scikit-learn`
+    (44 MB) e `joblib`, nenhum deles usado em lugar nenhum daqui. Eram ~195 MB
+    liquidos de instalador para dois chamados; o outro (`resample`) o `soxr`
+    atende, e este o `scipy`, que ja estava no pacote.
 
     Fica no dominio da frequencia de proposito: quem chama usa apenas a RAZAO
     de energia, nunca os sinais separados, entao a ISTFT -- a parte mais
