@@ -86,15 +86,18 @@ jobs:
     if: needs.prepare.outputs.exists != 'true'
     runs-on: windows-latest
     timeout-minutes: 120
+    outputs:
+      signed: ${{ steps.signing.outputs.signed }}
     env:
-      # Assinatura de código é obrigatória. Não há caminho que produza um
-      # instalador sem assinar: um release sem assinatura sai parecendo pronto e
-      # cada usuário encontra o aviso do SmartScreen na primeira execução — o
-      # custo aparece na conversão, longe de quem publicou.
+      # Assinatura de código é o caminho esperado: um release sem assinatura sai
+      # parecendo pronto e cada usuário encontra o aviso do SmartScreen na
+      # primeira execução — o custo aparece na conversão, longe de quem publicou.
       #
-      # Sem os segredos configurados, este job **falha**. É deliberado: uma
-      # falha de build é barata e visível; um instalador sem assinatura é caro e
-      # silencioso.
+      # Este job costumava **falhar** sem os segredos. Desde 05/09/2026 ele
+      # publica assim mesmo, por decisão do responsável, mas nunca em silêncio:
+      # emite aviso no log, pula a verificação de assinatura e a release sai
+      # marcada como não assinada. O objetivo do gate original era que ninguém
+      # descobrisse a ausência pelo usuário final; isso continua valendo.
       #
       # `CSC_IDENTITY_AUTO_DISCOVERY` fica desligado porque ele faz o
       # electron-builder procurar certificado no chaveiro da máquina, e um
@@ -140,19 +143,29 @@ jobs:
       - name: Install desktop dependencies
         working-directory: interface
         run: pnpm install --frozen-lockfile
-      - name: Require signing credentials
+      - name: Detect signing credentials
+        id: signing
         shell: pwsh
         run: |
-          # Falhar aqui, antes de duas horas de build, e não no fim. Um segredo
-          # ausente descoberto depois do PyInstaller custa o dobro do tempo e
-          # chega como erro do electron-builder, que não diz o que fazer.
-          if (-not $env:CSC_LINK) {
-            throw 'WINDOWS_CERT_BASE64 nao esta configurado. O release assina sempre; configure o segredo antes de publicar.'
+          # Decidido aqui, antes de duas horas de build, e não no fim: descobrir
+          # depois do PyInstaller custa o dobro do tempo e chega como erro do
+          # electron-builder, que não diz o que fazer.
+          #
+          # Os dois segredos andam juntos. Um só configurado quase sempre é
+          # engano — o electron-builder falharia no meio — então isso continua
+          # sendo erro, ao contrário de nenhum dos dois.
+          $temLink = [bool]$env:CSC_LINK
+          $temSenha = [bool]$env:CSC_KEY_PASSWORD
+          if ($temLink -ne $temSenha) {
+            throw 'Configure WINDOWS_CERT_BASE64 e WINDOWS_CERT_PASSWORD juntos, ou nenhum dos dois.'
           }
-          if (-not $env:CSC_KEY_PASSWORD) {
-            throw 'WINDOWS_CERT_PASSWORD nao esta configurado.'
+          if ($temLink) {
+            Write-Output 'Credenciais de assinatura presentes; o instalador sera assinado.'
+            'signed=true' | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            Write-Output '::warning title=Instalador sem assinatura::WINDOWS_CERT_BASE64 nao esta configurado. O instalador sera publicado SEM assinatura digital e disparara o aviso do SmartScreen na maquina de cada usuario.'
+            'signed=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
-          Write-Output 'Credenciais de assinatura presentes.'
 
       - name: Build NSIS installer
         working-directory: interface
@@ -162,6 +175,7 @@ jobs:
         run: pnpm run build:win
 
       - name: Verify signature
+        if: steps.signing.outputs.signed == 'true'
         working-directory: interface
         shell: pwsh
         run: |
@@ -180,6 +194,19 @@ jobs:
           if ($sig.Status -ne 'Valid') {
             throw "O instalador saiu com assinatura '$($sig.Status)'. Nao sera publicado."
           }
+
+      - name: Confirm the unsigned installer exists
+        if: steps.signing.outputs.signed != 'true'
+        working-directory: interface
+        shell: pwsh
+        run: |
+          # Sem assinatura para verificar, ainda e' preciso confirmar que o
+          # build produziu o instalador: publicar uma release vazia seria pior
+          # que publicar uma sem assinatura.
+          $exe = Get-ChildItem dist\*-setup.exe | Select-Object -First 1
+          if (-not $exe) { throw 'O build nao produziu instalador.' }
+          Write-Output "Instalador: $($exe.Name)"
+          Write-Output '::warning title=Instalador sem assinatura::Publicado sem assinatura digital.'
 
       - uses: actions/upload-artifact@v7
         with:
@@ -201,6 +228,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.prepare.outputs.tag }}
+          SIGNED: ${{ needs['windows-installer'].outputs.signed }}
         run: |
           set -euo pipefail
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
@@ -212,3 +240,13 @@ jobs:
             --title "Eterzion Studio $TAG" \
             --generate-notes \
             --repo "$GITHUB_REPOSITORY"
+
+          # Um instalador sem assinatura nao pode chegar ao usuario parecendo
+          # igual a um assinado. O aviso vai no topo das notas, onde ele le
+          # antes de baixar, e nao so no log do build que ninguem abre.
+          if [ "$SIGNED" != "true" ]; then
+            notas="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)"
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes "$(printf '%s\n\n%s\n' \
+              '> **Instalador sem assinatura digital.** O Windows vai exibir o aviso do SmartScreen ("editor desconhecido") na primeira execução. Prossiga apenas se você confia na origem deste arquivo.' \
+              "$notas")"
+          fi
