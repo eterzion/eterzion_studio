@@ -52,7 +52,6 @@ import {
   readdirSync,
   symlinkSync,
   copyFileSync,
-  readFileSync,
   writeFileSync
 } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -92,17 +91,50 @@ const TARGETS = {
   }
 }
 
-function sha256File(path) {
-  const data = readFileSync(path)
+function sha256(data) {
   return createHash('sha256').update(data).digest('hex')
 }
 
-async function download(url, destPath) {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`GET ${url} -> HTTP ${res.status}`)
-  const buffer = Buffer.from(await res.arrayBuffer())
-  mkdirSync(dirname(destPath), { recursive: true })
-  writeFileSync(destPath, buffer)
+const DOWNLOAD_ATTEMPTS = 3
+
+/**
+ * Baixa e devolve os bytes, sem tocar em disco.
+ *
+ * O conteudo e verificado em memoria de proposito. Antes isto gravava o
+ * arquivo e o hash era calculado relendo do disco -- e entre uma coisa e outra
+ * cabe o antivirus, que num Windows com protecao em tempo real inspeciona (e
+ * as vezes trunca ou poe em quarentena) um zip de 70 MB recem-escrito. Este
+ * mesmo script ja registra o fenomeno na limpeza mais abaixo. O sintoma era
+ * "SHA256 mismatch", que se parece com pin vencido e leva a conclusao perigosa
+ * de que basta atualizar o digest -- foi o que quebrou o release da v1.0.3 em
+ * 05/09/2026, com o asset publicado intacto o tempo todo.
+ *
+ * O `content-length` e conferido a parte para que uma conexao cortada no meio
+ * relate download incompleto em vez de hash divergente. Sao problemas
+ * diferentes, e so um deles significa "o binario publicado mudou".
+ */
+async function download(url) {
+  let lastError
+  for (let attempt = 1; attempt <= DOWNLOAD_ATTEMPTS; attempt += 1) {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`GET ${url} -> HTTP ${res.status}`)
+      const buffer = Buffer.from(await res.arrayBuffer())
+      const declared = Number(res.headers.get('content-length'))
+      if (Number.isFinite(declared) && declared > 0 && buffer.length !== declared) {
+        throw new Error(`download incompleto: ${buffer.length} de ${declared} bytes`)
+      }
+      return buffer
+    } catch (error) {
+      lastError = error
+      if (attempt < DOWNLOAD_ATTEMPTS) {
+        console.warn(
+          `[fetch-ffmpeg] tentativa ${attempt}/${DOWNLOAD_ATTEMPTS} falhou (${error.message}); repetindo`
+        )
+      }
+    }
+  }
+  throw lastError
 }
 
 function run(cmd, args, opts = {}) {
@@ -257,18 +289,20 @@ async function fetchPlatform(platform, { force }) {
   const archivePath = join(workDir, target.archiveName)
   const url = `${RELEASE_BASE}/${target.archiveName}`
   console.log(`[fetch-ffmpeg] ${platform}: downloading ${url}`)
-  await download(url, archivePath)
+  const archive = await download(url)
 
-  const actualSha256 = sha256File(archivePath)
+  const actualSha256 = sha256(archive)
   if (actualSha256 !== target.sha256) {
     throw new Error(
       `[fetch-ffmpeg] ${platform}: SHA256 mismatch for ${target.archiveName}\n` +
         `  expected: ${target.sha256}\n` +
         `  actual:   ${actualSha256}\n` +
+        `  bytes:    ${archive.length}\n` +
         'Refusing to use an unverified FFmpeg binary.'
     )
   }
   console.log(`[fetch-ffmpeg] ${platform}: SHA256 verified`)
+  writeFileSync(archivePath, archive)
 
   const extractDir = join(workDir, 'extracted')
   extractArchive(archivePath, extractDir)
