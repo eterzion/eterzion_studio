@@ -47,6 +47,33 @@
     "speechLabel": "音声・ナレーション",
     "unsupportedFormat": "未対応の形式: {name}"
   },
+  "components": {
+    "actions": {
+      "install": "インストール",
+      "update": "更新",
+      "remove": "削除",
+      "confirmRemove": "削除を確認",
+      "retry": "再試行"
+    },
+    "description": "このパソコンにダウンロード済みのもの、使用容量、削除できるものを表示します。",
+    "errors": {
+      "loadFailed": "コンポーネントの一覧を取得できませんでした。",
+      "installFailed": "インストールに失敗しましたが、理由は報告されませんでした。",
+      "actionFailed": "操作に失敗しました。"
+    },
+    "footnote": "削除すると容量はすぐに解放されます。次にその機能を使うときに再ダウンロードされます。",
+    "loading": "インストール状況を確認しています…",
+    "sizeGb": "{size} GB",
+    "sizeMb": "{size} MB",
+    "state": {
+      "notInstalled": "未インストール",
+      "installing": "インストール中…",
+      "installed": "インストール済み",
+      "updateAvailable": "更新があります"
+    },
+    "title": "コンポーネント",
+    "totalOnDisk": "ディスク使用量 {size}"
+  },
   "compression": {
     "animation": {
       "autoColors": "色を自動で決める",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "音声",
+    "components": "コンポーネント",
     "compression": "圧縮",
     "history": "履歴",
     "home": "ホーム",

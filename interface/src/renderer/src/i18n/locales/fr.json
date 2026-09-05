@@ -47,6 +47,33 @@
     "speechLabel": "Parole / voix",
     "unsupportedFormat": "Format non pris en charge : {name}"
   },
+  "components": {
+    "actions": {
+      "install": "Installer",
+      "update": "Mettre à jour",
+      "remove": "Supprimer",
+      "confirmRemove": "Confirmer la suppression",
+      "retry": "Réessayer"
+    },
+    "description": "Ce qui est téléchargé sur cette machine, l'espace occupé et ce que vous pouvez supprimer.",
+    "errors": {
+      "loadFailed": "Impossible de lire la liste des composants.",
+      "installFailed": "L'installation a échoué sans indiquer de raison.",
+      "actionFailed": "L'action a échoué."
+    },
+    "footnote": "Supprimer libère l'espace maintenant ; au prochain usage de cette capacité, le téléchargement recommence.",
+    "loading": "Vérification de ce qui est installé…",
+    "sizeGb": "{size} Go",
+    "sizeMb": "{size} Mo",
+    "state": {
+      "notInstalled": "Non installé",
+      "installing": "Installation…",
+      "installed": "Installé",
+      "updateAvailable": "Mise à jour disponible"
+    },
+    "title": "Composants",
+    "totalOnDisk": "{size} sur le disque"
+  },
   "compression": {
     "animation": {
       "autoColors": "Choisir les couleurs automatiquement",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "Audio",
+    "components": "Composants",
     "compression": "Compression",
     "history": "Historique",
     "home": "Accueil",

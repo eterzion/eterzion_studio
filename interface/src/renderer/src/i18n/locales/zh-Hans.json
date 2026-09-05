@@ -47,6 +47,33 @@
     "speechLabel": "语音 / 人声",
     "unsupportedFormat": "不支持的格式：{name}"
   },
+  "components": {
+    "actions": {
+      "install": "安装",
+      "update": "更新",
+      "remove": "删除",
+      "confirmRemove": "确认删除",
+      "retry": "重试"
+    },
+    "description": "本机已下载的内容、占用的空间，以及可以删除的项目。",
+    "errors": {
+      "loadFailed": "无法读取组件列表。",
+      "installFailed": "安装失败，且未说明原因。",
+      "actionFailed": "操作失败。"
+    },
+    "footnote": "删除会立即释放空间；下次使用该功能时会重新下载。",
+    "loading": "正在检查已安装的内容…",
+    "sizeGb": "{size} GB",
+    "sizeMb": "{size} MB",
+    "state": {
+      "notInstalled": "未安装",
+      "installing": "正在安装…",
+      "installed": "已安装",
+      "updateAvailable": "有可用更新"
+    },
+    "title": "组件",
+    "totalOnDisk": "占用磁盘 {size}"
+  },
   "compression": {
     "animation": {
       "autoColors": "自动选择颜色",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "音频",
+    "components": "组件",
     "compression": "压缩",
     "history": "历史记录",
     "home": "主页",

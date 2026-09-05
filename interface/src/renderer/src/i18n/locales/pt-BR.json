@@ -47,6 +47,33 @@
     "speechLabel": "Fala / voz",
     "unsupportedFormat": "Formato não suportado: {name}"
   },
+  "components": {
+    "actions": {
+      "install": "Instalar",
+      "update": "Atualizar",
+      "remove": "Remover",
+      "confirmRemove": "Confirmar remoção",
+      "retry": "Tentar de novo"
+    },
+    "description": "O que está baixado nesta máquina, quanto ocupa e o que dá para remover.",
+    "errors": {
+      "loadFailed": "Não foi possível ler a lista de componentes.",
+      "installFailed": "A instalação falhou e não informou o motivo.",
+      "actionFailed": "A ação falhou."
+    },
+    "footnote": "Remover libera o espaço agora; na próxima vez que você usar essa capacidade, ela baixa de novo.",
+    "loading": "Verificando o que está instalado…",
+    "sizeGb": "{size} GB",
+    "sizeMb": "{size} MB",
+    "state": {
+      "notInstalled": "Não instalado",
+      "installing": "Instalando…",
+      "installed": "Instalado",
+      "updateAvailable": "Atualização disponível"
+    },
+    "title": "Componentes",
+    "totalOnDisk": "{size} em disco"
+  },
   "compression": {
     "animation": {
       "autoColors": "Escolher as cores automaticamente",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "Áudio",
+    "components": "Componentes",
     "compression": "Compressão",
     "history": "Histórico",
     "home": "Home",
