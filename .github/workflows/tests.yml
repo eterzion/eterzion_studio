@@ -41,6 +41,25 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # A esteira de release construia o sdist/wheel de `api/` para anexar na
+  # release. Os arquivos sairam de la porque ninguem os consumia, mas o build
+  # em si continua valendo: e' o unico lugar que prova que o `pyproject.toml`
+  # esta consistente. Aqui ele vale mais do que valia, porque roda em cada PR
+  # em vez de so depois do merge, quando quebrar ja teria travado a publicacao.
+  python-package-build:
+    name: Python package (build)
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - run: python -m pip install --disable-pip-version-check build
+      - run: python -m build api
+
   licensing-service-tests:
     name: Licensing service (pytest)
     # Os dois jobs de pytest rodam em runner **auto-hospedado**, e um runner
