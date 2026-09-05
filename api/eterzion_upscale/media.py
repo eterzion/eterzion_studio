@@ -131,7 +131,9 @@ def is_lgpl_build() -> bool | None:
     return '--enable-gpl' not in config_line and '--enable-nonfree' not in config_line
 
 
-@functools.lru_cache(maxsize=1)
+_ENCODERS_CACHE: frozenset[str] | None = None
+
+
 def available_encoders() -> frozenset[str]:
     """The encoder names this ffmpeg binary actually exposes, from
     `ffmpeg -hide_banner -encoders`.
@@ -147,7 +149,19 @@ def available_encoders() -> frozenset[str]:
 
     Returns an empty set when no binary is found, which callers MUST treat as
     "nothing is available" — never as "unknown, proceed and hope".
+
+    **Só o sucesso é cacheado.** Com `lru_cache` um único timeout da sondagem
+    congelava o conjunto vazio para todo o processo, e a máquina passava a
+    parecer sem encoder nenhum até reiniciar. Isso aparecia como falha
+    intermitente e sem relação aparente: exportação sem arquivo de saída,
+    `output_path` nulo, teste pulando um encoder que existe. Um binário
+    ausente é um fato estável; um subprocesso que estourou o tempo sob carga
+    não é, e não pode virar resposta permanente.
     """
+    global _ENCODERS_CACHE
+    if _ENCODERS_CACHE is not None:
+        return _ENCODERS_CACHE
+
     ffmpeg_bin = ffmpeg_path()
     if not ffmpeg_bin:
         return frozenset()
@@ -171,7 +185,8 @@ def available_encoders() -> frozenset[str]:
         parts = line.split()
         if len(parts) >= 2 and parts[0] and not parts[0].startswith('-'):
             names.add(parts[1])
-    return frozenset(names)
+    _ENCODERS_CACHE = frozenset(names)
+    return _ENCODERS_CACHE
 
 
 @functools.lru_cache(maxsize=64)
