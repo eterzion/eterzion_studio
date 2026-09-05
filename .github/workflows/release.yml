@@ -116,10 +116,28 @@ jobs:
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
       - uses: actions/checkout@v7
+
+      # O cache vem antes de tudo de proposito. O ambiente Python -- setup,
+      # uv, venv, PyTorch, dependencias -- existe unicamente para CONSTRUIR o
+      # executavel do backend. Quando ele e' restaurado pronto, montar esse
+      # ambiente e' trabalho jogado fora: ~60s, mais a variacao do setup-uv,
+      # que ja custou de 1s a 50s entre execucoes.
+      #
+      # A chave cobre exatamente o que muda o executavel: codigo Python, o
+      # `.spec` e os requirements. Um release que mexeu so no frontend acerta.
+      - name: Cache do backend empacotado
+        id: backend-cache
+        uses: actions/cache@v6
+        with:
+          path: interface/resources/backend/win32
+          key: backend-win32-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
+
       - uses: actions/setup-python@v7
+        if: steps.backend-cache.outputs.cache-hit != 'true'
         with:
           python-version: '3.13'
       - uses: astral-sh/setup-uv@v10.0.1
+        if: steps.backend-cache.outputs.cache-hit != 'true'
         with:
           enable-cache: true
           cache-dependency-glob: api/eterzion_upscale_api/requirements*.txt
@@ -135,15 +153,18 @@ jobs:
           cache: pnpm
           cache-dependency-path: interface/pnpm-lock.yaml
       - name: Create isolated Python environment
+        if: steps.backend-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: uv venv --clear .venv --python python
       - name: Install CPU PyTorch stack
+        if: steps.backend-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: >-
           uv pip install --python .venv/Scripts/python.exe
           torch torchvision torchaudio
           --index-url https://download.pytorch.org/whl/cpu
       - name: Install backend build dependencies
+        if: steps.backend-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           uv pip install --python .venv/Scripts/python.exe -r api/eterzion_upscale_api/requirements.txt
@@ -152,21 +173,6 @@ jobs:
       - name: Install desktop dependencies
         working-directory: interface
         run: pnpm install --frozen-lockfile
-
-      # O PyInstaller empacotando o PyTorch e' ~4,5 dos ~7 minutos do release
-      # inteiro, e o executavel so muda quando o codigo Python, o `.spec` ou os
-      # requirements mudam. A chave cobre exatamente essas entradas: um release
-      # que mexeu so no frontend restaura em segundos.
-      #
-      # A pasta e' grande (PyTorch empacotado), entao a primeira gravacao custa
-      # alguns minutos. Compensa porque a maioria dos releases nao toca o
-      # backend; se um dia tocar sempre, o cache vira so custo e vale medir de
-      # novo.
-      - name: Cache do backend empacotado
-        uses: actions/cache@v4
-        with:
-          path: interface/resources/backend/win32
-          key: backend-win32-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
 
       - name: Detect signing credentials
         id: signing
