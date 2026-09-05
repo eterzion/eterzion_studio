@@ -142,6 +142,18 @@ export async function ensureApiRunning(
   mkdirSync(join(storageDir, 'uploads'), { recursive: true })
   mkdirSync(join(storageDir, 'outputs'), { recursive: true })
 
+  // Os modelos deixaram de vir no instalador (electron-builder.yml), então este
+  // diretório passou de cache pré-preenchido a destino de escrita: é nele que o
+  // primeiro uso de cada capacidade baixa o modelo, e é ele que a tela de
+  // Componentes esvazia ao remover.
+  //
+  // Precisa ser gravável, e é por isso que fica em userData. Sem a variável, o
+  // backend usa o default de `app/config.py`, que resolve para dentro do próprio
+  // pacote — em Program Files no Windows. O download falharia por permissão, com
+  // um erro que não menciona permissão nenhuma.
+  const modelsDir = bundledModelsDir ?? join(userDataPath, 'models')
+  mkdirSync(modelsDir, { recursive: true })
+
   let command: string
   let args: string[]
   let cwd: string
@@ -164,9 +176,9 @@ export async function ensureApiRunning(
       ASTROS_LICENSING_SERVICE_PUBLIC_KEY_B64: LICENSING_SERVICE_PUBLIC_KEY_B64,
       ASTROS_DEV_ALLOW_UNLICENSED: 'false',
       ASTROS_UPLOADS_DIR: join(storageDir, 'uploads'),
-      ASTROS_OUTPUTS_DIR: join(storageDir, 'outputs')
+      ASTROS_OUTPUTS_DIR: join(storageDir, 'outputs'),
+      ASTROS_MODELS_DIR: modelsDir
     }
-    if (bundledModelsDir) env.ASTROS_MODELS_DIR = bundledModelsDir
   } else {
     const apiDir = join(repoRoot, 'api', 'eterzion_upscale_api')
     const runScript = join(apiDir, 'run.py')
