@@ -291,11 +291,6 @@ MODEL_LICENSES: dict[str, ModelLicense] = {
     'nomos-webphoto': _cc_by_phhofm('https://huggingface.co/Phips/4xNomosWebPhoto_RealPLKSR'),
     'hfa2k-span': _cc_by_phhofm('https://huggingface.co/Phips/2xHFA2kSPAN'),
     'realesr-animevideo': _bsd3(),
-    'hfa2k-avc': _cc_by_phhofm('https://huggingface.co/Phips/2xHFA2kAVCCompact'),
-    'nomosuni-span': _cc_by_phhofm('https://huggingface.co/Phips/2xNomosUni_span_multijpg_ldl', 'openmodeldb'),
-    'denoise': _cc_by_phhofm('https://openmodeldb.info/models/1x-DeNoise-realplksr-otf', 'openmodeldb'),
-    'dejpg': _cc_by_phhofm('https://openmodeldb.info/models/1x-DeJPG-realplksr-otf', 'openmodeldb'),
-    'deh264': _cc_by_phhofm('https://huggingface.co/Phips/1xDeH264_realplksr'),
     # T045 — docs/models/MODEL_LICENSES.md §3-ter: Apache-2.0 código e pesos,
     # dataset 100% domínio público, sem ressalva ("SIM, sem ressalva").
     'realplksr-video-real': ModelLicense(
