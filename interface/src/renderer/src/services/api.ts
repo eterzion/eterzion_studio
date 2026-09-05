@@ -27,6 +27,10 @@ export interface ComponentDetails extends ComponentSummary {
   version: string
   provenance: string
   license: string
+  /** Por que a última instalação em segundo plano falhou. Existe só aqui, e
+   *  não em ComponentSummary: a mensagem carrega saída de pip e caminhos de
+   *  arquivo — o detalhe técnico que a listagem não pode expor (FR-063). */
+  error: string | null
 }
 
 export interface CustomSize {
@@ -202,6 +206,12 @@ export async function installComponent(componentId: string): Promise<ComponentSu
 
 export async function updateComponent(componentId: string): Promise<ComponentSummary> {
   const res = await fetch(`${BASE_URL}/components/${componentId}/update`, { method: 'POST' })
+  if (!res.ok) throw new Error(await extractError(res))
+  return res.json()
+}
+
+export async function uninstallComponent(componentId: string): Promise<ComponentSummary> {
+  const res = await fetch(`${BASE_URL}/components/${componentId}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(await extractError(res))
   return res.json()
 }
