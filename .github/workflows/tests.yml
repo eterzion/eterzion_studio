@@ -47,7 +47,8 @@ jobs:
     # desses executa o que o PR mandar na máquina de quem o hospeda. Para PR do
     # próprio repositório isso é aceitável — quem abriu já tem acesso de escrita.
     # De um fork, não é: seria dar a máquina a qualquer pessoa que abrir um PR.
-    # O job do desktop roda em runner da GitHub e não precisa da guarda.
+    # O job do desktop app carrega a mesma guarda desde que passou a poder cair
+    # no runner auto-hospedado também.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -98,7 +99,8 @@ jobs:
     # desses executa o que o PR mandar na máquina de quem o hospeda. Para PR do
     # próprio repositório isso é aceitável — quem abriu já tem acesso de escrita.
     # De um fork, não é: seria dar a máquina a qualquer pessoa que abrir um PR.
-    # O job do desktop roda em runner da GitHub e não precisa da guarda.
+    # O job do desktop app carrega a mesma guarda desde que passou a poder cair
+    # no runner auto-hospedado também.
     if: >-
       github.event_name != 'pull_request' ||
       github.event.pull_request.head.repo.full_name == github.repository
@@ -254,7 +256,14 @@ jobs:
 
   frontend-lint-and-typecheck:
     name: Desktop app — lint, typecheck + tests
-    runs-on: ubuntu-latest
+    # Este job passou a poder cair no runner auto-hospedado, entao herda a mesma
+    # guarda dos dois de pytest: um runner desses executa o que o PR mandar na
+    # maquina de quem o hospeda, e de um fork isso seria dar a maquina a
+    # qualquer pessoa que abrir um PR.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     defaults:
       run:
         working-directory: interface
