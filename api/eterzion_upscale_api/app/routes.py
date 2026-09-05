@@ -575,6 +575,7 @@ def _to_details(info: processing.ComponentInfo) -> ComponentDetails:
     return ComponentDetails(
         id=info.id, capability_label=info.capability_label, size_mb=info.size_mb,
         install_state=info.install_state, update_available=info.update_available,
+        error=info.error,
         technical_name=info.technical_name, version=info.version, provenance=info.provenance,
         license=info.license,
     )

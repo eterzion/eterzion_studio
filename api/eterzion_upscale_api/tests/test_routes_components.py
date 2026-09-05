@@ -5,12 +5,30 @@ an empty temp dir so install_state is deterministic regardless of what's
 cached on the machine running the test."""
 from __future__ import annotations
 
+import time
+
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app import processing
 from app.routes import components_router
 from app.config import settings
+
+
+def _wait_for_background(component_id: str, timeout: float = 10.0) -> None:
+    """Espera a thread de instalação terminar.
+
+    `POST /install` agora responde assim que valida e dispara, então afirmar
+    sobre o resultado exige esperar — mas por condição, nunca por `sleep` de
+    duração fixa, que é o que torna teste dependente da carga da máquina."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        with processing._INSTALL_LOCK:
+            if component_id not in processing._INSTALLING:
+                return
+        time.sleep(0.01)
+    raise AssertionError(f'instalação de {component_id} não terminou em {timeout}s')
 
 
 @pytest.fixture(autouse=True)
@@ -102,11 +120,35 @@ class TestInstallUpdate:
         res = client.post('/components/not-real/install')
         assert res.status_code == 404
 
+    def test_install_answers_immediately_with_installing(self, client, monkeypatch):
+        """A rota respondia só depois do download inteiro, o que para o modelo
+        maior é a tela parada por minutos — que a pessoa lê como app travado.
+        Agora ela valida, dispara e responde `installing`; o estado real chega
+        pela própria listagem, que a tela já consulta."""
+        import threading
+
+        from eterzion_upscale import processing as upscale
+
+        libera = threading.Event()
+        monkeypatch.setattr(upscale, 'resolve_model', lambda *a, **k: libera.wait(5))
+        try:
+            res = client.post('/components/anime_image/install')
+            assert res.status_code == 200
+            assert res.json()['install_state'] == 'installing'
+            listado = next(c for c in client.get('/components').json() if c['id'] == 'anime_image')
+            assert listado['install_state'] == 'installing'
+        finally:
+            libera.set()
+            _wait_for_background('anime_image')
+
     @pytest.mark.slow
     def test_real_install_of_a_small_model(self, client):
         install_res = client.post('/components/anime_image/install')
         assert install_res.status_code == 200
-        assert install_res.json()['install_state'] == 'installed'
+        assert install_res.json()['install_state'] == 'installing'
+        _wait_for_background('anime_image')
+        state = next(c for c in client.get('/components').json() if c['id'] == 'anime_image')
+        assert state['install_state'] == 'installed'
 
 
 class TestUninstall:

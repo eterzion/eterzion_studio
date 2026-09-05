@@ -10,7 +10,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from dataclasses import dataclass
+import threading
+from dataclasses import dataclass, replace
 from typing import Callable, TypedDict
 from urllib.parse import urlparse
 
@@ -899,6 +900,55 @@ class ComponentInfo:
     version: str
     provenance: str
     license: str
+    # Preenchido quando a última instalação em segundo plano falhou. Sem isto,
+    # o estado voltaria a `not_installed` e a pessoa clicaria de novo sem saber
+    # o que houve — que é o modo mais frustrante de um download falhar.
+    error: str | None = None
+
+
+# ------------------------------- instalação em segundo plano ------------------------------- #
+#
+# `POST /install` respondia só depois do download inteiro. Para o modelo maior
+# isso é a tela parada por minutos, sem indicação, que a pessoa lê como app
+# travado. O `InstallState` já previa `'installing'` — o que faltava era o
+# backend entregar esse estado.
+#
+# O que NÃO virou assíncrono: a validação. Falta de código-fonte ao lado ou
+# disco cheio continuam respondendo 422 na hora, porque são previsíveis antes
+# de começar. Só falha de execução — rede caiu, hash não bateu, pip quebrou —
+# chega pelo campo `error`, já que essas não dá para saber de antemão.
+_INSTALL_LOCK = threading.Lock()
+_INSTALLING: set[str] = set()
+_INSTALL_ERRORS: dict[str, str] = {}
+
+
+def _start_background(component_id: str, work: Callable[[], object]) -> None:
+    with _INSTALL_LOCK:
+        if component_id in _INSTALLING:
+            return  # já em curso: pedir de novo não enfileira uma segunda vez
+        _INSTALLING.add(component_id)
+        _INSTALL_ERRORS.pop(component_id, None)
+
+    def run() -> None:
+        try:
+            work()
+        except Exception as error:  # noqa: BLE001 - o erro vai para a tela, não some
+            with _INSTALL_LOCK:
+                _INSTALL_ERRORS[component_id] = str(error)
+        finally:
+            with _INSTALL_LOCK:
+                _INSTALLING.discard(component_id)
+
+    threading.Thread(target=run, name=f'component-install-{component_id}', daemon=True).start()
+
+
+def _with_background_state(info: ComponentInfo) -> ComponentInfo:
+    with _INSTALL_LOCK:
+        installing = info.id in _INSTALLING
+        error = _INSTALL_ERRORS.get(info.id)
+    if installing:
+        return replace(info, install_state='installing', error=None)
+    return replace(info, error=error) if error else info
 
 
 def _model_dir() -> str:
@@ -970,8 +1020,10 @@ def _component_info(content_type: str) -> ComponentInfo:
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(content_type)
     if content_type in _AUDIO_CONTENT_TYPES:
-        return _audio_component(content_type, implementation.engine_ref)
-    return _image_video_component(content_type, implementation.engine_ref)
+        info = _audio_component(content_type, implementation.engine_ref)
+    else:
+        info = _image_video_component(content_type, implementation.engine_ref)
+    return _with_background_state(info)
 
 
 def list_components() -> list[ComponentInfo]:
@@ -992,12 +1044,13 @@ def get_component_details(component_id: str) -> ComponentInfo:
 _MIN_FREE_BYTES_FOR_AUDIO_INSTALL = 3 * 1024 * 1024 * 1024  # 3 GiB
 
 
-def _pip_install_audio_extra(*extra_args: str) -> None:
-    """Real `pip install` of this repo's `[audio]` extra, run in this
-    process's own interpreter (sys.executable) so the result is importable
-    immediately — no separate venv, no silent no-op. `speech` and `music`
-    share this one extras group (pyproject.toml), so this installs/updates
-    both together regardless of which component the person clicked."""
+def _check_audio_install_possible() -> None:
+    """As duas condições que dá para conferir ANTES de começar.
+
+    Separadas da execução de propósito: elas respondem 422 na hora, enquanto o
+    `pip install` em si roda em segundo plano. Descobrir "não tem código-fonte
+    ao lado" depois de dois minutos de download seria pior que não tentar.
+    """
     if not (_REPO_ROOT / 'pyproject.toml').is_file():
         raise ComponentActionUnsupportedError(
             'Não foi possível instalar: esta cópia do aplicativo não tem o código-fonte '
@@ -1016,6 +1069,15 @@ def _pip_install_audio_extra(*extra_args: str) -> None:
             f'(SonicMaster + dependências): apenas {free_mb:.0f} MB livres, são '
             f'necessários pelo menos {_MIN_FREE_BYTES_FOR_AUDIO_INSTALL // (1024 * 1024)} MB. '
             'Libere espaço e tente novamente.')
+
+
+def _pip_install_audio_extra(*extra_args: str) -> None:
+    """Real `pip install` of this repo's `[audio]` extra, run in this
+    process's own interpreter (sys.executable) so the result is importable
+    immediately — no separate venv, no silent no-op. `speech` and `music`
+    share this one extras group (pyproject.toml), so this installs/updates
+    both together regardless of which component the person clicked."""
+    _check_audio_install_possible()
 
     target = f'{_REPO_ROOT}[audio]'
     cmd = [sys.executable, '-m', 'pip', 'install', *extra_args, target]
@@ -1040,14 +1102,16 @@ def install_component(component_id: str) -> ComponentInfo:
             'seguindo "Configurando o audio-worker" em api/README.md (venv próprio, checkpoint do '
             'modelo, variável HF_TOKEN).')
     if component_id in _AUDIO_CONTENT_TYPES:
-        _pip_install_audio_extra()
+        _check_audio_install_possible()
+        _start_background(component_id, _pip_install_audio_extra)
         return _component_info(component_id)
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)
     from eterzion_upscale.processing import resolve_model
 
-    resolve_model(implementation.engine_ref, model_dir=_model_dir())
+    engine_ref = implementation.engine_ref
+    _start_background(component_id, lambda: resolve_model(engine_ref, model_dir=_model_dir()))
     return _component_info(component_id)
 
 
@@ -1058,14 +1122,16 @@ def update_component(component_id: str) -> ComponentInfo:
             'as versões pinadas em audio_worker_requirements.txt e reinstale manualmente no venv '
             'isolado do audio-worker.')
     if component_id in _AUDIO_CONTENT_TYPES:
-        _pip_install_audio_extra('--upgrade')
+        _check_audio_install_possible()
+        _start_background(component_id, lambda: _pip_install_audio_extra('--upgrade'))
         return _component_info(component_id)
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)
     from eterzion_upscale.processing import update_model
 
-    update_model(implementation.engine_ref, model_dir=_model_dir())
+    engine_ref = implementation.engine_ref
+    _start_background(component_id, lambda: update_model(engine_ref, model_dir=_model_dir()))
     return _component_info(component_id)
 
 

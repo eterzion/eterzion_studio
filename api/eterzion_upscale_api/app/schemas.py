@@ -236,6 +236,11 @@ class ComponentDetails(Component):
     version: str
     provenance: str
     license: str
+    # Por que a última instalação em segundo plano falhou. Fica AQUI, e não em
+    # `Component`: a mensagem carrega saída de pip e caminhos de arquivo, que é
+    # exatamente o detalhe técnico que a listagem não pode expor. A tela mostra
+    # que a instalação não completou; quem quiser o motivo abre os detalhes.
+    error: str | None = None
 
 
 class DetectContentTypeRequest(BaseModel):
