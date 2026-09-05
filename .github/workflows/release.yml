@@ -21,7 +21,16 @@ jobs:
   # Os jobs Linux caem no runner auto-hospedado quando ele esta online e no
   # ubuntu-24.04 quando nao esta. Nao ha guarda de fork aqui porque este
   # workflow so dispara em push para main e workflow_dispatch.
-  # O instalador do Windows continua em windows-latest: o runner local e Linux.
+  #
+  # O instalador do Windows tem variavel propria, `RUNNER_LABELS_WINDOWS`, e
+  # nao pode usar a dos jobs Linux: sao maquinas diferentes dentro do mesmo
+  # desktop -- cinco runners no WSL e um servico nativo do Windows. Uma
+  # variavel so faria um cair na fila do outro.
+  #
+  # O runner Windows e servico com inicio automatico, entao esta no ar sempre
+  # que a maquina esta ligada, enquanto a variavel segue o ciclo do start.sh
+  # (logon a logoff). Deslogado, o job vai para o windows-latest mesmo com o
+  # runner local disponivel: desperdicio, nunca erro.
   prepare:
     name: Prepare release
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
@@ -84,7 +93,7 @@ jobs:
     name: Build Windows installer
     needs: prepare
     if: needs.prepare.outputs.exists != 'true'
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS_WINDOWS || '["windows-latest"]') }}
     timeout-minutes: 120
     outputs:
       signed: ${{ steps.signing.outputs.signed }}
