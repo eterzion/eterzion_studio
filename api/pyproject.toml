@@ -30,7 +30,10 @@ dependencies = [
     "tqdm",
     "psutil>=7.2",
     "nvidia-ml-py>=13.0",
-    "librosa>=1.0",
+    # Ver a nota em eterzion_upscale_api/requirements.txt: substituiram o
+    # librosa, que arrastava numba/llvmlite/scikit-learn -- ~195 MB.
+    "soxr>=1.0",
+    "soundfile>=0.13",
 ]
 
 [project.optional-dependencies]
