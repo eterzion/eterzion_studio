@@ -44,20 +44,22 @@ win:
   extraResources:
     - from: resources/backend/win32/eterzion-studio-api
       to: backend
-    # Os 134 MB de modelos continuam embarcados POR ENQUANTO. Eles são só um
-    # cache pré-preenchido: `resolve_model` sempre passa por
-    # `download_with_fallback` (SHA256 + espelhos), e todo item de `MODELS` tem
-    # `urls`. O `1xDeH264_realplksr` ja nao vem no pacote e e' baixado assim.
+    # Os modelos NAO vao mais no instalador -- eram 68 MB de 424.
     #
-    # Tirá-los daqui depende de duas coisas que ainda faltam na tela de
-    # Componentes: remoção (nao ha rota DELETE) e progresso de download (o
-    # `POST /install` e' sincrono e nao reporta bytes). Sem elas, o usuario
-    # trocaria 134 MB de instalador por uma tela congelada na primeira vez que
-    # usa cada capacidade, e por arquivos que se acumulam sem forma de limpar.
-    - from: ../models
-      to: models
-      filter:
-        - '**/*'
+    # Eles sempre foram só um cache pré-preenchido: os quatro de upscale têm
+    # `urls` + `sha256` em `MODELS`, e o detector de rosto (YuNet) é baixado
+    # pelo construtor do `FaceEnhancer`, também com sha256. Nenhum some para
+    # sempre ao sair daqui.
+    #
+    # O que faltava era o outro lado: sem uma tela, quem baixasse um modelo
+    # não teria como removê-lo nem como saber o que ocupava disco. As duas
+    # rotas existiam (DELETE /components/{id}) e nenhuma interface as usava.
+    # A ComponentsView fechou isso, então a troca deixou de ser 68 MB de
+    # instalador por arquivos que se acumulam sem forma de limpar.
+    #
+    # O primeiro uso de cada capacidade agora baixa o modelo. É a mesma espera
+    # que o `1xDeH264_realplksr` já tinha, e a tela de Componentes permite
+    # antecipá-la para quem preferir baixar tudo antes.
     - from: resources/ffmpeg/win32
       to: ffmpeg
 nsis:
