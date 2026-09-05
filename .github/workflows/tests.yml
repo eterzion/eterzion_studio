@@ -224,21 +224,21 @@ jobs:
       # before release. `-n auto` (pytest-xdist) spreads the rest across the
       # runner's cores instead of running ~30 test files serially.
       #
-      # Os testes com fixture chamam ffmpeg por subprocesso, e o numero de
-      # workers e' limitado por isso, nao pelo numero de CPUs. O comentario
-      # anterior ja registrava que `-n auto` numa workstation de 16 nucleos
-      # produz "uma duzia de falhas de aparencia nao relacionada que somem em
-      # `-n 4`" -- e era seguido de uma nota afirmando que este runner tinha 2
-      # cores, verdadeira quando o runner auto-hospedado era a VPS.
+      # Os testes com fixture chamam ffmpeg por subprocesso e varios afirmam
+      # sobre duracao medida, entao o numero de workers e' limitado pela carga
+      # que a maquina aguenta, nao pelo numero de CPUs.
       #
-      # Desde 04/09/2026 o runner e' um desktop de 32 threads, e `-n auto`
-      # passou a abrir 32 workers: a sondagem de encoder do ffmpeg passa a
-      # falhar (test_encoder_availability pula libx264 que existe na maquina),
-      # o webm de test_video_progress_is_real nao chega a ser escrito, e o
-      # historico de test_compression_job vaza entre workers. Fixar em 4 e' o
-      # valor que o comentario original ja apontava como estavel.
+      # Ate 04/09/2026 o runner auto-hospedado era a VPS de 2 vCPU, onde
+      # `-n auto` resolvia para 2 -- e foi com 2 que esta suite passou a ser
+      # validada. No desktop de 32 threads, `-n auto` abre 32 e `-n 4` ainda
+      # deixa a suite instavel: 865 testes passam e um diferente falha a cada
+      # execucao, sempre um dos sensiveis a tempo ou a subprocesso.
+      #
+      # Fixado em 2, que e' a concorrencia sob a qual a suite foi validada.
+      # Isso e' mitigacao, nao cura: os testes sensiveis a carga continuam
+      # sensiveis, e valeria endurece-los antes de subir esse numero.
       - run: >-
-          "$CI_VENV/bin/python" -m pytest -m "not slow" -n 4 --durations=20 --cov-report=xml
+          "$CI_VENV/bin/python" -m pytest -m "not slow" -n 2 --durations=20 --cov-report=xml
       # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)
       # and the step above never reached it: pytest.ini here sets
       # `testpaths = tests`, which is this package's tests and nothing else. It
