@@ -223,7 +223,7 @@ def test_cenario_10_a_origem_nao_muda_um_byte(client, foto, tmp_path):
 
 # ------------------------- 11 — nada órfão ------------------------- #
 
-def test_cenario_11_nenhum_temporario_sobra(client, foto, tmp_path):
+def test_cenario_11_nenhum_temporario_sobra(client, foto, tmp_path, tempdir_isolado):
     import tempfile
 
     def temporarios() -> set[str]:

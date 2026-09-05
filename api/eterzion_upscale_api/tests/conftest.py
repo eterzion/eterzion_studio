@@ -136,6 +136,24 @@ def real_input_file(tmp_path):
 
 
 @pytest.fixture
+def tempdir_isolado(tmp_path, monkeypatch):
+    """Aponta `tempfile.tempdir` para um diretório exclusivo deste teste.
+
+    Os testes que verificam vazamento de temporário listam o tempdir do
+    processo inteiro. Sob `pytest-xdist` isso é uma corrida: um temporário
+    criado por outro worker aparece como vazamento e derruba o teste por
+    trabalho alheio. O código sob teste usa `mkdtemp()` sem `dir=`, então
+    redirecionar o tempdir faz aplicação e verificação olharem o mesmo lugar.
+    """
+    import tempfile
+
+    alvo = tmp_path / 'tmp'
+    alvo.mkdir()
+    monkeypatch.setattr(tempfile, 'tempdir', str(alvo))
+    return alvo
+
+
+@pytest.fixture
 def default_job_params():
     """Factory fixture — call it to get a params dict shaped like what
     app.routes's _build_job_params() actually produces: intent only

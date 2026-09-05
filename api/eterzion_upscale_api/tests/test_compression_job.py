@@ -321,7 +321,7 @@ def test_a_varredura_nao_toca_execucao_em_curso():
         assert os.path.isdir(vivo), 'a varredura apagou um trabalho em andamento'
 
 
-def test_nenhum_temporario_sobra_depois_de_comprimir(client, imagem, tmp_path):
+def test_nenhum_temporario_sobra_depois_de_comprimir(client, imagem, tmp_path, tempdir_isolado):
     handle = media_handles.register_media(imagem)
     destino = tmp_path / 'saida'
     destino.mkdir()
@@ -334,7 +334,7 @@ def test_nenhum_temporario_sobra_depois_de_comprimir(client, imagem, tmp_path):
     assert _temporarios_da_central() == antes
 
 
-def test_nenhum_temporario_sobra_depois_de_um_erro(tmp_path):
+def test_nenhum_temporario_sobra_depois_de_um_erro(tmp_path, tempdir_isolado):
     """Uma compressão que levanta não pode deixar o diretório de trabalho."""
     antes = _temporarios_da_central()
     with pytest.raises(runner.CompressionRefused):
