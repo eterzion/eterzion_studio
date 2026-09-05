@@ -324,12 +324,31 @@ jobs:
           # acompanha varios resources le sempre a mesma estrutura. O
           # `--generate-notes` do gh produzia outro formato, com secao de
           # contribuidores e link de comparacao, que nao batia com nenhum.
+          # As tags precisam estar no repositorio local para delimitar o
+          # intervalo. O `actions/checkout` monta o fetch com `--no-tags` e,
+          # num runner auto-hospedado (workspace persistente), ja aconteceu de
+          # nenhuma tag chegar mesmo com `fetch-tags: true`: foi assim que a
+          # v1.0.3 saiu com 319 bullets, o historico inteiro ate o commit
+          # inicial, em vez dos tres commits desde a v1.0.2.
+          git fetch --tags --force --quiet origin
+
           previous_tag="$(
             git tag --sort=-version:refname |
             grep -Fxv "$TAG" |
             head -n 1 ||
             true
           )"
+
+          # Uma release anterior que existe no GitHub mas nao tem tag local
+          # significa ambiente quebrado, e o changelog sairia com o repositorio
+          # inteiro -- notas erradas numa release imutavel. Parar e' melhor.
+          latest_release="$(
+            gh release list --repo "$GITHUB_REPOSITORY" --limit 1               --json tagName --jq '.[0].tagName // empty'
+          )"
+          if [ -z "$previous_tag" ] && [ -n "$latest_release" ]; then
+            echo "::error::A release $latest_release existe, mas nenhuma tag local foi encontrada; o changelog sairia com o historico inteiro."
+            exit 1
+          fi
 
           if [ -n "$previous_tag" ]; then
             range="$previous_tag..HEAD"
