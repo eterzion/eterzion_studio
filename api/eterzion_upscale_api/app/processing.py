@@ -1067,3 +1067,41 @@ def update_component(component_id: str) -> ComponentInfo:
 
     update_model(implementation.engine_ref, model_dir=_model_dir())
     return _component_info(component_id)
+
+
+def uninstall_component(component_id: str) -> ComponentInfo:
+    """Apaga os arquivos que uma capacidade baixou, devolvendo o espaço.
+
+    Instalar sem poder desinstalar deixa o disco crescer sem que a pessoa
+    tenha como reverter — e a tela mostra o tamanho justamente para que ela
+    possa decidir. Cada capacidade de imagem/vídeo é um punhado de pesos; a
+    música é um checkpoint de ~3,3 GB, o caso em que isto mais importa.
+
+    `speech` fica de fora: ela é um extra do pip instalado neste mesmo
+    interpretador, e desinstalar pacote do processo em execução deixa o
+    ambiente num estado que só o reinício conserta. Recusar é mais honesto
+    que remover pela metade.
+    """
+    if component_id == 'speech':
+        raise ComponentActionUnsupportedError(
+            'A melhoria de voz não é removível por esta tela — ela é um extra do pip instalado '
+            'neste mesmo processo, e desinstalá-lo em execução deixaria o ambiente inconsistente. '
+            'Remova com `pip uninstall` no ambiente da API, com o app fechado.')
+
+    if component_id == 'music':
+        if not os.path.isfile(settings.audio_worker_checkpoint):
+            return _component_info(component_id)
+        os.remove(settings.audio_worker_checkpoint)
+        return _component_info(component_id)
+
+    implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
+    if implementation is None or implementation.engine_ref is None:
+        raise ComponentNotFoundError(component_id)
+    from eterzion_upscale.processing import model_local_paths
+
+    for path in model_local_paths(implementation.engine_ref, model_dir=_model_dir()):
+        # Remover o que já não está lá é sucesso, não erro: a pessoa pediu que
+        # não estivesse, e é assim que remover duas vezes seguidas funciona.
+        if os.path.isfile(path):
+            os.remove(path)
+    return _component_info(component_id)

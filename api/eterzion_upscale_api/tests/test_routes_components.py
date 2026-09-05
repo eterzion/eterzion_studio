@@ -107,3 +107,37 @@ class TestInstallUpdate:
         install_res = client.post('/components/anime_image/install')
         assert install_res.status_code == 200
         assert install_res.json()['install_state'] == 'installed'
+
+
+class TestUninstall:
+    """`DELETE /components/{id}` — a rota que contracts/api.md já especificava
+    ("POST /components/{id}/install, POST .../update, DELETE ...") e que nunca
+    foi implementada. Sem ela uma capacidade instalada ocupava disco para
+    sempre, apesar de a lista expor `size_mb` para a pessoa poder decidir."""
+
+    def test_unknown_component_returns_404(self, client):
+        assert client.delete('/components/not-real').status_code == 404
+
+    def test_speech_refuses_because_it_is_a_pip_extra(self, client):
+        """Desinstalar um pacote do interpretador em execução deixa o ambiente
+        num estado que só o reinício conserta. Recusar é mais honesto que
+        remover pela metade."""
+        res = client.delete('/components/speech')
+        assert res.status_code == 422
+        assert 'pip uninstall' in res.json()['detail']
+
+    def test_removing_what_is_not_there_succeeds(self, client):
+        """Remover duas vezes seguidas tem de funcionar: quem pede a remoção
+        quer o arquivo ausente, e ele já está."""
+        first = client.delete('/components/anime_image')
+        assert first.status_code == 200
+        assert first.json()['install_state'] == 'not_installed'
+        assert client.delete('/components/anime_image').status_code == 200
+
+    @pytest.mark.slow
+    def test_install_then_uninstall_frees_the_files(self, client):
+        assert client.post('/components/anime_image/install').json()['install_state'] == 'installed'
+        removed = client.delete('/components/anime_image')
+        assert removed.status_code == 200
+        assert removed.json()['install_state'] == 'not_installed'
+        assert removed.json()['size_mb'] == 0

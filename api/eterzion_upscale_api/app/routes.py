@@ -613,6 +613,19 @@ def update_component(component_id: str):
         raise HTTPException(422, str(error))
 
 
+# A rota que faltava para o `install/update/delete` que o cabeçalho deste bloco
+# ja anunciava. Sem ela, uma capacidade instalada ocupava disco para sempre — e
+# a tela mostra `size_mb` justamente para a pessoa poder decidir liberar.
+@components_router.delete('/{component_id}', response_model=Component)
+def uninstall_component(component_id: str):
+    try:
+        return _to_component(processing.uninstall_component(component_id))
+    except processing.ComponentNotFoundError:
+        raise HTTPException(404, 'Componente não encontrado.')
+    except processing.ComponentActionUnsupportedError as error:
+        raise HTTPException(422, str(error))
+
+
 # ------------------------------- /identity ------------------------------- #
 #
 # Read-only view of this installation's cryptographic identity (Fase 2). Never
