@@ -21,7 +21,16 @@ jobs:
   # Os jobs Linux caem no runner auto-hospedado quando ele esta online e no
   # ubuntu-24.04 quando nao esta. Nao ha guarda de fork aqui porque este
   # workflow so dispara em push para main e workflow_dispatch.
-  # O instalador do Windows continua em windows-latest: o runner local e Linux.
+  #
+  # O instalador do Windows tem variavel propria, `RUNNER_LABELS_WINDOWS`, e
+  # nao pode usar a dos jobs Linux: sao maquinas diferentes dentro do mesmo
+  # desktop -- cinco runners no WSL e um servico nativo do Windows. Uma
+  # variavel so faria um cair na fila do outro.
+  #
+  # O runner Windows e servico com inicio automatico, entao esta no ar sempre
+  # que a maquina esta ligada, enquanto a variavel segue o ciclo do start.sh
+  # (logon a logoff). Deslogado, o job vai para o windows-latest mesmo com o
+  # runner local disponivel: desperdicio, nunca erro.
   prepare:
     name: Prepare release
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
@@ -84,7 +93,7 @@ jobs:
     name: Build Windows installer
     needs: prepare
     if: needs.prepare.outputs.exists != 'true'
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS_WINDOWS || '["windows-latest"]') }}
     timeout-minutes: 120
     outputs:
       signed: ${{ steps.signing.outputs.signed }}
@@ -143,6 +152,22 @@ jobs:
       - name: Install desktop dependencies
         working-directory: interface
         run: pnpm install --frozen-lockfile
+
+      # O PyInstaller empacotando o PyTorch e' ~4,5 dos ~7 minutos do release
+      # inteiro, e o executavel so muda quando o codigo Python, o `.spec` ou os
+      # requirements mudam. A chave cobre exatamente essas entradas: um release
+      # que mexeu so no frontend restaura em segundos.
+      #
+      # A pasta e' grande (PyTorch empacotado), entao a primeira gravacao custa
+      # alguns minutos. Compensa porque a maioria dos releases nao toca o
+      # backend; se um dia tocar sempre, o cache vira so custo e vale medir de
+      # novo.
+      - name: Cache do backend empacotado
+        uses: actions/cache@v4
+        with:
+          path: interface/resources/backend/win32
+          key: backend-win32-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
+
       - name: Detect signing credentials
         id: signing
         shell: pwsh
@@ -168,11 +193,28 @@ jobs:
           }
 
       - name: Build NSIS installer
+        if: steps.signing.outputs.signed == 'true'
         working-directory: interface
         shell: pwsh
         env:
           PYTHON_EXE: ${{ github.workspace }}\.venv\Scripts\python.exe
+          REUSE_BACKEND_BUILD: "1"
         run: pnpm run build:win
+
+      - name: Build NSIS installer (sem assinatura)
+        if: steps.signing.outputs.signed != 'true'
+        working-directory: interface
+        shell: pwsh
+        env:
+          PYTHON_EXE: ${{ github.workspace }}\.venv\Scripts\python.exe
+          REUSE_BACKEND_BUILD: "1"
+        # O `electron-builder.yml` traz `forceCodeSigning: true`, entao o script
+        # normal falha sem certificado mesmo com o gate do workflow liberado. O
+        # projeto ja previa esse caminho: `build:win:unsigned` desliga a flag
+        # pelo caminho completo que o comentario do YAML exige e ainda nomeia o
+        # artefato como `-setup-NAO-ASSINADO.exe`, para o arquivo se identificar
+        # sozinho fora do contexto da release.
+        run: pnpm run build:win:unsigned
 
       - name: Verify signature
         if: steps.signing.outputs.signed == 'true'
@@ -202,8 +244,9 @@ jobs:
         run: |
           # Sem assinatura para verificar, ainda e' preciso confirmar que o
           # build produziu o instalador: publicar uma release vazia seria pior
-          # que publicar uma sem assinatura.
-          $exe = Get-ChildItem dist\*-setup.exe | Select-Object -First 1
+          # que publicar uma sem assinatura. O nome traz NAO-ASSINADO porque o
+          # `build:win:unsigned` renomeia o artefato.
+          $exe = Get-ChildItem dist\*-setup-NAO-ASSINADO.exe | Select-Object -First 1
           if (-not $exe) { throw 'O build nao produziu instalador.' }
           Write-Output "Instalador: $($exe.Name)"
           Write-Output '::warning title=Instalador sem assinatura::Publicado sem assinatura digital.'
@@ -217,7 +260,15 @@ jobs:
   publish:
     name: Publish GitHub release
     needs: [prepare, python-package, windows-installer]
-    if: needs.prepare.outputs.exists != 'true'
+    # A guarda de ref importa porque o passo abaixo usa `--target $GITHUB_SHA`:
+    # sem ela, um `workflow_dispatch` numa branch qualquer publicaria uma
+    # release apontando para o commit daquela branch, com a tag da versao do
+    # `package.json`. Os jobs de build nao precisam da guarda -- rodar o
+    # instalador numa branch e' justamente como se testa a esteira sem
+    # publicar nada.
+    if: >-
+      needs.prepare.outputs.exists != 'true' &&
+      github.ref == 'refs/heads/main'
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/download-artifact@v8

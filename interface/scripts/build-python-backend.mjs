@@ -17,6 +17,18 @@ const specPath = resolve(apiDir, 'eterzion-studio-api.spec')
 const distPath = resolve(interfaceDir, 'resources', 'backend', platform)
 const workPath = resolve(apiDir, 'build', 'pyinstaller')
 const python = process.env.PYTHON_EXE || process.env.PYTHON || 'python'
+const executable = resolve(distPath, 'eterzion-studio-api', 'eterzion-studio-api.exe')
+
+// Empacotar o PyTorch leva ~4,5 minutos e domina o tempo do release, mas o
+// resultado só muda quando `api/**`, o `.spec` ou os requirements mudam. Com
+// `REUSE_BACKEND_BUILD=1` um executável já presente é aceito como está — a CI
+// liga isso e deixa a decisão para a chave do cache, que é quem sabe se as
+// entradas mudaram. Fora da CI a variável fica desligada e o build é sempre do
+// zero, que é o comportamento seguro para quem roda na mão.
+if (process.env.REUSE_BACKEND_BUILD === '1' && existsSync(executable)) {
+  console.log(`[build-python-backend] reaproveitando: ${executable}`)
+  process.exit(0)
+}
 
 rmSync(distPath, { recursive: true, force: true })
 
@@ -42,7 +54,6 @@ if (result.error) {
 }
 if (result.status !== 0) process.exit(result.status ?? 1)
 
-const executable = resolve(distPath, 'eterzion-studio-api', 'eterzion-studio-api.exe')
 if (!existsSync(executable)) {
   console.error(`PyInstaller completed without producing ${executable}`)
   process.exit(1)
