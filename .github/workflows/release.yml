@@ -251,10 +251,16 @@ jobs:
           Write-Output "Instalador: $($exe.Name)"
           Write-Output '::warning title=Instalador sem assinatura::Publicado sem assinatura digital.'
 
+      # Este passo era copia literal do job python-package: mesmo nome de
+      # artefato e mesmo caminho `api/dist/*`, que este job nunca produz. O
+      # instalador recem-construido nao era enviado, entao a release sairia so
+      # com o pacote Python. Passou despercebido porque o job morria antes, no
+      # forceCodeSigning. O glob cobre os dois nomes possiveis, com e sem
+      # assinatura, mais o blockmap que o electron-builder gera ao lado.
       - uses: actions/upload-artifact@v7
         with:
-          name: python-package
-          path: api/dist/*
+          name: windows-installer
+          path: interface/dist/*-setup*.exe*
           if-no-files-found: error
 
   publish:
