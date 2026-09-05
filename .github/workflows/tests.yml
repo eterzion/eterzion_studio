@@ -144,6 +144,13 @@ jobs:
             # falha em FileNotFoundError, que parece bug de teste e e' recorte
             # do checkout.
             interface/src/renderer/src/services
+            # test_no_control_without_implementation.py (T094/FR-068) cruza o
+            # que os controles da Central emitem com o que as dataclasses
+            # aceitam. Sem este caminho ele nao falha: SKIPA, porque o proprio
+            # teste tem `skipif(not COMPONENTES.is_dir())`. Cinco testes de
+            # guarda ficavam verdes sem nunca rodar -- pior que o
+            # FileNotFoundError acima, que ao menos aparecia.
+            interface/src/renderer/src/components/compression
           sparse-checkout-cone-mode: true
       # Cache do uv no disco do runner persistente, em vez do cache do
       # Actions. Escrito por um passo, e nao por `env:`, porque o contexto
