@@ -10,4 +10,5 @@ export type NavKey =
   | 'audio'
   | 'compressao'
   | 'historico'
+  | 'componentes'
   | 'configuracoes'

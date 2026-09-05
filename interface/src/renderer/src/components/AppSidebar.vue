@@ -12,6 +12,7 @@ import {
   Music,
   Minimize2,
   History,
+  HardDrive,
   Settings,
   Moon,
   Sun,
@@ -207,6 +208,18 @@ function openExternal(url: string): void {
           </div>
         </Transition>
       </div>
+
+      <button
+        class="nav-item"
+        :class="{ active: active === 'componentes' }"
+        type="button"
+        :title="t('nav.components')"
+        @click="emit('navigate', 'componentes')"
+      >
+        <HardDrive :size="18" class="nav-icon" />
+        <span v-if="!collapsed" class="nav-label">{{ t('nav.components') }}</span>
+        <ChevronRight v-if="!collapsed" :size="15" class="chevron" />
+      </button>
 
       <button
         class="nav-item"

@@ -13,6 +13,7 @@ import VideoEditorView from './views/VideoEditorView.vue'
 import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
 import CompressionView from './views/CompressionView.vue'
+import ComponentsView from './views/ComponentsView.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
@@ -87,6 +88,7 @@ const { t } = useI18n()
         <HomeView v-if="active === 'home'" @navigate="navigate" />
         <ImageEditorView v-else-if="active === 'imagem'" @back="active = 'home'" />
         <HistoryView v-else-if="active === 'historico'" @open-image="active = 'imagem'" />
+        <ComponentsView v-else-if="active === 'componentes'" />
         <SettingsView v-else-if="active === 'configuracoes'" />
         <VideoEditorView v-else-if="active === 'video'" @back="active = 'home'" />
         <AudioView v-else-if="active === 'audio'" @back="active = 'home'" />

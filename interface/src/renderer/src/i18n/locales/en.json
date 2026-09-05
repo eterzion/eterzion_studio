@@ -47,6 +47,33 @@
     "speechLabel": "Speech / voice",
     "unsupportedFormat": "Unsupported format: {name}"
   },
+  "components": {
+    "actions": {
+      "install": "Install",
+      "update": "Update",
+      "remove": "Remove",
+      "confirmRemove": "Confirm removal",
+      "retry": "Try again"
+    },
+    "description": "What is downloaded on this machine, how much space it takes, and what you can remove.",
+    "errors": {
+      "loadFailed": "Could not read the list of components.",
+      "installFailed": "The installation failed and reported no reason.",
+      "actionFailed": "The action failed."
+    },
+    "footnote": "Removing a component frees the space now; the next time you use that capability it downloads again.",
+    "loading": "Checking what is installed…",
+    "sizeGb": "{size} GB",
+    "sizeMb": "{size} MB",
+    "state": {
+      "notInstalled": "Not installed",
+      "installing": "Installing…",
+      "installed": "Installed",
+      "updateAvailable": "Update available"
+    },
+    "title": "Components",
+    "totalOnDisk": "{size} on disk"
+  },
   "compression": {
     "animation": {
       "autoColors": "Choose colours automatically",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "Audio",
+    "components": "Components",
     "compression": "Compression",
     "history": "History",
     "home": "Home",

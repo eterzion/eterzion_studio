@@ -47,6 +47,33 @@
     "speechLabel": "음성 / 목소리",
     "unsupportedFormat": "지원하지 않는 형식: {name}"
   },
+  "components": {
+    "actions": {
+      "install": "설치",
+      "update": "업데이트",
+      "remove": "삭제",
+      "confirmRemove": "삭제 확인",
+      "retry": "다시 시도"
+    },
+    "description": "이 컴퓨터에 내려받은 항목, 사용 중인 용량, 삭제할 수 있는 항목입니다.",
+    "errors": {
+      "loadFailed": "구성 요소 목록을 읽지 못했습니다.",
+      "installFailed": "설치에 실패했으며 이유가 보고되지 않았습니다.",
+      "actionFailed": "작업에 실패했습니다."
+    },
+    "footnote": "삭제하면 용량이 바로 확보됩니다. 해당 기능을 다시 사용할 때 다시 내려받습니다.",
+    "loading": "설치 상태를 확인하는 중…",
+    "sizeGb": "{size} GB",
+    "sizeMb": "{size} MB",
+    "state": {
+      "notInstalled": "설치되지 않음",
+      "installing": "설치 중…",
+      "installed": "설치됨",
+      "updateAvailable": "업데이트 있음"
+    },
+    "title": "구성 요소",
+    "totalOnDisk": "디스크 사용량 {size}"
+  },
   "compression": {
     "animation": {
       "autoColors": "색상 자동 선택",
@@ -681,6 +708,7 @@
   },
   "nav": {
     "audio": "오디오",
+    "components": "구성 요소",
     "compression": "압축",
     "history": "기록",
     "home": "홈",
