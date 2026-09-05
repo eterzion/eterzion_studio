@@ -260,7 +260,15 @@ jobs:
   publish:
     name: Publish GitHub release
     needs: [prepare, python-package, windows-installer]
-    if: needs.prepare.outputs.exists != 'true'
+    # A guarda de ref importa porque o passo abaixo usa `--target $GITHUB_SHA`:
+    # sem ela, um `workflow_dispatch` numa branch qualquer publicaria uma
+    # release apontando para o commit daquela branch, com a tag da versao do
+    # `package.json`. Os jobs de build nao precisam da guarda -- rodar o
+    # instalador numa branch e' justamente como se testa a esteira sem
+    # publicar nada.
+    if: >-
+      needs.prepare.outputs.exists != 'true' &&
+      github.ref == 'refs/heads/main'
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     steps:
       - uses: actions/download-artifact@v8
