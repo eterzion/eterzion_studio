@@ -41,7 +41,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-// Official brand logo served by assets.eterzion.com.
+// Official brand logo served by cdn.eterzion.com.
 //
 // **O sufixo nomeia o tema a que a arte serve, não a cor da tinta dela.**
 // `logo-dark` tem traço claro (luminância média 201/255) e existe para fundo
@@ -62,10 +62,22 @@ const { t } = useI18n()
 // o CSP empacotado só aceita o host antigo, que hoje nem responde. Manter
 // `assets.ericinacio.com` no ar também não resolveria, porque o arquivo que
 // aquelas builds pedem não existe mais.
+//
+// **E aconteceu de novo em 06/09/2026**, agora com `assets.eterzion.com`: o
+// host foi aposentado e o catálogo passou a ser servido por
+// `cdn.eterzion.com`, direto do R2. As builds 1.0.4 e anteriores continuam
+// pedindo o host antigo e ficam sem logo para sempre, pelo mesmo motivo -- a
+// CSP viaja dentro do pacote.
+//
+// Duas vezes é padrão, não azar: **o host da marca está fixo em dois lugares
+// que precisam mudar juntos** -- esta URL e o `img-src` do CSP em
+// `index.html`. Trocar só a URL não dá erro de rede; o navegador bloqueia a
+// imagem e o sintoma é um espaço vazio. Se houver uma terceira migração, é
+// sinal de que este valor deveria vir de configuração, e não daqui.
 const brandLogoUrl = computed(() =>
   props.darkMode
-    ? 'https://assets.eterzion.com/branding/ez-logo-white/logo-256.webp'
-    : 'https://assets.eterzion.com/branding/ez-logo-black/logo-256.webp'
+    ? 'https://cdn.eterzion.com/branding/ez-logo-white/logo-256.webp'
+    : 'https://cdn.eterzion.com/branding/ez-logo-black/logo-256.webp'
 )
 
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the
