@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import AppSidebar from '../AppSidebar.vue'
 
 // O logo da marca é servido pelo CDN, e as duas formas de errá-lo são mudas.
@@ -19,7 +21,7 @@ import AppSidebar from '../AppSidebar.vue'
 
 const i18n = createI18n({ legacy: false, locale: 'en', missingWarn: false, fallbackWarn: false })
 
-const BASE = 'https://assets.eterzion.com/branding'
+const BASE = 'https://cdn.eterzion.com/branding'
 
 function logoSrc(darkMode: boolean): string {
   const wrapper = mount(AppSidebar, {
@@ -44,6 +46,33 @@ describe('AppSidebar — logo da marca', () => {
     for (const dark of [true, false]) {
       // Um caminho de um único segmento cai no index.html do CDN com status 200.
       expect(new URL(logoSrc(dark)).pathname.split('/').filter(Boolean).length).toBeGreaterThan(1)
+    }
+  })
+
+  // O host da marca vive em DOIS lugares que precisam mudar juntos: a URL
+  // acima e o `img-src` do CSP em `index.html`. Mudar só a URL não produz erro
+  // de rede -- o navegador bloqueia a imagem e sobra um espaço vazio, com o
+  // console limpo se ninguém estiver olhando a aba de segurança.
+  //
+  // Isso já custou duas migrações (`assets.ericinacio.com` em 13/08/2026,
+  // `assets.eterzion.com` em 06/09/2026). E o CSP viaja dentro do pacote, então
+  // o erro só aparece depois de instalar -- tarde demais para consertar sem
+  // publicar outra versão.
+  it('tem o host do logo liberado no img-src do CSP', () => {
+    // Resolvido a partir da raiz do projeto, e nao de `import.meta.url`: sob o
+    // Vitest esta URL nao tem esquema `file:`, e `fileURLToPath` lanca.
+    const caminho = resolve(process.cwd(), 'src/renderer/index.html')
+    const html = readFileSync(caminho, 'utf8')
+    // Aspas duplas apenas: o proprio CSP usa aspas simples (`'self'`), e uma
+    // classe que as exclua para a captura no primeiro `'self'`.
+    const csp = /content="([^"]*default-src[^"]*)"/.exec(html)?.[1]
+    expect(csp, 'CSP nao encontrado em index.html').toBeTruthy()
+
+    const imgSrc = /img-src ([^;]*)/.exec(csp!)?.[1]
+    expect(imgSrc, 'img-src ausente no CSP').toBeTruthy()
+
+    for (const dark of [true, false]) {
+      expect(imgSrc).toContain(new URL(logoSrc(dark)).origin)
     }
   })
 })
