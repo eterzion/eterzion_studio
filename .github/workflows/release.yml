@@ -216,16 +216,26 @@ jobs:
           #
           # Este passo NAO tem `if: cache-hit != true`, de proposito: um cache
           # gerado por um build defeituoso reproduziria o defeito em silencio.
-          $dir = "$env:GITHUB_WORKSPACE\interface\resources\backend\win32\_internal\torchvision"
-          if (-not (Test-Path $dir)) {
-            throw "torchvision nao foi empacotado: $dir nao existe."
+          # Procurado por BUSCA e nao por caminho fixo. A primeira versao deste
+          # passo apontava direto para `...\win32\_internal\torchvision` e
+          # falhou num build correto: o COLLECT do PyInstaller cria um nivel a
+          # mais (`win32\eterzion-studio-api\_internal\...`). Uma guarda que
+          # reprova build bom por detalhe de layout gasta a confianca que ela
+          # deveria construir.
+          $raiz = "$env:GITHUB_WORKSPACE\interface\resources\backend\win32"
+          if (-not (Test-Path $raiz)) {
+            throw "backend nao foi empacotado: $raiz nao existe."
           }
-          $nativos = Get-ChildItem $dir -Filter *.pyd -ErrorAction SilentlyContinue
+          $dirs = Get-ChildItem $raiz -Recurse -Directory -Filter torchvision -ErrorAction SilentlyContinue
+          if (-not $dirs) {
+            throw "torchvision nao esta no bundle. Procurado sob $raiz."
+          }
+          $nativos = $dirs | ForEach-Object { Get-ChildItem $_.FullName -Filter *.pyd -ErrorAction SilentlyContinue }
           if (-not $nativos) {
-            Get-ChildItem $dir | Select-Object -First 20 Name | Format-Table -AutoSize | Out-String | Write-Output
-            throw "torchvision foi empacotado SEM extensao nativa (.pyd). O backend nao vai iniciar. Provavel rename no upstream -- o spec usa collect_dynamic_libs justamente para sobreviver a isso; verifique se o pacote mudou de layout."
+            $dirs | ForEach-Object { Write-Output ("conteudo de " + $_.FullName); Get-ChildItem $_.FullName | Select-Object -First 20 Name | Out-String | Write-Output }
+            throw "torchvision foi empacotado SEM extensao nativa (.pyd). O backend nao vai iniciar -- o app trava na tela de licenca. O spec usa collect_dynamic_libs para sobreviver a renames; verifique se o pacote mudou de layout."
           }
-          Write-Output ("Extensao nativa presente: " + ($nativos.Name -join ', '))
+          Write-Output ("Extensao nativa presente: " + (($nativos | ForEach-Object { $_.Name }) -join ', '))
 
       - name: Verify signature
         if: steps.signing.outputs.signed == 'true'
