@@ -1,7 +1,7 @@
 from pathlib import Path
 import sys
 
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_dynamic_libs, collect_submodules
 
 
 api_dir = Path(SPECPATH).resolve()
@@ -17,6 +17,22 @@ datas = protected_sources + [
     (str(api_dir / 'vendor' / 'sonicmaster'), 'vendor/sonicmaster'),
 ]
 
+# As extensoes nativas do torchvision, coletadas POR DIRETORIO e nao por nome.
+#
+# O hook que vem com o PyInstaller pede `torchvision._C` e `torchvision.image`
+# como hidden imports. Na 0.29.0 esses arquivos passaram a se chamar
+# `_C_stable.pyd` e `image_stable.pyd`, entao o hook nao os encontra -- ele
+# avisa "Hidden import not found" e o build segue. O bundle sai sem a extensao,
+# os operadores nunca se registram, e o backend morre no import com
+# "RuntimeError: operator torchvision::nms does not exist". Foi o que aconteceu
+# nas versoes 1.0.4 e 1.0.5: o app instalava, abria e travava na tela de
+# licenca, porque o backend local nunca chegava a escutar.
+#
+# `collect_dynamic_libs` varre o diretorio do pacote e leva todo .pyd e .dll
+# que encontrar, qualquer que seja o nome -- inclusive as DLLs de imagem
+# (jpeg8, libpng16, libwebp, zlib). Sobrevive ao proximo rename.
+binaries = collect_dynamic_libs('torchvision')
+
 hiddenimports = sorted(set(
     collect_submodules('app')
     + collect_submodules('eterzion_upscale')
@@ -30,7 +46,7 @@ hiddenimports = sorted(set(
 a = Analysis(
     ['run.py'],
     pathex=[str(api_dir), str(api_root)],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],

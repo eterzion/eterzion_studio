@@ -204,6 +204,29 @@ jobs:
         # sozinho fora do contexto da release.
         run: pnpm run build:win:unsigned
 
+      - name: Verify the backend carries torchvision's native extension
+        shell: pwsh
+        run: |
+          # O PyInstaller AVISA e segue quando nao acha a extensao nativa:
+          #   WARNING: Hidden import "torchvision._C" not found!
+          # O build fica verde, o instalador e publicado, e o backend morre no
+          # primeiro import com "operator torchvision::nms does not exist" --
+          # o app abre e trava na tela de licenca, porque nunca chega a escutar
+          # na porta local. Foi assim que as versoes 1.0.4 e 1.0.5 sairam.
+          #
+          # Este passo NAO tem `if: cache-hit != true`, de proposito: um cache
+          # gerado por um build defeituoso reproduziria o defeito em silencio.
+          $dir = "$env:GITHUB_WORKSPACE\interface\resources\backend\win32\_internal\torchvision"
+          if (-not (Test-Path $dir)) {
+            throw "torchvision nao foi empacotado: $dir nao existe."
+          }
+          $nativos = Get-ChildItem $dir -Filter *.pyd -ErrorAction SilentlyContinue
+          if (-not $nativos) {
+            Get-ChildItem $dir | Select-Object -First 20 Name | Format-Table -AutoSize | Out-String | Write-Output
+            throw "torchvision foi empacotado SEM extensao nativa (.pyd). O backend nao vai iniciar. Provavel rename no upstream -- o spec usa collect_dynamic_libs justamente para sobreviver a isso; verifique se o pacote mudou de layout."
+          }
+          Write-Output ("Extensao nativa presente: " + ($nativos.Name -join ', '))
+
       - name: Verify signature
         if: steps.signing.outputs.signed == 'true'
         working-directory: interface
