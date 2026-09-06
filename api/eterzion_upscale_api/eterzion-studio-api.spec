@@ -28,10 +28,13 @@ datas = protected_sources + [
 # nas versoes 1.0.4 e 1.0.5: o app instalava, abria e travava na tela de
 # licenca, porque o backend local nunca chegava a escutar.
 #
-# `collect_dynamic_libs` varre o diretorio do pacote e leva todo .pyd e .dll
-# que encontrar, qualquer que seja o nome -- inclusive as DLLs de imagem
-# (jpeg8, libpng16, libwebp, zlib). Sobrevive ao proximo rename.
-binaries = collect_dynamic_libs('torchvision')
+# `collect_dynamic_libs` varre o diretorio do pacote por nome de arquivo, entao
+# sobrevive ao rename. Mas `search_patterns` PRECISA ser explicito: o padrao e
+# ['*.dll', '*.dylib', 'lib*.so'] e NAO inclui `*.pyd` -- que e justamente a
+# extensao dos modulos compilados do Python no Windows. Sem isso o bundle sai
+# com as DLLs de imagem e sem `_C_stable.pyd`, que e' o arquivo que registra os
+# operadores; medido num build real antes de acertar.
+binaries = collect_dynamic_libs('torchvision', search_patterns=['*.dll', '*.pyd'])
 
 hiddenimports = sorted(set(
     collect_submodules('app')
