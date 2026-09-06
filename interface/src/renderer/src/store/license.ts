@@ -1,6 +1,7 @@
 import { reactive } from 'vue'
 import {
   activateLicenseKey,
+  BackendUnreachableError,
   getLicenseStatus,
   releaseLicense,
   type LicenseState
@@ -79,9 +80,49 @@ export async function refreshLicenseStatus(): Promise<void> {
   if (isUsableLicenseState(licenseState.status)) licenseState.everUsable = true
 }
 
+/** Quanto esperar o backend local aceitar conexões, na abertura.
+ *
+ *  O executável empacotado importa torch e spandrel antes de escutar, e isso
+ *  leva dezenas de segundos numa máquina fria. Consultar uma vez só, como esta
+ *  função fazia, garantia a tela de erro em TODA abertura -- dizendo "verifique
+ *  sua conexão de internet" para um serviço que roda em 127.0.0.1 e apenas
+ *  ainda não subiu. O usuário via um erro de licença que não era de licença, e
+ *  a saída era clicar em "Try again" sem saber por quê.
+ *
+ *  Generoso de propósito: esperar demais custa uma tela de carregamento;
+ *  esperar de menos custa um erro que assusta e não orienta. */
+const ESPERA_BACKEND_MS = 90_000
+const INTERVALO_TENTATIVA_MS = 1_000
+
+const dormir = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
 /** Called once at app startup (App.vue). */
 export async function initLicense(): Promise<void> {
-  await refreshLicenseStatus()
+  const limite = Date.now() + ESPERA_BACKEND_MS
+
+  for (;;) {
+    licenseState.status = 'checking'
+    licenseState.error = null
+    try {
+      const body = await getLicenseStatus()
+      licenseState.status = body.state
+      licenseState.installationsUsed = body.installations_used
+      licenseState.installationsLimit = body.installations_limit
+      licenseState.offlineDaysRemaining = body.offline_days_remaining
+      if (isUsableLicenseState(licenseState.status)) licenseState.everUsable = true
+      return
+    } catch (error) {
+      // Só a ausência de resposta merece nova tentativa. Um erro vindo do
+      // backend é resposta: ele subiu, e insistir esconderia o problema atrás
+      // de uma tela de carregamento longa.
+      if (!(error instanceof BackendUnreachableError) || Date.now() >= limite) {
+        licenseState.status = 'error'
+        licenseState.error = error instanceof Error ? error.message : String(error)
+        return
+      }
+    }
+    await dormir(INTERVALO_TENTATIVA_MS)
+  }
 }
 
 export async function activateLicense(licenseId: string): Promise<void> {

@@ -234,8 +234,26 @@ export interface LicenseStatusResponse {
 /** T036/T038 — always goes through the local API's facade (never the remote
  *  licensing service directly): that's the only place the real offline-
  *  tolerance fallback (license_cache.py) and the T016 gate mechanism live. */
+/** O backend local ainda não aceita conexões.
+ *
+ *  Distinguir isto de "o backend respondeu um erro" é o que permite esperar
+ *  sem esconder falha real: `fetch` só rejeita quando não houve resposta
+ *  alguma. Qualquer status HTTP — inclusive 500 — significa que ele subiu, e
+ *  aí insistir não ajuda. */
+export class BackendUnreachableError extends Error {
+  constructor(cause?: unknown) {
+    super('O serviço local ainda não respondeu.', { cause })
+    this.name = 'BackendUnreachableError'
+  }
+}
+
 export async function getLicenseStatus(): Promise<LicenseStatusResponse> {
-  const res = await fetch(`${BASE_URL}/license/status`)
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/license/status`)
+  } catch (cause) {
+    throw new BackendUnreachableError(cause)
+  }
   if (!res.ok) throw new Error(await extractError(res))
   return res.json()
 }
