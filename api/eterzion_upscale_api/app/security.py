@@ -447,7 +447,20 @@ _SUPPORTED_PLATFORMS = ('win32',)
 
 
 class ProtectedLoadError(Exception):
-    pass
+    """Falha ao falar com o serviço de licenciamento.
+
+    `status` guarda o código HTTP quando o serviço RESPONDEU. Ele existe para
+    separar "a licença não existe" (404, decisão do serviço) de "não deu para
+    falar com o serviço" (timeout, DNS, 5xx). Sem isso, quem trata o erro só
+    tem a mensagem, e um ID digitado errado chegava ao usuário como falha de
+    infraestrutura pedindo para checar a conexão de internet.
+
+    `None` quando não houve resposta alguma.
+    """
+
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status
 
 
 class UnsupportedRuntime(ProtectedLoadError):
@@ -479,7 +492,7 @@ def _http_post(url: str, body: dict) -> dict:
             return json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as error:
         detail = error.read().decode('utf-8', errors='replace')
-        raise ProtectedLoadError(f'{url} -> HTTP {error.code}: {detail}') from error
+        raise ProtectedLoadError(f'{url} -> HTTP {error.code}: {detail}', error.code) from error
 
 
 def installation_status(base_url: str, install_id: str) -> dict:
@@ -509,7 +522,7 @@ def release(base_url: str, license_id: str, install_id: str) -> dict:
             return json.loads(resp.read().decode('utf-8'))
     except urllib.error.HTTPError as error:
         detail = error.read().decode('utf-8', errors='replace')
-        raise ProtectedLoadError(f'{base_url} -> HTTP {error.code}: {detail}') from error
+        raise ProtectedLoadError(f'{base_url} -> HTTP {error.code}: {detail}', error.code) from error
 
 
 def _trusted_public_key(base_url: str, pinned_b64: str) -> bytes:
