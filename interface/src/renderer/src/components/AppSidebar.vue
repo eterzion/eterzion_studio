@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { api, hasNativeApi } from '../services/native'
 import type { NavKey } from '../types'
 import type { SupportEndpoints } from '../constants/support'
 import { configuredSupportLinks } from '../constants/support'
@@ -83,6 +84,27 @@ const brandLogoUrl = computed(() =>
 // `module` ties a nav entry to its accent (theme.css [data-module]), so the
 // active item is tinted with the same colour as the screen it opens. Entries
 // without one (Início, Histórico) keep the neutral accent.
+// A versão vinha fixa como `v2.0.0` no template, e continuou dizendo isso
+// durante as 1.0.4, 1.0.5, 1.0.6 e 1.0.7 — um usuário que relatasse um problema
+// citando o número da tela daria a informação errada, e ninguém desconfiaria de
+// um rótulo. O canal `app:version` já existia no main e no preload; só o
+// componente não o usava.
+//
+// Sem valor inicial de propósito: um `'2.0.0'` de partida voltaria a mentir
+// durante o primeiro quadro, que é exatamente o que se quer evitar.
+const appVersion = ref('')
+
+onMounted(async () => {
+  // `hasNativeApi` é falso ao pré-visualizar num navegador comum, onde a ponte
+  // do Electron não existe. Aí o distintivo fica vazio em vez de quebrar.
+  if (!hasNativeApi) return
+  try {
+    appVersion.value = await api.getAppVersion()
+  } catch {
+    // Não vale derrubar a barra lateral por um rótulo.
+  }
+})
+
 const items = computed<{ key: NavKey; label: string; icon: unknown; module?: string }[]>(() => [
   { key: 'home', label: t('nav.home'), icon: Home },
   { key: 'imagem', label: t('nav.image'), icon: Image, module: 'image' },
@@ -262,7 +284,7 @@ function openExternal(url: string): void {
 
       <div v-if="!collapsed" class="version-badge">
         <Tag :size="16" class="version-badge-icon" />
-        <span class="version-badge-number">v2.0.0</span>
+        <span class="version-badge-number">v{{ appVersion }}</span>
       </div>
     </div>
   </aside>
