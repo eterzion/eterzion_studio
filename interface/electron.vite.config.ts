@@ -59,7 +59,7 @@ function astrosApiOrigin(): { name: string; transformIndexHtml: (html: string) =
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   main: {},
   preload: {},
   renderer: {
@@ -74,7 +74,22 @@ export default defineConfig({
     server: { port: DEV_RENDERER_PORT, strictPort: true },
     // The renderer cannot read process.env at runtime, so the API port is
     // inlined here. services/api.ts builds BASE_URL from it.
-    define: { __ASTROS_API_PORT__: JSON.stringify(DEV_API_PORT) },
+    //
+    // **Por modo, e não sempre o de desenvolvimento.** Isto inlinava
+    // `DEV_API_PORT` incondicionalmente: o app empacotado chamava 8050
+    // enquanto o backend subia em 8051, e TODA requisição falhava. O sintoma
+    // some a causa por completo — a tela de licença dizia "Could not verify
+    // your licence / Check your internet connection", com o backend rodando
+    // perfeitamente ao lado e respondendo 200 em 8051. Clicar em "Try again"
+    // nunca resolvia, porque a porta chamada estava vazia.
+    //
+    // É a mesma armadilha que o comentário de `astrosApiOrigin` acima descreve
+    // para o CSP, e que já foi corrigida lá. A porta ficou para trás: das
+    // quatro coisas que o cabeçalho deste arquivo diz que precisam concordar,
+    // esta era a única que ainda discordava.
+    define: {
+      __ASTROS_API_PORT__: JSON.stringify(command === 'build' ? PACKAGED_API_PORT : DEV_API_PORT)
+    },
     plugins: [vue(), tailwindcss(), astrosApiOrigin()]
   }
-})
+}))
