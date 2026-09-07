@@ -501,9 +501,20 @@ _HTTP_HEADERS = {
 
 
 def _http_get(url: str) -> dict:
+    # O erro precisa sair como ProtectedLoadError, igual ao _http_post abaixo.
+    # Sem isso, um HTTPError cru atravessava o `except ProtectedLoadError` de
+    # `_resolve_protected_module` (jobs.py), que existe justamente para
+    # degradar para o handler estatico quando o servico de licenciamento nao
+    # responde -- e o processamento morria com "HTTP Error 404: Not Found",
+    # categoria `model_failure`, no app instalado. O modelo nao tinha nada a
+    # ver: ele ja' estava em disco e carregava.
     req = urllib.request.Request(url, headers=_HTTP_HEADERS)
-    with urllib.request.urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode('utf-8'))
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+    except urllib.error.HTTPError as error:
+        detail = error.read().decode('utf-8', errors='replace')
+        raise ProtectedLoadError(f'{url} -> HTTP {error.code}: {detail}', error.code) from error
 
 
 def _http_post(url: str, body: dict) -> dict:

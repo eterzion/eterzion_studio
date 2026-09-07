@@ -1431,7 +1431,12 @@ def _resolve_protected_module(protected: dict | None):
         )
         _protected_module_cache[cache_key] = module
         return module
-    except ProtectedLoadError:
+    except (ProtectedLoadError, OSError):
+        # OSError cobre o nivel de rede (urllib.error.URLError herda dele):
+        # DNS que nao resolve, conexao recusada, timeout. O docstring acima
+        # promete degradar em QUALQUER falha do servico de licenciamento, e
+        # uma queda de rede e' exatamente esse caso -- deixar escapar aqui
+        # transformaria indisponibilidade em falha de processamento.
         traceback.print_exc(file=sys.stderr)
         return None
 
