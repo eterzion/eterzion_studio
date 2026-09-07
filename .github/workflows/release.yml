@@ -363,7 +363,15 @@ jobs:
           # nenhuma tag chegar mesmo com `fetch-tags: true`: foi assim que a
           # v1.0.3 saiu com 319 bullets, o historico inteiro ate o commit
           # inicial, em vez dos tres commits desde a v1.0.2.
-          git fetch --tags --force --quiet origin
+          # `persist-credentials: false` no checkout acima deixa o remote sem
+          # credencial, e este repositorio e' privado: um `git fetch origin`
+          # nu pede usuario e morre com "could not read Username". Nao
+          # aparecia enquanto este job rodava no runner auto-hospedado, cujo
+          # workspace persistente ja trazia as tags -- so quando ele passou a
+          # rodar num `ubuntu-24.04` limpo. O cabecalho vai em `-c`, escopo
+          # deste comando, entao nada e' gravado no `.git/config` do
+          # workspace, que e' o que o `persist-credentials: false` protege.
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" fetch --tags --force --quiet origin
 
           previous_tag="$(
             git tag --sort=-version:refname |
