@@ -146,6 +146,17 @@ def _base_root() -> str:
     return root
 
 
+def frozen() -> bool:
+    """True quando rodando de dentro de um bundle do PyInstaller.
+
+    Vive aqui, e não em cada módulo que precisa, porque a resposta muda o
+    comportamento em três lugares distantes entre si: como o worker isolado é
+    lançado, se um subprocesso abre janela, e o que a tela de Componentes pode
+    prometer ao usuário.
+    """
+    return bool(getattr(sys, 'frozen', False))
+
+
 def no_window_kwargs() -> dict[str, int]:
     """Impede que um subprocesso de console abra janela no Windows.
 
