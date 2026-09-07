@@ -259,7 +259,6 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
       transparent 47%
     ),
     linear-gradient(155deg, var(--card-bg), var(--surface-0) 76%);
-  box-shadow: inset 0 0 35px color-mix(in srgb, var(--tint) 3%, transparent);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
