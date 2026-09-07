@@ -214,10 +214,10 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--chip-tone, var(--color-primary));
+  /* O fundo tingido fica: é o que identifica o módulo de relance. O halo que o
+     acompanhava (`drop-shadow` de 8px) saiu — decoração que não comunicava
+     estado e aparecia em dezenas de chips pelo app. */
   background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
-  filter: drop-shadow(
-    0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent)
-  );
 }
 
 * {
