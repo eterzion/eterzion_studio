@@ -110,6 +110,43 @@ class TestActivate:
         res = client.post('/license/activate', json={'license_id': 'lic_1'})
         assert res.status_code == 502
 
+    def test_an_unknown_license_is_the_users_error_not_a_gateway_failure(self, client, monkeypatch):
+        """404 é decisão do serviço: aquela licença não existe.
+
+        Isto saía como 502, e a tela pedia para o usuário verificar a conexão de
+        internet — enquanto o serviço havia respondido na hora, dizendo o que
+        estava errado. Reproduzido com o ID 'ee' num app real: HTTP 404
+        {"detail":"Licença não encontrada."} apresentado como falha de rede.
+        """
+        _configure(monkeypatch)
+        from app import security as protected_loader
+
+        def _raise_404(url, body):
+            raise protected_loader.ProtectedLoadError(
+                f'{url} -> HTTP 404: {{"detail":"Licença não encontrada."}}', 404)
+
+        monkeypatch.setattr(protected_loader, '_http_post', _raise_404)
+        res = client.post('/license/activate', json={'license_id': 'inexistente'})
+
+        assert res.status_code == 404
+        detalhe = res.json()['detail']
+        assert 'não encontrada' in detalhe
+        # A mensagem tem de orientar, e nao expor a URL interna do servico.
+        assert 'http' not in detalhe.lower()
+
+    def test_keeps_502_when_the_service_itself_failed(self, client, monkeypatch):
+        """5xx e timeout continuam sendo falha de infraestrutura — insistir ou
+        checar a conexão são conselhos corretos aí."""
+        _configure(monkeypatch)
+        from app import security as protected_loader
+
+        def _raise_500(url, body):
+            raise protected_loader.ProtectedLoadError(f'{url} -> HTTP 500: erro', 500)
+
+        monkeypatch.setattr(protected_loader, '_http_post', _raise_500)
+        res = client.post('/license/activate', json={'license_id': 'lic_1'})
+        assert res.status_code == 502
+
 
 class TestRelease:
     def test_returns_409_when_not_activated(self, client, monkeypatch):

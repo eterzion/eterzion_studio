@@ -724,6 +724,15 @@ def activate_license(payload: ActivateRequest) -> dict:
     try:
         security.activate(settings.licensing_service_url, payload.license_id, identity)
     except security.ProtectedLoadError as error:
+        # 404 é decisão do serviço, não falha dele: aquela licença não existe.
+        # Devolver 502 aqui fazia um ID digitado errado chegar à interface como
+        # problema de infraestrutura, e a tela pedia para o usuário verificar a
+        # conexão de internet — enquanto o serviço tinha respondido na hora,
+        # dizendo exatamente o que estava errado. Mesmo motivo do 404 tratado
+        # em licensing.check_gate().
+        if error.status == 404:
+            raise HTTPException(
+                404, 'Licença não encontrada. Confira o ID recebido por e-mail.') from error
         raise HTTPException(502, f'Não foi possível ativar a licença: {error}') from error
     licensing.record_successful_check()
     return {'ok': True}
