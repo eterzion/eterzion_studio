@@ -13,6 +13,8 @@ que sugere algo transitório, para um defeito que falhava 100% das vezes.
 """
 from __future__ import annotations
 
+import pytest
+
 from app import jobs, security
 
 
@@ -52,3 +54,39 @@ class TestNoWindow:
     def test_stays_out_of_the_way_where_the_flag_does_not_exist(self, monkeypatch):
         monkeypatch.delattr('subprocess.CREATE_NO_WINDOW', raising=False)
         assert security.no_window_kwargs() == {}
+
+
+class TestSpeechInAPackagedApp:
+    """A mensagem do Speech precisa dizer o que fazer, não o que faltou.
+
+    A versão anterior citava o caminho de `resources/backend` e pedia o
+    código-fonte "ao lado", depois sugeria `pip install`. Num app instalado a
+    partir de um .exe isso descreve um cenário que o usuário não tem e um
+    comando que ele não pode rodar: o bundle não tem pip nem `site-packages`
+    gravável. Dizia a verdade sobre a causa e nada sobre a saída.
+    """
+
+    def test_says_it_is_not_installable_in_the_packaged_app(self, monkeypatch):
+        from app import processing
+
+        monkeypatch.setattr('sys.frozen', True, raising=False)
+        with pytest.raises(processing.ComponentActionUnsupportedError) as erro:
+            processing._check_audio_install_possible()
+
+        mensagem = str(erro.value)
+        assert 'versão instalada' in mensagem
+        # Não pode citar o caminho interno do bundle: para quem instalou um
+        # .exe, `resources/backend` não significa nada.
+        assert 'resources' not in mensagem
+        # Precisa apontar a saída real, e não só recusar.
+        assert 'código-fonte' in mensagem
+
+    def test_keeps_the_source_checkout_message_when_not_frozen(self, monkeypatch, tmp_path):
+        from app import processing
+
+        monkeypatch.delattr('sys.frozen', raising=False)
+        monkeypatch.setattr(processing, '_REPO_ROOT', tmp_path)  # sem pyproject.toml
+        with pytest.raises(processing.ComponentActionUnsupportedError) as erro:
+            processing._check_audio_install_possible()
+
+        assert 'código-fonte do eterzion_upscale ao lado' in str(erro.value)

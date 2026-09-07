@@ -49,11 +49,6 @@ _API_ROOT = Path(__file__).resolve().parent.parent  # app -> eterzion_upscale_ap
 FROZEN_WORKER_FLAG = '--eterzion-worker'
 
 
-def _frozen() -> bool:
-    """True quando rodando de dentro de um bundle do PyInstaller."""
-    return getattr(sys, 'frozen', False)
-
-
 def _default_spawn_args() -> list[str]:
     """Como pedir a este mesmo binário que vire um worker.
 
@@ -65,7 +60,9 @@ def _default_spawn_args() -> list[str]:
     processamento morria no timeout de 45s, com o erro chegando à interface sem
     mensagem.
     """
-    return [FROZEN_WORKER_FLAG] if _frozen() else ['-m', 'app.jobs']
+    from app.security import frozen
+
+    return [FROZEN_WORKER_FLAG] if frozen() else ['-m', 'app.jobs']
 
 
 logger = logging.getLogger(__name__)

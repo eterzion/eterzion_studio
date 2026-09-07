@@ -1054,6 +1054,23 @@ def _check_audio_install_possible() -> None:
     `pip install` em si roda em segundo plano. Descobrir "não tem código-fonte
     ao lado" depois de dois minutos de download seria pior que não tentar.
     """
+    # Num app EMPACOTADO isto nunca vai ser possível, e a mensagem precisa dizer
+    # isso — não sugerir um comando. O bundle não tem pip nem `site-packages`
+    # gravável, então "pip install eterzion_upscale[audio]" não é uma instrução
+    # que o usuário possa seguir: ele instalou um .exe, não um checkout.
+    #
+    # A mensagem antiga citava o caminho de `resources/backend` e pedia o
+    # código-fonte "ao lado", descrevendo um cenário de desenvolvimento para
+    # quem está na versão instalada. Ela dizia a verdade sobre a causa e nada
+    # sobre a saída.
+    if security.frozen():
+        raise ComponentActionUnsupportedError(
+            'A melhoria de áudio por voz não é instalável pela versão instalada do '
+            'aplicativo — ela vem como pacote Python, e o executável não tem como '
+            'adicionar pacotes a si mesmo. Para usá-la, rode o aplicativo a partir do '
+            'código-fonte (veja api/README.md) e instale com '
+            '"pip install eterzion_upscale[audio]".')
+
     if not (_REPO_ROOT / 'pyproject.toml').is_file():
         raise ComponentActionUnsupportedError(
             'Não foi possível instalar: esta cópia do aplicativo não tem o código-fonte '
