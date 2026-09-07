@@ -146,6 +146,21 @@ def _base_root() -> str:
     return root
 
 
+def no_window_kwargs() -> dict[str, int]:
+    """Impede que um subprocesso de console abra janela no Windows.
+
+    O app empacotado roda com `console=False`; nesse modo CADA processo de
+    console cria uma janela nova. O `icacls` logo abaixo é chamado por
+    `create_private_dir()`, que roda a cada trabalho — era ele que piscava um
+    terminal toda vez que o usuário processava algo.
+
+    Fora do Windows a flag não existe e o dicionário vazio deixa a chamada
+    exatamente como era.
+    """
+    flag = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+    return {'creationflags': flag} if flag else {}
+
+
 def restrict_to_current_user(path: str) -> None:
     """Strip inherited permissions and grant full control only to the current
     user. Best-effort: a failure here shouldn't crash the caller, it just means
@@ -166,6 +181,7 @@ def restrict_to_current_user(path: str) -> None:
         subprocess.run(
             ['icacls', path, '/inheritance:r', '/grant:r', f'{account}:(OI)(CI)F'],
             capture_output=True, timeout=10, check=False, shell=False,
+            **no_window_kwargs(),
         )
     except (OSError, subprocess.SubprocessError):
         pass

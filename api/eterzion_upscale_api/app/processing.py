@@ -15,6 +15,8 @@ from dataclasses import dataclass, replace
 from typing import Callable, TypedDict
 from urllib.parse import urlparse
 
+from app import security
+
 import cv2
 import numpy as np
 
@@ -757,6 +759,7 @@ def _enhance_music(input_wav: str, output_wav: str) -> None:
          '--ckpt', settings.audio_worker_checkpoint, '--input', input_wav, '--output', output_wav,
          '--prompt', 'Perform general music restoration and mastering', '--fs', '44100'],
         capture_output=True, text=True, timeout=600, check=False,
+        **security.no_window_kwargs(),
     )
     if result.returncode != 0 or not os.path.isfile(output_wav):
         raise RuntimeError(f'SonicMaster falhou: {result.stderr.strip()}')
@@ -1081,7 +1084,8 @@ def _pip_install_audio_extra(*extra_args: str) -> None:
 
     target = f'{_REPO_ROOT}[audio]'
     cmd = [sys.executable, '-m', 'pip', 'install', *extra_args, target]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, timeout=900, **security.no_window_kwargs())
     if result.returncode != 0:
         raise ComponentActionUnsupportedError(
             f'pip falhou (código {result.returncode}) instalando os componentes de áudio:\n'

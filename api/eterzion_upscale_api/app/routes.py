@@ -162,7 +162,7 @@ def _detect_video_content_type(input_path: str) -> str:
             result = subprocess.run(
                 [ffmpeg, '-v', 'error', '-ss', f'{offset:.3f}', '-i', input_path,
                  '-frames:v', '1', '-y', frame_path],
-                capture_output=True, shell=False,
+                capture_output=True, shell=False, **security.no_window_kwargs(),
             )
             if result.returncode != 0 or not os.path.isfile(frame_path):
                 continue
