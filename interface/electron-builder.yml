@@ -96,9 +96,12 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
+# O updater do app instalado le daqui, sem login. Nao pode ser o
+# eterzion_studio: ele e' privado, e release privada responde 404 para quem nao
+# esta' autenticado -- ate' a 1.1.1 nenhum app instalado conseguia se atualizar.
 publish:
   provider: github
   owner: eterzion
-  repo: eterzion_studio
+  repo: eterzion_studio_releases
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
