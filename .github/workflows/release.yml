@@ -64,8 +64,12 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG already exists; skipping all build jobs."
+          # A referencia e' o repositorio PUBLICO de distribuicao, que e' de
+          # onde o app instalado baixa. Se so' a release privada existisse (a
+          # publica falhou), perguntar ao privado pularia o build para sempre e
+          # a versao nunca chegaria a ninguem.
+          if gh release view "$TAG" --repo eterzion/eterzion_studio_releases >/dev/null 2>&1; then
+            echo "Release $TAG already exists in eterzion/eterzion_studio_releases; skipping all build jobs."
             echo 'exists=true' >> "$GITHUB_OUTPUT"
           else
             echo 'exists=false' >> "$GITHUB_OUTPUT"
@@ -317,6 +321,11 @@ jobs:
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          # O token padrao do workflow so' escreve neste repositorio. Para o
+          # de distribuicao: fine-grained token com Contents: read and write so'
+          # em eterzion/eterzion_studio_releases.
+          RELEASES_REPO_TOKEN: ${{ secrets.RELEASES_REPO_TOKEN }}
+          PUBLIC_REPO: eterzion/eterzion_studio_releases
           TAG: ${{ needs.prepare.outputs.tag }}
           SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
@@ -332,11 +341,16 @@ jobs:
             if ($LASTEXITCODE -ne 0) { throw "$oQue falhou (codigo $LASTEXITCODE)." }
           }
 
-          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Output "Release $env:TAG was created by another run; refusing to duplicate it."
-            exit 0
+          # Sem o token, falhar AQUI, antes de publicar qualquer coisa: uma
+          # release so' no privado e' justamente o estado que nao chega a
+          # ninguem (e o `prepare` passaria a pular o build dessa versao).
+          if (-not $env:RELEASES_REPO_TOKEN) {
+            throw "Segredo RELEASES_REPO_TOKEN ausente: sem ele a release nao chega ao repositorio publico ($env:PUBLIC_REPO), de onde o app instalado se atualiza."
           }
+
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
+          $privadaExiste = $LASTEXITCODE -eq 0
+          $env:GH_TOKEN_PUB = $env:RELEASES_REPO_TOKEN
 
           $version = $env:TAG -replace '^v', ''
 
@@ -371,6 +385,10 @@ jobs:
           $changes = (git log $range --pretty=format:"- %s [%h](https://github.com/$env:GITHUB_REPOSITORY/commit/%H)") -join "`n"
           Assert-Exit 'git log'
           if (-not $changes) { $changes = '- Nenhuma alteração registrada.' }
+          # No repositorio publico, sem link: os commits sao do privado e o
+          # link daria 404 para quem le as notas.
+          $changesPublico = (git log $range --pretty=format:"- %s") -join "`n"
+          if (-not $changesPublico) { $changesPublico = '- Nenhuma alteração registrada.' }
 
           $linhas = @()
           # Um instalador sem assinatura nao pode chegar ao usuario parecendo
@@ -387,6 +405,7 @@ jobs:
           $linhas += ''
           $linhas += '## Changelog'
           $linhas += ''
+          $linhasPublico = $linhas + @($changesPublico)
           $linhas += $changes
 
           # A release carrega so' o que o usuario final baixa: o instalador
@@ -402,13 +421,38 @@ jobs:
           $arquivos | ForEach-Object { Write-Output "Anexando: $($_.Name)" }
 
           $notas = [IO.Path]::GetTempFileName()
+          $notasPublico = [IO.Path]::GetTempFileName()
           try {
             # LF e UTF-8 sem BOM: e' o que o GitHub renderiza sem sobra.
             [IO.File]::WriteAllText($notas, ($linhas -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
+            [IO.File]::WriteAllText($notasPublico, ($linhasPublico -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 
             $extra = @()
-            if ($env:TAG -match '(alpha|beta|rc)') { $extra += '--prerelease' }
+            if ($env:TAG -match '(alpha|beta|rc)') { $extra += '--prerelease' } else { $extra += '--latest' }
 
+            # 1) Publico primeiro: e' o que chega ao app instalado. Sem
+            # `--target`: o commit e' do repositorio privado; a tag no publico
+            # fica sobre o branch padrao dele, que so' tem o README.
+            $antes = $env:GH_TOKEN
+            $env:GH_TOKEN = $env:GH_TOKEN_PUB
+            gh release view $env:TAG --repo $env:PUBLIC_REPO *> $null
+            if ($LASTEXITCODE -eq 0) {
+              Write-Output "Release $env:TAG ja' existe em $env:PUBLIC_REPO; nao duplica."
+            } else {
+              gh release create $env:TAG @($arquivos.FullName) `
+                --repo $env:PUBLIC_REPO `
+                --title $env:TAG `
+                --notes-file $notasPublico `
+                @extra
+              Assert-Exit 'gh release create (publico)'
+            }
+            $env:GH_TOKEN = $antes
+
+            # 2) Privado: historico, tag no commit certo e changelog com links.
+            if ($privadaExiste) {
+              Write-Output "Release $env:TAG was created by another run in $env:GITHUB_REPOSITORY; refusing to duplicate it."
+              exit 0
+            }
             gh release create $env:TAG @($arquivos.FullName) `
               --repo $env:GITHUB_REPOSITORY `
               --target $env:GITHUB_SHA `
@@ -417,5 +461,5 @@ jobs:
               @extra
             Assert-Exit 'gh release create'
           } finally {
-            Remove-Item $notas -ErrorAction SilentlyContinue
+            Remove-Item $notas, $notasPublico -ErrorAction SilentlyContinue
           }

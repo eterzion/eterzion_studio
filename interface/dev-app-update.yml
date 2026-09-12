@@ -1,4 +1,4 @@
 provider: github
 owner: eterzion
-repo: eterzion_studio
+repo: eterzion_studio_releases
 updaterCacheDirName: electron-app-updater
