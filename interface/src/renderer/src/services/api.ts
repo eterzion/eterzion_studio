@@ -184,10 +184,39 @@ async function extractError(res: Response): Promise<string> {
     const data = await res.json()
     if (typeof data.detail === 'string') return data.detail
     if (data.detail?.reason === 'conflict') return `CONFLICT:${data.detail.path}`
+    if (typeof data.detail?.message === 'string') return data.detail.message
     return `Erro ${res.status}`
   } catch {
     return `Erro ${res.status}`
   }
+}
+
+/** Erro de uma ação de componente. `reason` vem do 422 do backend e é o que a
+ *  tela usa para escrever a frase na língua do app; `message` (só pt-BR) é a
+ *  reserva. */
+export class ComponentActionError extends Error {
+  constructor(
+    message: string,
+    readonly reason: string | null
+  ) {
+    super(message)
+    this.name = 'ComponentActionError'
+  }
+}
+
+async function componentActionError(res: Response): Promise<Error> {
+  try {
+    const data = await res.clone().json()
+    if (data?.detail && typeof data.detail === 'object') {
+      return new ComponentActionError(
+        String(data.detail.message ?? `Erro ${res.status}`),
+        typeof data.detail.reason === 'string' ? data.detail.reason : null
+      )
+    }
+  } catch {
+    // corpo não-JSON: cai no caminho de sempre abaixo
+  }
+  return new Error(await extractError(res))
 }
 
 export async function listComponents(): Promise<ComponentSummary[]> {
@@ -204,19 +233,19 @@ export async function getComponentDetails(componentId: string): Promise<Componen
 
 export async function installComponent(componentId: string): Promise<ComponentSummary> {
   const res = await fetch(`${BASE_URL}/components/${componentId}/install`, { method: 'POST' })
-  if (!res.ok) throw new Error(await extractError(res))
+  if (!res.ok) throw await componentActionError(res)
   return res.json()
 }
 
 export async function updateComponent(componentId: string): Promise<ComponentSummary> {
   const res = await fetch(`${BASE_URL}/components/${componentId}/update`, { method: 'POST' })
-  if (!res.ok) throw new Error(await extractError(res))
+  if (!res.ok) throw await componentActionError(res)
   return res.json()
 }
 
 export async function uninstallComponent(componentId: string): Promise<ComponentSummary> {
   const res = await fetch(`${BASE_URL}/components/${componentId}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error(await extractError(res))
+  if (!res.ok) throw await componentActionError(res)
   return res.json()
 }
 

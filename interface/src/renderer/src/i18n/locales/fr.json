@@ -59,7 +59,8 @@
     "errors": {
       "loadFailed": "Impossible de lire la liste des composants.",
       "installFailed": "L'installation a échoué sans indiquer de raison.",
-      "actionFailed": "L'action a échoué."
+      "actionFailed": "L'action a échoué.",
+      "notAvailableInApp": "Pas encore disponible dans cette version de l'application."
     },
     "footnote": "Supprimer libère l'espace maintenant ; au prochain usage de cette capacité, le téléchargement recommence.",
     "loading": "Vérification de ce qui est installé…",

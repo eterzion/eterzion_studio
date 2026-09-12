@@ -84,42 +84,24 @@ class TestComponentDetails:
 
 
 class TestInstallUpdate:
-    def test_install_speech_returns_422_when_no_source_checkout_present(self, client, tmp_path, monkeypatch):
-        """install/update now really run `pip install <repo>[audio]` (see
-        component_manager._pip_install_audio_extra) — this test forces the
-        real "no pyproject.toml next to this process" failure path instead
-        of letting a real pip/git install run during the suite."""
-        from app import processing as component_manager
+    def test_install_speech_returns_200_and_downloads_weights(self, client, monkeypatch):
+        from eterzion_upscale import processing as biblioteca
 
-        monkeypatch.setattr(component_manager, '_REPO_ROOT', tmp_path)
-        res = client.post('/components/speech/install')
-        assert res.status_code == 422
-        assert 'pip install' in res.json()['detail']
-
-    def test_install_speech_returns_200_when_pip_succeeds(self, client, monkeypatch):
-        from app import processing as component_manager
-
-        class Usage:
-            free = 100 * 1024 * 1024 * 1024
-
-        def fake_run(cmd, **kwargs):
-            class Result:
-                returncode = 0
-                stdout = ''
-                stderr = ''
-
-            return Result()
-
-        monkeypatch.setattr(component_manager.shutil, 'disk_usage', lambda path: Usage())
-        monkeypatch.setattr(component_manager.subprocess, 'run', fake_run)
+        pedidos = []
+        monkeypatch.setattr(biblioteca, 'ensure_speech_weights', lambda model_dir: pedidos.append(model_dir))
         res = client.post('/components/speech/install')
         assert res.status_code == 200
         assert res.json()['id'] == 'speech'
-        # A thread de fundo escreve em `_INSTALLING`/`_INSTALL_ERRORS`, que sao
-        # estado de processo: deixa-la viva vaza para o proximo teste que
-        # consultar `speech`, e o `monkeypatch` do `subprocess.run` ja teria
-        # sido desfeito -- ou seja, um `pip install` de verdade.
+        # Esperar a thread de fundo: sem isso ela sobrevive ao monkeypatch e
+        # baixaria os pesos de verdade no proximo teste.
         _wait_for_background('speech')
+        assert len(pedidos) == 1
+
+    def test_install_music_422_carries_a_reason_for_the_ui(self, client):
+        res = client.post('/components/music/install')
+        assert res.status_code == 422
+        assert res.json()['detail']['reason'] == 'not_available_in_app'
+        assert 'README' not in res.json()['detail']['message']
 
     def test_install_unknown_component_returns_404(self, client):
         res = client.post('/components/not-real/install')
@@ -165,13 +147,12 @@ class TestUninstall:
     def test_unknown_component_returns_404(self, client):
         assert client.delete('/components/not-real').status_code == 404
 
-    def test_speech_refuses_because_it_is_a_pip_extra(self, client):
-        """Desinstalar um pacote do interpretador em execução deixa o ambiente
-        num estado que só o reinício conserta. Recusar é mais honesto que
-        remover pela metade."""
+    def test_speech_removes_its_weights(self, client):
+        """Antes recusava (era um extra do pip); agora a voz so' tem pesos a
+        apagar, e remover o que nao esta' la' e' sucesso."""
         res = client.delete('/components/speech')
-        assert res.status_code == 422
-        assert 'pip uninstall' in res.json()['detail']
+        assert res.status_code == 200
+        assert res.json()['install_state'] == 'not_installed'
 
     def test_removing_what_is_not_there_succeeds(self, client):
         """Remover duas vezes seguidas tem de funcionar: quem pede a remoção

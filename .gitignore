@@ -142,6 +142,9 @@ dmypy.json
 # the much smaller image/video checkpoints already tracked under models/).
 models/sonicmaster.safetensors
 models/sonicmaster/
+# Pesos da voz (LavaSR), baixados sob demanda pelo app e pelos testes -- ~56 MB,
+# espelhados em eterzion_studio_releases; nao vao para o repositorio.
+models/speech-lavasr/
 
 # Ad hoc local audio fixtures generated manually while testing the
 # audio-engine (real pytest fixtures are synthesized inline in the test

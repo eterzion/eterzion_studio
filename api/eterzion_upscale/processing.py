@@ -487,9 +487,10 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
 #
 # NOTE: ``audio-enhance`` has been exercised end-to-end (real weights, a real
 # 10.24s wav, CPU inference) — 48kHz/correct-duration output confirmed.
-# ``super-voz`` was written against its library's documented public API but not
-# run end-to-end in this environment (large model download); treat it as
-# implemented-but-unverified until run once against real weights.
+# ``super-voz`` ran end-to-end against the real LavaSR weights on 2026-09-12
+# (8 kHz input -> 48 kHz output, same duration, ~16% of the energy above 4 kHz,
+# 0.4s for 3s of audio on CPU) — and that run is what exposed that the old code
+# wrote upscale()'s (waveform, rate) tuple as if it were the waveform.
 #
 # The ``denoiser`` (CC-BY-NC-4.0) and ``voicefixer`` (unlicensed vocoder
 # checkpoint) engines were removed — see pyproject.toml's ``[audio]`` extra.
@@ -562,15 +563,95 @@ def _enhance_audio_enhance(input_wav: str, output_wav: str) -> None:
     sf.write(output_wav, data, 48000)
 
 
-def _enhance_super_voz(input_wav: str, output_wav: str) -> None:
+# --------------------------- voz: pesos do LavaSR --------------------------- #
+#
+# O `audiosronnx` sabe baixar os pesos sozinho, mas so' do Hugging Face e sem
+# SHA-256. Aqui eles passam pelo mesmo caminho dos modelos de imagem: espelho
+# publico primeiro, origem (revisao fixada) como reserva, hash conferido, erro
+# com frase amigavel. O adaptador so' recebe caminhos de arquivo ja' verificados.
+#
+# Licenca: Apache-2.0, declarada pelo proprio audiosronnx para os artefatos
+# ONNX ("ONNX artifacts: TigreGotico/audiosronnx-lavasr (Apache-2.0)", no
+# docstring de engines/lavasr.py e na tabela de motores do pacote). O
+# repositorio de pesos no Hugging Face nao tem a etiqueta; ver
+# docs/models/MODEL_LICENSES.md.
+#
+# So' backbone + spec_head: o `denoiser_core.onnx` so' e' usado com
+# `denoise=True`, que o app nao liga (a reducao de ruido ja' e' o DSP).
+SPEECH_WEIGHTS_DIR = 'speech-lavasr'
+_LAVASR_REVISION = 'b3df8a262cf44e59bf84a40b7084f4479ca566b4'
+_LAVASR_ORIGIN = f'https://huggingface.co/TigreGotico/audiosronnx-lavasr/resolve/{_LAVASR_REVISION}/'
+SPEECH_WEIGHTS: dict[str, str] = {
+    'backbone.onnx': '959f7879f58a80ce8e76156e3ee4dd3d56b6a5d62713272806f2c2f2860f56c0',
+    'spec_head.onnx': 'abd7961809fde26b38f3e7499d1d1240a222deee64cf472b9f6d9827d27a4e8a',
+}
+
+
+def speech_weight_paths(model_dir: str) -> dict[str, str]:
+    """Onde cada peso da voz fica (baixado ou nao)."""
+    pasta = os.path.join(model_dir, SPEECH_WEIGHTS_DIR)
+    return {nome: os.path.join(pasta, nome) for nome in SPEECH_WEIGHTS}
+
+
+def speech_weights_installed(model_dir: str) -> bool:
+    return all(os.path.isfile(p) for p in speech_weight_paths(model_dir).values())
+
+
+def ensure_speech_weights(model_dir: str) -> dict[str, str]:
+    """Baixa (espelho, depois origem) e verifica os pesos que faltarem."""
+    pasta = os.path.join(model_dir, SPEECH_WEIGHTS_DIR)
+    return {
+        nome: download_with_fallback(
+            [_mirror_url_for(nome), _LAVASR_ORIGIN + nome],
+            model_dir=pasta, file_name=nome, sha256=digest, progress=False)
+        for nome, digest in SPEECH_WEIGHTS.items()
+    }
+
+
+def load_speech_engine(model_dir: str):
+    """O motor de voz carregado a partir dos pesos locais verificados.
+
+    O adaptador do `audiosronnx` resolve os pesos pelo nome no Hugging Face;
+    esta subclasse so' troca o carregamento para os arquivos que acabamos de
+    verificar. `_ensure_models` e' interno a ele, por isso a versao do pacote
+    fica fixada (pyproject.toml e requirements.txt) e ha' teste cobrindo.
+    """
     try:
-        import soundfile as sf
-        from audiosronnx import load_sr
+        import onnxruntime as ort
+        from audiosronnx.engines.lavasr import LavaSRAdapter
     except ImportError as error:
         raise MissingAudioDependency('super-voz', 'audiosronnx', error) from error
-    model = load_sr(engine='lavasr')
-    waveform = model.upscale(input_wav)
-    sf.write(output_wav, waveform, 48000)
+    caminhos = ensure_speech_weights(model_dir)
+
+    class _LavaSRLocal(LavaSRAdapter):
+        def _ensure_models(self) -> None:
+            if self._backbone is not None:
+                return
+            opcoes = ort.SessionOptions()
+            opcoes.intra_op_num_threads = os.cpu_count() or 4
+            provedores = self._providers or ['CPUExecutionProvider']
+            self._backbone = ort.InferenceSession(
+                caminhos['backbone.onnx'], sess_options=opcoes, providers=provedores)
+            self._head = ort.InferenceSession(
+                caminhos['spec_head.onnx'], sess_options=opcoes, providers=provedores)
+
+    return _LavaSRLocal()
+
+
+def enhance_speech_file(input_wav: str, output_wav: str, model_dir: str = 'models') -> None:
+    """Extensao de banda da fala para 48 kHz.
+
+    O `upscale()` devolve `(forma_de_onda, taxa)`. A versao anterior gravava a
+    tupla inteira como se fosse o audio -- nunca tinha rodado com pesos reais.
+    """
+    import soundfile as sf
+
+    forma_de_onda, taxa = load_speech_engine(model_dir).upscale(input_wav)
+    sf.write(output_wav, forma_de_onda, taxa)
+
+
+def _enhance_super_voz(input_wav: str, output_wav: str) -> None:
+    enhance_speech_file(input_wav, output_wav)
 
 
 _ENGINE_FUNCS = {

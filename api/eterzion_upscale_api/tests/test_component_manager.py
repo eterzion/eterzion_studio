@@ -61,142 +61,120 @@ class TestListComponents:
         assert details.technical_name == 'nomos-webphoto'
         assert details.license  # real license string, not empty
 
-    def test_music_reports_a_real_conditional_license_string(self):
+    def test_music_details_carry_no_developer_notes(self):
+        """A licenca vai limpa, como nos Creditos; sem "condicional", sem
+        mandar ler MODEL_LICENSES.md ou api/README.md."""
         details = processing.get_component_details('music')
-        assert 'condicional' in details.license.lower()
+        assert details.license == 'Apache-2.0'
+        for proibido in ('condicional', 'README', 'MODEL_LICENSES'):
+            assert proibido not in details.license and proibido not in details.version
 
     def test_unknown_component_raises(self):
         with pytest.raises(ComponentNotFoundError):
             processing.get_component_details('not-a-real-component')
 
 
-class TestAudioComponentsInstallViaRealPip:
-    """speech/music share one pyproject.toml [audio] extra — install/update
-    run a real `pip install <repo>[audio]` (subprocess.run is the only
-    thing worth mocking here: actually invoking pip/git in a unit test
-    would be slow and network-dependent, same reasoning as the `slow`
-    marker on the image/video download round trip below)."""
+class TestSpeechInstallsItsWeights:
+    """Voz: o motor (audiosronnx + onnxruntime) vem no instalador; Instalar
+    baixa os pesos pelo mesmo caminho dos modelos de imagem. Ate' 2026-09-12
+    era um `pip install` do extra [audio] -- impossivel no app empacotado, que
+    nao tem pip, e a tela so' podia mandar rodar o codigo-fonte."""
 
     @pytest.fixture(autouse=True)
-    def plenty_of_disk_space(self, monkeypatch):
-        # Real disk_usage() would make these tests flaky depending on how
-        # full the machine running them happens to be — the low-space path
-        # itself is covered separately below with a real mock.
-        class Usage:
-            free = 100 * 1024 * 1024 * 1024
+    def pasta_de_modelos(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(settings, 'models_dir', str(tmp_path))
+        return tmp_path
 
-        monkeypatch.setattr(processing.shutil, 'disk_usage', lambda path: Usage())
+    def test_install_baixa_os_pesos_na_pasta_de_modelos(self, monkeypatch, pasta_de_modelos):
+        from eterzion_upscale import processing as biblioteca
 
-    def test_install_refuses_when_disk_space_is_low(self, monkeypatch):
-        """A real incident: an unmocked audio install once filled a dev
-        machine's C: drive to 0 bytes free mid-session. This is the guard
-        that must stop that from happening again."""
-
-        class LowUsage:
-            free = 500 * 1024 * 1024  # 500 MiB, below the 3 GiB floor
-
-        monkeypatch.setattr(processing.shutil, 'disk_usage', lambda path: LowUsage())
-        with pytest.raises(ComponentActionUnsupportedError, match='[Ee]spaço em disco'):
-            processing.install_component('speech')
-
-    def test_install_speech_runs_pip_install_of_the_shared_extra(self, monkeypatch):
-        calls = []
-
-        def fake_run(cmd, **kwargs):
-            calls.append(cmd)
-
-            class Result:
-                returncode = 0
-                stdout = ''
-                stderr = ''
-
-            return Result()
-
-        monkeypatch.setattr(processing.subprocess, 'run', fake_run)
-
+        pedidos = []
+        monkeypatch.setattr(biblioteca, 'ensure_speech_weights', lambda model_dir: pedidos.append(model_dir))
         result = processing.install_component('speech')
-        # `install_component` dispara e retorna; o pip roda na thread de fundo.
-        # Sem esperar, esta asserção corria contra ela e vencia quase sempre --
-        # até nao vencer, com `-n 2` sob carga.
         _wait_for_background('speech')
 
-        assert len(calls) == 1
-        cmd = calls[0]
-        assert cmd[0] == processing.sys.executable
-        assert cmd[1:4] == ['-m', 'pip', 'install']
-        assert cmd[-1].endswith('[audio]')
         assert result.id == 'speech'
+        assert pedidos == [str(pasta_de_modelos)]
+        assert processing.get_component_details('speech').error is None
 
-    def test_update_speech_runs_pip_install_with_upgrade_flag(self, monkeypatch):
-        calls = []
+    def test_install_funciona_no_app_empacotado(self, monkeypatch):
+        """O caso que a mudanca existe para resolver: sys.frozen nao bloqueia mais."""
+        from eterzion_upscale import processing as biblioteca
 
-        def fake_run(cmd, **kwargs):
-            calls.append(cmd)
-
-            class Result:
-                returncode = 0
-                stdout = ''
-                stderr = ''
-
-            return Result()
-
-        monkeypatch.setattr(processing.subprocess, 'run', fake_run)
-
-        processing.update_component('speech')
-        _wait_for_background('speech')
-
-        assert '--upgrade' in calls[0]
-
-    def test_install_music_refuses_no_pip_involved(self, monkeypatch):
-        """specs/006-audio-engine-masterizacao: SonicMaster runs from an
-        isolated venv the operator sets up manually (api/README.md), never
-        pip-installed into this process — unlike speech, which still shares
-        the [audio] extra. Regression test for a real bug: this used to run
-        `_pip_install_audio_extra()` (a no-op for SonicMaster, which was
-        never in that extra) and then re-check the stale
-        `shutil.which('inference_fullsong.py')` — always False, so the
-        Components screen showed "not installed" forever even with a fully
-        configured, working audio-worker."""
-        calls = []
-        monkeypatch.setattr(processing.subprocess, 'run', lambda *a, **k: calls.append(a))
-        with pytest.raises(ComponentActionUnsupportedError, match='SonicMaster'):
-            processing.install_component('music')
-        assert not calls, 'install_component("music") must never shell out to pip'
-
-    def test_update_music_refuses_no_pip_involved(self, monkeypatch):
-        calls = []
-        monkeypatch.setattr(processing.subprocess, 'run', lambda *a, **k: calls.append(a))
-        with pytest.raises(ComponentActionUnsupportedError, match='SonicMaster'):
-            processing.update_component('music')
-        assert not calls
-
-    def test_install_surfaces_real_pip_output_on_failure(self, monkeypatch):
-        """A saída real do pip continua chegando a quem clicou, mas por outro
-        caminho: o install roda em segundo plano, então a falha não pode mais
-        vir como exceção da requisição que o iniciou. Ela fica no `error`, que
-        só a rota de detalhes expõe — a listagem não pode carregar stderr."""
-        def fake_run(cmd, **kwargs):
-            class Result:
-                returncode = 1
-                stdout = ''
-                stderr = 'ERROR: could not find a version that satisfies sonicmaster'
-
-            return Result()
-
-        monkeypatch.setattr(processing.subprocess, 'run', fake_run)
-
+        monkeypatch.setattr('sys.frozen', True, raising=False)
+        pedidos = []
+        monkeypatch.setattr(biblioteca, 'ensure_speech_weights', lambda model_dir: pedidos.append(model_dir))
         processing.install_component('speech')
         _wait_for_background('speech')
-        assert 'sonicmaster' in (processing.get_component_details('speech').error or '')
+        assert len(pedidos) == 1
 
-    def test_install_refuses_when_no_source_checkout_present(self, tmp_path, monkeypatch):
-        """A packaged build has neither pip nor this repo's pyproject.toml
-        next to it — must fail with an actionable message, not a raw
-        FileNotFoundError from pip itself. `speech` (not `music`): only
-        speech still installs via this pip path."""
-        monkeypatch.setattr(processing, '_REPO_ROOT', tmp_path)
-        with pytest.raises(ComponentActionUnsupportedError, match='pip install eterzion_upscale'):
-            processing.install_component('speech')
+    def test_update_garante_os_mesmos_pesos(self, monkeypatch):
+        from eterzion_upscale import processing as biblioteca
+
+        pedidos = []
+        monkeypatch.setattr(biblioteca, 'ensure_speech_weights', lambda model_dir: pedidos.append(model_dir))
+        processing.update_component('speech')
+        _wait_for_background('speech')
+        assert len(pedidos) == 1
+
+    def test_instalada_so_com_os_pesos_no_disco(self, pasta_de_modelos):
+        from eterzion_upscale.processing import SPEECH_WEIGHTS, SPEECH_WEIGHTS_DIR
+
+        assert processing.get_component_details('speech').install_state == 'not_installed'
+        pasta = pasta_de_modelos / SPEECH_WEIGHTS_DIR
+        pasta.mkdir()
+        for nome in SPEECH_WEIGHTS:
+            (pasta / nome).write_bytes(b'x' * (1024 * 1024))
+        detalhes = processing.get_component_details('speech')
+        assert detalhes.install_state == 'installed'
+        assert detalhes.size_mb == 2
+        assert 'pip' not in detalhes.version
+
+    def test_remover_apaga_os_pesos(self, pasta_de_modelos):
+        from eterzion_upscale.processing import SPEECH_WEIGHTS, SPEECH_WEIGHTS_DIR
+
+        pasta = pasta_de_modelos / SPEECH_WEIGHTS_DIR
+        pasta.mkdir()
+        for nome in SPEECH_WEIGHTS:
+            (pasta / nome).write_bytes(b'x')
+        assert processing.uninstall_component('speech').install_state == 'not_installed'
+        assert not any(pasta.iterdir())
+        # remover de novo o que ja' nao esta' la' continua sendo sucesso
+        assert processing.uninstall_component('speech').install_state == 'not_installed'
+
+    def test_falha_de_download_chega_com_motivo(self, monkeypatch):
+        from eterzion_upscale import processing as biblioteca
+        from eterzion_upscale.media import DownloadError
+
+        def falha(model_dir):
+            raise DownloadError('rate_limited', 'backbone.onnx: HTTP Error 429 em https://h.invalido/x')
+
+        monkeypatch.setattr(biblioteca, 'ensure_speech_weights', falha)
+        processing.install_component('speech')
+        _wait_for_background('speech')
+        detalhes = processing.get_component_details('speech')
+        assert detalhes.error_reason == 'rate_limited'
+        assert 'http' not in (detalhes.error or '').lower()
+
+
+class TestMusicIsNotInstallableFromTheApp:
+    """Musica precisa de um ambiente CUDA de varios GB, placa de 6-8 GB e token
+    do Hugging Face com os termos da Stability aceitos. Nada disso cabe num
+    botao -- e a recusa tem de falar com quem usa o app, nao com quem o
+    desenvolve."""
+
+    @pytest.mark.parametrize('acao', ['install_component', 'update_component'])
+    def test_recusa_com_motivo_e_sem_texto_de_desenvolvedor(self, acao, monkeypatch):
+        chamadas = []
+        monkeypatch.setattr(processing.subprocess, 'run', lambda *a, **k: chamadas.append(a))
+        with pytest.raises(ComponentActionUnsupportedError) as erro:
+            getattr(processing, acao)('music')
+        assert erro.value.reason == 'not_available_in_app'
+        mensagem = str(erro.value)
+        for proibido in ('README', 'venv', 'HF_TOKEN', 'pip', 'SonicMaster', 'audio-worker'):
+            assert proibido not in mensagem
+        assert not chamadas
+
 
 @pytest.mark.slow
 class TestInstallRoundTrip:
