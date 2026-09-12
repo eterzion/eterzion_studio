@@ -53,9 +53,13 @@ def _pedir_token() -> dict:
         'timestamp': agora,
         'signature_b64': base64.b64encode(assinatura).decode('ascii'),
     }).encode('utf-8')
+    # Os cabecalhos das outras chamadas de licenca, com o User-Agent do app. Sem
+    # ele, o urllib manda `Python-urllib/3.x`, que o Cloudflare de
+    # license.eterzion.com barra antes de chegar ao servico ("error code: 1010",
+    # Browser Integrity Check) -- achado no primeiro pedido real em producao.
     req = urllib.request.Request(
         f'{settings.licensing_service_url.rstrip("/")}/downloads/token', data=corpo, method='POST',
-        headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
+        headers={**security._HTTP_HEADERS, 'Content-Type': 'application/json'})
     with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310 - URL fixa, da configuração
         return json.loads(resp.read().decode('utf-8'))
 

@@ -59,6 +59,9 @@ def test_o_pedido_sai_assinado_pela_chave_da_instalacao(monkeypatch):
 
     req = pedidos[0]
     assert req.full_url == 'https://licencas.invalido/downloads/token'
+    # Sem User-Agent do app, o Cloudflare de license.eterzion.com barra o
+    # `Python-urllib` com "error code: 1010" -- visto em producao.
+    assert req.get_header('User-agent', '').startswith('EterzionStudio/')
     corpo = json.loads(req.data)
     identidade = security.ensure_identity()
     assert corpo['install_id'] == identidade.install_id
