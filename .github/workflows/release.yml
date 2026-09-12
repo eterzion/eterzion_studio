@@ -72,13 +72,11 @@ jobs:
           fi
 
   windows-installer:
-    name: Build Windows installer
+    name: Build and publish Windows installer
     needs: prepare
     if: needs.prepare.outputs.exists != 'true'
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS_WINDOWS || '["windows-latest"]') }}
     timeout-minutes: 120
-    outputs:
-      signed: ${{ steps.signing.outputs.signed }}
     env:
       # Assinatura de código é o caminho esperado: um release sem assinatura sai
       # parecendo pronto e cada usuário encontra o aviso do SmartScreen na
@@ -97,7 +95,12 @@ jobs:
       CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
       CSC_IDENTITY_AUTO_DISCOVERY: 'false'
     steps:
+      # Historico completo e tags porque a publicacao, no fim deste job, monta
+      # o changelog pelo intervalo desde a release anterior.
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       # O cache vem antes de tudo de proposito. O ambiente Python -- setup,
       # uv, venv, PyTorch, dependencias -- existe unicamente para CONSTRUIR o
@@ -285,160 +288,134 @@ jobs:
           #
           # O `--publish never` nao impede a geracao: no app-builder-lib o
           # `createUpdateInfoTasks` fica fora do `if (isPublish)`. O que faltava
-          # era o arquivo entrar no glob do upload abaixo.
+          # era o arquivo entrar na lista que a publicacao, no fim do job,
+          # anexa a' release.
           if (-not (Test-Path dist\latest.yml)) {
             throw 'O build nao gerou dist/latest.yml; a atualizacao automatica ficaria quebrada.'
           }
           Get-Content dist\latest.yml
 
-      # Os tres arquivos que a release precisa carregar. O glob cobre os dois
-      # nomes possiveis do instalador, com e sem assinatura, mais o blockmap
-      # que o electron-builder gera ao lado; o `latest.yml` nao casa com ele e
-      # por isso vai listado a parte.
-      - uses: actions/upload-artifact@v7
-        with:
-          name: windows-installer
-          path: |
-            interface/dist/*-setup*.exe*
-            interface/dist/latest.yml
-          if-no-files-found: error
-          # O instalador do NSIS ja sai comprimido em LZMA. Comprimir de novo
-          # em zip gastava ~40s de CPU para ganhar quase nada de tamanho.
-          compression-level: 0
-          # Este artefato so' leva o instalador ate' o job `publish`, no mesmo
-          # run; depois disso a copia que importa e' a da release. Com os 90
-          # dias padrao, cada build deixava ~340 MB parados por tres meses --
-          # e em 2026-09-12, 15 deles (5,9 GB, 98% da cota de artefatos da
-          # organizacao) fizeram todo `upload-artifact` da eterzion falhar com
-          # "Artifact storage quota has been hit", inclusive o de cobertura.
-          # Um dia basta para rerodar um `publish` que falhou.
-          retention-days: 1
-
-  publish:
-    name: Publish GitHub release
-    needs: [prepare, windows-installer]
-    # A guarda de ref importa porque o passo abaixo usa `--target $GITHUB_SHA`:
-    # sem ela, um `workflow_dispatch` numa branch qualquer publicaria uma
-    # release apontando para o commit daquela branch, com a tag da versao do
-    # `package.json`. Os jobs de build nao precisam da guarda -- rodar o
-    # instalador numa branch e' justamente como se testa a esteira sem
-    # publicar nada.
-    if: >-
-      needs.prepare.outputs.exists != 'true' &&
-      github.ref == 'refs/heads/main'
-    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
-    steps:
-      # `fetch-depth: 0` e as tags sao o que permite montar o changelog a
-      # partir do intervalo desde a release anterior. O checkout vem antes do
-      # download porque ele limpa o workspace.
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          fetch-tags: true
-          persist-credentials: false
-      # A release carrega so o que o usuario final baixa: o instalador, o
-      # blockmap que o updater usa para o download diferencial e o
-      # `latest.yml` que ele le para descobrir que ha versao nova. O pacote
-      # Python (`.whl`/`.tar.gz`) saiu daqui porque nada o consumia -- o
-      # `api/README.md` instala com `pip install -e .` a partir do checkout e o
-      # worker de audio usa `audio_worker_requirements.txt`.
-      - uses: actions/download-artifact@v8
-        with:
-          name: windows-installer
-          path: artifacts
+      # Publica daqui mesmo, da maquina que construiu o instalador. Ate'
+      # 2026-09-12 o instalador subia como artefato para um segundo job, que o
+      # baixava de volta so' para anexar a' release: ~340 MB guardados no
+      # GitHub por build, sem ninguem precisar deles depois. Quinze desses
+      # (5,9 GB) esgotaram a cota de artefatos da organizacao e derrubaram todo
+      # `upload-artifact` da eterzion. Anexo de release nao entra nessa cota.
+      #
+      # Em pwsh, como o resto do job, e nao em bash: neste runner o `bash.exe`
+      # que o PATH encontra e' o C:\WINDOWS\system32\bash.exe -- o
+      # inicializador do WSL, nao o Git Bash. Um passo `shell: bash` rodaria
+      # dentro do Linux do WSL, como LocalSystem.
+      #
+      # A guarda de ref importa porque a release usa `--target $GITHUB_SHA`:
+      # sem ela, um `workflow_dispatch` numa branch qualquer publicaria uma
+      # release apontando para o commit daquela branch, com a tag da versao do
+      # `package.json`. O build continua rodando em branch -- e' assim que se
+      # testa a esteira sem publicar nada.
       - name: Publish immutable release
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.prepare.outputs.tag }}
-          SIGNED: ${{ needs['windows-installer'].outputs.signed }}
+          SIGNED: ${{ steps.signing.outputs.signed }}
         run: |
-          set -euo pipefail
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release $TAG was created by another run; refusing to duplicate it."
-            exit 0
-          fi
+          $ErrorActionPreference = 'Stop'
+          # Sem isto o pwsh decodifica a saida do git na pagina de codigo do
+          # console, e todo acento dos titulos de commit chega errado ao
+          # changelog de uma release que depois nao pode ser editada.
+          [Console]::OutputEncoding = [Text.UTF8Encoding]::new($false)
 
-          version="${TAG#v}"
+          # Comando nativo nao lanca excecao ao falhar; o codigo de saida tem
+          # que ser conferido a cada chamada que importa.
+          function Assert-Exit([string]$oQue) {
+            if ($LASTEXITCODE -ne 0) { throw "$oQue falhou (codigo $LASTEXITCODE)." }
+          }
+
+          gh release view $env:TAG --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "Release $env:TAG was created by another run; refusing to duplicate it."
+            exit 0
+          }
+
+          $version = $env:TAG -replace '^v', ''
 
           # Mesmo corpo dos demais repositorios da Eterzion (ver
           # eterzion_multicharacter/.github/workflows/release.yml): quem
-          # acompanha varios resources le sempre a mesma estrutura. O
-          # `--generate-notes` do gh produzia outro formato, com secao de
-          # contribuidores e link de comparacao, que nao batia com nenhum.
+          # acompanha varios resources le sempre a mesma estrutura.
+          #
           # As tags precisam estar no repositorio local para delimitar o
-          # intervalo. O `actions/checkout` monta o fetch com `--no-tags` e,
-          # num runner auto-hospedado (workspace persistente), ja aconteceu de
-          # nenhuma tag chegar mesmo com `fetch-tags: true`: foi assim que a
-          # v1.0.3 saiu com 319 bullets, o historico inteiro ate o commit
-          # inicial, em vez dos tres commits desde a v1.0.2.
-          # `persist-credentials: false` no checkout acima deixa o remote sem
-          # credencial, e este repositorio e' privado: um `git fetch origin`
-          # nu pede usuario e morre com "could not read Username". Nao
-          # aparecia enquanto este job rodava no runner auto-hospedado, cujo
-          # workspace persistente ja trazia as tags -- so quando ele passou a
-          # rodar num `ubuntu-24.04` limpo. O cabecalho vai em `-c`, escopo
-          # deste comando, entao nada e' gravado no `.git/config` do
-          # workspace, que e' o que o `persist-credentials: false` protege.
-          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)" fetch --tags --force --quiet origin
+          # intervalo. Num runner auto-hospedado (workspace persistente) ja'
+          # aconteceu de nenhuma tag chegar mesmo com `fetch-tags: true`: foi
+          # assim que a v1.0.3 saiu com 319 bullets, o historico inteiro, em vez
+          # dos tres commits desde a v1.0.2. O checkout deste job mantem a
+          # credencial, entao este fetch autentica sem mais nada.
+          git fetch --tags --force --quiet origin
+          Assert-Exit 'git fetch das tags'
 
-          previous_tag="$(
-            git tag --sort=-version:refname |
-            grep -Fxv "$TAG" |
-            head -n 1 ||
-            true
-          )"
+          $previousTag = git tag --sort=-version:refname |
+            Where-Object { $_ -ne $env:TAG } |
+            Select-Object -First 1
 
           # Uma release anterior que existe no GitHub mas nao tem tag local
           # significa ambiente quebrado, e o changelog sairia com o repositorio
           # inteiro -- notas erradas numa release imutavel. Parar e' melhor.
-          latest_release="$(
-            gh release list --repo "$GITHUB_REPOSITORY" --limit 1               --json tagName --jq '.[0].tagName // empty'
-          )"
-          if [ -z "$previous_tag" ] && [ -n "$latest_release" ]; then
-            echo "::error::A release $latest_release existe, mas nenhuma tag local foi encontrada; o changelog sairia com o historico inteiro."
+          $latestRelease = gh release list --repo $env:GITHUB_REPOSITORY --limit 1 --json tagName --jq '.[0].tagName // empty'
+          Assert-Exit 'gh release list'
+          if (-not $previousTag -and $latestRelease) {
+            Write-Output "::error::A release $latestRelease existe, mas nenhuma tag local foi encontrada; o changelog sairia com o historico inteiro."
             exit 1
-          fi
+          }
 
-          if [ -n "$previous_tag" ]; then
-            range="$previous_tag..HEAD"
-          else
-            range="HEAD"
-          fi
-          changes="$(git log "$range" --pretty=format:"- %s [%h](https://github.com/$GITHUB_REPOSITORY/commit/%H)")"
-          [ -n "$changes" ] || changes="- Nenhuma alteração registrada."
+          $range = if ($previousTag) { "$previousTag..HEAD" } else { 'HEAD' }
+          $changes = (git log $range --pretty=format:"- %s [%h](https://github.com/$env:GITHUB_REPOSITORY/commit/%H)") -join "`n"
+          Assert-Exit 'git log'
+          if (-not $changes) { $changes = '- Nenhuma alteração registrada.' }
 
-          notes_file="$(mktemp)"
-          trap 'rm -f "$notes_file"' EXIT
-
+          $linhas = @()
           # Um instalador sem assinatura nao pode chegar ao usuario parecendo
           # igual a um assinado. O aviso vai no topo das notas, onde ele le
           # antes de baixar, e nao so no log do build que ninguem abre.
-          if [ "$SIGNED" != "true" ]; then
-            cat >> "$notes_file" <<'AVISO'
-          > **Instalador sem assinatura digital.** O Windows vai exibir o aviso do SmartScreen ("editor desconhecido") na primeira execução. Prossiga apenas se você confia na origem deste arquivo.
+          if ($env:SIGNED -ne 'true') {
+            $linhas += '> **Instalador sem assinatura digital.** O Windows vai exibir o aviso do SmartScreen ("editor desconhecido") na primeira execução. Prossiga apenas se você confia na origem deste arquivo.'
+            $linhas += ''
+          }
+          $linhas += '## Detalhes da versão'
+          $linhas += ''
+          $linhas += "**Versão:** $version"
+          $linhas += "**Data:** $((Get-Date).ToString('dd/MM/yyyy'))"
+          $linhas += ''
+          $linhas += '## Changelog'
+          $linhas += ''
+          $linhas += $changes
 
-          AVISO
-          fi
+          # A release carrega so' o que o usuario final baixa: o instalador
+          # (com ou sem assinatura no nome), o blockmap que o updater usa para
+          # o download diferencial e o `latest.yml` que ele le para descobrir
+          # que ha versao nova. Os passos acima ja' confirmaram que existem;
+          # esta checagem so' impede uma release sem instalador se alguem
+          # mexer neles.
+          $arquivos = @(Get-ChildItem interface\dist\*-setup*.exe*) + @(Get-Item interface\dist\latest.yml)
+          if (-not ($arquivos | Where-Object { $_.Extension -eq '.exe' })) {
+            throw 'Nenhum instalador em interface\dist; a release nao sera criada.'
+          }
+          $arquivos | ForEach-Object { Write-Output "Anexando: $($_.Name)" }
 
-          cat >> "$notes_file" <<EOF
-          ## Detalhes da versão
+          $notas = [IO.Path]::GetTempFileName()
+          try {
+            # LF e UTF-8 sem BOM: e' o que o GitHub renderiza sem sobra.
+            [IO.File]::WriteAllText($notas, ($linhas -join "`n") + "`n", [Text.UTF8Encoding]::new($false))
 
-          **Versão:** ${version}
-          **Data:** $(date '+%d/%m/%Y')
+            $extra = @()
+            if ($env:TAG -match '(alpha|beta|rc)') { $extra += '--prerelease' }
 
-          ## Changelog
-
-          ${changes}
-          EOF
-
-          prerelease_args=()
-          if printf '%s' "$TAG" | grep -qE '(alpha|beta|rc)'; then
-            prerelease_args+=(--prerelease)
-          fi
-
-          gh release create "$TAG" artifacts/* \
-            --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
-            --title "$TAG" \
-            --notes-file "$notes_file" \
-            "${prerelease_args[@]}"
+            gh release create $env:TAG @($arquivos.FullName) `
+              --repo $env:GITHUB_REPOSITORY `
+              --target $env:GITHUB_SHA `
+              --title $env:TAG `
+              --notes-file $notas `
+              @extra
+            Assert-Exit 'gh release create'
+          } finally {
+            Remove-Item $notas -ErrorAction SilentlyContinue
+          }
