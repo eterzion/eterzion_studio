@@ -57,7 +57,17 @@ hiddenimports = sorted(set(
     # C -- o PyInstaller nao ve esse import e deixava o .pyd de fora. Sem ele,
     # NENHUMA extensao do scipy carrega, e a voz falhava na 1.1.2 com "The
     # `scipy` install you are using seems to be broken".
+    #
+    # E nao era so' ele: com o `_cyutility` no pacote, o autoteste do build
+    # parou em `scipy._external.array_api_compat.numpy.fft`, que o scipy importa
+    # montando o nome em tempo de execucao. Adivinhar modulo por modulo perde a
+    # proxima ocorrencia; o scipy vai inteiro, menos os testes dele.
     + ['scipy._cyutility']
+    + collect_submodules('scipy', filter=lambda nome: '.tests' not in nome and not nome.endswith('.conftest'))
+    # A coleta a partir de `scipy` perde a subarvore `_external` inteira: ela
+    # tropeca nos adaptadores de cupy/dask (nao instalados) e desiste do resto.
+    # Pedida direto, ela vem -- inclusive o `numpy.fft` que faltou.
+    + collect_submodules('scipy._external', filter=lambda nome: '.tests' not in nome)
 ))
 
 a = Analysis(

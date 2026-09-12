@@ -51,9 +51,21 @@ def _onnxruntime() -> str:
 
 
 def _audiosronnx() -> str:
-    from audiosronnx.engines.lavasr import LavaSRAdapter
+    """O DSP que o motor de voz roda antes e depois do ONNX, com as funcoes
+    dele: reamostragem, STFT/ISTFT e a costura espectral -- tudo scipy.signal.
+    O `resample_poly` sozinho ja' pegou o `array_api_compat` ausente, mas o
+    motor tambem passa por STFT/ISTFT, outro caminho do scipy; o que ele usa
+    de verdade e' o que precisa carregar."""
+    import numpy as np
+    from audiosronnx.engines import lavasr
 
-    return LavaSRAdapter.__name__
+    x = (np.sin(np.arange(16000) / 7.0) * 0.1).astype(np.float32)
+    x48 = lavasr._resample(x, 16000, 48000)
+    espectro = lavasr._stft(x, 16000, 512, 128)
+    lavasr._istft(espectro, 16000, 512, 128, target_len=len(x))
+    lavasr._spectral_merge(x48, x48, 48000, 4000.0, 8)
+    lavasr._build_mel_filterbank(24000, 1024, 80, 0.0, 8000.0)
+    return lavasr.LavaSRAdapter.__name__
 
 
 def _opencv() -> str:
