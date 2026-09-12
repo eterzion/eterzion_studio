@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
+
+const versaoFalsa = '9.9.9'
+vi.mock('../../services/native', () => ({
+  hasNativeApi: true,
+  api: { getAppVersion: () => Promise.resolve(versaoFalsa) }
+}))
 import { mount } from '@vue/test-utils'
 import { createI18n } from 'vue-i18n'
 import { readFileSync } from 'node:fs'
@@ -74,5 +80,21 @@ describe('AppSidebar — logo da marca', () => {
     for (const dark of [true, false]) {
       expect(imgSrc).toContain(new URL(logoSrc(dark)).origin)
     }
+  })
+
+  it('mostra a versão real do app, não um número escrito à mão', async () => {
+    // Era `v2.0.0` fixo no template, e continuou dizendo isso durante as
+    // 1.0.4, 1.0.5, 1.0.6 e 1.0.7. Um usuário relatando um problema pelo número
+    // da tela daria a informação errada, e ninguém desconfia de um rótulo.
+    const wrapper = mount(AppSidebar, {
+      props: { active: 'home' as const, darkMode: true },
+      global: { plugins: [i18n], stubs: { AppButton: true } }
+    })
+    await new Promise((r) => setTimeout(r, 0))
+    await wrapper.vm.$nextTick()
+
+    expect(wrapper.text()).toContain(`v${versaoFalsa}`)
+    expect(wrapper.text()).not.toContain('v2.0.0')
+    wrapper.unmount()
   })
 })
