@@ -12,9 +12,6 @@ import {
   RotateCcw,
   Check,
   Award,
-  ChevronDown,
-  ChevronRight,
-  Info,
   ShieldCheck,
   Image as ImageIcon,
   Palette,
@@ -66,7 +63,6 @@ const CREDITS: {
   work: string
   author: string
   license: string
-  noteKey?: string
   icon: unknown
   tint: string
 }[] = [
@@ -115,7 +111,19 @@ const CREDITS: {
     work: 'SonicMaster',
     author: 'AMAAI Lab',
     license: 'Apache-2.0',
-    noteKey: 'noteSonicMaster',
+    icon: Music2,
+    tint: '#ec4899'
+  },
+  // Linha propria, e nao mais uma observacao "condicional" na da SonicMaster:
+  // o VAE e' dependencia obrigatoria dela, sob outra licenca, e o credito a'
+  // Stability AI e' obrigacao dessa licenca (docs/models/MODEL_LICENSES.md,
+  // secao 3-bis, item 3). A observacao era a unica mencao a' Stability na
+  // tela; tira-la sem esta linha apagaria uma atribuicao exigida.
+  {
+    capabilityKey: 'audioMusic',
+    work: 'Stable Audio Open 1.0 (VAE)',
+    author: 'Stability AI',
+    license: 'Stability AI Community License',
     icon: Music2,
     tint: '#ec4899'
   },
@@ -132,7 +140,6 @@ const CREDITS: {
     work: 'FFmpeg',
     author: 'FFmpeg developers',
     license: 'LGPL v2.1+',
-    noteKey: 'noteFfmpeg',
     icon: PlayCircle,
     tint: '#3b82f6'
   }
@@ -143,15 +150,11 @@ const LICENSE_TONES: Record<string, string> = {
   'BSD-3-Clause': '#a855f7',
   'Apache-2.0': '#22c55e',
   MIT: '#94a3b8',
-  'LGPL v2.1+': '#94a3b8'
+  'LGPL v2.1+': '#94a3b8',
+  'Stability AI Community License': '#f59e0b'
 }
 function licenseTone(license: string): string {
   return LICENSE_TONES[license] ?? '#94a3b8'
-}
-
-const expandedCredit = ref<string | null>(null)
-function toggleCredit(work: string): void {
-  expandedCredit.value = expandedCredit.value === work ? null : work
 }
 
 const clearConfirm = ref(false)
@@ -512,9 +515,6 @@ const outputFolderLabel = computed(
                       <span class="credit-name">{{ t(`credits.${credit.capabilityKey}`) }}</span>
                     </div>
                     <span class="credit-author">{{ credit.work }} — {{ credit.author }}</span>
-                    <p v-if="credit.noteKey" class="credit-note">
-                      <Info :size="12" /> {{ t(`credits.${credit.noteKey}`) }}
-                    </p>
                   </div>
                   <span
                     class="credit-license-badge"
@@ -524,25 +524,7 @@ const outputFolderLabel = computed(
                     }"
                     >{{ credit.license }}</span
                   >
-                  <button
-                    class="credit-expand-btn"
-                    type="button"
-                    :title="
-                      expandedCredit === credit.work
-                        ? t('settings.collapse')
-                        : t('settings.details')
-                    "
-                    @click="toggleCredit(credit.work)"
-                  >
-                    <component
-                      :is="expandedCredit === credit.work ? ChevronDown : ChevronRight"
-                      :size="16"
-                    />
-                  </button>
                 </div>
-                <p v-if="expandedCredit === credit.work" class="credit-detail">
-                  {{ t('settings.distributedUnder', { license: credit.license }) }}
-                </p>
               </li>
             </ul>
           </div>
@@ -654,14 +636,6 @@ const outputFolderLabel = computed(
   color: var(--text-secondary);
   font-size: var(--fs-body-sm);
 }
-.credit-note {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 2px 0 0;
-  color: var(--text-tertiary);
-  font-size: var(--fs-caption);
-}
 .credit-license-badge {
   flex-shrink: 0;
   padding: 3px 10px;
@@ -669,28 +643,6 @@ const outputFolderLabel = computed(
   font-size: var(--fs-caption);
   font-weight: var(--fw-semibold);
   white-space: nowrap;
-}
-.credit-expand-btn {
-  flex-shrink: 0;
-  width: 26px;
-  height: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  color: var(--text-tertiary);
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-}
-.credit-expand-btn:hover {
-  background: var(--surface-2);
-  color: var(--text-primary);
-}
-.credit-detail {
-  margin: var(--space-2) 0 0 50px;
-  color: var(--text-secondary);
-  font-size: var(--fs-caption);
 }
 
 .credits-footer {

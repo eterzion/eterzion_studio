@@ -484,8 +484,6 @@
     "imageAnime": "图片增强 — 动漫/插画",
     "imagePhoto": "图片增强 — 照片",
     "media": "媒体处理",
-    "noteFfmpeg": "（发行版构建）",
-    "noteSonicMaster": "Apache-2.0 — 有条件（依赖 Stable Audio Open 的 VAE）",
     "videoAnime": "视频增强 — 动画",
     "videoReal": "视频增强 — 实拍"
   },
@@ -811,7 +809,6 @@
     "clearHistory": "手动清空历史记录",
     "clearHistoryAction": "清空历史记录",
     "clearHistoryDescription": "删除所有已保存的记录，不影响已导出的文件",
-    "collapse": "收起",
     "comfortable": "宽松",
     "compact": "紧凑",
     "concurrentJobs": "并发任务数",
@@ -824,8 +821,6 @@
     "defaultScaleDescription": "新图片预先选中的放大倍数",
     "density": "界面密度",
     "densityDescription": "元素之间的间距",
-    "details": "详情",
-    "distributedUnder": "依据 {license} 许可证分发。",
     "general": {
       "autoUpdate": {
         "description": "启动时检查新版本（即将推出）",
