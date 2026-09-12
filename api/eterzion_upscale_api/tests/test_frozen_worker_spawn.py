@@ -54,3 +54,34 @@ class TestNoWindow:
     def test_stays_out_of_the_way_where_the_flag_does_not_exist(self, monkeypatch):
         monkeypatch.delattr('subprocess.CREATE_NO_WINDOW', raising=False)
         assert security.no_window_kwargs() == {}
+
+
+class TestSelfCheck:
+    """O autoteste que a esteira roda dentro do executavel congelado precisa,
+    antes de tudo, passar aqui -- senao ele reprovaria todo build."""
+
+    def test_todas_as_partes_nativas_carregam(self, tmp_path):
+        import json
+
+        from app import self_check
+
+        relatorio = tmp_path / 'self-check.json'
+        assert self_check.run(str(relatorio)), relatorio.read_text(encoding='utf-8')
+        dados = json.loads(relatorio.read_text(encoding='utf-8'))
+        assert set(dados['verificacoes']) == {
+            'torchvision', 'scipy', 'onnxruntime', 'audiosronnx', 'opencv', 'soundfile'}
+
+    def test_uma_parte_quebrada_reprova_e_diz_qual(self, tmp_path, monkeypatch):
+        import json
+
+        from app import self_check
+
+        def quebrada():
+            raise ImportError('extension modules cannot be imported')
+
+        monkeypatch.setitem(self_check.VERIFICACOES, 'scipy', quebrada)
+        relatorio = tmp_path / 'self-check.json'
+        assert not self_check.run(str(relatorio))
+        dados = json.loads(relatorio.read_text(encoding='utf-8'))
+        assert dados['verificacoes']['scipy']['ok'] == 'nao'
+        assert 'extension modules' in dados['verificacoes']['scipy']['erro']

@@ -33,6 +33,14 @@ if __name__ == '__main__':
         worker_main()
         raise SystemExit(0)
 
+    # Autoteste das partes nativas, rodado pela esteira DENTRO do executável
+    # congelado (app/self_check.py). Relatório no arquivo do segundo argumento,
+    # porque o bundle não tem console; resultado também no código de saída.
+    if len(sys.argv) > 1 and sys.argv[1] == '--eterzion-self-check':
+        from app import self_check
+
+        raise SystemExit(0 if self_check.run(sys.argv[2] if len(sys.argv) > 2 else None) else 1)
+
     import logging
 
     import uvicorn

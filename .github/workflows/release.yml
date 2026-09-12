@@ -244,6 +244,26 @@ jobs:
           }
           Write-Output ("Extensao nativa presente: " + (($nativos | ForEach-Object { $_.Name }) -join ', '))
 
+      - name: Self-check the packaged backend (native parts really load)
+        shell: pwsh
+        run: |
+          # As guardas por arquivo acima pegam so' o defeito que ja' aconteceu.
+          # Esta roda o PROPRIO executavel congelado e exercita cada parte
+          # nativa (app/self_check.py): torchvision.ops, scipy.signal,
+          # onnxruntime, audiosronnx, opencv, soundfile. Foi o que faltou para
+          # pegar o `scipy._cyutility` ausente da 1.1.2 -- o build ficou verde
+          # e a voz so' falhou na maquina de quem processou.
+          $raiz = "$env:GITHUB_WORKSPACE\interface\resources\backend\win32"
+          $exe = Get-ChildItem $raiz -Recurse -File -Filter 'eterzion-studio-api.exe' | Select-Object -First 1
+          if (-not $exe) { throw "executavel do backend nao encontrado sob $raiz." }
+          $relatorio = Join-Path $env:RUNNER_TEMP 'self-check.json'
+          Remove-Item $relatorio -ErrorAction SilentlyContinue
+          $proc = Start-Process -FilePath $exe.FullName -ArgumentList '--eterzion-self-check', "`"$relatorio`"" -PassThru -Wait -WindowStyle Hidden
+          if (Test-Path $relatorio) { Get-Content $relatorio -Raw | Write-Output } else { Write-Output 'o executavel nao gravou relatorio (morreu antes de rodar as verificacoes).' }
+          if ($proc.ExitCode -ne 0) {
+            throw "Autoteste do backend empacotado falhou (codigo $($proc.ExitCode)). Veja o relatorio acima: alguma parte nativa nao carrega dentro do executavel."
+          }
+
       - name: Verify the backend carries onnxruntime (speech engine)
         shell: pwsh
         run: |
