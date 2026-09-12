@@ -305,6 +305,14 @@ jobs:
           # O instalador do NSIS ja sai comprimido em LZMA. Comprimir de novo
           # em zip gastava ~40s de CPU para ganhar quase nada de tamanho.
           compression-level: 0
+          # Este artefato so' leva o instalador ate' o job `publish`, no mesmo
+          # run; depois disso a copia que importa e' a da release. Com os 90
+          # dias padrao, cada build deixava ~340 MB parados por tres meses --
+          # e em 2026-09-12, 15 deles (5,9 GB, 98% da cota de artefatos da
+          # organizacao) fizeram todo `upload-artifact` da eterzion falhar com
+          # "Artifact storage quota has been hit", inclusive o de cobertura.
+          # Um dia basta para rerodar um `publish` que falhou.
+          retention-days: 1
 
   publish:
     name: Publish GitHub release
