@@ -59,7 +59,8 @@
     "errors": {
       "loadFailed": "无法读取组件列表。",
       "installFailed": "安装失败，且未说明原因。",
-      "actionFailed": "操作失败。"
+      "actionFailed": "操作失败。",
+      "notAvailableInApp": "此版本的应用暂不支持。"
     },
     "footnote": "删除会立即释放空间；下次使用该功能时会重新下载。",
     "loading": "正在检查已安装的内容…",

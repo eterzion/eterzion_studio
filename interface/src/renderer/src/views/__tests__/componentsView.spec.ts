@@ -145,6 +145,25 @@ describe('ComponentsView — o que a lista mostra', () => {
     wrapper.unmount()
   })
 
+  it('música recusada mostra a frase traduzida, não o texto do backend', async () => {
+    // O backend responde 422 com motivo; a frase sai na língua do app. Antes
+    // a tela mostrava "Configure-a manualmente seguindo api/README.md (venv
+    // próprio, checkpoint do modelo, variável HF_TOKEN)".
+    listComponents.mockResolvedValue([componente({ id: 'music' })])
+    installComponent.mockRejectedValue(
+      Object.assign(new Error('mensagem só em português'), { reason: 'not_available_in_app' })
+    )
+
+    const wrapper = await montar()
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Not available in this version of the app yet.')
+    expect(wrapper.text()).not.toContain('mensagem só em português')
+    expect(wrapper.text()).not.toContain('README')
+    wrapper.unmount()
+  })
+
   it('mostra o tamanho apenas do que está instalado', async () => {
     listComponents.mockResolvedValue([
       componente({ install_state: 'installed', size_mb: 68 }),
