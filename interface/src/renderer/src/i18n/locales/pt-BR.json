@@ -59,7 +59,8 @@
     "errors": {
       "loadFailed": "Não foi possível ler a lista de componentes.",
       "installFailed": "A instalação falhou e não informou o motivo.",
-      "actionFailed": "A ação falhou."
+      "actionFailed": "A ação falhou.",
+      "notAvailableInApp": "Ainda não disponível nesta versão do aplicativo."
     },
     "footnote": "Remover libera o espaço agora; na próxima vez que você usar essa capacidade, ela baixa de novo.",
     "loading": "Verificando o que está instalado…",

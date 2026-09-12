@@ -240,6 +240,22 @@ jobs:
           }
           Write-Output ("Extensao nativa presente: " + (($nativos | ForEach-Object { $_.Name }) -join ', '))
 
+      - name: Verify the backend carries onnxruntime (speech engine)
+        shell: pwsh
+        run: |
+          # A voz roda no onnxruntime empacotado. Mesmo risco do passo acima:
+          # sem a extensao nativa o build fica verde e o motor de voz so' falha
+          # na maquina de quem clicou em processar. Busca, nao caminho fixo.
+          $raiz = "$env:GITHUB_WORKSPACE\interface\resources\backend\win32"
+          $faltando = @()
+          foreach ($nome in 'onnxruntime_pybind11_state.pyd', 'onnxruntime.dll') {
+            $achado = Get-ChildItem $raiz -Recurse -File -Filter $nome -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($achado) { Write-Output ("presente: " + $achado.FullName.Substring($raiz.Length)) } else { $faltando += $nome }
+          }
+          if ($faltando) {
+            throw ("onnxruntime empacotado sem: " + ($faltando -join ', ') + ". O motor de voz nao vai carregar. Veja collect_dynamic_libs('onnxruntime') no .spec.")
+          }
+
       - name: Verify signature
         if: steps.signing.outputs.signed == 'true'
         working-directory: interface

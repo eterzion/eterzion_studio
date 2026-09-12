@@ -601,7 +601,7 @@ def install_component(component_id: str):
     except processing.ComponentNotFoundError:
         raise HTTPException(404, 'Componente não encontrado.')
     except processing.ComponentActionUnsupportedError as error:
-        raise HTTPException(422, str(error))
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error)})
 
 
 @components_router.post('/{component_id}/update', response_model=Component)
@@ -611,7 +611,7 @@ def update_component(component_id: str):
     except processing.ComponentNotFoundError:
         raise HTTPException(404, 'Componente não encontrado.')
     except processing.ComponentActionUnsupportedError as error:
-        raise HTTPException(422, str(error))
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error)})
 
 
 # A rota que faltava para o `install/update/delete` que o cabeçalho deste bloco
@@ -624,7 +624,7 @@ def uninstall_component(component_id: str):
     except processing.ComponentNotFoundError:
         raise HTTPException(404, 'Componente não encontrado.')
     except processing.ComponentActionUnsupportedError as error:
-        raise HTTPException(422, str(error))
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error)})
 
 
 # ------------------------------- /identity ------------------------------- #

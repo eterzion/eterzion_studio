@@ -59,7 +59,8 @@
     "errors": {
       "loadFailed": "구성 요소 목록을 읽지 못했습니다.",
       "installFailed": "설치에 실패했으며 이유가 보고되지 않았습니다.",
-      "actionFailed": "작업에 실패했습니다."
+      "actionFailed": "작업에 실패했습니다.",
+      "notAvailableInApp": "이 버전의 앱에서는 아직 사용할 수 없습니다."
     },
     "footnote": "삭제하면 용량이 바로 확보됩니다. 해당 기능을 다시 사용할 때 다시 내려받습니다.",
     "loading": "설치 상태를 확인하는 중…",
