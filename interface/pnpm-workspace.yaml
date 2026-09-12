@@ -52,3 +52,17 @@ overrides:
   # GHSA-6gmq-8vp8-gcm6 — injeção de fragmento XML por EntityReference.nodeName
   # inválido.
   '@xmldom/xmldom@<0.8.15': '>=0.8.15 <0.9'
+
+  # js-yaml chega por electron-updater, que VAI no app empacotado: e' com ele
+  # que o updater le o `latest.yml` baixado das releases, na maquina de cada
+  # usuario. Tambem chega por app-builder-lib/builder-util/dmg-builder (build).
+  #
+  # Override porque o Dependabot nao consegue: a atualizacao de seguranca
+  # dele terminava em `security_update_not_possible` a cada push na main.
+  # Todos os pais pedem `^4.1.0`, entao 4.3.2 cabe no range. O teto `<5`
+  # pelo mesmo motivo do fast-uri acima: a `latest` do js-yaml e' a 5.x, e
+  # sem teto o override viraria um salto de major imposto aos pais.
+  #
+  # GHSA-2883-xcg3-v3hh — `maxTotalMergeKeys` nao limita o uso de CPU quando
+  # as fontes de merge estao vazias.
+  js-yaml@<4.3.2: '>=4.3.2 <5'
