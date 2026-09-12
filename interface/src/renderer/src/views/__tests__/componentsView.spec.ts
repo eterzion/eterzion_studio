@@ -24,13 +24,17 @@ const getComponentDetails = vi.fn()
 const installComponent = vi.fn()
 const updateComponent = vi.fn()
 const uninstallComponent = vi.fn()
+// A tela pede ao serviço a frase de uma falha de download; o padrão aqui é
+// "não é download" (null), e o teste de download abaixo define a frase.
+const downloadErrorCopy = vi.fn()
 
 vi.mock('../../services/api', () => ({
   listComponents: (...a: unknown[]) => listComponents(...a),
   getComponentDetails: (...a: unknown[]) => getComponentDetails(...a),
   installComponent: (...a: unknown[]) => installComponent(...a),
   updateComponent: (...a: unknown[]) => updateComponent(...a),
-  uninstallComponent: (...a: unknown[]) => uninstallComponent(...a)
+  uninstallComponent: (...a: unknown[]) => uninstallComponent(...a),
+  downloadErrorCopy: (...a: unknown[]) => downloadErrorCopy(...a)
 }))
 
 import ComponentsView from '../ComponentsView.vue'
@@ -69,6 +73,7 @@ beforeEach(() => {
   installComponent.mockReset().mockResolvedValue(componente({ install_state: 'installing' }))
   updateComponent.mockReset().mockResolvedValue(componente())
   uninstallComponent.mockReset().mockResolvedValue(componente())
+  downloadErrorCopy.mockReset().mockReturnValue(null)
 })
 
 afterEach(() => {
@@ -104,6 +109,39 @@ describe('ComponentsView — o que a lista mostra', () => {
 
     expect(wrapper.text()).toContain('pip falhou: disco cheio')
     expect(wrapper.text()).not.toContain('nomos-webphoto')
+    wrapper.unmount()
+  })
+
+  it('falha de download mostra a frase do motivo, nunca o texto cru com link', async () => {
+    // O caso real: um 429 da origem aparecia como "Todas as fontes de download
+    // falharam para 2xHFA2kSPAN.safetensors: ... https://huggingface.co/...".
+    listComponents
+      .mockResolvedValueOnce([componente({ install_state: 'installing' })])
+      .mockResolvedValue([componente({ install_state: 'not_installed' })])
+    getComponentDetails.mockResolvedValue({
+      ...componente(),
+      technical_name: 'hfa2k-span',
+      version: '1.0',
+      provenance: 'x',
+      license: 'CC-BY-4.0',
+      error: 'O servidor de download está recebendo muitos pedidos agora.',
+      error_reason: 'rate_limited'
+    })
+    downloadErrorCopy.mockImplementation((reason: string) =>
+      reason === 'rate_limited'
+        ? { message: 'The download server is busy.', action: 'Try again in a few minutes.' }
+        : null
+    )
+
+    const wrapper = await montar()
+    await vi.advanceTimersByTimeAsync(2100)
+    await flushPromises()
+
+    expect(downloadErrorCopy).toHaveBeenCalledWith('rate_limited')
+    expect(wrapper.text()).toContain('The download server is busy. Try again in a few minutes.')
+    expect(wrapper.text()).not.toContain('servidor de download está recebendo')
+    expect(wrapper.text()).not.toContain('http')
+    expect(wrapper.text()).not.toContain('hfa2k-span')
     wrapper.unmount()
   })
 

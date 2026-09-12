@@ -5,6 +5,7 @@ what were `media_engine/{probe,temporal,transcode}.py` and
 """
 from __future__ import annotations
 
+import errno
 import functools
 import hashlib
 import json
@@ -12,7 +13,9 @@ import logging
 import math
 import os
 import shutil
+import socket
 import subprocess
+import urllib.error
 from collections.abc import Iterator, Sequence
 from dataclasses import dataclass
 from urllib.parse import urlparse
@@ -532,8 +535,74 @@ def apply_deflicker(input_path: str, output_path: str) -> None:
 # and mirror-with-fallback support.
 
 
+# O que a pessoa le quando um download falha. Nunca URL e nunca nome de
+# arquivo: o link nao e' acionavel para quem usa o app, e o nome do arquivo
+# e' o nome interno do modelo, que o produto nao expoe (Principio V). A frase
+# diz o que aconteceu em termos que ela reconhece e o que fazer a seguir.
+#
+# Nasceu de um caso real: a tela de Componentes mostrou "Todas as fontes de
+# download falharam para 2xHFA2kSPAN.safetensors: - Falha ao baixar o modelo
+# de https://huggingface.co/... (HTTP Error 429: Too Many Requests)" -- um 429,
+# que so' pede para esperar, apresentado como defeito com link e modelo.
+_DOWNLOAD_MESSAGES = {
+    'rate_limited': 'O servidor de download está recebendo muitos pedidos agora. '
+                    'Tente novamente em alguns minutos.',
+    'server_unavailable': 'O servidor de download não respondeu. Tente novamente mais tarde.',
+    'not_found': 'O arquivo não está disponível no servidor de download no momento. '
+                 'Tente novamente mais tarde; se continuar, atualize o aplicativo.',
+    'network': 'Não foi possível conectar ao servidor de download. '
+               'Verifique sua conexão com a internet e tente novamente.',
+    'corrupted': 'O download chegou incompleto ou corrompido e foi descartado. Tente novamente.',
+    'disk_full': 'Não há espaço em disco suficiente para o download. Libere espaço e tente novamente.',
+    'unknown': 'Não foi possível concluir o download. Tente novamente mais tarde.',
+}
+
+# Quando varias fontes falham por motivos diferentes, qual deles contar. Rede
+# por ultimo: se alguma fonte chegou a responder, a conexao da pessoa funciona,
+# e dizer "verifique sua internet" a mandaria procurar no lugar errado.
+_REASON_PRIORITY = ('disk_full', 'rate_limited', 'server_unavailable', 'corrupted',
+                    'not_found', 'network', 'unknown')
+
+
 class DownloadError(RuntimeError):
-    """Raised when a model download fails or its checksum does not match."""
+    """Raised when a model download fails or its checksum does not match.
+
+    ``str(error)`` e' a frase para quem usa o app (ver `_DOWNLOAD_MESSAGES`).
+    O tecnico -- URL, arquivo, erro original -- fica em ``detail``, que vai
+    para o log e para a area recolhida de detalhes, nunca para a frase.
+    """
+
+    def __init__(self, reason: str, detail: str):
+        self.reason = reason if reason in _DOWNLOAD_MESSAGES else 'unknown'
+        self.detail = detail
+        super().__init__(_DOWNLOAD_MESSAGES[self.reason])
+
+
+def _download_reason(error: BaseException) -> str:
+    """Classifica a falha de um download para escolher a frase certa."""
+    # HTTPError herda de URLError: precisa vir antes.
+    if isinstance(error, urllib.error.HTTPError):
+        if error.code == 429:
+            return 'rate_limited'
+        if error.code in (404, 410):
+            return 'not_found'
+        if error.code >= 500:
+            return 'server_unavailable'
+        return 'unknown'
+    if isinstance(error, (TimeoutError, socket.timeout)):
+        return 'server_unavailable'
+    if isinstance(error, urllib.error.URLError):
+        if isinstance(error.reason, (TimeoutError, socket.timeout)):
+            return 'server_unavailable'
+        # Um file:// inexistente tambem chega aqui; e' o "arquivo nao existe".
+        if isinstance(error.reason, FileNotFoundError):
+            return 'not_found'
+        return 'network'
+    if isinstance(error, OSError) and error.errno == errno.ENOSPC:
+        return 'disk_full'
+    if isinstance(error, ConnectionError):
+        return 'network'
+    return 'unknown'
 
 
 def sha256_of_file(path: str, chunk_size: int = 1 << 20) -> str:
@@ -610,16 +679,19 @@ def load_file_from_url(url: str,
     except Exception as error:
         if os.path.exists(partial_file):
             os.remove(partial_file)
-        raise DownloadError(f'Falha ao baixar o modelo de {url} ({error}). '
-                            'Verifique sua conexão ou se a URL ainda está no ar.') from error
+        detail = f'{filename}: falha ao baixar de {url} ({error})'
+        logger.warning('download failed: %s', detail)
+        raise DownloadError(_download_reason(error), detail) from error
 
     digest = sha256_of_file(partial_file)
     if sha256 is None:
         logger.warning('no pinned sha256 for %s; computed sha256=%s', filename, digest)
     elif digest.lower() != sha256.lower():
         os.remove(partial_file)
-        raise DownloadError(f'Checksum SHA256 inválido para {filename} (baixado de {url}): '
-                            f'esperado {sha256}, obtido {digest}. O arquivo foi descartado.')
+        detail = (f'{filename}: SHA256 invalido (baixado de {url}): '
+                  f'esperado {sha256}, obtido {digest}. O arquivo foi descartado.')
+        logger.warning('download rejected: %s', detail)
+        raise DownloadError('corrupted', detail)
     os.replace(partial_file, cached_file)
     return cached_file
 
@@ -641,15 +713,17 @@ def download_with_fallback(urls: list[str],
     if os.path.exists(cached_file):
         return cached_file
 
-    errors = []
+    errors: list[DownloadError] = []
     for url in urls:
         try:
             return load_file_from_url(url, model_dir=model_dir, progress=progress, file_name=filename, sha256=sha256)
         except DownloadError as error:
             logger.warning('source failed (%s); trying next mirror if any', url)
-            errors.append(str(error))
-    raise DownloadError('Todas as fontes de download falharam para ' + filename + ':\n' +
-                        '\n'.join(f'  - {e}' for e in errors))
+            errors.append(error)
+    reasons = {e.reason for e in errors}
+    reason = next(r for r in _REASON_PRIORITY if r in reasons or r == 'unknown')
+    raise DownloadError(reason, 'Todas as fontes de download falharam para ' + filename + ':\n' +
+                        '\n'.join(f'  - {e.detail}' for e in errors))
 
 
 def local_file_status(url: str, model_dir: str = 'models', file_name: str | None = None) -> tuple[bool, int]:

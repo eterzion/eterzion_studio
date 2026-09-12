@@ -35,6 +35,7 @@ import {
 
 import TopBar from '../components/TopBar.vue'
 import {
+  downloadErrorCopy,
   getComponentDetails,
   installComponent,
   listComponents,
@@ -95,7 +96,12 @@ async function refresh(): Promise<void> {
       if (antes.get(c.id) === 'installing' && c.install_state === 'not_installed') {
         try {
           const detalhe = await getComponentDetails(c.id)
-          if (detalhe.error) itemError.value[c.id] = detalhe.error
+          if (detalhe.error) {
+            // Falha de download vira a frase do motivo, na língua do app; o
+            // texto do backend (só pt-BR) fica para o que não é download.
+            const copy = downloadErrorCopy(detalhe.error_reason)
+            itemError.value[c.id] = copy ? `${copy.message} ${copy.action}` : detalhe.error
+          }
         } catch {
           itemError.value[c.id] = t('components.errors.installFailed')
         }
