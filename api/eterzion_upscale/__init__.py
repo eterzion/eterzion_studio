@@ -1,4 +1,4 @@
-__version__ = '1.1.2'
+__version__ = '1.1.3'
 
 from .processing import MODELS, EterzionUpscaler, load_model, resolve_model
 from .media import img2tensor, imread, imwrite, tensor2img

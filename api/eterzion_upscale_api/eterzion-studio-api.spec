@@ -52,6 +52,12 @@ hiddenimports = sorted(set(
     # adaptadores de motor se registram por import do subpacote `engines`.
     + collect_submodules('audiosronnx')
     + collect_submodules('onnxruntime')
+    # O scipy recente compila o utilitario comum do Cython num modulo proprio,
+    # `scipy._cyutility`, que as outras extensoes carregam por dentro do codigo
+    # C -- o PyInstaller nao ve esse import e deixava o .pyd de fora. Sem ele,
+    # NENHUMA extensao do scipy carrega, e a voz falhava na 1.1.2 com "The
+    # `scipy` install you are using seems to be broken".
+    + ['scipy._cyutility']
 ))
 
 a = Analysis(
