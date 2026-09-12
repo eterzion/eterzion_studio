@@ -45,8 +45,8 @@
 
 /* ---------------------------- accent ---------------------------- */
 /*
- * Image, video and audio share the same cyan identity. The module variables stay
- * available as compatibility aliases so existing components keep their structure.
+ * Um acento por módulo. O cartão da Home, o item do menu e a tela que ele abre
+ * leem todos daqui, então as três coisas dizem a mesma cor.
  */
 :root {
   --accent-image: #1688ff;
@@ -62,13 +62,36 @@
   --color-primary-soft: var(--primary-muted);
 }
 
-/* Every editor module resolves to the same official identity tokens. */
-[data-module='image'],
-[data-module='video'],
+/* Cada módulo usa o SEU acento — o mesmo que o cartão da Home e o item do menu
+   já usavam. Antes, `image`, `video` e `audio` eram colapsados aqui em
+   `var(--primary)`, e só `compression` mantinha cor própria: era por isso que
+   apenas a tela de Compressão combinava com o menu que a abriu.
+   `HomeView.vue` já afirmava o contrário no comentário dele — "a card and the
+   screen it opens are literally the same colour" —, e a afirmação só era
+   verdadeira para um dos quatro.
+
+   Note que o tema CLARO nunca teve esse problema: as regras
+   `:root[data-theme='light'] [data-module='…']` mais abaixo têm especificidade
+   maior e já davam a cor certa a cada módulo. O defeito era do tema escuro,
+   que é o padrão.
+
+   Texto sobre estes fundos é `--on-primary`, que é o próprio `--background`.
+   Contraste medido do escuro sobre cada acento: image 6,00 · video 4,86 ·
+   audio 12,00 · compression 8,05 — todos acima do mínimo de 4,5:1. */
+[data-module='image'] {
+  --color-primary: var(--accent-image);
+  --color-primary-hover: color-mix(in srgb, var(--accent-image) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-image) 14%, transparent);
+}
+[data-module='video'] {
+  --color-primary: var(--accent-video);
+  --color-primary-hover: color-mix(in srgb, var(--accent-video) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-video) 14%, transparent);
+}
 [data-module='audio'] {
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
-  --color-primary-soft: var(--primary-muted);
+  --color-primary: var(--accent-audio);
+  --color-primary-hover: color-mix(in srgb, var(--accent-audio) 82%, #000);
+  --color-primary-soft: color-mix(in srgb, var(--accent-audio) 14%, transparent);
 }
 [data-module='compression'] {
   --color-primary: var(--accent-compression);
@@ -214,10 +237,10 @@ body {
   align-items: center;
   justify-content: center;
   color: var(--chip-tone, var(--color-primary));
+  /* O fundo tingido fica: é o que identifica o módulo de relance. O halo que o
+     acompanhava (`drop-shadow` de 8px) saiu — decoração que não comunicava
+     estado e aparecia em dezenas de chips pelo app. */
   background: color-mix(in srgb, var(--chip-tone, var(--color-primary)) 19%, var(--surface-2));
-  filter: drop-shadow(
-    0 0 8px color-mix(in srgb, var(--chip-tone, var(--color-primary)) 22%, transparent)
-  );
 }
 
 * {

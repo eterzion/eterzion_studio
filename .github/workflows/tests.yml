@@ -105,12 +105,7 @@ jobs:
           uv venv --clear "$ci_venv" --python python
       - run: uv pip install --python "$CI_VENV/bin/python" -r requirements-dev.txt
       - run: >-
-          "$CI_VENV/bin/python" -m pytest --cov-report=xml
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: licensing-service-coverage
-          path: api/eterzion_licensing_service/coverage.xml
+          "$CI_VENV/bin/python" -m pytest
 
   upscale-api-tests:
     name: Upscale API (pytest)
@@ -264,7 +259,7 @@ jobs:
       # Isso e' mitigacao, nao cura: os testes sensiveis a carga continuam
       # sensiveis, e valeria endurece-los antes de subir esse numero.
       - run: >-
-          "$CI_VENV/bin/python" -m pytest -m "not slow" -n 2 --durations=20 --cov-report=xml
+          "$CI_VENV/bin/python" -m pytest -m "not slow" -n 2 --durations=20
       # The core library has its own suite (api/eterzion_upscale/tests, 81 tests)
       # and the step above never reached it: pytest.ini here sets
       # `testpaths = tests`, which is this package's tests and nothing else. It
@@ -274,11 +269,6 @@ jobs:
       - run: >-
           "$CI_VENV/bin/python" -m pytest -p no:cacheprovider
         working-directory: api
-      - uses: actions/upload-artifact@v7
-        if: always()
-        with:
-          name: upscale-api-coverage
-          path: api/eterzion_upscale_api/coverage.xml
 
   frontend-lint-and-typecheck:
     name: Desktop app — lint, typecheck + tests

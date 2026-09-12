@@ -15,6 +15,8 @@ from dataclasses import dataclass, replace
 from typing import Callable, TypedDict
 from urllib.parse import urlparse
 
+from app import security
+
 import cv2
 import numpy as np
 
@@ -757,6 +759,7 @@ def _enhance_music(input_wav: str, output_wav: str) -> None:
          '--ckpt', settings.audio_worker_checkpoint, '--input', input_wav, '--output', output_wav,
          '--prompt', 'Perform general music restoration and mastering', '--fs', '44100'],
         capture_output=True, text=True, timeout=600, check=False,
+        **security.no_window_kwargs(),
     )
     if result.returncode != 0 or not os.path.isfile(output_wav):
         raise RuntimeError(f'SonicMaster falhou: {result.stderr.strip()}')
@@ -1051,6 +1054,23 @@ def _check_audio_install_possible() -> None:
     `pip install` em si roda em segundo plano. Descobrir "não tem código-fonte
     ao lado" depois de dois minutos de download seria pior que não tentar.
     """
+    # Num app EMPACOTADO isto nunca vai ser possível, e a mensagem precisa dizer
+    # isso — não sugerir um comando. O bundle não tem pip nem `site-packages`
+    # gravável, então "pip install eterzion_upscale[audio]" não é uma instrução
+    # que o usuário possa seguir: ele instalou um .exe, não um checkout.
+    #
+    # A mensagem antiga citava o caminho de `resources/backend` e pedia o
+    # código-fonte "ao lado", descrevendo um cenário de desenvolvimento para
+    # quem está na versão instalada. Ela dizia a verdade sobre a causa e nada
+    # sobre a saída.
+    if security.frozen():
+        raise ComponentActionUnsupportedError(
+            'A melhoria de áudio por voz não é instalável pela versão instalada do '
+            'aplicativo — ela vem como pacote Python, e o executável não tem como '
+            'adicionar pacotes a si mesmo. Para usá-la, rode o aplicativo a partir do '
+            'código-fonte (veja api/README.md) e instale com '
+            '"pip install eterzion_upscale[audio]".')
+
     if not (_REPO_ROOT / 'pyproject.toml').is_file():
         raise ComponentActionUnsupportedError(
             'Não foi possível instalar: esta cópia do aplicativo não tem o código-fonte '
@@ -1081,7 +1101,8 @@ def _pip_install_audio_extra(*extra_args: str) -> None:
 
     target = f'{_REPO_ROOT}[audio]'
     cmd = [sys.executable, '-m', 'pip', 'install', *extra_args, target]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=900)
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, timeout=900, **security.no_window_kwargs())
     if result.returncode != 0:
         raise ComponentActionUnsupportedError(
             f'pip falhou (código {result.returncode}) instalando os componentes de áudio:\n'

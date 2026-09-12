@@ -1,6 +1,6 @@
 {
   "name": "eterzion-studio",
-  "version": "1.0.7",
+  "version": "1.1.0",
   "description": "Upscale de imagens e vídeos com IA — aplicativo desktop",
   "main": "./out/main/index.js",
   "author": "Eric Inácio",

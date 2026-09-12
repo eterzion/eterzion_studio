@@ -213,6 +213,17 @@ class TestInstallRoundTrip:
         assert before.install_state == 'not_installed'
         assert before.size_mb == 0
 
-        installed = processing.install_component('anime_image')
-        assert installed.install_state == 'installed'
-        assert installed.size_mb > 0
+        processing.install_component('anime_image')
+        # `install_component` volta assim que valida e dispara a thread, então o
+        # que ele devolve descreve o ANTES. Afirmar sobre esse retorno era o que
+        # fazia este teste falhar com `'installing' == 'installed'` — não uma
+        # instalação quebrada, uma leitura cedo demais. Os testes de speech
+        # acima já esperavam; este ficou para trás.
+        #
+        # Generoso porque aqui há download real: o modelo do anime tem ~8,5 MB,
+        # e uma rede lenta não deve reprovar código correto.
+        _wait_for_background('anime_image', timeout=180.0)
+
+        depois = processing.get_component_details('anime_image')
+        assert depois.install_state == 'installed'
+        assert depois.size_mb > 0

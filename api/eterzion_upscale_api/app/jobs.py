@@ -44,6 +44,27 @@ from app.config import settings
 _API_ROOT = Path(__file__).resolve().parent.parent  # app -> eterzion_upscale_api
 
 
+#: Sentinela que faz o executável empacotado atuar como worker isolado em vez de
+#: subir a API. `run.py` a consome antes de importar o uvicorn.
+FROZEN_WORKER_FLAG = '--eterzion-worker'
+
+
+def _default_spawn_args() -> list[str]:
+    """Como pedir a este mesmo binário que vire um worker.
+
+    Fora do bundle, `sys.executable` é um Python de verdade e `-m app.jobs`
+    funciona. Dentro, `sys.executable` é o próprio executável empacotado e o
+    bootloader do PyInstaller ignora `-m`: o comando subia uma SEGUNDA cópia da
+    API. Verificado na 1.0.7 instalada — lançar o exe com `-m app.jobs <addr>`
+    fazia a porta 8051 responder. O `Listener` nunca recebia conexão e todo
+    processamento morria no timeout de 45s, com o erro chegando à interface sem
+    mensagem.
+    """
+    from app.security import frozen
+
+    return [FROZEN_WORKER_FLAG] if frozen() else ['-m', 'app.jobs']
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -124,7 +145,7 @@ class WorkerSupervisor:
         self._runtime_dir: str | None = None
         self._authkey: str | None = None
         self._python_executable = python_executable or sys.executable
-        self._spawn_args = spawn_args if spawn_args is not None else ['-m', 'app.jobs']
+        self._spawn_args = spawn_args if spawn_args is not None else _default_spawn_args()
         self._extra_env_passthrough = extra_env_passthrough
         # Updated after every restore_audio() call (success or failure) — read by
         # _audio_worker_idle_watchdog_loop() to release VRAM after real inactivity.
@@ -134,7 +155,7 @@ class WorkerSupervisor:
 
     # ---------------------------------------------------------------- lifecycle
     def _spawn(self) -> None:
-        from app.security import create_private_dir
+        from app.security import create_private_dir, no_window_kwargs
 
         self._runtime_dir = create_private_dir()
         self._authkey = secrets.token_hex(32)
@@ -145,6 +166,7 @@ class WorkerSupervisor:
             env=_restricted_env(self._authkey, self._extra_env_passthrough),
             shell=False,
             stdin=subprocess.DEVNULL,
+            **no_window_kwargs(),
         )
         with open(os.path.join(self._runtime_dir, 'worker.pid'), 'w', encoding='utf-8') as fh:
             fh.write(str(self._process.pid))
@@ -1409,7 +1431,12 @@ def _resolve_protected_module(protected: dict | None):
         )
         _protected_module_cache[cache_key] = module
         return module
-    except ProtectedLoadError:
+    except (ProtectedLoadError, OSError):
+        # OSError cobre o nivel de rede (urllib.error.URLError herda dele):
+        # DNS que nao resolve, conexao recusada, timeout. O docstring acima
+        # promete degradar em QUALQUER falha do servico de licenciamento, e
+        # uma queda de rede e' exatamente esse caso -- deixar escapar aqui
+        # transformaria indisponibilidade em falha de processamento.
         traceback.print_exc(file=sys.stderr)
         return None
 

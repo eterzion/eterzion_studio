@@ -23,7 +23,6 @@ import {
   AudioLines,
   Download,
   Film,
-  HardDrive,
   Image as ImageIcon,
   Loader2,
   Music2,
@@ -176,106 +175,98 @@ void refresh()
     <TopBar :title="t('components.title')" />
 
     <div class="components-content">
-      <section class="settings-group">
-        <div class="group-header">
-          <div class="group-icon icon-chip"><HardDrive :size="18" /></div>
-          <div>
-            <h2 class="group-title">{{ t('components.title') }}</h2>
-            <p class="group-description">{{ t('components.description') }}</p>
-          </div>
+      <section class="components-section">
+        <header class="section-header">
+          <p class="section-description">{{ t('components.description') }}</p>
           <span v-if="totalInstalledMb > 0" class="total-size">
             {{ t('components.totalOnDisk', { size: formatarTamanho(totalInstalledMb) }) }}
           </span>
-        </div>
+        </header>
 
-        <div class="group-body">
-          <p v-if="loading" class="state-line">{{ t('components.loading') }}</p>
+        <p v-if="loading" class="state-line">{{ t('components.loading') }}</p>
 
-          <p v-else-if="loadError" class="state-line state-error">
-            <TriangleAlert :size="15" />
-            {{ loadError }}
-            <button type="button" class="link-btn" @click="refresh()">
-              {{ t('components.actions.retry') }}
-            </button>
-          </p>
+        <p v-else-if="loadError" class="state-line state-error">
+          <TriangleAlert :size="15" />
+          {{ loadError }}
+          <button type="button" class="link-btn" @click="refresh()">
+            {{ t('components.actions.retry') }}
+          </button>
+        </p>
 
-          <ul v-else class="component-list">
-            <li v-for="row in rows" :key="row.id" class="component-row">
-              <div class="row-icon" :style="{ color: row.meta.tint }">
-                <component :is="row.meta.icon" :size="18" />
-              </div>
+        <ul v-else class="component-list">
+          <li v-for="row in rows" :key="row.id" class="component-row">
+            <div class="row-icon" :style="{ color: row.meta.tint }">
+              <component :is="row.meta.icon" :size="18" />
+            </div>
 
-              <div class="row-main">
-                <span class="row-label">{{ t(row.meta.labelKey) }}</span>
-                <span class="row-state">
-                  <template v-if="row.install_state === 'installing'">
-                    <Loader2 :size="13" class="spin" />
-                    {{ t('components.state.installing') }}
-                  </template>
-                  <template v-else-if="row.install_state === 'update_available'">
-                    {{ t('components.state.updateAvailable') }}
-                    <span v-if="row.size_mb" class="row-size"
-                      >· {{ formatarTamanho(row.size_mb) }}</span
-                    >
-                  </template>
-                  <template v-else-if="row.install_state === 'installed'">
-                    {{ t('components.state.installed') }}
-                    <span v-if="row.size_mb" class="row-size"
-                      >· {{ formatarTamanho(row.size_mb) }}</span
-                    >
-                  </template>
-                  <template v-else>{{ t('components.state.notInstalled') }}</template>
-                </span>
-              </div>
+            <div class="row-main">
+              <span class="row-label">{{ t(row.meta.labelKey) }}</span>
+              <span class="row-state">
+                <template v-if="row.install_state === 'installing'">
+                  <Loader2 :size="13" class="spin" />
+                  {{ t('components.state.installing') }}
+                </template>
+                <template v-else-if="row.install_state === 'update_available'">
+                  {{ t('components.state.updateAvailable') }}
+                  <span v-if="row.size_mb" class="row-size"
+                    >· {{ formatarTamanho(row.size_mb) }}</span
+                  >
+                </template>
+                <template v-else-if="row.install_state === 'installed'">
+                  {{ t('components.state.installed') }}
+                  <span v-if="row.size_mb" class="row-size"
+                    >· {{ formatarTamanho(row.size_mb) }}</span
+                  >
+                </template>
+                <template v-else>{{ t('components.state.notInstalled') }}</template>
+              </span>
+            </div>
 
-              <div class="row-actions">
-                <button
-                  v-if="row.install_state === 'not_installed'"
-                  type="button"
-                  class="row-btn"
-                  :disabled="busy[row.id]"
-                  @click="agir(row.id, 'install')"
-                >
-                  <Download :size="14" />
-                  {{ t('components.actions.install') }}
-                </button>
+            <div class="row-actions">
+              <button
+                v-if="row.install_state === 'not_installed'"
+                type="button"
+                class="row-btn"
+                :disabled="busy[row.id]"
+                @click="agir(row.id, 'install')"
+              >
+                <Download :size="14" />
+                {{ t('components.actions.install') }}
+              </button>
 
-                <button
-                  v-if="row.install_state === 'update_available'"
-                  type="button"
-                  class="row-btn"
-                  :disabled="busy[row.id]"
-                  @click="agir(row.id, 'update')"
-                >
-                  <RefreshCw :size="14" />
-                  {{ t('components.actions.update') }}
-                </button>
+              <button
+                v-if="row.install_state === 'update_available'"
+                type="button"
+                class="row-btn"
+                :disabled="busy[row.id]"
+                @click="agir(row.id, 'update')"
+              >
+                <RefreshCw :size="14" />
+                {{ t('components.actions.update') }}
+              </button>
 
-                <button
-                  v-if="
-                    row.install_state === 'installed' || row.install_state === 'update_available'
-                  "
-                  type="button"
-                  class="row-btn row-btn-danger"
-                  :disabled="busy[row.id]"
-                  @click="pedirRemocao(row.id)"
-                >
-                  <Trash2 :size="14" />
-                  {{
-                    confirmingRemoval === row.id
-                      ? t('components.actions.confirmRemove')
-                      : t('components.actions.remove')
-                  }}
-                </button>
-              </div>
+              <button
+                v-if="row.install_state === 'installed' || row.install_state === 'update_available'"
+                type="button"
+                class="row-btn row-btn-danger"
+                :disabled="busy[row.id]"
+                @click="pedirRemocao(row.id)"
+              >
+                <Trash2 :size="14" />
+                {{
+                  confirmingRemoval === row.id
+                    ? t('components.actions.confirmRemove')
+                    : t('components.actions.remove')
+                }}
+              </button>
+            </div>
 
-              <p v-if="itemError[row.id]" class="row-error">
-                <TriangleAlert :size="14" />
-                <span>{{ itemError[row.id] }}</span>
-              </p>
-            </li>
-          </ul>
-        </div>
+            <p v-if="itemError[row.id]" class="row-error">
+              <TriangleAlert :size="14" />
+              <span>{{ itemError[row.id] }}</span>
+            </p>
+          </li>
+        </ul>
       </section>
 
       <p class="footnote">{{ t('components.footnote') }}</p>
@@ -300,6 +291,28 @@ void refresh()
   gap: 16px;
   max-width: 860px;
   width: 100%;
+}
+
+.components-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* O titulo vem da TopBar; aqui fica so' a descricao. O cabecalho anterior
+   repetia `components.title` e usava as classes de grupo da tela de
+   Configuracoes, que sao `scoped` la' e nunca chegaram aqui -- o `.icon-chip`,
+   esse sim global, esticava sozinho e virava uma barra. */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.section-description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
 }
 
 .total-size {
