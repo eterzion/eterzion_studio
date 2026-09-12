@@ -514,6 +514,10 @@
       "outOfMemory": {
         "action": "Essayez un facteur d’échelle ou une taille personnalisée plus petits.",
         "message": "Mémoire insuffisante pour cette taille de sortie."
+      },
+      "downloadFailed": {
+        "action": "Réessayez plus tard.",
+        "message": "Impossible de télécharger un composant nécessaire."
       }
     },
     "job": {
@@ -529,6 +533,36 @@
       "scaleMissing": "Choisissez un facteur d’échelle.",
       "sizeMissing": "Indiquez une largeur et une hauteur.",
       "unsupportedFormat": "Format non pris en charge (images uniquement : PNG, JPG, TIFF, WEBP, BMP)."
+    },
+    "download": {
+      "rateLimited": {
+        "action": "Réessayez dans quelques minutes.",
+        "message": "Le serveur de téléchargement reçoit trop de demandes en ce moment."
+      },
+      "serverUnavailable": {
+        "action": "Réessayez plus tard.",
+        "message": "Le serveur de téléchargement n'a pas répondu."
+      },
+      "notFound": {
+        "action": "Réessayez plus tard ; si le problème persiste, mettez à jour l'application.",
+        "message": "Le fichier n'est pas disponible sur le serveur de téléchargement pour le moment."
+      },
+      "network": {
+        "action": "Vérifiez votre connexion Internet et réessayez.",
+        "message": "Impossible de se connecter au serveur de téléchargement."
+      },
+      "corrupted": {
+        "action": "Réessayez.",
+        "message": "Le téléchargement est arrivé incomplet ou corrompu et a été supprimé."
+      },
+      "diskFull": {
+        "action": "Libérez de l'espace et réessayez.",
+        "message": "Il n'y a pas assez d'espace disque pour le téléchargement."
+      },
+      "unknown": {
+        "action": "Réessayez plus tard.",
+        "message": "Le téléchargement n'a pas pu aboutir."
+      }
     }
   },
   "history": {

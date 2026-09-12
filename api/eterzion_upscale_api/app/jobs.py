@@ -99,9 +99,17 @@ def _spawn_exit_message(codigo: int) -> str:
 
 
 class WorkerFailure(RuntimeError):
-    def __init__(self, message: str, error_class: str):
+    # `reason` e `detail` atravessam o IPC junto com a mensagem: sem eles, um
+    # DownloadError chegava aqui so' como texto, e o detalhe tecnico (URL,
+    # arquivo) ou se perdia ou acabava na frase que a pessoa le.
+    def __init__(self, message: str, error_class: str,
+                 reason: str | None = None, detail: str | None = None):
         super().__init__(message)
         self.error_class = error_class
+        if reason:
+            self.reason = reason
+        if detail:
+            self.detail = detail
 
 
 def _restricted_env(authkey: str, extra_passthrough: tuple[str, ...] = ()) -> dict[str, str]:
@@ -352,7 +360,8 @@ class WorkerSupervisor:
                     result['audio_meta'] = msg['audio_meta']
                 return result
             elif msg_type == 'error':
-                raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
+                raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'),
+                                    msg.get('reason'), msg.get('detail'))
 
     # ------------------------------------------------------------ audio jobs
     def restore_audio(self, *, timeout: float = 900.0, **payload: Any) -> str:
@@ -380,7 +389,8 @@ class WorkerSupervisor:
             if msg.get('type') == 'result':
                 return msg['output_path']
             if msg.get('type') == 'error':
-                raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'))
+                raise WorkerFailure(msg['message'], msg.get('error_class', 'Unknown'),
+                                    msg.get('reason'), msg.get('detail'))
             raise WorkerFailure(f'Resposta inesperada do audio-worker: {msg!r}', 'UnexpectedMessage')
         finally:
             self._last_used_at = time.monotonic()
@@ -683,6 +693,11 @@ def _record_failure(job: dict, error: Exception) -> None:
         job['error_reason'] = reason
     if any(marcador in mensagem for marcador in _FFMPEG_MARKERS):
         job['error_detail'] = mensagem
+    # Mesmo principio para downloads: a frase amigavel fica em `error`, e o
+    # tecnico (URL, arquivo, codigo HTTP) vai para a area recolhida.
+    detalhe = getattr(error, 'detail', None)
+    if isinstance(detalhe, str) and detalhe:
+        job['error_detail'] = detalhe
 
 
 def _record_compression_history(job: dict, medido: dict) -> None:
@@ -998,6 +1013,11 @@ def _categorize_error(error: Exception) -> str:
         return 'license_invalid'
     if isinstance(error, WorkerCrashed):
         return 'model_failure'
+    # Pelo nome, e nao por isinstance: o DownloadError nasce no worker e chega
+    # aqui como WorkerFailure com `error_class`. Um download que falhou nao e'
+    # "erro no processamento, tente outro modelo" -- e' "tente mais tarde".
+    if 'DownloadError' in (type(error).__name__, getattr(error, 'error_class', None)):
+        return 'download_failed'
     text = str(error).lower()
     if isinstance(error, MemoryError) or 'out of memory' in text or 'cuda out of memory' in text:
         return 'out_of_memory'
@@ -1563,7 +1583,8 @@ def _handle_process(conn, msg: dict) -> None:
     try:
         handler(msg, send)
     except Exception as error:  # noqa: BLE001 - reported to the parent, not re-raised
-        send({'type': 'error', 'message': str(error), 'error_class': type(error).__name__})
+        send({'type': 'error', 'message': str(error), 'error_class': type(error).__name__,
+              'reason': getattr(error, 'reason', None), 'detail': getattr(error, 'detail', None)})
 
 
 def main() -> None:

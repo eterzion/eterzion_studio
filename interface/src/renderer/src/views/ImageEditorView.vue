@@ -666,18 +666,18 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               <span>
                 {{
                   job.errorCategory
-                    ? errorCategoryCopy(job.errorCategory).message
+                    ? errorCategoryCopy(job.errorCategory, job.errorReason).message
                     : job.errorMessage
                 }}
                 <template v-if="job.errorCategory">
-                  {{ errorCategoryCopy(job.errorCategory).action }}</template
+                  {{ errorCategoryCopy(job.errorCategory, job.errorReason).action }}</template
                 >
               </span>
             </p>
             <TechnicalDetails
               v-if="job.errorCategory && job.errorMessage"
               :summary="t('imageEditor.technicalDetails')"
-              :text="job.errorMessage"
+              :text="job.errorDetail || job.errorMessage"
             />
           </div>
           <p v-if="job.status === 'cancelled'" class="banner-info">

@@ -45,10 +45,14 @@ def test_fallback_to_original_when_mirror_fails(tmp_path):
 
 
 def test_all_sources_fail_raises_aggregated_error(tmp_path):
-    with pytest.raises(DownloadError, match='Todas as fontes'):
+    with pytest.raises(DownloadError) as capturado:
         download_with_fallback(
             [(tmp_path / 'a.pth').as_uri(), (tmp_path / 'b.pth').as_uri()],
             model_dir=str(tmp_path / 'out'), progress=False, file_name='x.pth')
+    # O agregado continua completo, mas no `detail`: as duas fontes aparecem.
+    assert 'Todas as fontes' in capturado.value.detail
+    assert 'a.pth' in capturado.value.detail and 'b.pth' in capturado.value.detail
+    assert 'x.pth' not in str(capturado.value)
 
 
 def test_resolve_model_uses_mirror_json(tmp_path, monkeypatch):

@@ -14,7 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 JobStatusValue = Literal['pending', 'pending_confirmation', 'analyzing', 'queued', 'processing', 'done', 'error', 'cancelled']
 ErrorCategory = Literal[
     'out_of_memory', 'corrupted_input', 'model_failure', 'disk_full',
-    'hardware_insufficient', 'license_invalid',
+    'hardware_insufficient', 'license_invalid', 'download_failed',
 ]
 ConflictMode = Literal['overwrite', 'rename', 'ask']
 
@@ -241,6 +241,10 @@ class ComponentDetails(Component):
     # exatamente o detalhe técnico que a listagem não pode expor. A tela mostra
     # que a instalação não completou; quem quiser o motivo abre os detalhes.
     error: str | None = None
+    # Quando a falha foi de download: o motivo (`rate_limited`, `network`...),
+    # para a interface escrever a frase na língua de quem usa, em vez de
+    # repetir o texto do backend, que só existe em português.
+    error_reason: str | None = None
 
 
 class DetectContentTypeRequest(BaseModel):

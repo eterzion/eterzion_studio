@@ -514,6 +514,10 @@
       "outOfMemory": {
         "action": "Prova un fattore di scala o una dimensione personalizzata più piccoli.",
         "message": "Memoria insufficiente per questa dimensione di uscita."
+      },
+      "downloadFailed": {
+        "action": "Riprova più tardi.",
+        "message": "Impossibile scaricare un componente necessario."
       }
     },
     "job": {
@@ -529,6 +533,36 @@
       "scaleMissing": "Scegli un fattore di scala.",
       "sizeMissing": "Indica larghezza e altezza.",
       "unsupportedFormat": "Formato non supportato (solo immagini: PNG, JPG, TIFF, WEBP, BMP)."
+    },
+    "download": {
+      "rateLimited": {
+        "action": "Riprova tra qualche minuto.",
+        "message": "Il server di download sta ricevendo troppe richieste in questo momento."
+      },
+      "serverUnavailable": {
+        "action": "Riprova più tardi.",
+        "message": "Il server di download non ha risposto."
+      },
+      "notFound": {
+        "action": "Riprova più tardi; se continua, aggiorna l'app.",
+        "message": "Il file non è disponibile sul server di download in questo momento."
+      },
+      "network": {
+        "action": "Controlla la connessione a internet e riprova.",
+        "message": "Impossibile connettersi al server di download."
+      },
+      "corrupted": {
+        "action": "Riprova.",
+        "message": "Il download è arrivato incompleto o danneggiato ed è stato scartato."
+      },
+      "diskFull": {
+        "action": "Libera spazio e riprova.",
+        "message": "Spazio su disco insufficiente per il download."
+      },
+      "unknown": {
+        "action": "Riprova più tardi.",
+        "message": "Impossibile completare il download."
+      }
     }
   },
   "history": {

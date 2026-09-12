@@ -514,6 +514,10 @@
       "outOfMemory": {
         "action": "请尝试更小的放大倍数或更小的自定义尺寸。",
         "message": "内存不足，无法输出该尺寸。"
+      },
+      "downloadFailed": {
+        "action": "请稍后重试。",
+        "message": "无法下载所需的组件。"
       }
     },
     "job": {
@@ -529,6 +533,36 @@
       "scaleMissing": "请选择放大倍数。",
       "sizeMissing": "请输入宽度和高度。",
       "unsupportedFormat": "不支持的格式（仅限图片：PNG、JPG、TIFF、WEBP、BMP）。"
+    },
+    "download": {
+      "rateLimited": {
+        "action": "请几分钟后重试。",
+        "message": "下载服务器当前收到的请求过多。"
+      },
+      "serverUnavailable": {
+        "action": "请稍后重试。",
+        "message": "下载服务器没有响应。"
+      },
+      "notFound": {
+        "action": "请稍后重试；如果问题持续，请更新应用。",
+        "message": "下载服务器上暂时无法获取该文件。"
+      },
+      "network": {
+        "action": "请检查网络连接后重试。",
+        "message": "无法连接到下载服务器。"
+      },
+      "corrupted": {
+        "action": "请重试。",
+        "message": "下载内容不完整或已损坏，已被丢弃。"
+      },
+      "diskFull": {
+        "action": "请释放空间后重试。",
+        "message": "磁盘空间不足，无法完成下载。"
+      },
+      "unknown": {
+        "action": "请稍后重试。",
+        "message": "无法完成下载。"
+      }
     }
   },
   "history": {
