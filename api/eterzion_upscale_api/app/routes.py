@@ -633,6 +633,28 @@ def uninstall_component(component_id: str):
 # exposes the private key — only what a future activation flow (Fase 3) would
 # need to send to a remote licensing service: the install id and the public key.
 
+# ------------------------------- /downloads ------------------------------- #
+#
+# O updater do Electron pergunta aqui pela credencial do CDN privado do Studio
+# (app/cdn.py). 204 = sem credencial agora (sem licenca ativa, sem rede ou CDN
+# nao configurado): o updater simplesmente nao verifica nesta rodada.
+
+downloads_router = APIRouter()
+
+
+@downloads_router.get('/token')
+def download_token():
+    from fastapi import Response
+
+    from app import cdn
+
+    token = cdn.download_token()
+    if not token:
+        return Response(status_code=204)
+    return {'base': token['base'], 'token': token['token'], 'exp': token['exp'],
+            'renew_after': token['renew_after']}
+
+
 identity_router = APIRouter()
 
 

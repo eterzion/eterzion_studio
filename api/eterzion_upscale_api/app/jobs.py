@@ -98,6 +98,15 @@ def _spawn_exit_message(codigo: int) -> str:
         codigo, f'O worker isolado encerrou ao iniciar (código {codigo}).')
 
 
+def _cdn_token_for_worker() -> dict | None:
+    """So' o que o worker precisa para montar a URL assinada -- nada da
+    identidade da instalacao atravessa o IPC."""
+    from app import cdn
+
+    token = cdn.download_token()
+    return {k: token[k] for k in ('base', 'exp', 'sig')} if token else None
+
+
 class WorkerFailure(RuntimeError):
     # `reason` e `detail` atravessam o IPC junto com a mensagem: sem eles, um
     # DownloadError chegava aqui so' como texto, e o detalhe tecnico (URL,
@@ -341,6 +350,10 @@ class WorkerSupervisor:
             'face_recovery': face_recovery, 'face_recovery_strength': face_recovery_strength,
             'denoise_filter_strength': denoise_filter_strength, 'half': half, 'stabilize': stabilize,
             'tile_threshold': tile_threshold, 'tile_size': tile_size,
+            # Credencial de download do CDN para o worker isolado, que nao fala
+            # com o servidor de licencas: com ela, um modelo que falte e' baixado
+            # do espelho privado; sem ela (None), da fonte original.
+            'cdn': _cdn_token_for_worker(),
         })
         while True:
             try:
@@ -1583,6 +1596,9 @@ def _handle_process(conn, msg: dict) -> None:
             'error_class': 'NoHandlerAvailable',
         })
         return
+
+    from app import cdn
+    cdn.install_mirror_from_message(msg.get('cdn'))
 
     try:
         handler(msg, send)

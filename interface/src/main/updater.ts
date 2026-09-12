@@ -1,6 +1,8 @@
 import { app } from 'electron'
 import { autoUpdater } from 'electron-updater'
 
+import { API_BASE_URL } from './apiProcess'
+
 /**
  * Atualização automática.
  *
@@ -17,6 +19,40 @@ import { autoUpdater } from 'electron-updater'
 
 /** Uma verificação ao abrir, e outra a cada seis horas para sessões longas. */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000
+
+/**
+ * As atualizações saem do CDN privado do Studio (`cdn.eterzion.com/studio/`,
+ * um bucket do R2), e não mais de um repositório público do GitHub. O Worker de
+ * lá só serve com uma assinatura que o servidor de licenças emite -- e só para
+ * instalação ativada com licença ativa. O backend local pede essa assinatura
+ * (assinando o pedido com a chave desta instalação) e a entrega aqui.
+ *
+ * `useMultipleRangeRequest: false`: o R2 serve um intervalo por pedido. Com
+ * vários intervalos num pedido só (o padrão), o download diferencial -- o que
+ * baixa só o que mudou entre versões -- não funcionaria.
+ */
+type CredencialCdn = { base: string; token: string; exp: number; renew_after: number }
+
+/** O backend pode estar subindo quando o app abre: algumas tentativas
+ *  espaçadas antes de desistir desta rodada. */
+const TENTATIVAS_CREDENCIAL = 6
+const INTERVALO_TENTATIVA_MS = 10_000
+
+async function credencialCdn(): Promise<CredencialCdn | null> {
+  for (let tentativa = 0; tentativa < TENTATIVAS_CREDENCIAL; tentativa += 1) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/downloads/token`)
+      // 204: sem licença ativa, sem rede ou CDN não configurado. Não é erro;
+      // só não há o que verificar agora.
+      if (res.status === 204) return null
+      if (res.ok) return (await res.json()) as CredencialCdn
+    } catch {
+      // backend ainda subindo
+    }
+    await new Promise((resolve) => setTimeout(resolve, INTERVALO_TENTATIVA_MS))
+  }
+  return null
+}
 
 let periodicCheck: NodeJS.Timeout | undefined
 
@@ -73,6 +109,19 @@ export function stopUpdater(): void {
  */
 async function checkQuietly(): Promise<void> {
   try {
+    const credencial = await credencialCdn()
+    if (!credencial) {
+      console.info('[updater] sem credencial do CDN nesta rodada; verificação adiada')
+      return
+    }
+    // A cada rodada, porque a credencial vence: a de agora vale por horas, e a
+    // próxima verificação é daqui a seis.
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: `${credencial.base}/updates`,
+      useMultipleRangeRequest: false
+    })
+    autoUpdater.requestHeaders = { Authorization: `Bearer ${credencial.token}` }
     await autoUpdater.checkForUpdates()
   } catch {
     // Já registrado pelo handler de erro.

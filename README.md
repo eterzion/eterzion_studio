@@ -140,33 +140,27 @@ TensorRT, componentes RIFE), não o peso `.pth`/`.safetensors` isolado. Se você
 tiver um link direto confiável para esse arquivo, ele pode ser adicionado ao
 registro.
 
-### Hospedando seus próprios modelos no GitHub (opcional, desativado por padrão)
+### Espelho dos modelos (CDN do Studio)
 
-**O padrão do projeto é baixar sempre da fonte oficial de cada modelo** — a
-API nunca usa um espelho a não ser que você configure um explicitamente com o
-passo abaixo. Se um dia preferir hospedar sua própria cópia (por exemplo, para
-não depender da disponibilidade dessas fontes), rode o script de
-espelhamento **uma vez**, apontando para o seu próprio repositório:
+A biblioteca, usada sozinha, **baixa sempre da fonte oficial** de cada modelo.
+O aplicativo tenta antes um espelho: o CDN privado do Studio
+(`cdn.eterzion.com/studio/models/`, um bucket R2), que só serve com a
+assinatura que o servidor de licenças emite para instalação com licença ativa
+(`api/eterzion_upscale_api/app/cdn.py`). Se o espelho não responder, o
+download cai na fonte original. O SHA-256 fixado de cada arquivo vale para as
+duas fontes.
+
+O espelho é mantido pelo workflow **Models to R2**
+(`.github/workflows/models-to-r2.yml`), que roda sozinho quando a lista de
+modelos muda na `main`: ele baixa cada arquivo da fonte original, confere o
+hash e envia para o bucket. Para ver o que seria enviado:
 
 ```bash
-# requer o GitHub CLI instalado e autenticado: https://cli.github.com/
-gh auth login
-python scripts/mirror_models.py --repo seu-usuario/eterzion_upscale
+python scripts/models_to_r2.py --listar
 ```
 
-Isso baixa cada modelo, confere o checksum, publica os arquivos como assets
-de um [GitHub Release](https://docs.github.com/releases) chamado `models-v1`
-no seu repositório, e gera um arquivo `models.json` na raiz do projeto — esse
-arquivo (pequeno, só texto) deve ser commitado; os `.pth`/`.safetensors` em si
-**não** vão para o git, só para o Release.
-
-A partir daí, todo download tenta primeiro o seu espelho e cai automaticamente
-para a URL original se o espelho estiver indisponível — nenhuma outra
-configuração é necessária, e quem clonar o projeto sem rodar o script continua
-funcionando normalmente (baixando das fontes originais).
-
-Use `python scripts/mirror_models.py --help` para ver todas as opções
-(espelhar só alguns modelos, mudar o nome do release, etc.).
+Um `models.json` na raiz continua valendo como substituição local do espelho
+(ver `_load_mirror_map` em `api/eterzion_upscale/processing.py`).
 
 ---
 

@@ -96,12 +96,17 @@ linux:
 appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
-# O updater do app instalado le daqui, sem login. Nao pode ser o
-# eterzion_studio: ele e' privado, e release privada responde 404 para quem nao
-# esta' autenticado -- ate' a 1.1.1 nenhum app instalado conseguia se atualizar.
+# De onde o app instalado se atualiza: o CDN privado do Studio (bucket R2 atras
+# do Worker de cdn.eterzion.com). Isto so' vai para o `app-update.yml`; em tempo
+# de execucao o updater.ts reaponta o feed a cada verificacao, com a credencial
+# que o servidor de licencas emite (so' licenca ativa). O upload para o R2 e'
+# feito pela esteira (release.yml), nao pelo electron-builder.
+#
+# Historico: ate' a 1.1.1 o feed era o repositorio privado (404 sem login -- nenhum
+# app se atualizava); a 1.1.2 e a 1.1.3 usaram um repositorio publico do GitHub.
 publish:
-  provider: github
-  owner: eterzion
-  repo: eterzion_studio_releases
+  provider: generic
+  url: https://cdn.eterzion.com/studio/updates
+  useMultipleRangeRequest: false
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

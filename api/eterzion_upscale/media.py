@@ -673,13 +673,13 @@ def load_file_from_url(url: str,
         return cached_file
 
     partial_file = cached_file + '.partial'
-    print(f'Baixando "{url}"\n  -> {cached_file}')
+    print(f'Baixando "{_sem_query(url)}"\n  -> {cached_file}')
     try:
         download_url_to_file(url, partial_file, hash_prefix=None, progress=progress)
     except Exception as error:
         if os.path.exists(partial_file):
             os.remove(partial_file)
-        detail = f'{filename}: falha ao baixar de {url} ({error})'
+        detail = f'{filename}: falha ao baixar de {_sem_query(url)} ({error})'
         logger.warning('download failed: %s', detail)
         raise DownloadError(_download_reason(error), detail) from error
 
@@ -688,12 +688,19 @@ def load_file_from_url(url: str,
         logger.warning('no pinned sha256 for %s; computed sha256=%s', filename, digest)
     elif digest.lower() != sha256.lower():
         os.remove(partial_file)
-        detail = (f'{filename}: SHA256 invalido (baixado de {url}): '
+        detail = (f'{filename}: SHA256 invalido (baixado de {_sem_query(url)}): '
                   f'esperado {sha256}, obtido {digest}. O arquivo foi descartado.')
         logger.warning('download rejected: %s', detail)
         raise DownloadError('corrupted', detail)
     os.replace(partial_file, cached_file)
     return cached_file
+
+
+def _sem_query(url: str) -> str:
+    """A URL sem a query. A do CDN do Studio leva `exp`/`sig` -- uma credencial
+    de download de horas --, que nao deve ir para log nem para o detalhe tecnico
+    que a interface mostra."""
+    return url.split('?', 1)[0]
 
 
 def download_with_fallback(urls: list[str],
@@ -718,7 +725,7 @@ def download_with_fallback(urls: list[str],
         try:
             return load_file_from_url(url, model_dir=model_dir, progress=progress, file_name=filename, sha256=sha256)
         except DownloadError as error:
-            logger.warning('source failed (%s); trying next mirror if any', url)
+            logger.warning('source failed (%s); trying next mirror if any', _sem_query(url))
             errors.append(error)
     reasons = {e.reason for e in errors}
     reason = next(r for r in _REASON_PRIORITY if r in reasons or r == 'unknown')
