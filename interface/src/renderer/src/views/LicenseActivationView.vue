@@ -80,9 +80,6 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
     <div class="license-card">
       <div class="header-group">
         <div class="icon-badge" :class="'tone-' + licenseState.status">
-          <span class="badge-particle p1" /><span class="badge-particle p2" /><span
-            class="badge-particle p3"
-          />
           <component
             :is="icon"
             :size="36"
@@ -212,27 +209,23 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
-  background: radial-gradient(
-    circle,
-    var(--color-warning-soft, rgba(245, 158, 11, 0.15)) 0%,
-    transparent 70%
-  );
+  --chip-tone: var(--color-warning, var(--text-secondary));
 }
 
+/* Mesma receita do `.icon-chip` da Home (theme.css): fundo tingido e chapado,
+   sem halo. O `radial-gradient` que iluminava o fundo e as tres particulas em
+   volta sairam pelo mesmo motivo do halo de la' -- decoracao que nao comunica
+   estado. */
 .icon-badge::before {
   content: '';
   position: absolute;
   inset: 12px;
   border-radius: var(--radius-sm);
-  border: 1px solid var(--color-warning-soft, rgba(245, 158, 11, 0.3));
+  background: color-mix(in srgb, var(--chip-tone) 19%, var(--surface-2));
 }
 
 .icon-badge.tone-not_activated {
-  background: radial-gradient(circle, var(--color-primary-soft) 0%, transparent 70%);
-}
-
-.icon-badge.tone-not_activated::before {
-  border-color: var(--color-primary-soft);
+  --chip-tone: var(--color-primary);
 }
 
 .license-icon {
@@ -242,34 +235,6 @@ const isPrimaryActivate = computed(() => licenseState.status === 'not_activated'
 
 .icon-badge.tone-not_activated .license-icon {
   color: var(--color-primary);
-}
-
-.badge-particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: var(--radius-sm);
-  background: var(--color-warning, var(--text-tertiary));
-  opacity: 0.5;
-}
-
-.badge-particle.p1 {
-  top: 6px;
-  right: 14px;
-}
-
-.badge-particle.p2 {
-  bottom: 10px;
-  left: 4px;
-  width: 3px;
-  height: 3px;
-}
-
-.badge-particle.p3 {
-  top: 30px;
-  right: -2px;
-  width: 3px;
-  height: 3px;
 }
 
 h1 {
