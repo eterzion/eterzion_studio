@@ -59,7 +59,8 @@
     "errors": {
       "loadFailed": "Impossibile leggere l'elenco dei componenti.",
       "installFailed": "L'installazione è fallita senza indicarne il motivo.",
-      "actionFailed": "L'azione è fallita."
+      "actionFailed": "L'azione è fallita.",
+      "notAvailableInApp": "Non ancora disponibile in questa versione dell'app."
     },
     "footnote": "Rimuovere libera lo spazio adesso; al prossimo uso di quella capacità verrà scaricata di nuovo.",
     "loading": "Verifica di cosa è installato…",

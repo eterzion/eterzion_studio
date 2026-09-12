@@ -1545,10 +1545,14 @@ def _handle_audio_enhance(msg: dict, send) -> None:
     module = _resolve_protected_module(msg.get('protected'))
     processor = getattr(module, 'audio_processor', None) if module is not None else None
     processor = processor or _static_audio_processor
+    # So' o processador estatico conhece `models_dir`; um modulo protegido
+    # mantem a assinatura que ja' tinha.
+    extra = {'models_dir': msg.get('models_dir')} if processor is _static_audio_processor else {}
     result = processor.process(
         msg['input_path'], msg['model'], msg['master_path'],
         on_progress=lambda pct: send({'type': 'progress', 'pct': pct}),
         on_stage=lambda stage: send({'type': 'stage', 'stage': stage}),
+        **extra,
     )
     send({'type': 'result', 'source_size': (0, 0), 'output_size': (0, 0), 'audio_meta': result})
 

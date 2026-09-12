@@ -142,11 +142,15 @@ async function agir(id: string, acao: 'install' | 'update' | 'remove'): Promise<
     else await uninstallComponent(id)
     await refresh()
   } catch (error) {
-    // 422 de speech/music chega aqui com a explicação do backend — que é a
-    // mensagem certa para mostrar, e mais precisa do que qualquer texto
-    // genérico que a tela pudesse inventar.
+    // Motivo conhecido vira frase na língua do app; o texto do backend (só
+    // pt-BR) fica para o que ainda não tem motivo próprio.
+    const reason = (error as { reason?: string | null } | null)?.reason
     itemError.value[id] =
-      error instanceof Error ? error.message : t('components.errors.actionFailed')
+      reason === 'not_available_in_app'
+        ? t('components.errors.notAvailableInApp')
+        : error instanceof Error
+          ? error.message
+          : t('components.errors.actionFailed')
   } finally {
     busy.value[id] = false
     confirmingRemoval.value = null

@@ -41,3 +41,9 @@ tqdm
 # no ML dependency, needed by app.audio_engine.analyzer/quality regardless
 # of whether the SonicMaster provider is configured.
 pyloudnorm>=0.2
+# Voz (extensao de banda da fala). Vai no instalador desde 2026-09-12: o app
+# empacotado nao tem pip, entao o motor precisa estar dentro dele; o botao
+# Instalar so' baixa os pesos. Versoes FIXAS: o audiosronnx e' alpha, e o app
+# troca o carregamento de pesos do adaptador dele (processing.load_speech_engine).
+audiosronnx==0.9.0a2
+onnxruntime==1.30.0

@@ -717,23 +717,19 @@ def apply_dsp_chain(input_path: str, output_path: str) -> None:
     run_ffmpeg(lambda f: f.input(input_path).output(output_path, {'af': _DSP_FILTER_CHAIN}))
 
 
-def _enhance_speech(input_wav: str, output_wav: str) -> None:
+def _enhance_speech(input_wav: str, output_wav: str, models_dir: str) -> None:
     """speech content_type — audiosronnx (Apache-2.0), the same engine
-    eterzion_upscale.processing registers as 'super-voz'."""
-    try:
-        import soundfile as sf
-        from audiosronnx import load_sr
-    except ImportError as error:
-        raise MissingAudioDependency('speech (audiosronnx)', 'audiosronnx', error) from error
-    model = load_sr(engine='lavasr')
-    waveform = model.upscale(input_wav)
-    sf.write(output_wav, waveform, 48000)
+    eterzion_upscale.processing registers as 'super-voz'. Os pesos vem de
+    `models_dir` (baixados sob demanda, espelho primeiro, SHA-256 conferido)."""
+    from eterzion_upscale.processing import enhance_speech_file
+
+    enhance_speech_file(input_wav, output_wav, models_dir)
 
 
 _VENDOR_SONICMASTER_INFER = str(APP_DIR.parent / 'vendor' / 'sonicmaster' / 'infer.py')
 
 
-def _enhance_music(input_wav: str, output_wav: str) -> None:
+def _enhance_music(input_wav: str, output_wav: str, models_dir: str | None = None) -> None:
     """music content_type — SonicMaster (approved_conditional, see
     app.licensing's _CONTENT_TYPE_IMPLEMENTATIONS and
     docs/models/MODEL_LICENSES.md §3-bis). Fixed in specs/006-audio-engine-
@@ -769,7 +765,7 @@ def _enhance_music(input_wav: str, output_wav: str) -> None:
 # 'super-voz'/'sonicmaster') — not content_type. The isolated worker's IPC
 # message never carries content_type (FR-009/FR-011: only the already-resolved
 # engine_ref crosses that boundary), same contract image/video handlers use.
-_ENGINE_ENHANCERS: dict[str, Callable[[str, str], None]] = {
+_ENGINE_ENHANCERS: dict[str, Callable[[str, str, str], None]] = {
     'super-voz': _enhance_speech,
     'sonicmaster': _enhance_music,
 }
@@ -781,6 +777,7 @@ def process(
     output_path: str,
     on_progress: Callable[[int], None] | None = None,
     on_stage: Callable[[str], None] | None = None,
+    models_dir: str | None = None,
 ) -> AudioProcessResult:
     """Full pipeline: convert to WAV -> DSP chain -> content-type model pass
     -> re-encode to output_path's real format. Raises MissingAudioDependency
@@ -811,7 +808,10 @@ def process(
             on_stage('Aplicando modelo de IA')
         if on_progress:
             on_progress(50)
-        _ENGINE_ENHANCERS[engine_ref](tmp_dsp, tmp_model)
+        # `models_dir` chega pela mensagem do job: o worker isolado nao recebe
+        # ASTROS_MODELS_DIR no ambiente, e sem isto os pesos iriam para a pasta
+        # padrao -- dentro da instalacao, possivelmente sem permissao de escrita.
+        _ENGINE_ENHANCERS[engine_ref](tmp_dsp, tmp_model, models_dir or _model_dir())
 
         if on_stage:
             on_stage('Salvando resultado')
@@ -849,26 +849,13 @@ def process(
 #   downloads, real SHA-256 verification (already implemented by
 #   resolve_model()/model_needs_update()), real local cache (models_dir), real
 #   eviction (delete the cached weight file(s)).
-# - audio content types: no per-file weight download in the same sense —
-#   `speech` (audiosronnx) and `music` (SonicMaster) are Python
-#   packages/scripts, both declared under this repo's own `[audio]` extra
-#   (pyproject.toml) rather than downloaded weight files. "install"/"update"
-#   run a real `pip install <repo>[audio]` in this process's own
-#   interpreter (sys.executable) — the two share one extras group, so
-#   installing/updating either one installs both. Only works when this
-#   process is running from a source checkout with pyproject.toml (true in
-#   dev; a packaged build has neither pip nor the repo tree, so this would
-#   fail with pip's own real error — never silently no-ops). Deletion still
-#   refuses: uninstalling a shared dependency (e.g. torch) from under a
-#   running interpreter has no safe undo.
-
-# APP_DIR = <repo>/api/eterzion_upscale_api/app -> the api/ package root (where
-# pyproject.toml and the eterzion_upscale[audio] extras group live) is 2 levels
-# up. This is deliberately NOT the git repo root (contrast with config.py's
-# models_dir, which still climbs 3 levels to /models) — pyproject.toml moved
-# into api/ during the api/+interface/ reorganisation, so "source checkout
-# present" now means "api/ is present", not "the repo root is present".
-_REPO_ROOT = APP_DIR.parent.parent
+# - `speech`: o motor (audiosronnx + onnxruntime) vem no instalador; o botao
+#   Instalar baixa os pesos do LavaSR pelo mesmo caminho dos de imagem
+#   (espelho primeiro, SHA-256 fixado), e Remover apaga esses pesos. Ate'
+#   2026-09-12 isto era um `pip install` do extra [audio] -- impossivel no app
+#   empacotado, que nao tem pip, e a tela so' podia pedir para rodar o codigo-
+#   fonte.
+# - `music` (SonicMaster): nao instalavel pelo app; ver _MUSIC_NOT_AVAILABLE.
 
 CAPABILITY_LABELS: dict[str, str] = {
     'photo': 'Melhoria de imagem — Foto',
@@ -888,8 +875,27 @@ class ComponentNotFoundError(KeyError):
 
 class ComponentActionUnsupportedError(RuntimeError):
     """Raised when install/update/delete is attempted on a component this
-    process cannot safely automate (e.g. a pip-installed audio package) —
-    never silently no-ops, always tells the person what to do instead."""
+    process cannot safely automate — never silently no-ops, always tells the
+    person what happened.
+
+    `reason` e' o que a interface usa para escrever a frase na lingua do app;
+    a mensagem (so' em portugues) e' a reserva.
+    """
+
+    def __init__(self, message: str, reason: str = 'unsupported'):
+        super().__init__(message)
+        self.reason = reason
+
+
+# A musica (SonicMaster) precisa de um ambiente Python proprio com torch CUDA
+# de varios GB, placa de video com 6-8 GB de VRAM e um download do Hugging Face
+# que exige token e aceite dos termos da Stability AI. Nada disso cabe no
+# instalador nem num botao desta tela, e a instalacao completa ficou para um
+# projeto proprio (decisao de 2026-09-12). Ate' la', a recusa fala com quem usa
+# o app -- nao manda ler README, montar venv ou exportar HF_TOKEN.
+_MUSIC_NOT_AVAILABLE = ComponentActionUnsupportedError(
+    'A restauração de música por IA ainda não está disponível nesta versão do aplicativo.',
+    reason='not_available_in_app')
 
 
 @dataclass
@@ -992,17 +998,20 @@ def _image_video_component(content_type: str, engine_ref: str) -> ComponentInfo:
 
 def _audio_component(content_type: str, engine_ref: str) -> ComponentInfo:
     if engine_ref == 'super-voz':
-        from eterzion_upscale.processing import AUDIO_ENGINES, is_engine_available
+        from eterzion_upscale.processing import (
+            _LAVASR_REVISION, is_engine_available, speech_weight_paths, speech_weights_installed)
 
-        available = is_engine_available('super-voz')
-        entry = AUDIO_ENGINES['super-voz']
+        # Instalada = motor no pacote E pesos no disco. O motor vem no
+        # instalador; o que o botao Instalar baixa sao os pesos (~56 MB).
+        instalada = is_engine_available('super-voz') and speech_weights_installed(_model_dir())
+        tamanho = sum(os.path.getsize(p) for p in speech_weight_paths(_model_dir()).values()
+                      if os.path.isfile(p))
         return ComponentInfo(
-            # size stays 0 ("not measurable"): this is a pip package spread across
-            # site-packages, not a single weight file this screen owns.
-            id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=0,
-            install_state='installed' if available else 'not_installed', update_available=False,
-            technical_name=engine_ref, version='pacote pip (sem versão fixada)',
-            provenance=entry['reference'], license='Apache-2.0',
+            id=content_type, capability_label=CAPABILITY_LABELS[content_type],
+            size_mb=int(tamanho / (1024 * 1024)) if instalada else 0,
+            install_state='installed' if instalada else 'not_installed', update_available=False,
+            technical_name=engine_ref, version=f'LavaSR {_LAVASR_REVISION[:7]}',
+            provenance='https://github.com/TigreGotico/audiosronnx', license='Apache-2.0',
         )
     # music / sonicmaster — specs/006-audio-engine-masterizacao: runs from a
     # vendored inference subset in an isolated venv (audio_worker_requirements.txt),
@@ -1022,8 +1031,8 @@ def _audio_component(content_type: str, engine_ref: str) -> ComponentInfo:
     return ComponentInfo(
         id=content_type, capability_label=CAPABILITY_LABELS[content_type], size_mb=size_mb,
         install_state='installed' if checkpoint_ready else 'not_installed', update_available=False,
-        technical_name=engine_ref, version='ambiente isolado (ver api/README.md)',
-        provenance='https://github.com/AMAAI-Lab/SonicMaster', license='Apache-2.0 (condicional — ver MODEL_LICENSES.md §3-bis)',
+        technical_name=engine_ref, version='não incluída nesta versão do aplicativo',
+        provenance='https://github.com/AMAAI-Lab/SonicMaster', license='Apache-2.0',
     )
 
 
@@ -1048,93 +1057,28 @@ def get_component_details(component_id: str) -> ComponentInfo:
     return _component_info(component_id)
 
 
-# pip's download/build cache lives under the user profile (Windows:
-# %LOCALAPPDATA%\pip\cache), which is very often on a different, smaller
-# drive than this repo — checking free space there, not next to the repo,
-# is what actually prevents a real incident: a mid-session audio install
-# once filled a dev machine's C: drive to 0 bytes free this way.
-_MIN_FREE_BYTES_FOR_AUDIO_INSTALL = 3 * 1024 * 1024 * 1024  # 3 GiB
+def _install_speech_weights() -> None:
+    from eterzion_upscale.processing import ensure_speech_weights, is_engine_available
 
-
-def _check_audio_install_possible() -> None:
-    """As duas condições que dá para conferir ANTES de começar.
-
-    Separadas da execução de propósito: elas respondem 422 na hora, enquanto o
-    `pip install` em si roda em segundo plano. Descobrir "não tem código-fonte
-    ao lado" depois de dois minutos de download seria pior que não tentar.
-    """
-    # Num app EMPACOTADO isto nunca vai ser possível, e a mensagem precisa dizer
-    # isso — não sugerir um comando. O bundle não tem pip nem `site-packages`
-    # gravável, então "pip install eterzion_upscale[audio]" não é uma instrução
-    # que o usuário possa seguir: ele instalou um .exe, não um checkout.
-    #
-    # A mensagem antiga citava o caminho de `resources/backend` e pedia o
-    # código-fonte "ao lado", descrevendo um cenário de desenvolvimento para
-    # quem está na versão instalada. Ela dizia a verdade sobre a causa e nada
-    # sobre a saída.
-    if security.frozen():
+    # O motor vem no instalador. Faltar aqui so' acontece num ambiente de
+    # desenvolvimento montado sem o extra [audio].
+    if not is_engine_available('super-voz'):
         raise ComponentActionUnsupportedError(
-            'A melhoria de áudio por voz não é instalável pela versão instalada do '
-            'aplicativo — ela vem como pacote Python, e o executável não tem como '
-            'adicionar pacotes a si mesmo. Para usá-la, rode o aplicativo a partir do '
-            'código-fonte (veja api/README.md) e instale com '
-            '"pip install eterzion_upscale[audio]".')
-
-    if not (_REPO_ROOT / 'pyproject.toml').is_file():
-        raise ComponentActionUnsupportedError(
-            'Não foi possível instalar: esta cópia do aplicativo não tem o código-fonte '
-            f'do eterzion_upscale ao lado ({_REPO_ROOT}). Instale manualmente com '
-            '"pip install eterzion_upscale[audio]".')
-
-    # sys.executable's own drive is what actually receives the install (pip
-    # writes into that interpreter's site-packages) — not the user's home
-    # directory, which can be on a different, unrelated drive (e.g. a small
-    # system C: while the venv/repo live on a much larger D:).
-    free_bytes = shutil.disk_usage(os.path.dirname(sys.executable)).free
-    if free_bytes < _MIN_FREE_BYTES_FOR_AUDIO_INSTALL:
-        free_mb = free_bytes / (1024 * 1024)
-        raise ComponentActionUnsupportedError(
-            f'Espaço em disco insuficiente para instalar os componentes de áudio '
-            f'(SonicMaster + dependências): apenas {free_mb:.0f} MB livres, são '
-            f'necessários pelo menos {_MIN_FREE_BYTES_FOR_AUDIO_INSTALL // (1024 * 1024)} MB. '
-            'Libere espaço e tente novamente.')
-
-
-def _pip_install_audio_extra(*extra_args: str) -> None:
-    """Real `pip install` of this repo's `[audio]` extra, run in this
-    process's own interpreter (sys.executable) so the result is importable
-    immediately — no separate venv, no silent no-op. `speech` and `music`
-    share this one extras group (pyproject.toml), so this installs/updates
-    both together regardless of which component the person clicked."""
-    _check_audio_install_possible()
-
-    target = f'{_REPO_ROOT}[audio]'
-    cmd = [sys.executable, '-m', 'pip', 'install', *extra_args, target]
-    result = subprocess.run(
-        cmd, capture_output=True, text=True, timeout=900, **security.no_window_kwargs())
-    if result.returncode != 0:
-        raise ComponentActionUnsupportedError(
-            f'pip falhou (código {result.returncode}) instalando os componentes de áudio:\n'
-            f'{result.stderr[-2000:] or result.stdout[-2000:]}')
+            'Esta cópia do aplicativo foi montada sem o motor de voz. Reinstale o aplicativo.',
+            reason='engine_missing')
+    ensure_speech_weights(_model_dir())
 
 
 def install_component(component_id: str) -> ComponentInfo:
-    """Real download + real SHA-256 verification (eterzion_upscale.processing.resolve_model)
-    for image/video; a real `pip install` of the shared [audio] extra for
-    speech (see _pip_install_audio_extra). `music` (SonicMaster) is
-    deliberately NOT installable from here — it runs from an isolated venv
-    the operator sets up manually (api/README.md), never pip-installed into
-    this process (specs/006-audio-engine-masterizacao)."""
+    """Real download + real SHA-256 verification: image/video weights through
+    eterzion_upscale.processing.resolve_model, the speech weights through
+    ensure_speech_weights — the same mirror-first path for both. `music`
+    (SonicMaster) is not installable from the app (see _MUSIC_NOT_AVAILABLE)."""
     if component_id == 'music':
-        raise ComponentActionUnsupportedError(
-            'A restauração de música por IA (SonicMaster) não é instalável por esta tela — ela '
-            'roda num ambiente Python isolado, separado deste processo. Configure-a manualmente '
-            'seguindo "Configurando o audio-worker" em api/README.md (venv próprio, checkpoint do '
-            'modelo, variável HF_TOKEN).')
-    if component_id in _AUDIO_CONTENT_TYPES:
-        _check_audio_install_possible()
-        _start_background(component_id, _pip_install_audio_extra)
-        return _component_info(component_id)
+        raise _MUSIC_NOT_AVAILABLE
+    if component_id == 'speech':
+        _start_background('speech', _install_speech_weights)
+        return _component_info('speech')
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)
@@ -1147,14 +1091,12 @@ def install_component(component_id: str) -> ComponentInfo:
 
 def update_component(component_id: str) -> ComponentInfo:
     if component_id == 'music':
-        raise ComponentActionUnsupportedError(
-            'A restauração de música por IA (SonicMaster) não é atualizável por esta tela — troque '
-            'as versões pinadas em audio_worker_requirements.txt e reinstale manualmente no venv '
-            'isolado do audio-worker.')
-    if component_id in _AUDIO_CONTENT_TYPES:
-        _check_audio_install_possible()
-        _start_background(component_id, lambda: _pip_install_audio_extra('--upgrade'))
-        return _component_info(component_id)
+        raise _MUSIC_NOT_AVAILABLE
+    if component_id == 'speech':
+        # Os pesos tem revisao e SHA-256 fixados: "atualizar" e' garantir que
+        # os arquivos certos estao la', baixando o que faltar.
+        _start_background('speech', _install_speech_weights)
+        return _component_info('speech')
     implementation = _CONTENT_TYPE_IMPLEMENTATIONS.get(component_id)
     if implementation is None or implementation.engine_ref is None:
         raise ComponentNotFoundError(component_id)
@@ -1173,16 +1115,15 @@ def uninstall_component(component_id: str) -> ComponentInfo:
     possa decidir. Cada capacidade de imagem/vídeo é um punhado de pesos; a
     música é um checkpoint de ~3,3 GB, o caso em que isto mais importa.
 
-    `speech` fica de fora: ela é um extra do pip instalado neste mesmo
-    interpretador, e desinstalar pacote do processo em execução deixa o
-    ambiente num estado que só o reinício conserta. Recusar é mais honesto
-    que remover pela metade.
+    A voz remove os pesos que baixou; o motor fica, porque vem no instalador.
     """
     if component_id == 'speech':
-        raise ComponentActionUnsupportedError(
-            'A melhoria de voz não é removível por esta tela — ela é um extra do pip instalado '
-            'neste mesmo processo, e desinstalá-lo em execução deixaria o ambiente inconsistente. '
-            'Remova com `pip uninstall` no ambiente da API, com o app fechado.')
+        from eterzion_upscale.processing import speech_weight_paths
+
+        for caminho in speech_weight_paths(_model_dir()).values():
+            if os.path.isfile(caminho):
+                os.remove(caminho)
+        return _component_info('speech')
 
     if component_id == 'music':
         if not os.path.isfile(settings.audio_worker_checkpoint):

@@ -42,7 +42,8 @@ audio = [
     # the retired external astros_audio_enhance repository were removed. DSP
     # (afftdn/loudnorm) remains built in, while AudioSR provides the approved
     # speech bandwidth-extension path.
-    "audiosronnx",  # Apache-2.0 code and weights — speech bandwidth extension
+    "audiosronnx==0.9.0a2",  # Apache-2.0 code and weights — speech bandwidth extension (pinned: alpha)
+    "onnxruntime==1.30.0",
     # SonicMaster (music restoration, approved_conditional — see MODEL_LICENSES.md §3-bis) is
     # deliberately NOT listed here: its upstream repo (github.com/AMAAI-Lab/SonicMaster) has no
     # setup.py/pyproject.toml, so `pip install git+...` never worked (T001, specs/

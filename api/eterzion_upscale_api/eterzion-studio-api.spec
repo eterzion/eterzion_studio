@@ -35,6 +35,10 @@ datas = protected_sources + [
 # com as DLLs de imagem e sem `_C_stable.pyd`, que e' o arquivo que registra os
 # operadores; medido num build real antes de acertar.
 binaries = collect_dynamic_libs('torchvision', search_patterns=['*.dll', '*.pyd'])
+# Mesmo motivo para o onnxruntime, que o motor de voz usa: a extensao
+# `onnxruntime_pybind11_state.pyd` fica ao lado de `onnxruntime.dll` e
+# `onnxruntime_providers_shared.dll`, e sem ela o import do onnxruntime falha.
+binaries += collect_dynamic_libs('onnxruntime', search_patterns=['*.dll', '*.pyd'])
 
 hiddenimports = sorted(set(
     collect_submodules('app')
@@ -44,6 +48,10 @@ hiddenimports = sorted(set(
     + collect_submodules('pydantic_settings')
     + collect_submodules('spandrel')
     + collect_submodules('uvicorn')
+    # `audiosronnx` e' importado dentro de funcao (so' quando a voz roda), e os
+    # adaptadores de motor se registram por import do subpacote `engines`.
+    + collect_submodules('audiosronnx')
+    + collect_submodules('onnxruntime')
 ))
 
 a = Analysis(
