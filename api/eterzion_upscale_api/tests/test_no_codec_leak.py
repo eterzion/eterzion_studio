@@ -8,6 +8,7 @@ internal, and that nobody notices until it is in a screenshot.
 """
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -48,10 +49,30 @@ def handle_id(client):
     return client.post('/media/handles', json={'path': str(source)}).json()['handle_id']
 
 
+# O handle_id e' `vh_` + `secrets.token_urlsafe(32)`: 43 caracteres sorteados
+# que voltam em toda resposta sobre o handle. Como a busca abaixo e' por
+# substring e sem caixa, uma sequencia aleatoria como `...CpMduhQQSvnn...`
+# contem `qsv` -- e o teste reprovou um PR por isso em 2026-09-12, sem
+# vazamento nenhum. Um identificador gerado nunca e' nome de implementacao,
+# entao ele sai do texto antes da busca.
+_HANDLE_ID = re.compile(r'vh_[A-Za-z0-9_-]+')
+
+
 def _assert_clean(payload: object, where: str) -> None:
-    flat = str(payload).lower()
+    flat = _HANDLE_ID.sub('vh_<id>', str(payload)).lower()
     leaked = [name for name in FORBIDDEN if name in flat]
     assert not leaked, f'{where} expõe nome de implementação: {leaked}'
+
+
+def test_um_handle_id_sorteado_nao_e_vazamento():
+    """O id exato que reprovou o PR #83 -- tem `QSv` no meio."""
+    _assert_clean({'handle_id': 'vh_gBN8duMVkUMQxsTnl-wdz9X-CpMduhQQSvnn6ABA_XQ'}, 'id sorteado')
+
+
+def test_o_detector_continua_pegando_vazamento_de_verdade():
+    """Ignorar o id nao pode cegar a busca no resto da resposta."""
+    with pytest.raises(AssertionError, match='qsv'):
+        _assert_clean({'handle_id': 'vh_abc', 'encoder': 'h264_qsv'}, 'vazamento real')
 
 
 def test_export_options_names_no_encoder(client):
