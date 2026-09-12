@@ -57,6 +57,25 @@ class Settings(BaseSettings):
         ),
     )
 
+    # Downloads do Studio pelo R2 (app/downloads.py). A chave precisa ser
+    # identica ao segredo STUDIO_SIGNING_KEY do Worker de cdn.eterzion.com, e
+    # EXCLUSIVA do Studio -- nao a do catalogo. Vazia = rota desligada (503).
+    studio_cdn_signing_key: str = Field(
+        '', validation_alias=AliasChoices('ETERZION_LICENSING_STUDIO_CDN_SIGNING_KEY'),
+    )
+    studio_cdn_base: str = Field(
+        'https://cdn.eterzion.com/studio',
+        validation_alias=AliasChoices('ETERZION_LICENSING_STUDIO_CDN_BASE'),
+    )
+    # Seis horas cobre o maior download (instalador ~360 MB numa conexao lenta)
+    # com folga; o app renova antes de vencer.
+    studio_cdn_token_ttl_seconds: int = Field(
+        21600, validation_alias=AliasChoices('ETERZION_LICENSING_STUDIO_CDN_TOKEN_TTL_SECONDS'),
+    )
+    studio_cdn_token_align_seconds: int = Field(
+        3600, validation_alias=AliasChoices('ETERZION_LICENSING_STUDIO_CDN_TOKEN_ALIGN_SECONDS'),
+    )
+
     # Provider integrations stay disabled until their secrets are configured.
     stripe_webhook_secret: str = Field(
         '',
