@@ -484,8 +484,6 @@
     "imageAnime": "Image enhancement — Anime / illustration",
     "imagePhoto": "Image enhancement — Photo",
     "media": "Media processing",
-    "noteFfmpeg": "(distribution build)",
-    "noteSonicMaster": "Apache-2.0 — conditional (depends on the Stable Audio Open VAE)",
     "videoAnime": "Video enhancement — Anime / animation",
     "videoReal": "Video enhancement — Live action"
   },
@@ -777,7 +775,6 @@
     "clearHistory": "Clear the history manually",
     "clearHistoryAction": "Clear history",
     "clearHistoryDescription": "Removes every stored entry — does not touch the exported files",
-    "collapse": "Collapse",
     "comfortable": "Comfortable",
     "compact": "Compact",
     "concurrentJobs": "Concurrent jobs",
@@ -790,8 +787,6 @@
     "defaultScaleDescription": "Factor pre-selected for new images",
     "density": "Interface density",
     "densityDescription": "Spacing between elements",
-    "details": "Details",
-    "distributedUnder": "Distributed under the {license} licence.",
     "general": {
       "autoUpdate": {
         "description": "Check for new versions on startup (coming soon)",

@@ -484,8 +484,6 @@
     "imageAnime": "Улучшение изображений — Аниме/иллюстрация",
     "imagePhoto": "Улучшение изображений — Фото",
     "media": "Обработка медиа",
-    "noteFfmpeg": "(дистрибутивная сборка)",
-    "noteSonicMaster": "Apache-2.0 — условно (зависит от VAE Stable Audio Open)",
     "videoAnime": "Улучшение видео — Аниме/анимация",
     "videoReal": "Улучшение видео — Реальная съёмка"
   },
@@ -777,7 +775,6 @@
     "clearHistory": "Очистить историю вручную",
     "clearHistoryAction": "Очистить историю",
     "clearHistoryDescription": "Удаляет все сохранённые записи — экспортированные файлы не затрагиваются",
-    "collapse": "Свернуть",
     "comfortable": "Свободная",
     "compact": "Плотная",
     "concurrentJobs": "Одновременные задачи",
@@ -790,8 +787,6 @@
     "defaultScaleDescription": "Предвыбранный множитель для новых изображений",
     "density": "Плотность интерфейса",
     "densityDescription": "Отступы между элементами",
-    "details": "Подробности",
-    "distributedUnder": "Распространяется по лицензии {license}.",
     "general": {
       "autoUpdate": {
         "description": "Проверять новые версии при запуске (скоро)",

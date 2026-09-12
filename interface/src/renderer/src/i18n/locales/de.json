@@ -484,8 +484,6 @@
     "imageAnime": "Bildverbesserung — Anime/Illustration",
     "imagePhoto": "Bildverbesserung — Foto",
     "media": "Medienverarbeitung",
-    "noteFfmpeg": "(Distributions-Build)",
-    "noteSonicMaster": "Apache-2.0 — bedingt (hängt vom VAE von Stable Audio Open ab)",
     "videoAnime": "Videoverbesserung — Anime/Animation",
     "videoReal": "Videoverbesserung — Realaufnahmen"
   },
@@ -777,7 +775,6 @@
     "clearHistory": "Verlauf manuell leeren",
     "clearHistoryAction": "Verlauf leeren",
     "clearHistoryDescription": "Entfernt alle gespeicherten Einträge — die exportierten Dateien bleiben unberührt",
-    "collapse": "Einklappen",
     "comfortable": "Großzügig",
     "compact": "Kompakt",
     "concurrentJobs": "Gleichzeitige Aufgaben",
@@ -790,8 +787,6 @@
     "defaultScaleDescription": "Vorausgewählter Faktor für neue Bilder",
     "density": "Dichte der Oberfläche",
     "densityDescription": "Abstand zwischen den Elementen",
-    "details": "Details",
-    "distributedUnder": "Vertrieben unter der Lizenz {license}.",
     "general": {
       "autoUpdate": {
         "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)",
