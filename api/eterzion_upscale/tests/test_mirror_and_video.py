@@ -171,3 +171,40 @@ def test_audio_engines_registry():
         assert info['category'] in ('Áudio/Voz', 'Áudio/Geral', 'Áudio/Música'), name
         assert info['description'], name
         assert info['reference'].startswith('https://'), name
+
+
+def test_espelho_publico_vem_antes_da_fonte_original():
+    """Sem models.json, todo arquivo tenta primeiro o espelho publico e so'
+    depois a origem. Foi um 429 da origem (Hugging Face) numa instalacao real
+    que motivou isto; o SHA-256 fixado continua valendo para as duas."""
+    from eterzion_upscale.processing import MIRROR_BASE_URL, MODELS, _urls_with_mirror
+
+    for nome, entry in MODELS.items():
+        for candidatos, original in zip(_urls_with_mirror(nome, entry, 'nao-existe.json'), entry['urls']):
+            assert candidatos[0].startswith(MIRROR_BASE_URL), nome
+            assert candidatos[0].endswith('/' + os.path.basename(original)), nome
+            assert candidatos[1] == original, nome
+
+
+def test_espelho_e_publico_e_nao_o_repositorio_privado():
+    """O repositorio do codigo e' privado: anexo de release dele responde 404
+    para quem nao tem login -- que e' o caso do app instalado."""
+    from eterzion_upscale.processing import MIRROR_BASE_URL
+
+    assert 'eterzion_studio_releases' in MIRROR_BASE_URL
+    assert '/eterzion_studio/' not in MIRROR_BASE_URL
+
+
+def test_detector_de_rostos_tambem_passa_pelo_espelho(tmp_path, monkeypatch):
+    from eterzion_upscale import processing
+
+    pedidos = []
+
+    def registra(urls, **kwargs):
+        pedidos.append(urls)
+        return str(tmp_path / 'face.onnx')
+
+    monkeypatch.setattr(processing, 'download_with_fallback', registra)
+    processing.FaceEnhancer(model_dir=str(tmp_path))
+    assert pedidos[0][0].startswith(processing.MIRROR_BASE_URL)
+    assert pedidos[0][1] == processing._YUNET_URL
