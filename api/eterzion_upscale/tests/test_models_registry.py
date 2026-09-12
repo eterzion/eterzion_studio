@@ -38,9 +38,11 @@ def test_download_sha256_ok_and_mismatch(tmp_path):
 
     # wrong checksum -> DownloadError and nothing left behind
     model_dir_bad = tmp_path / 'bad'
-    with pytest.raises(DownloadError, match='SHA256'):
+    with pytest.raises(DownloadError) as capturado:
         load_file_from_url(url, model_dir=str(model_dir_bad), progress=False, sha256='0' * 64)
     assert list(model_dir_bad.iterdir()) == []
+    assert capturado.value.reason == 'corrupted'
+    assert 'SHA256' in capturado.value.detail
 
 
 def test_download_unpinned_hash_warns(tmp_path, caplog):
@@ -51,10 +53,15 @@ def test_download_unpinned_hash_warns(tmp_path, caplog):
     assert any('sha256' in record.message for record in caplog.records)
 
 
-def test_download_error_mentions_url(tmp_path):
+def test_download_error_keeps_url_in_detail_not_in_message(tmp_path):
+    """O link e o nome do arquivo servem a quem investiga, nao a quem usa o
+    app: ficam no `detail`, e a frase que chega a' tela nao os carrega."""
     url = (tmp_path / 'nao_existe.pth').as_uri()
-    with pytest.raises(DownloadError, match='nao_existe'):
+    with pytest.raises(DownloadError) as capturado:
         load_file_from_url(url, model_dir=str(tmp_path / 'out'), progress=False)
+    assert 'nao_existe' in capturado.value.detail
+    mensagem = str(capturado.value)
+    assert '://' not in mensagem and 'nao_existe' not in mensagem
 
 
 def _toy_upscaler(tmp_path, scale, name):

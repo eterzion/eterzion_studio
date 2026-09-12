@@ -96,6 +96,10 @@ export interface Job {
   queuePosition: number | null
   errorMessage?: string
   errorCategory?: ErrorCategory
+  /** Motivo fino da falha (hoje: o de um download), para a frase certa. */
+  errorReason?: string
+  /** Saída técnica (URL, código HTTP, ffmpeg) para a área recolhida. */
+  errorDetail?: string
   outputMeta?: OutputMeta
   createdAt: number
   processingStartedAt?: number
@@ -547,6 +551,8 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
     job.status = 'error'
     job.errorMessage = status.error ?? t('errors.job.processingFailed')
     job.errorCategory = status.error_category ?? undefined
+    job.errorReason = status.error_reason ?? undefined
+    job.errorDetail = status.error_detail ?? undefined
   } else if (status.status === 'cancelled') {
     job.status = 'cancelled'
   }
@@ -568,6 +574,8 @@ export async function startProcessing(job: Job): Promise<void> {
   job.progress = 0
   job.errorMessage = undefined
   job.errorCategory = undefined
+  job.errorReason = undefined
+  job.errorDetail = undefined
   recordJob(job, job.status)
 
   try {

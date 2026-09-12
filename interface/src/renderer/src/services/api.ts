@@ -31,6 +31,9 @@ export interface ComponentDetails extends ComponentSummary {
    *  não em ComponentSummary: a mensagem carrega saída de pip e caminhos de
    *  arquivo — o detalhe técnico que a listagem não pode expor (FR-063). */
   error: string | null
+  /** Motivo, quando a falha foi de download (`rate_limited`, `network`...).
+   *  Com ele a frase sai na língua de quem usa — o `error` só existe em pt-BR. */
+  error_reason?: string | null
 }
 
 export interface CustomSize {
@@ -109,6 +112,7 @@ export type ErrorCategory =
   | 'out_of_memory'
   | 'corrupted_input'
   | 'model_failure'
+  | 'download_failed'
   | 'disk_full'
   | 'hardware_insufficient'
   | 'license_invalid'
@@ -381,13 +385,50 @@ export function defaultAdjustments(): Adjustments {
  *  Keys live under errors.category.* so the message and its suggested action
  *  stay together; splitting them invites a message that no longer matches the
  *  advice beneath it. */
-export function errorCategoryCopy(category: ErrorCategory): { message: string; action: string } {
+export function errorCategoryCopy(
+  category: ErrorCategory,
+  reason?: string | null
+): { message: string; action: string } {
+  if (category === 'download_failed') {
+    const copy = downloadErrorCopy(reason)
+    if (copy) return copy
+  }
   const key = ERROR_CATEGORY_KEYS[category]
   const t = i18n.global.t
   return {
     message: t(`errors.category.${key}.message`),
     action: t(`errors.category.${key}.action`)
   }
+}
+
+/** A frase de um download que falhou, pelo motivo que o backend classificou.
+ *
+ *  Nunca link, nunca nome de arquivo: um 429 da origem apareceu na tela como
+ *  "Todas as fontes de download falharam para 2xHFA2kSPAN.safetensors: ...
+ *  https://huggingface.co/... (HTTP Error 429: Too Many Requests)" — um "espere
+ *  alguns minutos" apresentado como defeito, com o nome interno do modelo.
+ *  Motivo desconhecido devolve `null`, e quem chama cai no genérico. */
+export function downloadErrorCopy(
+  reason?: string | null
+): { message: string; action: string } | null {
+  const key = reason ? DOWNLOAD_REASON_KEYS[reason] : undefined
+  if (!key) return null
+  const t = i18n.global.t
+  return {
+    message: t(`errors.download.${key}.message`),
+    action: t(`errors.download.${key}.action`)
+  }
+}
+
+// Explícito pelo mesmo motivo do mapa de categorias abaixo.
+const DOWNLOAD_REASON_KEYS: Record<string, string> = {
+  rate_limited: 'rateLimited',
+  server_unavailable: 'serverUnavailable',
+  not_found: 'notFound',
+  network: 'network',
+  corrupted: 'corrupted',
+  disk_full: 'diskFull',
+  unknown: 'unknown'
 }
 
 // The API's snake_case categories mapped to the locale files' camelCase keys.
@@ -399,7 +440,8 @@ const ERROR_CATEGORY_KEYS: Record<ErrorCategory, string> = {
   model_failure: 'modelFailure',
   disk_full: 'diskFull',
   hardware_insufficient: 'hardwareInsufficient',
-  license_invalid: 'licenseInvalid'
+  license_invalid: 'licenseInvalid',
+  download_failed: 'downloadFailed'
 }
 
 // --- Video editing (specs/007-video-editor-player) ---

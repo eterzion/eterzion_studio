@@ -512,6 +512,10 @@
       "outOfMemory": {
         "action": "Try a smaller scale factor or a smaller custom size.",
         "message": "Not enough memory for this output size."
+      },
+      "downloadFailed": {
+        "action": "Please try again later.",
+        "message": "A required component could not be downloaded."
       }
     },
     "job": {
@@ -527,6 +531,36 @@
       "scaleMissing": "Choose a scale factor.",
       "sizeMissing": "Enter a width and height.",
       "unsupportedFormat": "Unsupported format (images only: PNG, JPG, TIFF, WEBP, BMP)."
+    },
+    "download": {
+      "rateLimited": {
+        "action": "Please try again in a few minutes.",
+        "message": "The download server is receiving too many requests right now."
+      },
+      "serverUnavailable": {
+        "action": "Please try again later.",
+        "message": "The download server did not respond."
+      },
+      "notFound": {
+        "action": "Please try again later; if it keeps happening, update the app.",
+        "message": "The file is not available on the download server right now."
+      },
+      "network": {
+        "action": "Check your internet connection and try again.",
+        "message": "Could not connect to the download server."
+      },
+      "corrupted": {
+        "action": "Please try again.",
+        "message": "The download arrived incomplete or corrupted and was discarded."
+      },
+      "diskFull": {
+        "action": "Free up some space and try again.",
+        "message": "There is not enough disk space for the download."
+      },
+      "unknown": {
+        "action": "Please try again later.",
+        "message": "The download could not be completed."
+      }
     }
   },
   "history": {

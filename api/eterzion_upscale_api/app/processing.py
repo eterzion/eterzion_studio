@@ -907,6 +907,7 @@ class ComponentInfo:
     # o estado voltaria a `not_installed` e a pessoa clicaria de novo sem saber
     # o que houve — que é o modo mais frustrante de um download falhar.
     error: str | None = None
+    error_reason: str | None = None
 
 
 # ------------------------------- instalação em segundo plano ------------------------------- #
@@ -923,6 +924,9 @@ class ComponentInfo:
 _INSTALL_LOCK = threading.Lock()
 _INSTALLING: set[str] = set()
 _INSTALL_ERRORS: dict[str, str] = {}
+# Motivo da falha de download (`DownloadError.reason`), quando houver: e' com
+# ele que a interface escolhe a frase, na lingua de quem usa o app.
+_INSTALL_ERROR_REASONS: dict[str, str] = {}
 
 
 def _start_background(component_id: str, work: Callable[[], object]) -> None:
@@ -931,6 +935,7 @@ def _start_background(component_id: str, work: Callable[[], object]) -> None:
             return  # já em curso: pedir de novo não enfileira uma segunda vez
         _INSTALLING.add(component_id)
         _INSTALL_ERRORS.pop(component_id, None)
+        _INSTALL_ERROR_REASONS.pop(component_id, None)
 
     def run() -> None:
         try:
@@ -938,6 +943,9 @@ def _start_background(component_id: str, work: Callable[[], object]) -> None:
         except Exception as error:  # noqa: BLE001 - o erro vai para a tela, não some
             with _INSTALL_LOCK:
                 _INSTALL_ERRORS[component_id] = str(error)
+                reason = getattr(error, 'reason', None)
+                if reason:
+                    _INSTALL_ERROR_REASONS[component_id] = reason
         finally:
             with _INSTALL_LOCK:
                 _INSTALLING.discard(component_id)
@@ -949,9 +957,10 @@ def _with_background_state(info: ComponentInfo) -> ComponentInfo:
     with _INSTALL_LOCK:
         installing = info.id in _INSTALLING
         error = _INSTALL_ERRORS.get(info.id)
+        reason = _INSTALL_ERROR_REASONS.get(info.id)
     if installing:
-        return replace(info, install_state='installing', error=None)
-    return replace(info, error=error) if error else info
+        return replace(info, install_state='installing', error=None, error_reason=None)
+    return replace(info, error=error, error_reason=reason) if error else info
 
 
 def _model_dir() -> str:

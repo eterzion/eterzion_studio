@@ -512,6 +512,10 @@
       "outOfMemory": {
         "action": "Tente reduzir o fator de escala ou o tamanho personalizado.",
         "message": "Memória insuficiente para este tamanho de saída."
+      },
+      "downloadFailed": {
+        "action": "Tente novamente mais tarde.",
+        "message": "Não foi possível transferir um componente necessário."
       }
     },
     "job": {
@@ -527,6 +531,36 @@
       "scaleMissing": "Escolha um fator de escala.",
       "sizeMissing": "Indique largura e altura.",
       "unsupportedFormat": "Formato não suportado (apenas imagens: PNG, JPG, TIFF, WEBP, BMP)."
+    },
+    "download": {
+      "rateLimited": {
+        "action": "Tente novamente dentro de alguns minutos.",
+        "message": "O servidor de transferência está a receber demasiados pedidos neste momento."
+      },
+      "serverUnavailable": {
+        "action": "Tente novamente mais tarde.",
+        "message": "O servidor de transferência não respondeu."
+      },
+      "notFound": {
+        "action": "Tente novamente mais tarde; se continuar, atualize a aplicação.",
+        "message": "O ficheiro não está disponível no servidor de transferência neste momento."
+      },
+      "network": {
+        "action": "Verifique a sua ligação à internet e tente novamente.",
+        "message": "Não foi possível ligar ao servidor de transferência."
+      },
+      "corrupted": {
+        "action": "Tente novamente.",
+        "message": "A transferência chegou incompleta ou corrompida e foi descartada."
+      },
+      "diskFull": {
+        "action": "Liberte espaço e tente novamente.",
+        "message": "Não há espaço em disco suficiente para a transferência."
+      },
+      "unknown": {
+        "action": "Tente novamente mais tarde.",
+        "message": "Não foi possível concluir a transferência."
+      }
     }
   },
   "history": {
