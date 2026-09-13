@@ -98,3 +98,24 @@ def test_copy_audio_invalid_input(tmp_path):
     bad.write_bytes(b'nao e video')
     ok = copy_audio(str(bad), str(bad), str(tmp_path / 'out.mp4'))
     assert ok is False
+
+
+@pytest.mark.skipif(not has_ffmpeg(), reason='ffmpeg binary not available')
+def test_ffprobe_reads_tags_and_paths_with_accents(tmp_path):
+    """Tags e caminho fora do ASCII. No Windows o `text=True` sozinho decodifica
+    a saida UTF-8 do ffprobe em cp1252: a thread de leitura quebrava, o stdout
+    chegava None e a criacao do job caia com 500 -- achado num MP3 de musica
+    com o titulo acentuado, na 1.1.9 instalada."""
+    from eterzion_upscale.media import ffprobe_json
+
+    pasta = tmp_path / 'Músicas — ação'
+    pasta.mkdir()
+    arquivo = pasta / 'canção.wav'
+    subprocess.run(
+        [ffmpeg_path(), '-y', '-v', 'error', '-f', 'lavfi', '-i', 'sine=frequency=440:duration=0.5',
+         '-metadata', 'title=Canção — Ação ♪ 音楽', '-metadata', 'artist=Zoë & Ñandú', str(arquivo)],
+        check=True, capture_output=True)
+    dados = ffprobe_json(str(arquivo))
+    tags = {k.lower(): v for k, v in dados['format'].get('tags', {}).items()}
+    assert tags['title'] == 'Canção — Ação ♪ 音楽'
+    assert tags['artist'] == 'Zoë & Ñandú'
