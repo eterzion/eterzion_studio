@@ -65,6 +65,24 @@ def status(install_id: str):
     }
 
 
+class SignedInstallRequest(BaseModel):
+    install_id: str
+    timestamp: int
+    signature_b64: str
+
+
+@activation_router.post('/details')
+def details(body: SignedInstallRequest):
+    """O final da chave e o e-mail da compra, para o popover da licenca. So'
+    com pedido assinado pela instalacao -- ver app/account.py."""
+    from app import account, downloads
+
+    try:
+        return account.detalhes(body.install_id, body.timestamp, body.signature_b64)
+    except downloads.DownloadTokenError as error:
+        raise HTTPException(error.status, error.motivo) from error
+
+
 # ------------------------------- /downloads ------------------------------- #
 #
 # Links de download do Studio (instaladores e modelos no R2 privado). Pedido

@@ -5,8 +5,10 @@ media-request -> profile -> engine resolver chain. Consolidates what were
 """
 from __future__ import annotations
 
+import base64
 import json
 import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -211,6 +213,77 @@ def check_gate() -> GateResult:
     return GateResult(
         allowed=False, state='blocked',
         message='Sua licença não está mais ativa. Verifique o status da sua assinatura.')
+
+
+# ------------------------------- license details ------------------------------- #
+#
+# O final da chave e o e-mail da compra, para o popover da licenca. Vem de
+# `POST /activations/details`, com pedido assinado pela chave desta instalacao
+# (o e-mail e' dado pessoal, e o install_id sozinho circula em URLs e logs --
+# ver api/eterzion_licensing_service/app/account.py).
+#
+# So' em memoria, nunca no disco: e' informativo, e na proxima abertura com
+# rede ele vem de novo. Sem rede, o popover so' nao mostra essas duas linhas.
+
+_DETAILS_PURPOSE = 'eterzion-license-details'  # o mesmo do servidor de licencas
+# Depois de uma falha (sem rede, ou servidor anterior a esta rota), nao tentar
+# de novo a cada consulta de status.
+_DETAILS_RETRY_S = 300
+
+_details_lock = threading.Lock()
+_details_cache: dict | None = None
+_details_failed_at = 0.0
+
+
+def _http_post_json(url: str, body: dict, timeout: float = 5.0) -> dict:
+    request = urllib.request.Request(
+        url, data=json.dumps(body).encode('utf-8'), method='POST',
+        headers={**_HTTP_HEADERS, 'Content-Type': 'application/json'})
+    with urllib.request.urlopen(request, timeout=timeout) as resp:  # noqa: S310 - fixed, config-provided base_url
+        return json.loads(resp.read().decode('utf-8'))
+
+
+def license_details(fetch: bool = True) -> dict | None:
+    """`{'license_last4', 'email'}` da licenca ativa nesta instalacao, ou None.
+
+    `fetch=False` so' devolve o que ja' estiver em memoria -- para os estados
+    offline, em que pedir de novo so' esperaria o timeout."""
+    global _details_cache, _details_failed_at
+    if not settings.licensing_service_url:
+        return None
+    with _details_lock:
+        if _details_cache is not None or not fetch:
+            return _details_cache
+        if time.time() - _details_failed_at < _DETAILS_RETRY_S:
+            return None
+        from app.security import ensure_identity
+
+        identity = ensure_identity()
+        agora = int(time.time())
+        assinatura = identity.sign(f'{_DETAILS_PURPOSE}:{identity.install_id}:{agora}'.encode('utf-8'))
+        try:
+            body = _http_post_json(f'{settings.licensing_service_url.rstrip("/")}/activations/details', {
+                'install_id': identity.install_id,
+                'timestamp': agora,
+                'signature_b64': base64.b64encode(assinatura).decode('ascii'),
+            })
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError):
+            _details_failed_at = time.time()
+            return None
+        last4, email = body.get('license_last4'), body.get('email')
+        _details_cache = {
+            'license_last4': last4 if isinstance(last4, str) else None,
+            'email': email if isinstance(email, str) else None,
+        }
+        return _details_cache
+
+
+def clear_license_details() -> None:
+    """Depois de ativar ou liberar: a licenca desta instalacao pode ter mudado."""
+    global _details_cache, _details_failed_at
+    with _details_lock:
+        _details_cache = None
+        _details_failed_at = 0.0
 
 
 # ------------------------------- model-license registry ------------------------------- #

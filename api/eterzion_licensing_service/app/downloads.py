@@ -77,23 +77,34 @@ def _verifica_assinatura(chave_publica_b64: str, mensagem: bytes, assinatura_b64
         return False
 
 
-def emitir_token(install_id: str, timestamp: int, assinatura_b64: str, agora: float | None = None) -> dict:
-    """Confere quem pede e devolve a assinatura de download do escopo `studio`.
+def verificar_pedido(install_id: str, timestamp: int, assinatura_b64: str, proposito: str,
+                     agora: float | None = None) -> None:
+    """Confere que o pedido veio da propria instalacao: assinatura Ed25519 de
+    `"<proposito>:<install_id>:<unix_ts>"` com a chave registrada na ativacao,
+    dentro da folga de relogio. O proposito no texto assinado impede que uma
+    assinatura feita para uma rota sirva em outra.
 
     Erros com o mesmo 401 para "instalação desconhecida" e "assinatura errada":
     distinguir os dois ensinaria a quem tenta adivinhar quais install_id existem.
     """
+    agora = time.time() if agora is None else agora
+    if abs(agora - timestamp) > FOLGA_RELOGIO_S:
+        raise DownloadTokenError(401, 'nao_autorizado')
+    instalacao = licensing.get_installation(install_id)
+    mensagem = f'{proposito}:{install_id}:{timestamp}'.encode('utf-8')
+    if instalacao is None or not _verifica_assinatura(
+            instalacao['signing_public_key_b64'], mensagem, assinatura_b64):
+        raise DownloadTokenError(401, 'nao_autorizado')
+
+
+def emitir_token(install_id: str, timestamp: int, assinatura_b64: str, agora: float | None = None) -> dict:
+    """Confere quem pede e devolve a assinatura de download do escopo `studio`."""
     chave = settings.studio_cdn_signing_key
     if not chave:
         raise DownloadTokenError(503, 'downloads_nao_configurados')
     agora = time.time() if agora is None else agora
 
-    if abs(agora - timestamp) > FOLGA_RELOGIO_S:
-        raise DownloadTokenError(401, 'nao_autorizado')
-    instalacao = licensing.get_installation(install_id)
-    if instalacao is None or not _verifica_assinatura(
-            instalacao['signing_public_key_b64'], canonical_request(install_id, timestamp), assinatura_b64):
-        raise DownloadTokenError(401, 'nao_autorizado')
+    verificar_pedido(install_id, timestamp, assinatura_b64, PROPOSITO, agora)
 
     licenca = licensing.installation_license(install_id)
     if licenca is None or licenca.status != 'active':

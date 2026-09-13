@@ -19,6 +19,8 @@ interface LicenseStoreState {
   installationsUsed: number
   installationsLimit: number
   offlineDaysRemaining: number | null
+  licenseLast4: string | null
+  email: string | null
   error: string | null
   // Set the first time a check resolves to a usable status this session.
   // Once true, a later 'error' (can't reach the server right now) degrades
@@ -33,6 +35,8 @@ export const licenseState = reactive<LicenseStoreState>({
   installationsUsed: 0,
   installationsLimit: 0,
   offlineDaysRemaining: null,
+  licenseLast4: null,
+  email: null,
   error: null,
   everUsable: false
 })
@@ -73,6 +77,8 @@ export async function refreshLicenseStatus(): Promise<void> {
     licenseState.installationsUsed = body.installations_used
     licenseState.installationsLimit = body.installations_limit
     licenseState.offlineDaysRemaining = body.offline_days_remaining
+    licenseState.licenseLast4 = body.license_last4 ?? null
+    licenseState.email = body.email ?? null
   } catch (error) {
     licenseState.status = 'error'
     licenseState.error = error instanceof Error ? error.message : String(error)
@@ -109,6 +115,8 @@ export async function initLicense(): Promise<void> {
       licenseState.installationsUsed = body.installations_used
       licenseState.installationsLimit = body.installations_limit
       licenseState.offlineDaysRemaining = body.offline_days_remaining
+      licenseState.licenseLast4 = body.license_last4 ?? null
+      licenseState.email = body.email ?? null
       if (isUsableLicenseState(licenseState.status)) licenseState.everUsable = true
       return
     } catch (error) {

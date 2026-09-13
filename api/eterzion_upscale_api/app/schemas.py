@@ -263,6 +263,10 @@ class LicenseStatusResponse(BaseModel):
     installations_used: int
     installations_limit: int
     offline_days_remaining: int | None = None
+    # O final da chave e o e-mail da compra (popover da licenca). None sem rede
+    # ou antes de o servidor responder -- ver licensing.license_details().
+    license_last4: str | None = None
+    email: str | None = None
 
 
 # --- Video editing (specs/007-video-editor-player) ---

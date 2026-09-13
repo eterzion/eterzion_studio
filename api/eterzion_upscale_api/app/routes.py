@@ -738,11 +738,20 @@ class ActivateRequest(BaseModel):
 @license_router.get('/status', response_model=LicenseStatusResponse)
 def get_status() -> LicenseStatusResponse:
     result = licensing.check_gate()
+    # Com o servidor respondendo, pede (uma vez por sessao); offline, so' o que
+    # ja' estiver em memoria.
+    details = None
+    if result.state == 'active':
+        details = licensing.license_details()
+    elif result.state in ('offline_tolerance', 'offline_expiring'):
+        details = licensing.license_details(fetch=False)
     return LicenseStatusResponse(
         state=result.state,
         installations_used=result.installations_used or 0,
         installations_limit=result.installations_limit or 0,
         offline_days_remaining=result.offline_days_remaining,
+        license_last4=(details or {}).get('license_last4'),
+        email=(details or {}).get('email'),
     )
 
 
@@ -765,6 +774,7 @@ def activate_license(payload: ActivateRequest) -> dict:
                 404, 'Licença não encontrada. Confira o ID recebido por e-mail.') from error
         raise HTTPException(502, f'Não foi possível ativar a licença: {error}') from error
     licensing.record_successful_check()
+    licensing.clear_license_details()
     return {'ok': True}
 
 
@@ -783,6 +793,7 @@ def release_license() -> dict:
         security.release(settings.licensing_service_url, body['license_id'], identity.install_id)
     except (security.ProtectedLoadError, urllib.error.HTTPError) as error:
         raise HTTPException(502, f'Não foi possível liberar a instalação: {error}') from error
+    licensing.clear_license_details()
     return {'ok': True}
 
 

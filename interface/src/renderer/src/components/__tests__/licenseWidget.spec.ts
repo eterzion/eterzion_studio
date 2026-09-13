@@ -7,6 +7,8 @@ const { estado, desativar } = vi.hoisted(() => ({
     installationsUsed: 2,
     installationsLimit: 3,
     offlineDaysRemaining: null as number | null,
+    licenseLast4: null as string | null,
+    email: null as string | null,
     error: null as string | null,
     everUsable: true
   },
@@ -43,6 +45,25 @@ describe('LicenseWidget', () => {
   beforeEach(() => {
     desativar.mockClear()
     estado.status = 'active'
+    estado.licenseLast4 = null
+    estado.email = null
+  })
+
+  it('mostra o final da chave, mascarado, e o e-mail da compra', async () => {
+    estado.licenseLast4 = '3f2a'
+    estado.email = 'cliente@example.com'
+    const wrapper = abrir()
+    await wrapper.get('.license-pill').trigger('click')
+    expect(wrapper.get('.license-key').text()).toBe('••••3f2a')
+    expect(wrapper.text()).toContain('cliente@example.com')
+    wrapper.unmount()
+  })
+
+  it('sem esses dados (offline, servidor antigo), nao mostra as linhas', async () => {
+    const wrapper = abrir()
+    await wrapper.get('.license-pill').trigger('click')
+    expect(wrapper.find('.license-facts').exists()).toBe(false)
+    wrapper.unmount()
   })
 
   it('mostra as instalacoes como "usadas de limite"', async () => {
