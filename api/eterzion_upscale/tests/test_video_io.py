@@ -119,3 +119,50 @@ def test_ffprobe_reads_tags_and_paths_with_accents(tmp_path):
     tags = {k.lower(): v for k, v in dados['format'].get('tags', {}).items()}
     assert tags['title'] == 'Canção — Ação ♪ 音楽'
     assert tags['artist'] == 'Zoë & Ñandú'
+
+
+def test_ffmpeg_and_ffprobe_never_open_a_terminal_window(tmp_path, monkeypatch):
+    """No backend empacotado (sem console), cada processo de console ganha uma
+    janela: um job de musica piscava varios terminais. Todo processo do
+    ffmpeg/ffprobe precisa nascer com CREATE_NO_WINDOW -- inclusive os do
+    run_ffmpeg, cuja biblioteca fixava outra flag."""
+    import subprocess as sp
+
+    from eterzion_upscale import media
+
+    flag = getattr(sp, 'CREATE_NO_WINDOW', 0)
+    if not flag:
+        pytest.skip('flag exclusiva do Windows')
+    criados = []
+    original = sp.Popen
+
+    class Espiao(original):
+        def __init__(self, *args, **kwargs):
+            criados.append(kwargs.get('creationflags', 0))
+            super().__init__(*args, **kwargs)
+
+    monkeypatch.setattr(sp, 'Popen', Espiao)
+
+    saida = tmp_path / 'tom.wav'
+    progresso = []
+
+    def construir(f):
+        f.on('progress', progresso.append)
+        return f.input('sine=frequency=440:duration=1', f='lavfi').output(str(saida))
+
+    media.run_ffmpeg(construir)
+    media.ffprobe_json(str(saida))
+    assert len(criados) >= 2
+    assert all(c & flag for c in criados), criados
+    # O execute() da biblioteca continua o dela: a compressao depende destes
+    # eventos para a barra de progresso.
+    assert progresso, 'o run_ffmpeg deixou de emitir progresso'
+
+
+def test_run_ffmpeg_failure_keeps_the_known_prefix(tmp_path):
+    """jobs._FFMPEG_MARKERS reconhece a falha pelo prefixo e manda a saida do
+    ffmpeg para a area recolhida da interface."""
+    from eterzion_upscale import media
+
+    with pytest.raises(RuntimeError, match='^Falha ao processar com ffmpeg'):
+        media.run_ffmpeg(lambda f: f.input(str(tmp_path / 'nao-existe.wav')).output(str(tmp_path / 'x.wav')))

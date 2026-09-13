@@ -258,6 +258,7 @@ def _pid_alive(pid: int) -> bool:
     try:
         result = subprocess.run(
             ['tasklist', '/FI', f'PID eq {pid}'], capture_output=True, timeout=5, text=True, check=False,
+            **no_window_kwargs(),
         )
         return str(pid) in result.stdout
     except (OSError, subprocess.SubprocessError):

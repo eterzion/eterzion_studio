@@ -25,7 +25,7 @@ from spandrel import ModelLoader
 from torch.nn import functional as F
 
 from .media import (download_with_fallback, has_ffmpeg, load_file_from_url,
-                    local_file_status, run_ffmpeg, sha256_of_file)
+                    local_file_status, no_window_kwargs, run_ffmpeg, sha256_of_file)
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +149,7 @@ def _list_ffmpeg_codecs(flag: str) -> list[str]:
     try:
         result = subprocess.run(
             [ffmpeg_bin, '-hide_banner', flag], capture_output=True, text=True, encoding='utf-8', errors='replace',
-            timeout=10, check=False,
+            timeout=10, check=False, **no_window_kwargs(),
         )
     except (OSError, subprocess.TimeoutExpired):
         return []
