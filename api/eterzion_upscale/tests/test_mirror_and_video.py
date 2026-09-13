@@ -3,6 +3,8 @@ import os
 
 import numpy as np
 import pytest
+
+ESPELHO = 'https://cdn.invalido/studio/models/'
 import torch
 from spandrel.architectures.Compact import Compact
 
@@ -173,29 +175,53 @@ def test_audio_engines_registry():
         assert info['reference'].startswith('https://'), name
 
 
-def test_espelho_publico_vem_antes_da_fonte_original():
-    """Sem models.json, todo arquivo tenta primeiro o espelho publico e so'
-    depois a origem. Foi um 429 da origem (Hugging Face) numa instalacao real
-    que motivou isto; o SHA-256 fixado continua valendo para as duas."""
-    from eterzion_upscale.processing import MIRROR_BASE_URL, MODELS, _urls_with_mirror
+@pytest.fixture
+def espelho():
+    """Instala um fornecedor de espelho como o app faz (app/cdn.py) e o remove
+    no fim: ele e' estado do modulo, e vazaria para os outros testes."""
+    from eterzion_upscale import processing
+
+    processing.set_mirror_url_factory(lambda nome: ESPELHO + nome + '?exp=1&sig=ab')
+    yield ESPELHO
+    processing.set_mirror_url_factory(None)
+
+
+def test_com_espelho_ele_vem_antes_da_fonte_original(espelho):
+    """Foi um 429 da origem (Hugging Face) numa instalacao real que motivou o
+    espelho; o SHA-256 fixado vale para as duas fontes."""
+    from eterzion_upscale.processing import MODELS, _urls_with_mirror
 
     for nome, entry in MODELS.items():
         for candidatos, original in zip(_urls_with_mirror(nome, entry, 'nao-existe.json'), entry['urls']):
-            assert candidatos[0].startswith(MIRROR_BASE_URL), nome
-            assert candidatos[0].endswith('/' + os.path.basename(original)), nome
+            assert candidatos[0].startswith(espelho), nome
+            assert os.path.basename(original) in candidatos[0], nome
             assert candidatos[1] == original, nome
 
 
-def test_espelho_e_publico_e_nao_o_repositorio_privado():
-    """O repositorio do codigo e' privado: anexo de release dele responde 404
-    para quem nao tem login -- que e' o caso do app instalado."""
-    from eterzion_upscale.processing import MIRROR_BASE_URL
+def test_sem_espelho_so_a_origem():
+    """A biblioteca usada sozinha (linha de comando) nao tem fornecedor: vai
+    direto a' fonte original, sem URL morta na frente."""
+    from eterzion_upscale.processing import MODELS, _urls_with_mirror
 
-    assert 'eterzion_studio_releases' in MIRROR_BASE_URL
-    assert '/eterzion_studio/' not in MIRROR_BASE_URL
+    for nome, entry in MODELS.items():
+        for candidatos, original in zip(_urls_with_mirror(nome, entry, 'nao-existe.json'), entry['urls']):
+            assert candidatos == [original], nome
 
 
-def test_detector_de_rostos_tambem_passa_pelo_espelho(tmp_path, monkeypatch):
+def test_fornecedor_quebrado_nao_impede_a_origem():
+    from eterzion_upscale import processing
+
+    def quebrado(nome):
+        raise RuntimeError('sem rede')
+
+    processing.set_mirror_url_factory(quebrado)
+    try:
+        assert processing._com_espelho('x.pth', 'https://origem/x.pth') == ['https://origem/x.pth']
+    finally:
+        processing.set_mirror_url_factory(None)
+
+
+def test_detector_de_rostos_tambem_passa_pelo_espelho(tmp_path, monkeypatch, espelho):
     from eterzion_upscale import processing
 
     pedidos = []
@@ -206,5 +232,23 @@ def test_detector_de_rostos_tambem_passa_pelo_espelho(tmp_path, monkeypatch):
 
     monkeypatch.setattr(processing, 'download_with_fallback', registra)
     processing.FaceEnhancer(model_dir=str(tmp_path))
-    assert pedidos[0][0].startswith(processing.MIRROR_BASE_URL)
+    assert pedidos[0][0].startswith(espelho)
     assert pedidos[0][1] == processing._YUNET_URL
+
+
+def test_a_assinatura_da_url_nao_vai_para_o_detalhe(tmp_path, monkeypatch):
+    """A URL do CDN leva exp/sig -- uma credencial de horas. Ela nao pode
+    aparecer no detalhe tecnico que a interface mostra, nem no log."""
+    import urllib.error
+
+    from eterzion_upscale import media
+
+    def falha(url, dst, hash_prefix=None, progress=True):
+        raise urllib.error.HTTPError(url, 503, 'x', {}, None)
+
+    monkeypatch.setattr(media, 'download_url_to_file', falha)
+    with pytest.raises(media.DownloadError) as capturado:
+        media.load_file_from_url('https://cdn.invalido/studio/models/w.pth?exp=1&sig=segredo',
+                                 model_dir=str(tmp_path), progress=False)
+    assert 'segredo' not in capturado.value.detail
+    assert 'cdn.invalido/studio/models/w.pth' in capturado.value.detail

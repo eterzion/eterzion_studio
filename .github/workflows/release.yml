@@ -64,12 +64,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.version.outputs.tag }}
         run: |
-          # A referencia e' o repositorio PUBLICO de distribuicao, que e' de
-          # onde o app instalado baixa. Se so' a release privada existisse (a
-          # publica falhou), perguntar ao privado pularia o build para sempre e
-          # a versao nunca chegaria a ninguem.
-          if gh release view "$TAG" --repo eterzion/eterzion_studio_releases >/dev/null 2>&1; then
-            echo "Release $TAG already exists in eterzion/eterzion_studio_releases; skipping all build jobs."
+          # A release PRIVADA e' a ultima coisa que a publicacao cria -- depois do
+          # upload para o CDN (R2) e do repositorio publico da migracao. Se ela
+          # existe, tudo antes dela deu certo; se algo falhou no meio, ela nao
+          # existe e a proxima execucao refaz (os passos anteriores sao
+          # idempotentes). Perguntar a um destino do meio pularia o build com a
+          # publicacao pela metade.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping all build jobs."
             echo 'exists=true' >> "$GITHUB_OUTPUT"
           else
             echo 'exists=false' >> "$GITHUB_OUTPUT"
@@ -352,6 +354,90 @@ jobs:
       # release apontando para o commit daquela branch, com a tag da versao do
       # `package.json`. O build continua rodando em branch -- e' assim que se
       # testa a esteira sem publicar nada.
+      # O app instalado se atualiza pelo CDN privado do Studio: bucket
+      # `eterzion-studio` no R2, atras do Worker de cdn.eterzion.com/studio/, que
+      # so' serve com a assinatura que o servidor de licencas emite (licenca
+      # ativa). Vem ANTES das releases do GitHub: a release privada, a ultima,
+      # e' o sinal de que a publicacao terminou (ver `prepare`).
+      - name: Upload to the Studio CDN (R2)
+        if: github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          # Token do R2 com Object Read & Write SO' no bucket eterzion-studio --
+          # nunca o do catalogo (eterzion-assets).
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # rclone oficial, hash conferido antes de executar. >= 1.75: o 1.60 do
+          # apt falha todo upload no R2 com NotImplemented (ver eterzion_assets/
+          # cdn/README.md).
+          RCLONE_VERSION: v1.75.1
+          RCLONE_SHA256: 200eb602c126d82aa38b51e0f6b9ae837473ff99b51278d3f6f837574c494d6e
+          # Versoes do instalador mantidas no bucket. Cada uma tem ~360 MB, e o
+          # plano gratuito do R2 tem 10 GB para a conta inteira.
+          MANTER_VERSOES: '3'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Assert-Exit([string]$oQue) {
+            if ($LASTEXITCODE -ne 0) { throw "$oQue falhou (codigo $LASTEXITCODE)." }
+          }
+          foreach ($nome in 'R2_ACCOUNT_ID', 'R2_ACCESS_KEY_ID', 'R2_SECRET_ACCESS_KEY') {
+            if (-not [Environment]::GetEnvironmentVariable($nome)) {
+              throw "Segredo $nome ausente: sem ele a versao nao chega ao CDN, de onde o app se atualiza."
+            }
+          }
+
+          $zip = Join-Path $env:RUNNER_TEMP "rclone-$env:RCLONE_VERSION.zip"
+          Invoke-WebRequest "https://downloads.rclone.org/$env:RCLONE_VERSION/rclone-$env:RCLONE_VERSION-windows-amd64.zip" -OutFile $zip -UseBasicParsing
+          $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne $env:RCLONE_SHA256) { throw "rclone baixado com SHA-256 inesperado ($hash); nao sera executado." }
+          $pasta = Join-Path $env:RUNNER_TEMP "rclone-$env:RCLONE_VERSION"
+          Expand-Archive $zip -DestinationPath $pasta -Force
+          $rclone = (Get-ChildItem $pasta -Recurse -Filter rclone.exe | Select-Object -First 1).FullName
+          & $rclone version | Select-Object -First 1
+
+          # Remote so' por variavel de ambiente: nenhuma credencial vai para
+          # arquivo no disco do runner. NO_CHECK_BUCKET porque o token, restrito
+          # ao bucket, nao pode (nem precisa) listar ou criar buckets.
+          $env:RCLONE_CONFIG_R2_TYPE = 's3'
+          $env:RCLONE_CONFIG_R2_PROVIDER = 'Cloudflare'
+          $env:RCLONE_CONFIG_R2_ACCESS_KEY_ID = $env:R2_ACCESS_KEY_ID
+          $env:RCLONE_CONFIG_R2_SECRET_ACCESS_KEY = $env:R2_SECRET_ACCESS_KEY
+          $env:RCLONE_CONFIG_R2_ENDPOINT = "https://$env:R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          $env:RCLONE_CONFIG_R2_NO_CHECK_BUCKET = 'true'
+          $destino = 'r2:eterzion-studio/updates'
+
+          $instalador = Get-ChildItem interface\dist\*-setup*.exe | Select-Object -First 1
+          if (-not $instalador) { throw 'Nenhum instalador em interface\dist.' }
+          $blockmap = "$($instalador.FullName).blockmap"
+
+          # Instalador e blockmap ANTES do latest.yml: um app que leia o
+          # latest.yml novo precisa encontrar no bucket o instalador que ele cita.
+          foreach ($arquivo in @($instalador.FullName, $blockmap)) {
+            & $rclone copyto $arquivo "$destino/$(Split-Path $arquivo -Leaf)" --retries 3
+            Assert-Exit "upload de $(Split-Path $arquivo -Leaf)"
+          }
+          & $rclone copyto interface\dist\latest.yml "$destino/latest.yml" --retries 3
+          Assert-Exit 'upload do latest.yml'
+
+          # Retencao: as N versoes mais novas ficam; as outras saem, instalador
+          # e blockmap juntos.
+          $nomes = & $rclone lsf $destino --files-only
+          Assert-Exit 'listagem do bucket'
+          $versoes = $nomes | ForEach-Object { if ($_ -match '-(\d+\.\d+\.\d+)-setup') { [version]$Matches[1] } } |
+            Sort-Object -Unique -Descending
+          $manter = @($versoes | Select-Object -First ([int]$env:MANTER_VERSOES))
+          foreach ($nome in $nomes) {
+            if ($nome -match '-(\d+\.\d+\.\d+)-setup' -and ([version]$Matches[1] -notin $manter)) {
+              & $rclone deletefile "$destino/$nome"
+              Assert-Exit "remocao de $nome"
+              Write-Output "removido pela retencao: $nome"
+            }
+          }
+          Write-Output '--- no CDN agora ---'
+          & $rclone lsl $destino
+          Assert-Exit 'conferencia do bucket'
+
       - name: Publish immutable release
         if: github.ref == 'refs/heads/main'
         shell: pwsh

@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app import jobs, security
+from app import cdn, jobs, security
 from app.config import settings
-from app.routes import (components_router, compression_router, files_router, identity_router,
+from app.routes import (components_router, compression_router, downloads_router, files_router,
+                        identity_router,
                         jobs_router, license_router,
                         image_router, media_router, preview_router, video_router,
                         ws_router)
@@ -21,6 +22,7 @@ app.include_router(jobs_router, prefix='/jobs', tags=['jobs'])
 app.include_router(components_router, prefix='/components', tags=['components'])
 app.include_router(files_router, tags=['files'])
 app.include_router(identity_router, prefix='/identity', tags=['identity'])
+app.include_router(downloads_router, prefix='/downloads', tags=['downloads'])
 app.include_router(preview_router, prefix='/preview', tags=['preview'])
 app.include_router(license_router, prefix='/license', tags=['license'])
 app.include_router(compression_router, prefix='/compression', tags=['compression'])
@@ -40,6 +42,9 @@ async def on_startup():
     # reaproveita nas seguintes. Feito na inicialização para falhar cedo e alto se
     # o DPAPI não estiver disponível, em vez de silenciosamente na primeira ativação.
     security.ensure_identity()
+    # Modelos baixados pelo processo da API (tela de Componentes) passam pelo
+    # CDN privado do Studio quando ha' licenca ativa; senao, pela origem.
+    cdn.install_mirror()
 
 
 @app.on_event('shutdown')

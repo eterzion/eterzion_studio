@@ -146,6 +146,10 @@ jobs:
             # guarda ficavam verdes sem nunca rodar -- pior que o
             # FileNotFoundError acima, que ao menos aparecia.
             interface/src/renderer/src/components/compression
+            # test_models_to_r2.py confere que o script que espelha os modelos
+            # no CDN (scripts/models_to_r2.py) le a mesma lista que o app baixa.
+            # Mesmo caso do api.ts acima: sem o caminho, FileNotFoundError.
+            scripts
           sparse-checkout-cone-mode: true
       # Cache do uv no disco do runner persistente, em vez do cache do
       # Actions. Escrito por um passo, e nao por `env:`, porque o contexto

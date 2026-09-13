@@ -13,7 +13,9 @@ import numpy as np
 import pytest
 
 from eterzion_upscale import processing
-from eterzion_upscale.processing import MIRROR_BASE_URL, SPEECH_WEIGHTS, SPEECH_WEIGHTS_DIR
+from eterzion_upscale.processing import SPEECH_WEIGHTS, SPEECH_WEIGHTS_DIR
+
+ESPELHO = 'https://cdn.invalido/studio/models/'
 
 
 def test_pesos_passam_pelo_espelho_com_revisao_e_hash_fixados(tmp_path, monkeypatch):
@@ -24,11 +26,15 @@ def test_pesos_passam_pelo_espelho_com_revisao_e_hash_fixados(tmp_path, monkeypa
         return os.path.join(model_dir, file_name)
 
     monkeypatch.setattr(processing, 'download_with_fallback', registra)
-    caminhos = processing.ensure_speech_weights(str(tmp_path))
+    processing.set_mirror_url_factory(lambda nome: ESPELHO + nome)
+    try:
+        caminhos = processing.ensure_speech_weights(str(tmp_path))
+    finally:
+        processing.set_mirror_url_factory(None)
 
     assert set(caminhos) == set(SPEECH_WEIGHTS) == {'backbone.onnx', 'spec_head.onnx'}
     for urls, pasta, nome, digest in pedidos:
-        assert urls[0] == MIRROR_BASE_URL + nome
+        assert urls[0] == ESPELHO + nome
         # A origem e' a revisao fixada do Hugging Face, nunca `main`.
         assert processing._LAVASR_REVISION in urls[1] and '/main/' not in urls[1]
         assert digest == SPEECH_WEIGHTS[nome]

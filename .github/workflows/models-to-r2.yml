@@ -1,0 +1,68 @@
+name: Models to R2
+
+# Espelha no CDN privado do Studio (bucket R2 `eterzion-studio`, pasta
+# `models/`) os arquivos de modelo que o app baixa sob demanda. O app tenta
+# esse espelho antes da fonte original, com a assinatura que o servidor de
+# licencas emite (app/cdn.py) -- um Hugging Face respondendo 429 nao impede
+# ninguem de instalar um componente.
+#
+# Roda sozinho quando a lista de modelos muda na main (um modelo novo ou uma
+# revisao nova precisa estar no espelho antes de alguem pedir), e a mao.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - api/eterzion_upscale/processing.py
+      - scripts/models_to_r2.py
+      - .github/workflows/models-to-r2.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: models-to-r2
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Mirror model files to the Studio CDN
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          sparse-checkout: |
+            api/eterzion_upscale
+            scripts
+      # O script so' usa a biblioteca padrao: le a lista de modelos pela AST,
+      # sem importar torch.
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+      - name: Install rclone (official build, pinned hash)
+        env:
+          RCLONE_VERSION: v1.75.1
+          RCLONE_SHA256: 982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab
+        run: |
+          set -euo pipefail
+          zip="$RUNNER_TEMP/rclone.zip"
+          curl -fsSL -o "$zip" "https://downloads.rclone.org/$RCLONE_VERSION/rclone-$RCLONE_VERSION-linux-amd64.zip"
+          echo "$RCLONE_SHA256  $zip" | sha256sum -c -
+          python -c "import zipfile,sys; zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])" "$zip" "$RUNNER_TEMP/rclone"
+          bin="$(find "$RUNNER_TEMP/rclone" -name rclone -type f | head -n 1)"
+          chmod +x "$bin"
+          "$bin" version | head -n 1
+          echo "RCLONE=$bin" >> "$GITHUB_ENV"
+      - name: Mirror (download from origin, verify SHA-256, upload)
+        env:
+          # Token do R2 com Object Read & Write SO' no bucket eterzion-studio.
+          RCLONE_CONFIG_R2_TYPE: s3
+          RCLONE_CONFIG_R2_PROVIDER: Cloudflare
+          RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          RCLONE_CONFIG_R2_NO_CHECK_BUCKET: 'true'
+        run: python scripts/models_to_r2.py
