@@ -242,6 +242,27 @@ onBeforeUnmount(() => {
   font-weight: var(--fw-medium);
 }
 
+/* O tom do estado, repetido com mais especificidade: `.status-box` vem depois
+   de `.tone-*` e, com a mesma especificidade, apagava a cor -- o bloco saia
+   cinza com "Licenca ativa". */
+.status-box.tone-success {
+  color: var(--color-success);
+  border-color: var(--color-success-soft);
+  background: var(--color-success-soft);
+}
+
+.status-box.tone-warning {
+  color: var(--color-warning);
+  border-color: var(--color-warning-soft);
+  background: var(--color-warning-soft);
+}
+
+.status-box.tone-danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger-soft);
+  background: var(--color-danger-soft);
+}
+
 .popover-section {
   display: flex;
   flex-direction: column;
