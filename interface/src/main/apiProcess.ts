@@ -198,6 +198,15 @@ export async function ensureApiRunning(
   if (bundledFfmpegDir) env.ASTROS_FFMPEG_DIR = bundledFfmpegDir
 
   const child = spawn(command, args, { cwd, env, windowsHide: true })
+  // Sem isto o `stopOwnedApiProcess()` nao tinha o que encerrar: o processo
+  // ficava so' nesta variavel local, e ao fechar o app o backend so' morria se
+  // os pipes quebrados o derrubassem. Um backend que sobra segura a porta 8051
+  // (a proxima abertura acusa "porta em uso") e os arquivos da instalacao
+  // (o instalador da atualizacao nao consegue substitui-los).
+  ownedProcess = child
+  child.once('exit', () => {
+    if (ownedProcess === child) ownedProcess = null
+  })
 
   let stderrTail = ''
   child.stderr?.on('data', (chunk: Buffer) => {

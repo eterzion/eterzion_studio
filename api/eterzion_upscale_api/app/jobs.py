@@ -134,6 +134,14 @@ def _restricted_env(authkey: str, extra_passthrough: tuple[str, ...] = ()) -> di
         # Needed for app.security's DPAPI-protected identity file (Fase 2/4)
         # to resolve the same per-user path the API process itself uses.
         'LOCALAPPDATA', 'APPDATA', 'USERPROFILE',
+        # O FFmpeg empacotado (LGPL). Sem ele o worker -- que roda voz e video --
+        # procurava o ffmpeg no PATH: numa maquina sem FFmpeg instalado essas
+        # etapas quebravam, e numa com um FFmpeg GPL no PATH, usavam esse.
+        'ASTROS_FFMPEG_DIR',
+        # Linux: HOME para os caminhos por usuario (a identidade cai em
+        # Path.home() fora do Windows) e LD_LIBRARY_PATH para as bibliotecas do
+        # FFmpeg compartilhado.
+        'HOME', 'LD_LIBRARY_PATH',
     ) + extra_passthrough
     env = {k: os.environ[k] for k in passthrough if k in os.environ}
     env['ASTROS_WORKER_AUTHKEY'] = authkey
