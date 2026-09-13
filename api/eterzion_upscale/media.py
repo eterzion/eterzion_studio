@@ -360,22 +360,38 @@ def run_ffmpeg(args_builder) -> None:
     Consolidates what were three near-identical `_run_ffmpeg` helpers in
     video_io.py, audio.py and optimize.py into the one real place.
     Uses the bundled ffmpeg binary (T072) when packaged, falling back to PATH."""
-    from ffmpeg import FFmpeg
+    from ffmpeg import FFmpeg, FFmpegError
 
     _warn_once_if_gpl_build()
+    _ffmpeg_lib_sem_janela()
     executable = ffmpeg_path() or 'ffmpeg'
-    # A biblioteca `ffmpeg` so' monta os argumentos: o `execute()` dela cria o
-    # processo com `creationflags=CREATE_NEW_PROCESS_GROUP` fixo, sem como pedir
-    # CREATE_NO_WINDOW -- e no backend sem console cada chamada abria um terminal.
-    argumentos = args_builder(FFmpeg(executable=executable).option('y')).arguments
     try:
-        resultado = subprocess.run(argumentos, stdin=subprocess.DEVNULL, capture_output=True,
-                                   check=False, **no_window_kwargs())
-    except OSError as error:
+        args_builder(FFmpeg(executable=executable).option('y')).execute()
+    except (FFmpegError, OSError) as error:
         raise RuntimeError(f'Falha ao processar com ffmpeg: {error}') from error
-    if resultado.returncode != 0:
-        saida = resultado.stderr.decode('utf-8', errors='replace').strip()
-        raise RuntimeError(f'Falha ao processar com ffmpeg: {saida[-2000:]}')
+
+
+def _ffmpeg_lib_sem_janela() -> None:
+    """A biblioteca `ffmpeg` cria o processo com `creationflags` fixo em
+    CREATE_NEW_PROCESS_GROUP (de que ela precisa para encerrar o ffmpeg com
+    CTRL_BREAK), sem como pedir mais nada -- e no backend sem console cada
+    chamada abria um terminal. Troca so' a funcao que ela usa para criar o
+    processo, somando CREATE_NO_WINDOW; o `execute()` continua o dela, com os
+    eventos de progresso que a compressao usa para a barra."""
+    if not getattr(subprocess, 'CREATE_NO_WINDOW', 0):
+        return
+    import ffmpeg.ffmpeg as lib
+
+    if getattr(lib.create_subprocess, '_eterzion_sem_janela', False):
+        return
+
+    def criar(*args, **kwargs):
+        kwargs['creationflags'] = (kwargs.get('creationflags', 0) | subprocess.CREATE_NEW_PROCESS_GROUP
+                                   | subprocess.CREATE_NO_WINDOW)
+        return subprocess.Popen(*args, **kwargs)
+
+    criar._eterzion_sem_janela = True
+    lib.create_subprocess = criar
 
 
 # ------------------------------- ffprobe inspection ------------------------------- #

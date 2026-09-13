@@ -123,28 +123,40 @@ def test_ffprobe_reads_tags_and_paths_with_accents(tmp_path):
 
 def test_ffmpeg_and_ffprobe_never_open_a_terminal_window(tmp_path, monkeypatch):
     """No backend empacotado (sem console), cada processo de console ganha uma
-    janela: um job de musica piscava varios terminais. Toda chamada ao
-    ffmpeg/ffprobe precisa pedir CREATE_NO_WINDOW -- inclusive o run_ffmpeg, cuja
-    biblioteca fixava outra flag."""
+    janela: um job de musica piscava varios terminais. Todo processo do
+    ffmpeg/ffprobe precisa nascer com CREATE_NO_WINDOW -- inclusive os do
+    run_ffmpeg, cuja biblioteca fixava outra flag."""
     import subprocess as sp
 
     from eterzion_upscale import media
 
-    chamadas = []
-    original = sp.run
+    flag = getattr(sp, 'CREATE_NO_WINDOW', 0)
+    if not flag:
+        pytest.skip('flag exclusiva do Windows')
+    criados = []
+    original = sp.Popen
 
-    def espiao(*args, **kwargs):
-        chamadas.append(kwargs.get('creationflags', 0))
-        return original(*args, **kwargs)
+    class Espiao(original):
+        def __init__(self, *args, **kwargs):
+            criados.append(kwargs.get('creationflags', 0))
+            super().__init__(*args, **kwargs)
 
-    monkeypatch.setattr(media.subprocess, 'run', espiao)
-    esperado = getattr(sp, 'CREATE_NO_WINDOW', 0)
+    monkeypatch.setattr(sp, 'Popen', Espiao)
 
     saida = tmp_path / 'tom.wav'
-    media.run_ffmpeg(lambda f: f.input('sine=frequency=440:duration=0.2', f='lavfi').output(str(saida)))
+    progresso = []
+
+    def construir(f):
+        f.on('progress', progresso.append)
+        return f.input('sine=frequency=440:duration=1', f='lavfi').output(str(saida))
+
+    media.run_ffmpeg(construir)
     media.ffprobe_json(str(saida))
-    assert len(chamadas) >= 2
-    assert all(flag == esperado for flag in chamadas)
+    assert len(criados) >= 2
+    assert all(c & flag for c in criados), criados
+    # O execute() da biblioteca continua o dela: a compressao depende destes
+    # eventos para a barra de progresso.
+    assert progresso, 'o run_ffmpeg deixou de emitir progresso'
 
 
 def test_run_ffmpeg_failure_keeps_the_known_prefix(tmp_path):
