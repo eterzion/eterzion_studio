@@ -227,6 +227,10 @@ class Component(BaseModel):
     size_mb: int
     install_state: InstallState
     update_available: bool = False
+    # False = a capacidade existe mas esta versao do app nao a instala (hoje, a
+    # musica). A tela mostra "Em breve" sem botoes em vez de oferecer "Instalar"
+    # e so' descobrir a recusa (422 `not_available_in_app`) depois do clique.
+    available: bool = True
 
 
 class ComponentDetails(Component):

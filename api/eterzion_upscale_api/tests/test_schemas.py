@@ -87,3 +87,9 @@ def test_component_never_carries_technical_fields():
     component = Component(id='img-enhance-photo', capability_label='Melhoria de imagem — Fotos',
                            size_mb=64, install_state='installed')
     assert not hasattr(component, 'technical_name')
+
+
+def test_component_is_available_unless_told_otherwise():
+    component = Component(id='photo', capability_label='Melhoria de imagem — Foto',
+                           size_mb=0, install_state='not_installed')
+    assert component.available is True

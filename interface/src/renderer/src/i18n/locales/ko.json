@@ -70,7 +70,8 @@
       "notInstalled": "설치되지 않음",
       "installing": "설치 중…",
       "installed": "설치됨",
-      "updateAvailable": "업데이트 있음"
+      "updateAvailable": "업데이트 있음",
+      "comingSoon": "출시 예정"
     },
     "title": "구성 요소",
     "totalOnDisk": "디스크 사용량 {size}"

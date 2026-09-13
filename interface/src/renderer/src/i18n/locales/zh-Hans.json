@@ -70,7 +70,8 @@
       "notInstalled": "未安装",
       "installing": "正在安装…",
       "installed": "已安装",
-      "updateAvailable": "有可用更新"
+      "updateAvailable": "有可用更新",
+      "comingSoon": "即将推出"
     },
     "title": "组件",
     "totalOnDisk": "占用磁盘 {size}"
