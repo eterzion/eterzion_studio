@@ -87,3 +87,31 @@ class TestDetectProblems:
         problems = detect_problems(report)
         assert problems.noise_severity == 0.0
         assert problems.requires_ai_restoration is False
+
+
+def _broadband(duration=4.0, rate=_RATE, cutoff_hz=None) -> np.ndarray:
+    """Ruido branco com (opcionalmente) um corte abrupto de agudos -- o degrau
+    que um MP3 de taxa baixa deixa no espectro."""
+    rng = np.random.default_rng(1)
+    n = int(rate * duration)
+    mono = rng.standard_normal(n)
+    if cutoff_hz is not None:
+        spec = np.fft.rfft(mono)
+        spec[np.fft.rfftfreq(n, 1 / rate) > cutoff_hz] = 0
+        mono = np.fft.irfft(spec, n)
+    mono = 0.2 * mono / np.max(np.abs(mono))
+    return np.column_stack([mono, mono])
+
+
+def test_bandwidth_finds_the_lossy_cutoff(tmp_path):
+    """O corte de um arquivo comprimido e' o que liga o excitador na
+    masterizacao (dsp._exciter_for)."""
+    cortado = analyze(_write_wav(tmp_path, 'cut.wav', _broadband(cutoff_hz=11000)))
+    cheio = analyze(_write_wav(tmp_path, 'full.wav', _broadband()))
+    assert 10000 < cortado.bandwidth_hz < 12000
+    assert cheio.bandwidth_hz > 20000
+
+
+def test_bandwidth_of_silence_is_not_a_cutoff(tmp_path):
+    silencio = analyze(_write_wav(tmp_path, 'silence.wav', np.zeros((_RATE, 2))))
+    assert silencio.bandwidth_hz == _RATE / 2

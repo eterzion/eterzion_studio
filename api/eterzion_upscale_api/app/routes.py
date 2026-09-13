@@ -568,6 +568,10 @@ components_router = APIRouter()
 # segunda barreira): a listagem avisa antes, para a tela nao oferecer um botao
 # que so' serve para devolver 422.
 _NOT_AVAILABLE_IN_APP = frozenset({'music'})
+# Ja' funcionam sem download: a musica e' melhorada pela masterizacao DSP
+# (app.audio_engine), que vem no app. Continua em _NOT_AVAILABLE_IN_APP porque
+# nao ha' o que instalar, atualizar ou remover.
+_BUILT_IN = frozenset({'music'})
 
 
 def _to_component(info: processing.ComponentInfo) -> Component:
@@ -575,6 +579,7 @@ def _to_component(info: processing.ComponentInfo) -> Component:
         id=info.id, capability_label=info.capability_label, size_mb=info.size_mb,
         install_state=info.install_state, update_available=info.update_available,
         available=info.id not in _NOT_AVAILABLE_IN_APP,
+        built_in=info.id in _BUILT_IN,
     )
 
 
@@ -583,6 +588,7 @@ def _to_details(info: processing.ComponentInfo) -> ComponentDetails:
         id=info.id, capability_label=info.capability_label, size_mb=info.size_mb,
         install_state=info.install_state, update_available=info.update_available,
         available=info.id not in _NOT_AVAILABLE_IN_APP,
+        built_in=info.id in _BUILT_IN,
         error=info.error, error_reason=info.error_reason,
         technical_name=info.technical_name, version=info.version, provenance=info.provenance,
         license=info.license,

@@ -1131,23 +1131,32 @@ async def _process_job(job_id: str) -> None:
             )
 
         audio_mode = params.get('audio_mode')
-        if (job.get('media_type') == 'audio' and job.get('content_type_detected') == 'music'
-                and audio_mode not in (None, 'enhance')):
-            # specs/006-audio-engine-masterizacao — audio_mode opts a music job
-            # into app.audio_engine.mastering.MasteringEngine instead of the
-            # single-pass _ENGINE_ENHANCERS['sonicmaster'] path below. Runs in
-            # this same executor thread (not the primary isolated worker
-            # subprocess) — MasteringEngine's own AI step is isolated via its
-            # own audio-worker subprocess (get_audio_worker_supervisor()),
-            # which is the real isolation boundary here, not this thread.
+        if job.get('media_type') == 'audio' and job.get('content_type_detected') == 'music':
+            # Musica vai SEMPRE pelo app.audio_engine.mastering.MasteringEngine
+            # (specs/006-audio-engine-masterizacao): analise, restauracao e
+            # masterizacao por DSP (filtros LGPL do FFmpeg), com a etapa de IA
+            # so' quando um provedor estiver disponivel. O modo padrao
+            # ('enhance') ia direto para _ENGINE_ENHANCERS['sonicmaster'], que
+            # exige um ambiente Python a parte com torch CUDA e o VAE da
+            # Stability AI -- nada disso vem no app, e todo job de musica
+            # falhava com uma mensagem mandando ler o README (decisao de
+            # 2026-09-13: melhorar musica sem SonicMaster).
+            #
+            # Roda nesta mesma thread do executor (nao no worker isolado): a
+            # etapa de IA do MasteringEngine, quando houver, tem o proprio
+            # subprocesso (get_audio_worker_supervisor()).
             from app.audio_engine.mastering import MasteringEngine
+
+            modo = audio_mode if audio_mode in ('auto_master', 'restore', 'restore_master') else 'auto_master'
 
             output_path = _audio_output_path(job_id, job['input_path'])
             os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
             if on_stage:
                 on_stage('Analisando e restaurando áudio')
+            if on_progress:
+                on_progress(10)
             result = MasteringEngine().run(
-                audio_mode, job['input_path'], output_path,
+                modo, job['input_path'], output_path,
                 ai_strength=params.get('ai_strength') or 50,
             )
             job['audio_analysis'] = {

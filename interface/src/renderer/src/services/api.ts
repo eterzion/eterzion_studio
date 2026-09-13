@@ -23,6 +23,9 @@ export interface ComponentSummary {
   /** `false` = a capacidade existe, mas esta versão do app não a instala (hoje,
    *  a música). Quem decide é a API; a tela só mostra "Em breve" sem botões. */
   available: boolean
+  /** `true` = já vem com o app e funciona sem download (hoje, a música, pela
+   *  masterização DSP). A tela mostra "Incluído no app" sem botões. */
+  built_in?: boolean
 }
 
 export interface ComponentDetails extends ComponentSummary {

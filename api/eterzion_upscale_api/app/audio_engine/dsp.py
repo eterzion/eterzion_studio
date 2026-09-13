@@ -8,13 +8,19 @@ Auto Master chain — EQ, dynamics, stereo, limiter, loudness normalization).
 """
 from __future__ import annotations
 
+import soundfile as sf
 from eterzion_upscale.media import run_ffmpeg
 
 from app.audio_engine.analyzer import ProblemDetection
 
 # afftdn: FFT noise reduction. highpass=20: removes subsonic rumble/DC-adjacent
 # content no music mix needs. Both always run — deterministic, no ML, no GPU.
-_BASELINE_RESTORE_FILTERS = ['highpass=f=20', 'afftdn']
+#
+# afftdn suave (6 dB de reducao, piso em -60 dB) e nao o padrao (12 dB, -50 dB):
+# o detector de ruido ainda nao existe (noise_severity e' sempre 0), entao isto
+# roda em TODA musica, e o padrao come reverberacao, pratos e caudas de notas
+# junto com o chiado.
+_BASELINE_RESTORE_FILTERS = ['highpass=f=20', 'afftdn=nr=6:nf=-60']
 
 # 60Hz mains hum + its first harmonic — narrow rejection, doesn't touch
 # musical content elsewhere in the spectrum.
@@ -22,7 +28,7 @@ _HUM_NOTCH_FILTERS = ['bandreject=f=60:width_type=h:w=4', 'bandreject=f=120:widt
 
 # Gentle limiter to tame residual peaks after clipping-restoration — not the
 # final master limiter (that's in master()'s chain, with the real loudness target).
-_POST_RESTORE_LIMITER = 'alimiter=limit=0.95:level=disabled'
+_POST_RESTORE_LIMITER = 'alimiter=limit=0.95:level=disabled:latency=1'
 
 # A phase-corrective downmix-toward-mono — only applied when analyzer.py
 # flagged phase_issues_detected (real negative stereo correlation), never
@@ -36,9 +42,25 @@ _PHASE_CORRECTION_FILTER = 'pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1'
 # already has stable input dynamics before the final normalization pass.
 _MASTER_EQ = 'equalizer=f=100:t=q:w=1:g=1,equalizer=f=8000:t=q:w=1:g=1'
 _MASTER_COMPRESSOR = 'acompressor=threshold=-18dB:ratio=3:attack=20:release=250'
-_MASTER_LIMITER = 'alimiter=limit=0.97:level=disabled'
+_MASTER_LIMITER = 'alimiter=limit=0.97:level=disabled:latency=1'
 
 DEFAULT_TARGET_LUFS = -14.0  # streaming-platform-style target (Spotify/YouTube Music range)
+
+# Abaixo disto o arquivo perdeu os agudos na compressao (MP3/AAC de taxa baixa).
+# 128 kbps corta em ~16 kHz e soa bem; 96 kbps ou menos ja' soa abafado.
+_LOSSY_BANDWIDTH_HZ = 15500.0
+
+
+def _exciter_for(bandwidth_hz: float | None) -> str | None:
+    """Excitador de harmonicos para arquivo que perdeu os agudos: gera
+    harmonicos a partir da faixa logo abaixo do corte, devolvendo "ar" a' parte
+    que a compressao apagou. Nao recupera o que se perdeu -- sintetiza --, por
+    isso so' entra quando o corte foi medido, e com drive moderado."""
+    if bandwidth_hz is None or bandwidth_hz >= _LOSSY_BANDWIDTH_HZ:
+        return None
+    freq = min(max(bandwidth_hz * 0.5, 2000.0), 12000.0)
+    ceil = min(max(bandwidth_hz * 1.5, 9999.0), 20000.0)
+    return f'aexciter=amount=1:drive=5:blend=0:freq={freq:.0f}:ceil={ceil:.0f}'
 
 
 def restore(input_path: str, output_path: str, problems: ProblemDetection) -> None:
@@ -60,14 +82,23 @@ def master(
     *,
     target_lufs: float = DEFAULT_TARGET_LUFS,
     correct_phase: bool = False,
+    bandwidth_hz: float | None = None,
 ) -> None:
     """Auto Master chain — EQ, dynamics, limiter, then loudness normalization
     to `target_lufs` last (FR-010). `correct_phase` is only True when
     analyzer.py's AudioAnalysisReport.phase_issues_detected was real —
-    never applied unconditionally."""
+    never applied unconditionally. `bandwidth_hz` (medido pelo analyzer)
+    liga o excitador so' em arquivo que perdeu os agudos."""
     filters = []
     if correct_phase:
         filters.append(_PHASE_CORRECTION_FILTER)
-    filters.extend([_MASTER_EQ, _MASTER_COMPRESSOR, _MASTER_LIMITER,
-                     f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11'])
+    filters.append(_MASTER_EQ)
+    exciter = _exciter_for(bandwidth_hz)
+    if exciter:
+        filters.append(exciter)
+    # loudnorm trabalha a 192 kHz por dentro e SAI a 192 kHz: sem o aresample,
+    # uma musica de 44,1 kHz virava um WAV 4x maior, com agudos que nao existem.
+    taxa = sf.info(input_path).samplerate
+    filters.extend([_MASTER_COMPRESSOR, _MASTER_LIMITER,
+                    f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11', f'aresample={taxa}'])
     run_ffmpeg(lambda f: f.input(input_path).output(output_path, {'af': ','.join(filters)}))

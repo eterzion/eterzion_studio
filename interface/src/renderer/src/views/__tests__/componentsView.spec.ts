@@ -214,6 +214,20 @@ describe('ComponentsView — o que a lista mostra', () => {
     ])
     wrapper.unmount()
   })
+
+  it('o que já vem com o app mostra "Incluído no app" e nenhum botão', async () => {
+    // A música funciona pela masterização DSP, sem download: não é "Em breve"
+    // nem "Não instalado".
+    listComponents.mockResolvedValue([
+      componente({ id: 'music', available: false, built_in: true })
+    ])
+    const wrapper = await montar()
+    const linha = wrapper.get('.component-row')
+    expect(linha.text()).toContain(en.components.state.builtIn)
+    expect(linha.text()).not.toContain(en.components.state.comingSoon)
+    expect(linha.findAll('button')).toHaveLength(0)
+    wrapper.unmount()
+  })
 })
 
 describe('ComponentsView — ações', () => {

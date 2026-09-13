@@ -231,6 +231,10 @@ class Component(BaseModel):
     # musica). A tela mostra "Em breve" sem botoes em vez de oferecer "Instalar"
     # e so' descobrir a recusa (422 `not_available_in_app`) depois do clique.
     available: bool = True
+    # True = a capacidade ja' vem com o app e funciona sem download (hoje, a
+    # musica, pela masterizacao DSP). A tela mostra "Incluido no app" sem
+    # botoes -- nao ha' o que instalar nem remover.
+    built_in: bool = False
 
 
 class ComponentDetails(Component):

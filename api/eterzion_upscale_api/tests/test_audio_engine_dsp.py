@@ -140,3 +140,46 @@ class TestMaster:
         out_data, _ = sf.read(output_path)
         correlation_after = float(np.corrcoef(out_data[:, 0], out_data[:, 1])[0, 1])
         assert correlation_after > -0.4  # measurably improved vs. the strongly anti-correlated input
+
+
+def test_exciter_only_for_files_that_lost_their_highs():
+    """Excitador so' onde a compressao cortou os agudos: sintetizar harmonicos
+    num arquivo com banda cheia so' deixaria o som aspero."""
+    assert dsp._exciter_for(None) is None
+    assert dsp._exciter_for(20000) is None
+    assert dsp._exciter_for(16500) is None  # MP3 128 kbps
+    filtro = dsp._exciter_for(11000)  # MP3 64 kbps
+    assert filtro is not None and filtro.startswith('aexciter=')
+    assert 'freq=5500' in filtro and 'ceil=16500' in filtro
+
+
+def test_master_with_the_exciter_adds_energy_above_the_cutoff(tmp_path):
+    rng = np.random.default_rng(2)
+    n = _RATE * 3
+    mono = rng.standard_normal(n)
+    spec = np.fft.rfft(mono)
+    freqs = np.fft.rfftfreq(n, 1 / _RATE)
+    spec[freqs > 11000] = 0
+    mono = 0.2 * np.fft.irfft(spec, n) / np.max(np.abs(np.fft.irfft(spec, n)))
+    src = _write_wav(tmp_path, 'lossy.wav', np.column_stack([mono, mono]))
+
+    def energia_acima(path, lo=12000):
+        data, rate = sf.read(path)
+        m = data.mean(axis=1)
+        s = np.abs(np.fft.rfft(m)) ** 2
+        return s[np.fft.rfftfreq(m.size, 1 / rate) >= lo].sum() / s.sum()
+
+    sem = str(tmp_path / 'sem.wav')
+    com = str(tmp_path / 'com.wav')
+    dsp.master(src, sem)
+    dsp.master(src, com, bandwidth_hz=11000)
+    assert energia_acima(com) > 10 * energia_acima(sem)
+
+
+def test_master_keeps_the_input_sample_rate(tmp_path):
+    """loudnorm sai a 192 kHz por dentro; a masterizacao devolvia um WAV 4x
+    maior que o original. A saida tem a taxa da entrada."""
+    src = _write_wav(tmp_path, 'in.wav', _quiet_tone())
+    out = str(tmp_path / 'out.wav')
+    dsp.master(src, out)
+    assert sf.info(out).samplerate == _RATE

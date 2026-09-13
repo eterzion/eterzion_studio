@@ -302,26 +302,19 @@ class TestAudioEngineIntegration:
         asyncio.run(job_manager._process_job(job_id))
         return client.get(f'/jobs/{job_id}').json()
 
-    @pytest.mark.slow  # spawns the real isolated worker subprocess (real torch import)
-    def test_audio_mode_absent_produces_the_same_response_shape_as_before(self, client, tmp_path, monkeypatch):
-        """T025 — regression gate. Without audio_mode, a music job must not
-        gain audio_analysis/quality_verdict fields, and must still go
-        through the original _ENGINE_ENHANCERS['sonicmaster'] path (which
-        raises MissingAudioDependency here, since no audio-worker is
-        configured in tests — the same honest failure it always had, not a
-        new behaviour)."""
+    def test_music_without_audio_mode_goes_through_the_mastering_engine(self, client, tmp_path):
+        """Sem audio_mode (o que a tela de Audio manda), musica passa pelo
+        MasteringEngine em 'auto_master' e termina. Antes ia para o
+        SonicMaster, que o app nao tem, e todo job de musica falhava com uma
+        mensagem mandando ler o README (decisao de 2026-09-13)."""
         input_path = _real_music_wav(tmp_path)
         job_id = client.post('/jobs/local', json=_local_body(
             input_path, media_type='audio', operation='enhance', content_type_override='music',
         )).json()['id']
         body = self._run_job(client, job_id)
-        assert 'audio_analysis' not in body
-        assert 'quality_verdict' not in body
-        # The original path was already broken before this feature (T003
-        # fixed the wrong-script bug, but a missing audio-worker still
-        # legitimately fails) — what matters here is which path ran.
-        assert body['status'] == 'error'
-        assert body.get('error_category') == 'model_failure'
+        assert body['status'] == 'done', body.get('error')
+        assert -20 < body['audio_analysis']['integrated_lufs'] < -8
+        assert 'README' not in (body.get('error') or '')
 
     def test_audio_mode_auto_master_runs_the_new_pipeline(self, client, tmp_path):
         input_path = _real_music_wav(tmp_path)

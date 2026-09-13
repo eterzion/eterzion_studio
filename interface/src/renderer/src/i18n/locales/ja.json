@@ -71,7 +71,8 @@
       "installing": "インストール中…",
       "installed": "インストール済み",
       "updateAvailable": "更新があります",
-      "comingSoon": "近日公開"
+      "comingSoon": "近日公開",
+      "builtIn": "アプリに内蔵"
     },
     "title": "コンポーネント",
     "totalOnDisk": "ディスク使用量 {size}"

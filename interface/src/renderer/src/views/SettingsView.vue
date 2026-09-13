@@ -18,7 +18,6 @@ import {
   Film,
   Video,
   AudioLines,
-  Music2,
   Scan,
   PlayCircle,
   RefreshCw
@@ -116,27 +115,6 @@ const CREDITS: {
     tint: '#14b8a6'
   },
   {
-    capabilityKey: 'audioMusic',
-    work: 'SonicMaster',
-    author: 'AMAAI Lab',
-    license: 'Apache-2.0',
-    icon: Music2,
-    tint: '#ec4899'
-  },
-  // Linha propria, e nao mais uma observacao "condicional" na da SonicMaster:
-  // o VAE e' dependencia obrigatoria dela, sob outra licenca, e o credito a'
-  // Stability AI e' obrigacao dessa licenca (docs/models/MODEL_LICENSES.md,
-  // secao 3-bis, item 3). A observacao era a unica mencao a' Stability na
-  // tela; tira-la sem esta linha apagaria uma atribuicao exigida.
-  {
-    capabilityKey: 'audioMusic',
-    work: 'Stable Audio Open 1.0 (VAE)',
-    author: 'Stability AI',
-    license: 'Stability AI Community License',
-    icon: Music2,
-    tint: '#ec4899'
-  },
-  {
     capabilityKey: 'faceEnhance',
     work: 'YuNet',
     author: 'OpenCV / libfacedetection',
@@ -159,8 +137,7 @@ const LICENSE_TONES: Record<string, string> = {
   'BSD-3-Clause': '#a855f7',
   'Apache-2.0': '#22c55e',
   MIT: '#94a3b8',
-  'LGPL v2.1+': '#94a3b8',
-  'Stability AI Community License': '#f59e0b'
+  'LGPL v2.1+': '#94a3b8'
 }
 function licenseTone(license: string): string {
   return LICENSE_TONES[license] ?? '#94a3b8'

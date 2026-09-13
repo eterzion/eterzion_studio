@@ -71,7 +71,8 @@
       "installing": "설치 중…",
       "installed": "설치됨",
       "updateAvailable": "업데이트 있음",
-      "comingSoon": "출시 예정"
+      "comingSoon": "출시 예정",
+      "builtIn": "앱에 기본 포함"
     },
     "title": "구성 요소",
     "totalOnDisk": "디스크 사용량 {size}"

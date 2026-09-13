@@ -86,6 +86,23 @@ def _soundfile() -> str:
     return soundfile.__version__
 
 
+def _musica() -> str:
+    """O que a melhoria de musica (app.audio_engine) roda fora do FFmpeg: a
+    medicao de loudness (pyloudnorm) e a largura de banda (Welch, scipy.signal)
+    que decide o excitador. Desde 2026-09-13 todo job de musica passa por aqui."""
+    import numpy as np
+    import pyloudnorm as pyln
+    from scipy.signal import welch
+
+    from app.audio_engine import analyzer
+
+    x = (np.sin(np.arange(44100) / 5.0) * 0.1).astype(np.float64)
+    pyln.Meter(44100).integrated_loudness(np.column_stack([x, x]))
+    welch(x, fs=44100, nperseg=4096)
+    analyzer._bandwidth_hz(x, 44100)
+    return pyln.__name__
+
+
 VERIFICACOES: dict[str, Callable[[], str]] = {
     'torchvision': _torchvision,
     'scipy': _scipy,
@@ -93,6 +110,7 @@ VERIFICACOES: dict[str, Callable[[], str]] = {
     'audiosronnx': _audiosronnx,
     'opencv': _opencv,
     'soundfile': _soundfile,
+    'musica': _musica,
 }
 
 

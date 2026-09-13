@@ -71,7 +71,8 @@
       "installing": "A instalar…",
       "installed": "Instalado",
       "updateAvailable": "Atualização disponível",
-      "comingSoon": "Brevemente"
+      "comingSoon": "Brevemente",
+      "builtIn": "Incluído na aplicação"
     },
     "title": "Componentes",
     "totalOnDisk": "{size} em disco"
