@@ -192,13 +192,12 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
 </template>
 
 <style scoped>
-/* FR-004 exception: this screen's category-card system (color-mix(), radial gradients,
-   layered box-shadows, clamp()-based responsive type, all driven by a per-card --tint CSS
-   custom property) is genuinely complex, bespoke, and — per research.md Audit (b) — uses
-   one-off color literals deliberately excluded from tokenization (none repeat elsewhere).
-   Converting it to Tailwind's arbitrary-value syntax would trade one form of literal values
-   for another with no reduction in duplication and real risk of a gradient/shadow typo, so
-   it stays hand-written. */
+/* Cartoes de categoria sem brilho: fundo chapado na mesma superficie dos cartoes de
+   Configuracoes (`--surface-1`), sem gradiente radial, sem sombra tingida e sem o
+   levantamento no hover. O tom de cada cartao (`--tint`, vindo de CATEGORIES) aparece
+   so' na borda, no icone e na seta; o hover apenas acende a borda ate' o tom cheio.
+   Continua CSS escrito a mao por causa do clamp() da tipografia e do color-mix() por
+   cartao, mas o espacamento usa os tokens `--space-*` para acompanhar a densidade. */
 .home-view {
   flex: 1;
   min-width: 0;
@@ -237,38 +236,27 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
      tamanho de um cartão, e voltaria a divergir agora que a Central entrou. */
   grid-template-columns: repeat(var(--categorias, 3), minmax(0, 1fr));
   gap: clamp(8px, 0.9vw, 12px);
-  margin-bottom: 16px;
+  margin-bottom: var(--space-3);
 }
 .category-card {
-  --card-bg: color-mix(in srgb, var(--tint) 8%, var(--surface-1));
   position: relative;
   display: flex;
   min-width: 0;
   height: clamp(215px, 28vh, 270px);
-  padding: 16px 17px;
+  padding: var(--space-3);
   overflow: hidden;
   color: var(--text-primary);
   text-align: left;
   cursor: pointer;
-  border: 1px solid color-mix(in srgb, var(--tint) 82%, transparent);
+  /* Em repouso o tom vem misturado com a borda neutra; no hover vai ao tom cheio.
+     Sem sombra nem levantamento, essa distancia e' o que faz o hover ser notado. */
+  border: 1px solid color-mix(in srgb, var(--tint) 45%, var(--surface-border));
   border-radius: 11px;
-  background:
-    radial-gradient(
-      circle at 50% 45%,
-      color-mix(in srgb, var(--tint) 13%, transparent),
-      transparent 47%
-    ),
-    linear-gradient(155deg, var(--card-bg), var(--surface-0) 76%);
-  transition:
-    transform 180ms ease,
-    box-shadow 180ms ease,
-    border-color 180ms ease;
+  background: var(--surface-1);
+  transition: border-color 180ms ease;
 }
 .category-card:hover {
-  z-index: 1;
-  transform: translateY(-2px);
   border-color: var(--tint);
-  box-shadow: 0 7px 24px color-mix(in srgb, var(--tint) 15%, transparent);
 }
 .category-card:focus-visible {
   outline: 2px solid #fff;
@@ -291,7 +279,7 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
   position: absolute;
   z-index: 2;
   left: 50%;
-  bottom: 8px;
+  bottom: var(--space-2);
   display: flex;
   width: 40px;
   height: 44px;
@@ -300,18 +288,9 @@ function rowClass(kind: MediaKind, index: number): Record<string, boolean> {
   color: var(--text-primary);
   border: 1.5px solid var(--tint);
   border-radius: var(--radius-sm);
+  /* Fundo tingido e chapado, como o `.icon-chip`: sem halo nem brilho interno. */
   background: color-mix(in srgb, var(--tint) 8%, var(--surface-2));
-  box-shadow:
-    0 0 10px color-mix(in srgb, var(--tint) 55%, transparent),
-    inset 0 0 9px color-mix(in srgb, var(--tint) 11%, transparent);
   transform: translateX(-50%);
-  transition:
-    transform 180ms ease,
-    background 180ms ease;
-}
-.category-card:hover .category-arrow {
-  background: color-mix(in srgb, var(--tint) 22%, var(--surface-2));
-  transform: translateX(-50%) scale(1.04);
 }
 .queue-section {
   flex: 1;
