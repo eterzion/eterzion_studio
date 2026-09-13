@@ -69,7 +69,7 @@ class TestSelfCheck:
         assert self_check.run(str(relatorio)), relatorio.read_text(encoding='utf-8')
         dados = json.loads(relatorio.read_text(encoding='utf-8'))
         assert set(dados['verificacoes']) == {
-            'torchvision', 'scipy', 'onnxruntime', 'audiosronnx', 'opencv', 'soundfile'}
+            'torchvision', 'scipy', 'onnxruntime', 'audiosronnx', 'opencv', 'soundfile', 'musica'}
 
     def test_uma_parte_quebrada_reprova_e_diz_qual(self, tmp_path, monkeypatch):
         import json
