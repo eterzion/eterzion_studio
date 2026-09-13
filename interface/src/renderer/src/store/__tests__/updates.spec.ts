@@ -35,9 +35,15 @@ function estado(phase: string, version: string | null = null): void {
 }
 
 describe('store/updates', () => {
+  // A chamada que o init faz fica guardada aqui, e nao no historico do mock:
+  // o vitest 5 liga `clearMocks` por padrao e limpa esse historico antes de
+  // cada teste, entao o que o `beforeAll` chamou nao chega mais ao `it`.
+  let chamadaAoIniciar: unknown[] | undefined
+
   beforeAll(async () => {
     localStorage.clear()
     await initUpdates()
+    chamadaAoIniciar = ponte.setAutoCheckUpdates.mock.lastCall
   })
 
   beforeEach(() => {
@@ -48,7 +54,7 @@ describe('store/updates', () => {
   })
 
   it('informa ao processo principal a preferencia de procurar, e cada mudanca dela', async () => {
-    expect(ponte.setAutoCheckUpdates).toHaveBeenLastCalledWith(true)
+    expect(chamadaAoIniciar).toEqual([true])
     settingsState.autoCheckUpdates = false
     await nextTick()
     expect(ponte.setAutoCheckUpdates).toHaveBeenLastCalledWith(false)
