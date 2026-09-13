@@ -174,3 +174,7 @@ interface/package-lock.json
 
 # Cache incremental do TypeScript: artefato de build local.
 *.tsbuildinfo
+
+# Copiado de interface/release-notes/<versao>.md pelo workflow de release, que
+# o electron-builder le para o latest.yml. O versionado e' o de release-notes/.
+interface/build/release-notes.md

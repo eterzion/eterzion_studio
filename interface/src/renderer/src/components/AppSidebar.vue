@@ -6,6 +6,7 @@ import type { NavKey } from '../types'
 import type { SupportEndpoints } from '../constants/support'
 import { configuredSupportLinks } from '../constants/support'
 import AppButton from './atoms/AppButton.vue'
+import { requestUpdatesFocus, updatesState } from '../store/updates'
 import {
   Home,
   Image,
@@ -27,7 +28,8 @@ import {
   Mail,
   HelpCircle,
   ExternalLink,
-  Tag
+  Tag,
+  Download
 } from '@lucide/vue'
 
 const props = defineProps<{
@@ -151,6 +153,16 @@ function toggleSupport(): void {
   supportOpen.value = !supportOpen.value
 }
 
+// O selo da versao leva a' secao Atualizacoes das Configuracoes. Com uma versao
+// nova baixada ele vira o lembrete de que ela esta' pronta: o aviso flutuante
+// aparece uma vez so', e isto fica ate' reiniciar.
+const updateReady = computed(() => updatesState.phase === 'ready')
+
+function openUpdates(): void {
+  requestUpdatesFocus()
+  emit('navigate', 'configuracoes')
+}
+
 function openExternal(url: string): void {
   // main/index.ts's setWindowOpenHandler routes this to shell.openExternal
   // and denies the in-app popup — opens in the OS's default browser.
@@ -262,7 +274,12 @@ function openExternal(url: string): void {
         :title="t('nav.settings')"
         @click="emit('navigate', 'configuracoes')"
       >
-        <Settings :size="18" class="nav-icon" />
+        <span class="nav-icon-wrap">
+          <Settings :size="18" class="nav-icon" />
+          <!-- Com a barra recolhida o selo da versao some; o ponto e' o que
+               sobra do aviso de atualizacao pronta. -->
+          <span v-if="updateReady" class="update-dot" />
+        </span>
         <span v-if="!collapsed" class="nav-label">{{ t('nav.settings') }}</span>
         <ChevronRight v-if="!collapsed" :size="15" class="chevron" />
       </button>
@@ -282,10 +299,18 @@ function openExternal(url: string): void {
         /></span>
       </button>
 
-      <div v-if="!collapsed" class="version-badge">
-        <Tag :size="16" class="version-badge-icon" />
-        <span class="version-badge-number">v{{ appVersion }}</span>
-      </div>
+      <button
+        v-if="!collapsed"
+        class="version-badge"
+        :class="{ ready: updateReady }"
+        type="button"
+        :title="t('sidebar.openUpdates')"
+        @click="openUpdates"
+      >
+        <component :is="updateReady ? Download : Tag" :size="16" class="version-badge-icon" />
+        <span v-if="updateReady" class="version-badge-number">{{ t('sidebar.updateReady') }}</span>
+        <span v-else class="version-badge-number">v{{ appVersion }}</span>
+      </button>
     </div>
   </aside>
 </template>
@@ -573,10 +598,53 @@ function openExternal(url: string): void {
   align-items: center;
   justify-content: center;
   gap: var(--space-1-5);
+  width: 100%;
   margin-top: 4px;
   padding: 9px var(--space-2);
   border: 1px solid var(--surface-border-soft);
   border-radius: var(--radius-md);
+  background: transparent;
+  cursor: pointer;
+  transition: border-color 150ms ease;
+}
+
+.version-badge:hover {
+  border-color: var(--surface-border);
+}
+
+.version-badge:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.version-badge.ready {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+}
+
+.version-badge.ready .version-badge-number {
+  color: var(--color-primary);
+}
+
+.nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.update-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--surface-1);
+}
+
+/* Aberta, a barra mostra o selo; o ponto so' vale quando ele nao aparece. */
+.sidebar:not(.collapsed) .update-dot {
+  display: none;
 }
 
 .version-badge-icon {
@@ -610,6 +678,10 @@ function openExternal(url: string): void {
   .sidebar:not(.collapsed) .support-list,
   .sidebar:not(.collapsed) .version-badge {
     display: none;
+  }
+
+  .sidebar:not(.collapsed) .update-dot {
+    display: block;
   }
 
   .sidebar:not(.collapsed) .brand {

@@ -828,10 +828,6 @@
     "density": "Densidade da interface",
     "densityDescription": "Espaçamento entre elementos",
     "general": {
-      "autoUpdate": {
-        "description": "Verificar novas versões ao iniciar (brevemente)",
-        "label": "Atualizações automáticas"
-      },
       "description": "Preferências gerais da aplicação",
       "exportFormat": {
         "description": "Pré-selecionado ao abrir o painel de exportação",
@@ -877,7 +873,28 @@
     "standard": "Padrão",
     "thumbnailSize": "Tamanho das miniaturas",
     "thumbnailSizeDescription": "Fila, editor e histórico",
-    "title": "Definições"
+    "title": "Definições",
+    "updates": {
+      "autoDescription": "Ao abrir a aplicação e a cada 6 horas. A versão nova é transferida em segundo plano.",
+      "autoLabel": "Procurar atualizações automaticamente",
+      "cancel": "Cancelar",
+      "check": "Procurar atualizações",
+      "confirmRestart": "Há {n} processamento em curso. Reiniciar agora vai cancelá-lo. | Há {n} processamentos em curso. Reiniciar agora vai cancelá-los.",
+      "description": "Versão instalada e novas versões da aplicação",
+      "installedVersion": "Versão {version}",
+      "restartAnyway": "Reiniciar mesmo assim",
+      "status": {
+        "checking": "A procurar atualizações…",
+        "disabled": "As atualizações só funcionam na aplicação instalada.",
+        "downloading": "A transferir a versão {version}… {percent}%",
+        "error": "Não foi possível procurar agora. Tente novamente mais tarde.",
+        "idle": "Procure para ver se existe uma versão nova.",
+        "ready": "A versão {version} está pronta. Será instalada quando fechar a aplicação.",
+        "upToDate": "Tem a versão mais recente."
+      },
+      "title": "Atualizações",
+      "whatsNew": "Novidades da versão {version}"
+    }
   },
   "sidebar": {
     "collapse": "Recolher barra lateral",
@@ -891,8 +908,10 @@
       "help": "Central de ajuda",
       "site": "Site oficial"
     },
+    "openUpdates": "Ver atualizações",
     "support": "Suporte",
-    "toggleTheme": "Alternar tema claro/escuro"
+    "toggleTheme": "Alternar tema claro/escuro",
+    "updateReady": "Atualização pronta"
   },
   "stats": {
     "adjustmentsApplied": "Ajustes aplicados",
@@ -912,6 +931,14 @@
     "error": "Falhou",
     "processing": "A processar",
     "queued": "Em espera"
+  },
+  "updates": {
+    "later": "Mais tarde",
+    "restartNow": "Reiniciar e atualizar",
+    "toast": {
+      "body": "Será instalada quando fechar a aplicação. Se preferir, reinicie agora.",
+      "title": "Versão {version} pronta"
+    }
   },
   "upload": {
     "aria": "Arraste ficheiros para aqui ou prima Enter para selecionar",

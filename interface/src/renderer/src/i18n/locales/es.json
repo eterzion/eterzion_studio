@@ -828,10 +828,6 @@
     "density": "Densidad de la interfaz",
     "densityDescription": "Espaciado entre elementos",
     "general": {
-      "autoUpdate": {
-        "description": "Buscar nuevas versiones al iniciar (próximamente)",
-        "label": "Actualizaciones automáticas"
-      },
       "description": "Preferencias generales de la aplicación",
       "exportFormat": {
         "description": "Preseleccionado al abrir el panel de exportación",
@@ -877,7 +873,28 @@
     "standard": "Estándar",
     "thumbnailSize": "Tamaño de las miniaturas",
     "thumbnailSizeDescription": "Cola, editor e historial",
-    "title": "Ajustes"
+    "title": "Ajustes",
+    "updates": {
+      "autoDescription": "Al abrir la app y cada 6 horas. La versión nueva se descarga en segundo plano.",
+      "autoLabel": "Buscar actualizaciones automáticamente",
+      "cancel": "Cancelar",
+      "check": "Buscar actualizaciones",
+      "confirmRestart": "Hay {n} proceso en curso. Reiniciar ahora lo cancelará. | Hay {n} procesos en curso. Reiniciar ahora los cancelará.",
+      "description": "Versión instalada y nuevas versiones de la app",
+      "installedVersion": "Versión {version}",
+      "restartAnyway": "Reiniciar de todos modos",
+      "status": {
+        "checking": "Buscando actualizaciones…",
+        "disabled": "Las actualizaciones solo funcionan en la app instalada.",
+        "downloading": "Descargando la versión {version}… {percent} %",
+        "error": "No se pudo buscar ahora. Inténtalo de nuevo más tarde.",
+        "idle": "Busca para ver si hay una versión nueva.",
+        "ready": "La versión {version} está lista. Se instalará cuando cierres la app.",
+        "upToDate": "Tienes la versión más reciente."
+      },
+      "title": "Actualizaciones",
+      "whatsNew": "Novedades de la versión {version}"
+    }
   },
   "sidebar": {
     "collapse": "Contraer barra lateral",
@@ -891,8 +908,10 @@
       "help": "Centro de ayuda",
       "site": "Sitio oficial"
     },
+    "openUpdates": "Ver actualizaciones",
     "support": "Soporte",
-    "toggleTheme": "Alternar tema claro/oscuro"
+    "toggleTheme": "Alternar tema claro/oscuro",
+    "updateReady": "Actualización lista"
   },
   "stats": {
     "adjustmentsApplied": "Ajustes aplicados",
@@ -912,6 +931,14 @@
     "error": "Falló",
     "processing": "Procesando",
     "queued": "En espera"
+  },
+  "updates": {
+    "later": "Más tarde",
+    "restartNow": "Reiniciar y actualizar",
+    "toast": {
+      "body": "Se instalará cuando cierres la app. Si prefieres, reinicia ahora.",
+      "title": "Versión {version} lista"
+    }
   },
   "upload": {
     "aria": "Arrastra archivos aquí o pulsa Enter para elegir",

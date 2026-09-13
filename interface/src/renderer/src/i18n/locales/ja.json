@@ -828,10 +828,6 @@
     "density": "表示の密度",
     "densityDescription": "要素どうしの間隔",
     "general": {
-      "autoUpdate": {
-        "description": "起動時に新しいバージョンを確認する（近日公開）",
-        "label": "自動更新"
-      },
       "description": "アプリケーションの一般設定",
       "exportFormat": {
         "description": "エクスポートパネルを開いたときに事前選択されます",
@@ -877,7 +873,28 @@
     "standard": "標準",
     "thumbnailSize": "サムネイルのサイズ",
     "thumbnailSizeDescription": "キュー、エディター、履歴",
-    "title": "設定"
+    "title": "設定",
+    "updates": {
+      "autoDescription": "アプリの起動時と 6 時間ごとに確認します。新しいバージョンはバックグラウンドでダウンロードされます。",
+      "autoLabel": "アップデートを自動で確認",
+      "cancel": "キャンセル",
+      "check": "アップデートを確認",
+      "confirmRestart": "{n} 件の処理が進行中です。今すぐ再起動すると処理はキャンセルされます。",
+      "description": "インストール済みのバージョンと新しいバージョン",
+      "installedVersion": "バージョン {version}",
+      "restartAnyway": "それでも再起動",
+      "status": {
+        "checking": "アップデートを確認しています…",
+        "disabled": "アップデートはインストール版のアプリでのみ利用できます。",
+        "downloading": "バージョン {version} をダウンロード中… {percent}%",
+        "error": "現在確認できません。しばらくしてからもう一度お試しください。",
+        "idle": "新しいバージョンがあるか確認できます。",
+        "ready": "バージョン {version} の準備ができました。アプリを閉じるとインストールされます。",
+        "upToDate": "最新バージョンを使用しています。"
+      },
+      "title": "アップデート",
+      "whatsNew": "バージョン {version} の新機能"
+    }
   },
   "sidebar": {
     "collapse": "サイドバーを折りたたむ",
@@ -891,8 +908,10 @@
       "help": "ヘルプセンター",
       "site": "公式サイト"
     },
+    "openUpdates": "アップデートを表示",
     "support": "サポート",
-    "toggleTheme": "ライト/ダークテーマを切り替え"
+    "toggleTheme": "ライト/ダークテーマを切り替え",
+    "updateReady": "アップデートの準備完了"
   },
   "stats": {
     "adjustmentsApplied": "適用した調整",
@@ -912,6 +931,14 @@
     "error": "失敗",
     "processing": "処理中",
     "queued": "待機中"
+  },
+  "updates": {
+    "later": "後で",
+    "restartNow": "再起動してアップデート",
+    "toast": {
+      "body": "アプリを閉じるとインストールされます。今すぐ再起動することもできます。",
+      "title": "バージョン {version} の準備ができました"
+    }
   },
   "upload": {
     "aria": "ここにファイルをドロップするか、Enterキーで選択します",

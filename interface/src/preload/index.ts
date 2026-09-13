@@ -31,6 +31,18 @@ export interface ApiReadyResult {
   error?: string
 }
 
+/** Estado da atualizacao automatica. Espelha UpdateSnapshot em
+ *  src/main/updater.ts -- o preload nao importa do main. */
+export type UpdatePhase =
+  'disabled' | 'idle' | 'checking' | 'downloading' | 'ready' | 'up_to_date' | 'error'
+
+export interface UpdateSnapshot {
+  phase: UpdatePhase
+  version: string | null
+  percent: number | null
+  notes: string | null
+}
+
 // Custom APIs for renderer
 const api = {
   ensureApi: (): Promise<ApiReadyResult> => ipcRenderer.invoke('api:ensure'),
@@ -62,6 +74,18 @@ const api = {
   saveTempImage: (buffer: ArrayBuffer, ext: string): Promise<string> =>
     ipcRenderer.invoke('paste:saveImage', buffer, ext),
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:version'),
+  getUpdateState: (): Promise<UpdateSnapshot> => ipcRenderer.invoke('updater:get-state'),
+  checkForUpdates: (): Promise<UpdateSnapshot> => ipcRenderer.invoke('updater:check'),
+  installUpdate: (): Promise<boolean> => ipcRenderer.invoke('updater:install'),
+  setAutoCheckUpdates: (enabled: boolean): Promise<void> =>
+    ipcRenderer.invoke('updater:set-auto-check', enabled),
+  // Devolve a funcao que cancela a inscricao.
+  onUpdateState: (callback: (snapshot: UpdateSnapshot) => void): (() => void) => {
+    const handler = (_event: Electron.IpcRendererEvent, snapshot: UpdateSnapshot): void =>
+      callback(snapshot)
+    ipcRenderer.on('updater:state', handler)
+    return () => ipcRenderer.removeListener('updater:state', handler)
+  },
   openDevTools: (): Promise<void> => ipcRenderer.invoke('debug:openDevTools')
 }
 

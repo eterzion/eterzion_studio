@@ -828,10 +828,6 @@
     "density": "Dichte der Oberfläche",
     "densityDescription": "Abstand zwischen den Elementen",
     "general": {
-      "autoUpdate": {
-        "description": "Beim Start nach neuen Versionen suchen (demnächst verfügbar)",
-        "label": "Automatische Updates"
-      },
       "description": "Allgemeine Anwendungseinstellungen",
       "exportFormat": {
         "description": "Beim Öffnen des Exportbereichs vorausgewählt",
@@ -877,7 +873,28 @@
     "standard": "Standard",
     "thumbnailSize": "Größe der Miniaturbilder",
     "thumbnailSizeDescription": "Warteschlange, Editor und Verlauf",
-    "title": "Einstellungen"
+    "title": "Einstellungen",
+    "updates": {
+      "autoDescription": "Beim Öffnen der App und alle 6 Stunden. Neue Versionen werden im Hintergrund heruntergeladen.",
+      "autoLabel": "Automatisch nach Updates suchen",
+      "cancel": "Abbrechen",
+      "check": "Nach Updates suchen",
+      "confirmRestart": "{n} Verarbeitung läuft. Ein Neustart bricht sie ab. | {n} Verarbeitungen laufen. Ein Neustart bricht sie ab.",
+      "description": "Installierte Version und neue Versionen der App",
+      "installedVersion": "Version {version}",
+      "restartAnyway": "Trotzdem neu starten",
+      "status": {
+        "checking": "Suche nach Updates…",
+        "disabled": "Updates funktionieren nur in der installierten App.",
+        "downloading": "Version {version} wird heruntergeladen… {percent} %",
+        "error": "Die Suche ist gerade nicht möglich. Bitte versuchen Sie es später erneut.",
+        "idle": "Suchen Sie, um zu prüfen, ob eine neue Version verfügbar ist.",
+        "ready": "Version {version} ist bereit. Sie wird beim Schließen der App installiert.",
+        "upToDate": "Sie verwenden die neueste Version."
+      },
+      "title": "Updates",
+      "whatsNew": "Neu in Version {version}"
+    }
   },
   "sidebar": {
     "collapse": "Seitenleiste einklappen",
@@ -891,8 +908,10 @@
       "help": "Hilfe-Center",
       "site": "Offizielle Website"
     },
+    "openUpdates": "Updates anzeigen",
     "support": "Support",
-    "toggleTheme": "Hell/Dunkel-Modus umschalten"
+    "toggleTheme": "Hell/Dunkel-Modus umschalten",
+    "updateReady": "Update bereit"
   },
   "stats": {
     "adjustmentsApplied": "Angewandte Anpassungen",
@@ -912,6 +931,14 @@
     "error": "Fehlgeschlagen",
     "processing": "Wird verarbeitet",
     "queued": "Wartet"
+  },
+  "updates": {
+    "later": "Später",
+    "restartNow": "Neu starten und aktualisieren",
+    "toast": {
+      "body": "Sie wird beim Schließen der App installiert. Sie können auch jetzt neu starten.",
+      "title": "Version {version} ist bereit"
+    }
   },
   "upload": {
     "aria": "Dateien hier ablegen oder Eingabetaste zum Auswählen drücken",

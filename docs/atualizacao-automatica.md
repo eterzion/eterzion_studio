@@ -3,14 +3,32 @@
 ## O estado atual
 
 Implementada. `electron-updater` verifica ao abrir e a cada seis horas,
-baixa em segundo plano e instala quando o app é fechado. O feed é o de
-releases do GitHub (`provider: github`, `eterzion/eterzion_studio`), então
-não há infraestrutura própria a manter.
+baixa em segundo plano e instala quando o app é fechado. O feed é o CDN
+privado do Studio (`cdn.eterzion.com/studio/updates`, bucket `eterzion-studio`
+no R2), servido só com a assinatura que o servidor de licenças emite para
+licença ativa — ver `src/main/updater.ts`.
 
 O comportamento é deliberadamente discreto: nenhum diálogo interrompe um
 upscale em andamento e nada força reinício. Falha de rede é registrada e
-ignorada — ficar sem internet ou atrás de um proxy corporativo é normal e
-não pode impedir ninguém de usar o programa.
+aparece só como "tente novamente mais tarde" — ficar sem internet ou atrás
+de um proxy corporativo é normal e não pode impedir ninguém de usar o
+programa.
+
+**O que a pessoa vê** (desde a 1.1.6):
+
+- quando a versão nova termina de baixar, um aviso no canto, uma vez por
+  versão, com "Reiniciar e atualizar";
+- o selo da versão na barra lateral vira "Atualização pronta" (com a barra
+  recolhida, um ponto no ícone de Configurações) e leva à seção
+  **Configurações → Atualizações**: versão instalada, estado, progresso do
+  download, novidades e o botão "Procurar atualizações";
+- reiniciar com processamento em andamento pede confirmação, porque cancela
+  o que estiver rodando;
+- "Procurar atualizações automaticamente" desligada: o app só procura quando
+  se clica no botão.
+
+As novidades de cada versão ficam em `interface/release-notes/<versão>.md`
+(ver o README de lá).
 
 ## O que havia antes
 

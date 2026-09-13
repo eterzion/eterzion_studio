@@ -828,10 +828,6 @@
     "density": "界面密度",
     "densityDescription": "元素之间的间距",
     "general": {
-      "autoUpdate": {
-        "description": "启动时检查新版本（即将推出）",
-        "label": "自动更新"
-      },
       "description": "应用程序的常规首选项",
       "exportFormat": {
         "description": "打开导出面板时预先选择",
@@ -877,7 +873,28 @@
     "standard": "标准",
     "thumbnailSize": "缩略图大小",
     "thumbnailSizeDescription": "队列、编辑器与历史记录",
-    "title": "设置"
+    "title": "设置",
+    "updates": {
+      "autoDescription": "在打开应用时以及每 6 小时检查一次。新版本会在后台下载。",
+      "autoLabel": "自动检查更新",
+      "cancel": "取消",
+      "check": "检查更新",
+      "confirmRestart": "有 {n} 个处理任务正在进行。立即重启将取消这些任务。",
+      "description": "已安装的版本和应用的新版本",
+      "installedVersion": "版本 {version}",
+      "restartAnyway": "仍然重启",
+      "status": {
+        "checking": "正在检查更新…",
+        "disabled": "更新仅在已安装的应用中可用。",
+        "downloading": "正在下载版本 {version}… {percent}%",
+        "error": "暂时无法检查，请稍后再试。",
+        "idle": "检查是否有新版本。",
+        "ready": "版本 {version} 已就绪，将在关闭应用时安装。",
+        "upToDate": "您使用的是最新版本。"
+      },
+      "title": "更新",
+      "whatsNew": "版本 {version} 的新功能"
+    }
   },
   "sidebar": {
     "collapse": "收起侧边栏",
@@ -891,8 +908,10 @@
       "help": "帮助中心",
       "site": "官方网站"
     },
+    "openUpdates": "查看更新",
     "support": "支持",
-    "toggleTheme": "切换浅色/深色主题"
+    "toggleTheme": "切换浅色/深色主题",
+    "updateReady": "更新已就绪"
   },
   "stats": {
     "adjustmentsApplied": "已应用的调整",
@@ -912,6 +931,14 @@
     "error": "失败",
     "processing": "处理中",
     "queued": "等待中"
+  },
+  "updates": {
+    "later": "稍后",
+    "restartNow": "重启并更新",
+    "toast": {
+      "body": "关闭应用时将自动安装。也可以立即重启。",
+      "title": "版本 {version} 已就绪"
+    }
   },
   "upload": {
     "aria": "将文件拖放到这里，或按 Enter 选择",
