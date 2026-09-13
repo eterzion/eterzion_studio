@@ -444,3 +444,19 @@ class TestSpawnFailureIsNotCalledATimeout:
         with pytest.raises(WorkerCrashed):
             supervisor.ensure_started()
         assert time.monotonic() - inicio < 20.0
+
+
+class TestWorkerFindsTheBundledFfmpeg:
+    def test_passes_the_bundled_ffmpeg_dir_through(self, monkeypatch):
+        """O worker roda voz e video: sem ASTROS_FFMPEG_DIR ele procurava o
+        ffmpeg no PATH -- nenhum numa maquina limpa, ou um GPL onde houvesse."""
+        monkeypatch.setenv('ASTROS_FFMPEG_DIR', r'C:\app\resources\ffmpeg')
+        env = worker_supervisor._restricted_env('key')
+        assert env['ASTROS_FFMPEG_DIR'] == r'C:\app\resources\ffmpeg'
+
+    def test_linux_library_path_and_home_pass_through(self, monkeypatch):
+        monkeypatch.setenv('LD_LIBRARY_PATH', '/opt/eterzion/ffmpeg/lib')
+        monkeypatch.setenv('HOME', '/home/usuario')
+        env = worker_supervisor._restricted_env('key')
+        assert env['LD_LIBRARY_PATH'] == '/opt/eterzion/ffmpeg/lib'
+        assert env['HOME'] == '/home/usuario'
