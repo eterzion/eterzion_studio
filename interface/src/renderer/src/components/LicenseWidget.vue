@@ -112,6 +112,19 @@ onBeforeUnmount(() => {
         <span>{{ meta.label }}</span>
       </div>
 
+      <!-- Qual licenca esta' ativa aqui: o final da chave e o e-mail da compra.
+           So' aparecem quando o servidor de licencas respondeu nesta sessao. -->
+      <dl v-if="licenseState.licenseLast4 || licenseState.email" class="license-facts">
+        <template v-if="licenseState.licenseLast4">
+          <dt>{{ t('license.keyLabel') }}</dt>
+          <dd class="license-key">••••{{ licenseState.licenseLast4 }}</dd>
+        </template>
+        <template v-if="licenseState.email">
+          <dt>{{ t('license.emailLabel') }}</dt>
+          <dd :title="licenseState.email">{{ licenseState.email }}</dd>
+        </template>
+      </dl>
+
       <div v-if="licenseState.installationsLimit" class="popover-section">
         <div class="section-row">
           <span class="section-label">{{ t('license.installationsLabel') }}</span>
@@ -261,6 +274,32 @@ onBeforeUnmount(() => {
   color: var(--color-danger);
   border-color: var(--color-danger-soft);
   background: var(--color-danger-soft);
+}
+
+.license-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-1-5) var(--space-3);
+  font-size: var(--fs-caption);
+}
+
+.license-facts dt {
+  color: var(--text-tertiary);
+}
+
+.license-facts dd {
+  min-width: 0;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+}
+
+.license-key {
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
 }
 
 .popover-section {

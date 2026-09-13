@@ -19,6 +19,22 @@ def isolated_cache_dir(tmp_path, monkeypatch):
     monkeypatch.delenv('APPDATA', raising=False)
 
 
+@pytest.fixture(autouse=True)
+def no_license_details(monkeypatch):
+    """Por padrao o servidor nao responde ao pedido de detalhes; cada teste
+    que precisa dele troca o stub. Sem isto, /license/status 'active' iria a'
+    rede de verdade."""
+    from app import licensing
+
+    def _offline(url, body, timeout=5.0):
+        raise urllib.error.URLError('offline')
+
+    monkeypatch.setattr(licensing, '_http_post_json', _offline)
+    licensing.clear_license_details()
+    yield
+    licensing.clear_license_details()
+
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -30,6 +46,9 @@ class _FakeIdentity:
     install_id = 'install-fake'
     signing_public_key_b64 = 'c2lnbmluZy1rZXk='
     encryption_public_key_b64 = 'ZW5jcnlwdGlvbi1rZXk='
+
+    def sign(self, message: bytes) -> bytes:
+        return b'assinado:' + message
 
 
 def _configure(monkeypatch):
@@ -182,3 +201,83 @@ class TestRelease:
         res = client.post('/license/release')
         assert res.status_code == 200
         assert released == {'license_id': 'lic_1', 'install_id': 'install-fake'}
+
+
+class TestLicenseDetails:
+    """O final da chave e o e-mail no popover: pedido assinado pela instalacao,
+    guardado so' em memoria."""
+
+    def _active(self, monkeypatch):
+        _configure(monkeypatch)
+        from app import licensing
+
+        monkeypatch.setattr(licensing, '_http_get', lambda url, timeout=5.0: {
+            'license_id': 'lic_abc', 'status': 'active', 'installations_used': 1, 'installations_limit': 1,
+        })
+        return licensing
+
+    def test_active_status_carries_last4_and_email(self, client, monkeypatch):
+        import base64
+
+        licensing = self._active(monkeypatch)
+        pedidos = []
+
+        def _details(url, body, timeout=5.0):
+            pedidos.append((url, body))
+            return {'license_last4': '3f2a', 'email': 'cliente@example.com'}
+
+        monkeypatch.setattr(licensing, '_http_post_json', _details)
+        body = client.get('/license/status').json()
+        assert body['license_last4'] == '3f2a'
+        assert body['email'] == 'cliente@example.com'
+
+        url, pedido = pedidos[0]
+        assert url == 'http://licensing.test/activations/details'
+        assert pedido['install_id'] == 'install-fake'
+        assinado = base64.b64decode(pedido['signature_b64'])
+        assert assinado == f"assinado:eterzion-license-details:install-fake:{pedido['timestamp']}".encode()
+
+        # Uma vez por sessao: a segunda consulta usa a memoria.
+        client.get('/license/status')
+        assert len(pedidos) == 1
+
+    def test_without_the_details_the_status_still_works(self, client, monkeypatch):
+        """Sem rede, ou com um servidor anterior a esta rota: o popover so' nao
+        mostra as duas linhas."""
+        self._active(monkeypatch)
+        body = client.get('/license/status').json()
+        assert body['state'] == 'active'
+        assert body['license_last4'] is None
+        assert body['email'] is None
+
+    def test_a_failure_is_not_retried_on_every_status(self, client, monkeypatch):
+        licensing = self._active(monkeypatch)
+        tentativas = []
+
+        def _falha(url, body, timeout=5.0):
+            tentativas.append(url)
+            raise urllib.error.HTTPError(url, 404, 'not found', hdrs=None, fp=None)
+
+        monkeypatch.setattr(licensing, '_http_post_json', _falha)
+        client.get('/license/status')
+        client.get('/license/status')
+        assert len(tentativas) == 1
+
+    def test_offline_only_uses_what_is_in_memory(self, client, monkeypatch):
+        licensing = self._active(monkeypatch)
+        monkeypatch.setattr(licensing, '_http_post_json',
+                            lambda url, body, timeout=5.0: {'license_last4': '3f2a', 'email': 'c@example.com'})
+        client.get('/license/status')
+
+        def _sem_rede(url, timeout=5.0):
+            raise urllib.error.URLError('offline')
+
+        def _nao_chame(url, body, timeout=5.0):
+            raise AssertionError('offline nao deve pedir de novo')
+
+        monkeypatch.setattr(licensing, '_http_get', _sem_rede)
+        monkeypatch.setattr(licensing, '_http_post_json', _nao_chame)
+        licensing.record_successful_check()
+        body = client.get('/license/status').json()
+        assert body['state'] == 'offline_tolerance'
+        assert body['email'] == 'c@example.com'

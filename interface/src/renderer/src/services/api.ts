@@ -265,6 +265,10 @@ export interface LicenseStatusResponse {
   installations_used: number
   installations_limit: number
   offline_days_remaining: number | null
+  /** Os 4 ultimos caracteres da chave e o e-mail da compra, para o popover.
+   *  null sem rede ou com um servidor anterior a eles. */
+  license_last4?: string | null
+  email?: string | null
 }
 
 /** T036/T038 — always goes through the local API's facade (never the remote
