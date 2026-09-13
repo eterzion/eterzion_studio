@@ -100,7 +100,7 @@ const CREDITS: {
   },
   {
     capabilityKey: 'audioSpeech',
-    work: 'audiosronnx',
+    work: 'audiosronnx (LavaSR)',
     author: 'TigreGotico',
     license: 'Apache-2.0',
     icon: AudioLines,
