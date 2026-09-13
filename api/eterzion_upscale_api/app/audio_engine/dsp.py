@@ -14,7 +14,12 @@ from app.audio_engine.analyzer import ProblemDetection
 
 # afftdn: FFT noise reduction. highpass=20: removes subsonic rumble/DC-adjacent
 # content no music mix needs. Both always run — deterministic, no ML, no GPU.
-_BASELINE_RESTORE_FILTERS = ['highpass=f=20', 'afftdn']
+#
+# afftdn suave (6 dB de reducao, piso em -60 dB) e nao o padrao (12 dB, -50 dB):
+# o detector de ruido ainda nao existe (noise_severity e' sempre 0), entao isto
+# roda em TODA musica, e o padrao come reverberacao, pratos e caudas de notas
+# junto com o chiado.
+_BASELINE_RESTORE_FILTERS = ['highpass=f=20', 'afftdn=nr=6:nf=-60']
 
 # 60Hz mains hum + its first harmonic — narrow rejection, doesn't touch
 # musical content elsewhere in the spectrum.
@@ -40,6 +45,22 @@ _MASTER_LIMITER = 'alimiter=limit=0.97:level=disabled'
 
 DEFAULT_TARGET_LUFS = -14.0  # streaming-platform-style target (Spotify/YouTube Music range)
 
+# Abaixo disto o arquivo perdeu os agudos na compressao (MP3/AAC de taxa baixa).
+# 128 kbps corta em ~16 kHz e soa bem; 96 kbps ou menos ja' soa abafado.
+_LOSSY_BANDWIDTH_HZ = 15500.0
+
+
+def _exciter_for(bandwidth_hz: float | None) -> str | None:
+    """Excitador de harmonicos para arquivo que perdeu os agudos: gera
+    harmonicos a partir da faixa logo abaixo do corte, devolvendo "ar" a' parte
+    que a compressao apagou. Nao recupera o que se perdeu -- sintetiza --, por
+    isso so' entra quando o corte foi medido, e com drive moderado."""
+    if bandwidth_hz is None or bandwidth_hz >= _LOSSY_BANDWIDTH_HZ:
+        return None
+    freq = min(max(bandwidth_hz * 0.5, 2000.0), 12000.0)
+    ceil = min(max(bandwidth_hz * 1.5, 9999.0), 20000.0)
+    return f'aexciter=amount=1:drive=5:blend=0:freq={freq:.0f}:ceil={ceil:.0f}'
+
 
 def restore(input_path: str, output_path: str, problems: ProblemDetection) -> None:
     """Corrective DSP — reduces noise/hum/residual clipping without touching
@@ -60,14 +81,20 @@ def master(
     *,
     target_lufs: float = DEFAULT_TARGET_LUFS,
     correct_phase: bool = False,
+    bandwidth_hz: float | None = None,
 ) -> None:
     """Auto Master chain — EQ, dynamics, limiter, then loudness normalization
     to `target_lufs` last (FR-010). `correct_phase` is only True when
     analyzer.py's AudioAnalysisReport.phase_issues_detected was real —
-    never applied unconditionally."""
+    never applied unconditionally. `bandwidth_hz` (medido pelo analyzer)
+    liga o excitador so' em arquivo que perdeu os agudos."""
     filters = []
     if correct_phase:
         filters.append(_PHASE_CORRECTION_FILTER)
-    filters.extend([_MASTER_EQ, _MASTER_COMPRESSOR, _MASTER_LIMITER,
-                     f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11'])
+    filters.append(_MASTER_EQ)
+    exciter = _exciter_for(bandwidth_hz)
+    if exciter:
+        filters.append(exciter)
+    filters.extend([_MASTER_COMPRESSOR, _MASTER_LIMITER,
+                    f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11'])
     run_ffmpeg(lambda f: f.input(input_path).output(output_path, {'af': ','.join(filters)}))

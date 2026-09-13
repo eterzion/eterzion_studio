@@ -28,6 +28,8 @@ class AudioAnalysisReport:
     clipping_ratio: float
     phase_issues_detected: bool
     measured_at: MeasuredAt
+    # Ate' onde vai o conteudo de agudos, em Hz -- ver _bandwidth_hz().
+    bandwidth_hz: float | None = None
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,31 @@ def _spectral_balance(mono: np.ndarray, rate: int) -> dict[str, float]:
     }
 
 
+# Um MP3/AAC de taxa baixa corta os agudos num degrau: 64 kbps para em ~11 kHz,
+# 128 kbps em ~16 kHz. O corte e' onde o espectro cai este tanto abaixo do
+# nivel dos medios (1-4 kHz) e nao volta mais.
+_BANDWIDTH_DROP_DB = 45.0
+
+
+def _bandwidth_hz(mono: np.ndarray, rate: int) -> float:
+    """A frequencia mais alta com conteudo real -- a assinatura de um arquivo
+    comprimido. Welch (media de janelas) em vez de uma FFT unica: o espectro de
+    uma musica inteira numa FFT so' e' ruidoso demais para achar um degrau."""
+    from scipy.signal import welch
+
+    nyquist = rate / 2
+    if mono.size < 4096 or not np.any(mono):
+        return float(nyquist)
+    freqs, psd = welch(mono, fs=rate, nperseg=4096)
+    psd_db = 10 * np.log10(psd + 1e-20)
+    medios = psd_db[(freqs >= 1000) & (freqs <= 4000)]
+    if medios.size == 0:
+        return float(nyquist)
+    limite = float(np.median(medios)) - _BANDWIDTH_DROP_DB
+    acima = np.nonzero(psd_db > limite)[0]
+    return float(freqs[acima[-1]]) if acima.size else float(nyquist)
+
+
 def _clipping_ratio(audio: np.ndarray) -> float:
     if audio.size == 0:
         return 0.0
@@ -125,6 +152,7 @@ def analyze(path: str, measured_at: MeasuredAt = 'input') -> AudioAnalysisReport
         clipping_ratio=_clipping_ratio(audio),
         phase_issues_detected=correlation < -0.3,
         measured_at=measured_at,
+        bandwidth_hz=_bandwidth_hz(mono, rate),
     )
 
 

@@ -207,3 +207,13 @@ class TestProcessDispatchesByEngineRef:
         assert cmd[1].endswith('vendor\\sonicmaster\\infer.py') or cmd[1].endswith('vendor/sonicmaster/infer.py')
         assert '--ckpt' in cmd and str(ckpt) in cmd
         assert '--prompt' in cmd
+
+
+def test_missing_audio_dependency_speaks_to_the_user_not_to_a_developer():
+    """A frase chega a quem usa o app instalado: nada de pip, README ou
+    variavel de ambiente. O tecnico fica em `detail`."""
+    erro = MissingAudioDependency('music (SonicMaster)', 'audio-worker',
+                                  ImportError('ASTROS_AUDIO_WORKER_PYTHON não configurado'))
+    for proibido in ('pip', 'README', 'ASTROS_', 'SonicMaster', 'audio-worker'):
+        assert proibido not in str(erro)
+    assert 'audio-worker' in erro.detail

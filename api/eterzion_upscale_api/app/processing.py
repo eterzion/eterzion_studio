@@ -673,13 +673,14 @@ class VideoUpscaler:
 #    loudness normalization). Fully verifiable with just ffmpeg — no ML
 #    dependency, no network, no GPU.
 # 2. Content-type model pass — `speech` gets audiosronnx's bandwidth extension
-#    (Apache-2.0, package `audiosronnx`); `music` gets SonicMaster's
-#    restoration model (Apache-2.0 code/weights, `license_status=
-#    approved_conditional` — see app.licensing's profile resolver and
-#    docs/models/MODEL_LICENSES.md §3-bis for the Stable Audio Open VAE
-#    dependency this carries). Neither package is installed in every
-#    environment (`[audio]` extra) — a missing one raises
+#    (Apache-2.0, package `audiosronnx`). A missing engine raises
 #    MissingAudioDependency rather than silently skipping the step.
+#
+# Musica NAO passa mais por aqui no app: desde 2026-09-13 todo job de musica
+# vai pelo app.audio_engine.mastering.MasteringEngine (ver app/jobs.py). O
+# `sonicmaster` abaixo so' serve a um ambiente de desenvolvimento com o
+# audio-worker configurado; exige o VAE do Stable Audio Open
+# (docs/models/MODEL_LICENSES.md §3-bis), que o app nao distribui.
 #
 # SonicMaster ships as inference *scripts* (`inference_fullsong.py` et al.).
 # There is no documented stable importable Python API — this integration calls
@@ -691,10 +692,15 @@ class VideoUpscaler:
 
 
 class MissingAudioDependency(ImportError):
+    """Um motor de audio sem o que precisa para rodar nesta instalacao.
+
+    A frase fala com quem usa o app -- nada de pip, README ou variavel de
+    ambiente, que ninguem com o instalador tem como seguir. O tecnico (motor,
+    pacote, erro original) vai em `detail`, a area recolhida da interface."""
+
     def __init__(self, engine: str, package: str, original: Exception) -> None:
-        super().__init__(
-            f"O motor de áudio '{engine}' precisa do pacote opcional '{package}', que não está instalado.\n"
-            f"Instale com: pip install eterzion_upscale[audio]\n(erro original: {original})")
+        super().__init__('Este recurso de áudio não está disponível nesta instalação do aplicativo.')
+        self.detail = f"motor '{engine}', dependência '{package}': {original}"
 
 
 class AudioProcessResult(TypedDict):
@@ -745,7 +751,7 @@ def _enhance_music(input_wav: str, output_wav: str, models_dir: str | None = Non
     if not settings.audio_worker_python:
         raise MissingAudioDependency(
             'music (SonicMaster)', 'audio-worker',
-            ImportError('ASTROS_AUDIO_WORKER_PYTHON não configurado — veja api/README.md'))
+            ImportError('ASTROS_AUDIO_WORKER_PYTHON não configurado'))
     if not os.path.isfile(settings.audio_worker_checkpoint):
         raise MissingAudioDependency(
             'music (SonicMaster)', 'sonicmaster-checkpoint',

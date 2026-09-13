@@ -82,7 +82,8 @@ class MasteringEngine:
             input_path, self._provider, ai_strength, full_song=full_song)
         pre_master = analyzer.analyze(restored_path, measured_at='post_dsp' if verdict is None else 'post_ai')
         dsp.master(restored_path, output_path, target_lufs=target_lufs,
-                   correct_phase=pre_master.phase_issues_detected)
+                   correct_phase=pre_master.phase_issues_detected,
+                   bandwidth_hz=pre_master.bandwidth_hz)
         final_analysis = analyzer.analyze(output_path, measured_at='post_master')
         return MasteringResult(
             output_path=output_path, audio_analysis=final_analysis, quality_verdict=verdict,
@@ -125,7 +126,8 @@ class MasteringEngine:
             input_path, self._provider, ai_strength, full_song=full_song)
         pre_master = analyzer.analyze(restored_path, measured_at='post_dsp' if verdict is None else 'post_ai')
         dsp.master(restored_path, output_path, target_lufs=target_lufs,
-                   correct_phase=pre_master.phase_issues_detected)
+                   correct_phase=pre_master.phase_issues_detected,
+                   bandwidth_hz=pre_master.bandwidth_hz)
         final_analysis = analyzer.analyze(output_path, measured_at='post_master')
         return MasteringResult(
             output_path=output_path, audio_analysis=final_analysis, quality_verdict=verdict,
