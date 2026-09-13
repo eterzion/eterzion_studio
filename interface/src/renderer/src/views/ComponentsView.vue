@@ -34,6 +34,7 @@ import {
 } from '@lucide/vue'
 
 import TopBar from '../components/TopBar.vue'
+import AppBadge from '../components/atoms/AppBadge.vue'
 import {
   downloadErrorCopy,
   getComponentDetails,
@@ -73,11 +74,20 @@ let confirmTimer: ReturnType<typeof setTimeout> | undefined
 const rows = computed(() =>
   components.value
     .filter((c) => c.id in CAPABILITIES)
-    .map((c) => ({ ...c, meta: CAPABILITIES[c.id] }))
+    // `!== false`, e não `=== true`: um backend anterior ao campo `available`
+    // (API rodando do código-fonte, por exemplo) não pode transformar a lista
+    // inteira em "Em breve".
+    .map((c) => ({ ...c, meta: CAPABILITIES[c.id], disponivel: c.available !== false }))
 )
 
+/** Só o que está no disco conta. Somar todos os itens fazia o total depender
+ *  de o backend mandar `size_mb` 0 para o que não foi baixado — um item em
+ *  `installing`, ou uma API que informasse o tamanho do download antes de
+ *  instalar, inflaria o total com espaço que ainda não está ocupado. */
 const totalInstalledMb = computed(() =>
-  components.value.reduce((sum, c) => sum + (c.size_mb || 0), 0)
+  components.value
+    .filter((c) => c.install_state === 'installed' || c.install_state === 'update_available')
+    .reduce((sum, c) => sum + (c.size_mb || 0), 0)
 )
 
 const anyInstalling = computed(() => components.value.some((c) => c.install_state === 'installing'))
@@ -185,128 +195,153 @@ void refresh()
     <TopBar :title="t('components.title')" />
 
     <div class="components-content">
-      <section class="components-section">
-        <header class="section-header">
-          <p class="section-description">{{ t('components.description') }}</p>
-          <span v-if="totalInstalledMb > 0" class="total-size">
-            {{ t('components.totalOnDisk', { size: formatarTamanho(totalInstalledMb) }) }}
-          </span>
-        </header>
+      <div class="components-column">
+        <section class="components-section">
+          <header class="section-header">
+            <p class="section-description">{{ t('components.description') }}</p>
+            <span v-if="totalInstalledMb > 0" class="total-size">
+              {{ t('components.totalOnDisk', { size: formatarTamanho(totalInstalledMb) }) }}
+            </span>
+          </header>
 
-        <p v-if="loading" class="state-line">{{ t('components.loading') }}</p>
+          <p v-if="loading" class="state-line">{{ t('components.loading') }}</p>
 
-        <p v-else-if="loadError" class="state-line state-error">
-          <TriangleAlert :size="15" />
-          {{ loadError }}
-          <button type="button" class="link-btn" @click="refresh()">
-            {{ t('components.actions.retry') }}
-          </button>
-        </p>
+          <p v-else-if="loadError" class="state-line state-error">
+            <TriangleAlert :size="15" />
+            {{ loadError }}
+            <button type="button" class="link-btn" @click="refresh()">
+              {{ t('components.actions.retry') }}
+            </button>
+          </p>
 
-        <ul v-else class="component-list">
-          <li v-for="row in rows" :key="row.id" class="component-row">
-            <div class="row-icon" :style="{ color: row.meta.tint }">
-              <component :is="row.meta.icon" :size="18" />
-            </div>
+          <ul v-else class="component-list">
+            <li v-for="row in rows" :key="row.id" class="component-row">
+              <div class="row-icon" :style="{ color: row.meta.tint }">
+                <component :is="row.meta.icon" :size="18" />
+              </div>
 
-            <div class="row-main">
-              <span class="row-label">{{ t(row.meta.labelKey) }}</span>
-              <span class="row-state">
-                <template v-if="row.install_state === 'installing'">
-                  <Loader2 :size="13" class="spin" />
-                  {{ t('components.state.installing') }}
-                </template>
-                <template v-else-if="row.install_state === 'update_available'">
-                  {{ t('components.state.updateAvailable') }}
-                  <span v-if="row.size_mb" class="row-size"
-                    >· {{ formatarTamanho(row.size_mb) }}</span
-                  >
-                </template>
-                <template v-else-if="row.install_state === 'installed'">
-                  {{ t('components.state.installed') }}
-                  <span v-if="row.size_mb" class="row-size"
-                    >· {{ formatarTamanho(row.size_mb) }}</span
-                  >
-                </template>
-                <template v-else>{{ t('components.state.notInstalled') }}</template>
-              </span>
-            </div>
+              <div class="row-main">
+                <span class="row-label">{{ t(row.meta.labelKey) }}</span>
+                <!-- O que a API marca como indisponivel nesta versao (hoje, a
+                   musica) nao tem estado de instalacao a mostrar nem acao a
+                   oferecer: antes a tela exibia "Instalar" e so' o 422 depois
+                   do clique contava que nao dava. -->
+                <span v-if="!row.disponivel" class="row-state">
+                  <AppBadge tone="neutral">{{ t('components.state.comingSoon') }}</AppBadge>
+                </span>
+                <span v-else class="row-state">
+                  <template v-if="row.install_state === 'installing'">
+                    <Loader2 :size="13" class="spin" />
+                    {{ t('components.state.installing') }}
+                  </template>
+                  <template v-else-if="row.install_state === 'update_available'">
+                    {{ t('components.state.updateAvailable') }}
+                    <span v-if="row.size_mb" class="row-size"
+                      >· {{ formatarTamanho(row.size_mb) }}</span
+                    >
+                  </template>
+                  <template v-else-if="row.install_state === 'installed'">
+                    {{ t('components.state.installed') }}
+                    <span v-if="row.size_mb" class="row-size"
+                      >· {{ formatarTamanho(row.size_mb) }}</span
+                    >
+                  </template>
+                  <template v-else>{{ t('components.state.notInstalled') }}</template>
+                </span>
+              </div>
 
-            <div class="row-actions">
-              <button
-                v-if="row.install_state === 'not_installed'"
-                type="button"
-                class="row-btn"
-                :disabled="busy[row.id]"
-                @click="agir(row.id, 'install')"
-              >
-                <Download :size="14" />
-                {{ t('components.actions.install') }}
-              </button>
+              <div v-if="row.disponivel" class="row-actions">
+                <button
+                  v-if="row.install_state === 'not_installed'"
+                  type="button"
+                  class="row-btn"
+                  :disabled="busy[row.id]"
+                  @click="agir(row.id, 'install')"
+                >
+                  <Download :size="14" />
+                  {{ t('components.actions.install') }}
+                </button>
 
-              <button
-                v-if="row.install_state === 'update_available'"
-                type="button"
-                class="row-btn"
-                :disabled="busy[row.id]"
-                @click="agir(row.id, 'update')"
-              >
-                <RefreshCw :size="14" />
-                {{ t('components.actions.update') }}
-              </button>
+                <button
+                  v-if="row.install_state === 'update_available'"
+                  type="button"
+                  class="row-btn"
+                  :disabled="busy[row.id]"
+                  @click="agir(row.id, 'update')"
+                >
+                  <RefreshCw :size="14" />
+                  {{ t('components.actions.update') }}
+                </button>
 
-              <button
-                v-if="row.install_state === 'installed' || row.install_state === 'update_available'"
-                type="button"
-                class="row-btn row-btn-danger"
-                :disabled="busy[row.id]"
-                @click="pedirRemocao(row.id)"
-              >
-                <Trash2 :size="14" />
-                {{
-                  confirmingRemoval === row.id
-                    ? t('components.actions.confirmRemove')
-                    : t('components.actions.remove')
-                }}
-              </button>
-            </div>
+                <button
+                  v-if="
+                    row.install_state === 'installed' || row.install_state === 'update_available'
+                  "
+                  type="button"
+                  class="row-btn row-btn-danger"
+                  :disabled="busy[row.id]"
+                  @click="pedirRemocao(row.id)"
+                >
+                  <Trash2 :size="14" />
+                  {{
+                    confirmingRemoval === row.id
+                      ? t('components.actions.confirmRemove')
+                      : t('components.actions.remove')
+                  }}
+                </button>
+              </div>
 
-            <p v-if="itemError[row.id]" class="row-error">
-              <TriangleAlert :size="14" />
-              <span>{{ itemError[row.id] }}</span>
-            </p>
-          </li>
-        </ul>
-      </section>
+              <p v-if="itemError[row.id]" class="row-error">
+                <TriangleAlert :size="14" />
+                <span>{{ itemError[row.id] }}</span>
+              </p>
+            </li>
+          </ul>
+        </section>
 
-      <p class="footnote">{{ t('components.footnote') }}</p>
+        <p class="footnote">{{ t('components.footnote') }}</p>
+      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* `flex: 1` porque `.app-shell` e' um flex row: sem isto a tela encolhia ate' a
+   largura do conteudo (~620px) e sobrava o resto da janela vazio -- o mesmo
+   conserto da Central de compressao. `min-width: 0` deixa texto longo encolher
+   em vez de esticar a coluna. */
 .components-view {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
+  flex: 1;
+  min-width: 0;
 }
 
+/* Mesmo arranjo das Configuracoes: o scroller ocupa a largura inteira e a
+   coluna de 860px fica dentro dele, centralizada, para a barra de rolagem
+   ficar na borda da janela e nao colada no conteudo. */
 .components-content {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
-  padding: 24px;
+  padding: var(--space-4);
+}
+
+.components-column {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 860px;
+  gap: var(--space-3);
   width: 100%;
+  max-width: 860px;
+  margin: 0 auto;
 }
 
 .components-section {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-2-5);
 }
 
 /* O titulo vem da TopBar; aqui fica so' a descricao. O cabecalho anterior
@@ -316,7 +351,7 @@ void refresh()
 .section-header {
   display: flex;
   align-items: baseline;
-  gap: 12px;
+  gap: var(--space-2-5);
 }
 
 .section-description {
@@ -344,8 +379,8 @@ void refresh()
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-2-5);
+  padding: var(--space-2-5) 0;
   border-bottom: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.06));
 }
 
@@ -388,7 +423,7 @@ void refresh()
 
 .row-actions {
   display: flex;
-  gap: 6px;
+  gap: var(--space-1-5);
 }
 
 .row-btn {
@@ -397,7 +432,7 @@ void refresh()
   gap: 5px;
   padding: 5px 10px;
   font-size: 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   background: transparent;
   color: inherit;
@@ -424,10 +459,10 @@ void refresh()
   grid-column: 1 / -1;
   display: flex;
   align-items: flex-start;
-  gap: 6px;
-  margin: 4px 0 0;
-  padding: 8px 10px;
-  border-radius: 6px;
+  gap: var(--space-1-5);
+  margin: var(--space-1) 0 0;
+  padding: var(--space-2) 10px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, #ef4444 10%, transparent);
   color: #ef4444;
   font-size: 12px;
@@ -438,9 +473,9 @@ void refresh()
 .state-line {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
   font-size: 13px;
   color: var(--text-muted);
 }

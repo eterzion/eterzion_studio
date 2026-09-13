@@ -54,6 +54,7 @@ function componente(over: Record<string, unknown> = {}): Record<string, unknown>
     size_mb: 0,
     install_state: 'not_installed',
     update_available: false,
+    available: true,
     ...over
   }
 }
@@ -145,11 +146,13 @@ describe('ComponentsView — o que a lista mostra', () => {
     wrapper.unmount()
   })
 
-  it('música recusada mostra a frase traduzida, não o texto do backend', async () => {
+  it('recusa not_available_in_app mostra a frase traduzida, não o texto do backend', async () => {
     // O backend responde 422 com motivo; a frase sai na língua do app. Antes
     // a tela mostrava "Configure-a manualmente seguindo api/README.md (venv
-    // próprio, checkpoint do modelo, variável HF_TOKEN)".
-    listComponents.mockResolvedValue([componente({ id: 'music' })])
+    // próprio, checkpoint do modelo, variável HF_TOKEN)". Com `available` a
+    // música nem oferece o botão, mas a recusa continua sendo a segunda
+    // barreira — e um backend sem o campo ainda chega até ela.
+    listComponents.mockResolvedValue([componente({ id: 'music', available: undefined })])
     installComponent.mockRejectedValue(
       Object.assign(new Error('mensagem só em português'), { reason: 'not_available_in_app' })
     )
@@ -171,6 +174,44 @@ describe('ComponentsView — o que a lista mostra', () => {
     ])
     const wrapper = await montar()
     expect(wrapper.text()).toContain('68 MB')
+    wrapper.unmount()
+  })
+
+  it('o total em disco soma só o que está instalado', async () => {
+    // Antes a soma passava por todos os itens: um `size_mb` num item que não
+    // está no disco (baixando, ou não instalado) entrava no total.
+    listComponents.mockResolvedValue([
+      componente({ id: 'photo', install_state: 'installed', size_mb: 68 }),
+      componente({ id: 'anime_image', install_state: 'update_available', size_mb: 32 }),
+      componente({ id: 'real_video', install_state: 'installing', size_mb: 500 }),
+      componente({ id: 'anime_video', install_state: 'not_installed', size_mb: 700 })
+    ])
+    const wrapper = await montar()
+    expect(wrapper.get('.total-size').text()).toBe(
+      en.components.totalOnDisk.replace('{size}', '100 MB')
+    )
+    wrapper.unmount()
+  })
+
+  it('o que a API marca como indisponível mostra "Em breve" e nenhum botão', async () => {
+    // Quem decide é a API (`available: false`), não o id: a tela não sabe que
+    // é a música. Antes aparecia "Instalar" e só o 422 depois do clique
+    // contava que não dava.
+    listComponents.mockResolvedValue([
+      componente({ id: 'music', available: false }),
+      componente({ id: 'photo' })
+    ])
+    const wrapper = await montar()
+    const [indisponivel, disponivel] = wrapper.findAll('.component-row')
+
+    expect(indisponivel.text()).toContain(en.components.state.comingSoon)
+    expect(indisponivel.text()).not.toContain(en.components.state.notInstalled)
+    expect(indisponivel.findAll('button')).toHaveLength(0)
+
+    expect(disponivel.text()).not.toContain(en.components.state.comingSoon)
+    expect(disponivel.findAll('.row-btn').map((b) => b.text())).toEqual([
+      en.components.actions.install
+    ])
     wrapper.unmount()
   })
 })

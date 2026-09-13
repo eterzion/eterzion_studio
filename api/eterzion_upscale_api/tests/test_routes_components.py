@@ -59,7 +59,27 @@ class TestListComponents:
         for component in res.json():
             assert set(component.keys()) == {
                 'id', 'capability_label', 'size_mb', 'install_state', 'update_available',
+                'available',
             }
+
+    def test_only_music_is_marked_unavailable_in_the_app(self, client):
+        """A tela mostra "Em breve" sem botoes para o que a API marca como
+        indisponivel -- a interface nao conhece o id `music`, quem decide e' a
+        API. As outras cinco seguem instalaveis."""
+        body = client.get('/components').json()
+        disponivel = {c['id']: c['available'] for c in body}
+        assert disponivel.pop('music') is False
+        assert disponivel and all(disponivel.values())
+
+    def test_unavailable_flag_matches_the_install_refusal(self, client):
+        """O que a listagem marca como indisponivel e' exatamente o que o
+        install recusa com `not_available_in_app` -- as duas barreiras nao
+        podem divergir."""
+        for c in client.get('/components').json():
+            if not c['available']:
+                res = client.post(f"/components/{c['id']}/install")
+                assert res.status_code == 422
+                assert res.json()['detail']['reason'] == 'not_available_in_app'
 
     def test_nothing_downloaded_reports_not_installed(self, client):
         res = client.get('/components')
@@ -77,6 +97,10 @@ class TestComponentDetails:
         body = res.json()
         assert body['technical_name'] == 'nomos-webphoto'
         assert body['license']
+        assert body['available'] is True
+
+    def test_details_carry_the_same_availability_as_the_list(self, client):
+        assert client.get('/components/music/details').json()['available'] is False
 
     def test_returns_404_for_unknown_component(self, client):
         res = client.get('/components/not-real/details')

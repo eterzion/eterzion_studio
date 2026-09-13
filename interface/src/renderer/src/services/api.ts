@@ -20,6 +20,9 @@ export interface ComponentSummary {
   size_mb: number
   install_state: InstallState
   update_available: boolean
+  /** `false` = a capacidade existe, mas esta versão do app não a instala (hoje,
+   *  a música). Quem decide é a API; a tela só mostra "Em breve" sem botões. */
+  available: boolean
 }
 
 export interface ComponentDetails extends ComponentSummary {

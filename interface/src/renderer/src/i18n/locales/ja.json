@@ -70,7 +70,8 @@
       "notInstalled": "未インストール",
       "installing": "インストール中…",
       "installed": "インストール済み",
-      "updateAvailable": "更新があります"
+      "updateAvailable": "更新があります",
+      "comingSoon": "近日公開"
     },
     "title": "コンポーネント",
     "totalOnDisk": "ディスク使用量 {size}"

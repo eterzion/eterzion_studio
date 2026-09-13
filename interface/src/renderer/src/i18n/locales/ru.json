@@ -70,7 +70,8 @@
       "notInstalled": "Не установлено",
       "installing": "Установка…",
       "installed": "Установлено",
-      "updateAvailable": "Доступно обновление"
+      "updateAvailable": "Доступно обновление",
+      "comingSoon": "Скоро"
     },
     "title": "Компоненты",
     "totalOnDisk": "{size} на диске"

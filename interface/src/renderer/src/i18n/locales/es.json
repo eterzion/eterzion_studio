@@ -70,7 +70,8 @@
       "notInstalled": "No instalado",
       "installing": "Instalando…",
       "installed": "Instalado",
-      "updateAvailable": "Actualización disponible"
+      "updateAvailable": "Actualización disponible",
+      "comingSoon": "Próximamente"
     },
     "title": "Componentes",
     "totalOnDisk": "{size} en disco"
