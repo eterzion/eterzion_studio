@@ -368,11 +368,13 @@ jobs:
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # Sem o prefixo RCLONE_: o rclone le toda variavel RCLONE_<ALGO> como o
+          # parametro --<algo> (`RCLONE_VERSION` vira `--version=...` e aborta).
           # rclone oficial, hash conferido antes de executar. >= 1.75: o 1.60 do
           # apt falha todo upload no R2 com NotImplemented (ver eterzion_assets/
           # cdn/README.md).
-          RCLONE_VERSION: v1.75.1
-          RCLONE_SHA256: 200eb602c126d82aa38b51e0f6b9ae837473ff99b51278d3f6f837574c494d6e
+          VERSAO_RCLONE: v1.75.1
+          SHA256_RCLONE: 200eb602c126d82aa38b51e0f6b9ae837473ff99b51278d3f6f837574c494d6e
           # Versoes do instalador mantidas no bucket. Cada uma tem ~360 MB, e o
           # plano gratuito do R2 tem 10 GB para a conta inteira.
           MANTER_VERSOES: '3'
@@ -387,11 +389,11 @@ jobs:
             }
           }
 
-          $zip = Join-Path $env:RUNNER_TEMP "rclone-$env:RCLONE_VERSION.zip"
-          Invoke-WebRequest "https://downloads.rclone.org/$env:RCLONE_VERSION/rclone-$env:RCLONE_VERSION-windows-amd64.zip" -OutFile $zip -UseBasicParsing
+          $zip = Join-Path $env:RUNNER_TEMP "rclone-$env:VERSAO_RCLONE.zip"
+          Invoke-WebRequest "https://downloads.rclone.org/$env:VERSAO_RCLONE/rclone-$env:VERSAO_RCLONE-windows-amd64.zip" -OutFile $zip -UseBasicParsing
           $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
-          if ($hash -ne $env:RCLONE_SHA256) { throw "rclone baixado com SHA-256 inesperado ($hash); nao sera executado." }
-          $pasta = Join-Path $env:RUNNER_TEMP "rclone-$env:RCLONE_VERSION"
+          if ($hash -ne $env:SHA256_RCLONE) { throw "rclone baixado com SHA-256 inesperado ($hash); nao sera executado." }
+          $pasta = Join-Path $env:RUNNER_TEMP "rclone-$env:VERSAO_RCLONE"
           Expand-Archive $zip -DestinationPath $pasta -Force
           $rclone = (Get-ChildItem $pasta -Recurse -Filter rclone.exe | Select-Object -First 1).FullName
           & $rclone version | Select-Object -First 1
