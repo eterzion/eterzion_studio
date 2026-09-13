@@ -63,6 +63,23 @@ GPL_FILTERS = frozenset({
 })
 
 
+def no_window_kwargs() -> dict[str, int]:
+    """Impede que o ffmpeg/ffprobe abra uma janela de terminal no Windows.
+
+    O backend empacotado roda sem console (`console=False`), e nesse modo cada
+    processo de console que ele inicia ganha uma janela propria -- um terminal
+    que pisca e fecha a cada chamada. O worker isolado nao sofria disso (e'
+    iniciado com a flag, e os filhos herdam o console invisivel dele), mas a
+    masterizacao de musica e as sondagens do ffprobe rodam no processo
+    principal: um job de musica piscava varios terminais seguidos.
+
+    Fora do Windows a flag nao existe e o dicionario vazio nao muda nada.
+    Mesma ideia de app.security.no_window_kwargs, que o pacote nao pode importar.
+    """
+    flag = getattr(subprocess, 'CREATE_NO_WINDOW', 0)
+    return {'creationflags': flag} if flag else {}
+
+
 def graph_has_gpl_filter(chain: 'Sequence[str]') -> str | None:
     """The name of the first GPL filter in a filter chain, or None.
 
@@ -128,7 +145,7 @@ def is_lgpl_build() -> bool | None:
         return None
     try:
         result = subprocess.run([ffmpeg_bin, '-version'], capture_output=True, text=True, encoding='utf-8',
-                                errors='replace', timeout=10, check=False)
+                                errors='replace', **no_window_kwargs(), timeout=10, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return None
     config_line = next((line for line in result.stdout.splitlines() if line.startswith('configuration:')), '')
@@ -172,7 +189,7 @@ def available_encoders() -> frozenset[str]:
     try:
         result = subprocess.run(
             [ffmpeg_bin, '-hide_banner', '-encoders'],
-            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=15, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', **no_window_kwargs(), timeout=15, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return frozenset()
@@ -223,7 +240,7 @@ def encoder_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
              '-c:v', name, '-frames:v', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', **no_window_kwargs(), timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -268,7 +285,7 @@ def audio_encoder_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo:d=0.1',
              '-c:a', name, '-frames:a', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', **no_window_kwargs(), timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -317,7 +334,7 @@ def filter_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
              *shape, '-frames:v', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', **no_window_kwargs(), timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -343,14 +360,22 @@ def run_ffmpeg(args_builder) -> None:
     Consolidates what were three near-identical `_run_ffmpeg` helpers in
     video_io.py, audio.py and optimize.py into the one real place.
     Uses the bundled ffmpeg binary (T072) when packaged, falling back to PATH."""
-    from ffmpeg import FFmpeg, FFmpegError
+    from ffmpeg import FFmpeg
 
     _warn_once_if_gpl_build()
     executable = ffmpeg_path() or 'ffmpeg'
+    # A biblioteca `ffmpeg` so' monta os argumentos: o `execute()` dela cria o
+    # processo com `creationflags=CREATE_NEW_PROCESS_GROUP` fixo, sem como pedir
+    # CREATE_NO_WINDOW -- e no backend sem console cada chamada abria um terminal.
+    argumentos = args_builder(FFmpeg(executable=executable).option('y')).arguments
     try:
-        args_builder(FFmpeg(executable=executable).option('y')).execute()
-    except (FFmpegError, OSError) as error:
+        resultado = subprocess.run(argumentos, stdin=subprocess.DEVNULL, capture_output=True,
+                                   check=False, **no_window_kwargs())
+    except OSError as error:
         raise RuntimeError(f'Falha ao processar com ffmpeg: {error}') from error
+    if resultado.returncode != 0:
+        saida = resultado.stderr.decode('utf-8', errors='replace').strip()
+        raise RuntimeError(f'Falha ao processar com ffmpeg: {saida[-2000:]}')
 
 
 # ------------------------------- ffprobe inspection ------------------------------- #
@@ -380,7 +405,7 @@ def ffprobe_json(path: str) -> dict:
     try:
         result = subprocess.run(
             [ffprobe_bin, '-v', 'error', '-show_format', '-show_streams', '-show_chapters', '-of', 'json', path],
-            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', **no_window_kwargs(), timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise ProbeError(f'Falha ao executar ffprobe em {path!r}: {error}') from error

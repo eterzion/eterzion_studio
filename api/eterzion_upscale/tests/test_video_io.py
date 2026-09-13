@@ -119,3 +119,38 @@ def test_ffprobe_reads_tags_and_paths_with_accents(tmp_path):
     tags = {k.lower(): v for k, v in dados['format'].get('tags', {}).items()}
     assert tags['title'] == 'Canção — Ação ♪ 音楽'
     assert tags['artist'] == 'Zoë & Ñandú'
+
+
+def test_ffmpeg_and_ffprobe_never_open_a_terminal_window(tmp_path, monkeypatch):
+    """No backend empacotado (sem console), cada processo de console ganha uma
+    janela: um job de musica piscava varios terminais. Toda chamada ao
+    ffmpeg/ffprobe precisa pedir CREATE_NO_WINDOW -- inclusive o run_ffmpeg, cuja
+    biblioteca fixava outra flag."""
+    import subprocess as sp
+
+    from eterzion_upscale import media
+
+    chamadas = []
+    original = sp.run
+
+    def espiao(*args, **kwargs):
+        chamadas.append(kwargs.get('creationflags', 0))
+        return original(*args, **kwargs)
+
+    monkeypatch.setattr(media.subprocess, 'run', espiao)
+    esperado = getattr(sp, 'CREATE_NO_WINDOW', 0)
+
+    saida = tmp_path / 'tom.wav'
+    media.run_ffmpeg(lambda f: f.input('sine=frequency=440:duration=0.2', f='lavfi').output(str(saida)))
+    media.ffprobe_json(str(saida))
+    assert len(chamadas) >= 2
+    assert all(flag == esperado for flag in chamadas)
+
+
+def test_run_ffmpeg_failure_keeps_the_known_prefix(tmp_path):
+    """jobs._FFMPEG_MARKERS reconhece a falha pelo prefixo e manda a saida do
+    ffmpeg para a area recolhida da interface."""
+    from eterzion_upscale import media
+
+    with pytest.raises(RuntimeError, match='^Falha ao processar com ffmpeg'):
+        media.run_ffmpeg(lambda f: f.input(str(tmp_path / 'nao-existe.wav')).output(str(tmp_path / 'x.wav')))
