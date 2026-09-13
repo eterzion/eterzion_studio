@@ -16,7 +16,7 @@ test_models_to_r2.py confere que esta leitura bate com os valores de verdade.
 
 Uso:
     python scripts/models_to_r2.py --listar       # só mostra o que seria enviado
-    RCLONE=/caminho/rclone python scripts/models_to_r2.py
+    CAMINHO_RCLONE=/caminho/rclone python scripts/models_to_r2.py
 Remote `r2:` configurado por variáveis RCLONE_CONFIG_R2_* (ver models-to-r2.yml).
 
 Substitui scripts/mirror_models.py, que importava módulos que não existem mais
@@ -112,7 +112,8 @@ def main() -> int:
             print(f'{nome}  {digest[:12]}  {url}')
         return 0
 
-    rclone = os.environ.get('RCLONE', 'rclone')
+    # Fora do prefixo RCLONE_, que o rclone le como parametros dele.
+    rclone = os.environ.get('CAMINHO_RCLONE', 'rclone')
     with tempfile.TemporaryDirectory() as tmp:
         for nome, digest, url in itens:
             local = Path(tmp) / nome
