@@ -30,7 +30,7 @@ withDefaults(
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-  padding: var(--space-3) 0;
+  padding: var(--space-2-5) 0;
   border-bottom: 1px solid var(--surface-border-soft);
   flex-wrap: wrap;
 }
@@ -40,7 +40,7 @@ withDefaults(
 }
 
 /* Tirar a régua não bastou: as duas linhas continuavam com o respiro de
-   controles vizinhos (16px de cada lado, 32px entre elas), e espaço demais
+   controles vizinhos (12px de cada lado, 24px entre elas), e espaço demais
    separa tanto quanto uma linha. Uma continuação encosta na anterior. */
 .setting-row.undivided {
   border-bottom: none;
