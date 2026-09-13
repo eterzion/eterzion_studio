@@ -148,7 +148,8 @@ def _list_ffmpeg_codecs(flag: str) -> list[str]:
         return []
     try:
         result = subprocess.run(
-            [ffmpeg_bin, '-hide_banner', flag], capture_output=True, text=True, timeout=10, check=False,
+            [ffmpeg_bin, '-hide_banner', flag], capture_output=True, text=True, encoding='utf-8', errors='replace',
+            timeout=10, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return []

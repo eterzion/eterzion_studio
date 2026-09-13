@@ -127,7 +127,8 @@ def is_lgpl_build() -> bool | None:
     if not ffmpeg_bin:
         return None
     try:
-        result = subprocess.run([ffmpeg_bin, '-version'], capture_output=True, text=True, timeout=10, check=False)
+        result = subprocess.run([ffmpeg_bin, '-version'], capture_output=True, text=True, encoding='utf-8',
+                                errors='replace', timeout=10, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return None
     config_line = next((line for line in result.stdout.splitlines() if line.startswith('configuration:')), '')
@@ -171,7 +172,7 @@ def available_encoders() -> frozenset[str]:
     try:
         result = subprocess.run(
             [ffmpeg_bin, '-hide_banner', '-encoders'],
-            capture_output=True, text=True, timeout=15, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=15, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return frozenset()
@@ -222,7 +223,7 @@ def encoder_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
              '-c:v', name, '-frames:v', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -267,7 +268,7 @@ def audio_encoder_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'anullsrc=r=48000:cl=stereo:d=0.1',
              '-c:a', name, '-frames:a', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -316,7 +317,7 @@ def filter_works(name: str) -> bool:
             [ffmpeg_bin, '-hide_banner', '-v', 'error', '-y',
              '-f', 'lavfi', '-i', 'color=c=black:size=64x64:rate=1:duration=0.1',
              *shape, '-frames:v', '1', '-f', 'null', '-'],
-            capture_output=True, text=True, timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired):
         return False
@@ -365,21 +366,28 @@ class ProbeError(RuntimeError):
 def ffprobe_json(path: str) -> dict:
     """Runs `ffprobe -show_format -show_streams -show_chapters -of json` and
     returns the parsed result. Real subprocess call, no parsing of a
-    synthetic/mocked shape."""
+    synthetic/mocked shape.
+
+    `encoding='utf-8'` em todas as chamadas ao ffmpeg/ffprobe deste modulo: o
+    ffprobe escreve o JSON em UTF-8, e no Windows o `text=True` sozinho decodifica
+    na pagina de codigo do sistema (cp1252). Um arquivo com acento ou simbolo nas
+    tags (titulo, artista) -- ou uma pasta com acento no nome ("Músicas"),
+    que sai no stderr -- fazia a decodificacao falhar na thread de
+    leitura, o `stdout` chegava None e a criacao do job caia com 500."""
     ffprobe_bin = ffprobe_path()
     if not ffprobe_bin:
         raise ProbeError('ffprobe não encontrado no sistema.')
     try:
         result = subprocess.run(
             [ffprobe_bin, '-v', 'error', '-show_format', '-show_streams', '-show_chapters', '-of', 'json', path],
-            capture_output=True, text=True, timeout=30, check=False,
+            capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=30, check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as error:
         raise ProbeError(f'Falha ao executar ffprobe em {path!r}: {error}') from error
     if result.returncode != 0:
         raise ProbeError(f'ffprobe falhou em {path!r}: {result.stderr.strip()}')
     try:
-        return json.loads(result.stdout)
+        return json.loads(result.stdout or '')
     except json.JSONDecodeError as error:
         raise ProbeError(f'Saída inválida do ffprobe para {path!r}: {error}') from error
 
