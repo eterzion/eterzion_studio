@@ -226,7 +226,12 @@ void refresh()
                    musica) nao tem estado de instalacao a mostrar nem acao a
                    oferecer: antes a tela exibia "Instalar" e so' o 422 depois
                    do clique contava que nao dava. -->
-                <span v-if="!row.disponivel" class="row-state">
+                <!-- Ja' vem com o app (a musica, pela masterizacao DSP): funciona
+                     sem download, e nao ha' o que instalar nem remover. -->
+                <span v-if="row.built_in" class="row-state">
+                  <AppBadge tone="success">{{ t('components.state.builtIn') }}</AppBadge>
+                </span>
+                <span v-else-if="!row.disponivel" class="row-state">
                   <AppBadge tone="neutral">{{ t('components.state.comingSoon') }}</AppBadge>
                 </span>
                 <span v-else class="row-state">

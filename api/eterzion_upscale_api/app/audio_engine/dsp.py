@@ -8,6 +8,7 @@ Auto Master chain — EQ, dynamics, stereo, limiter, loudness normalization).
 """
 from __future__ import annotations
 
+import soundfile as sf
 from eterzion_upscale.media import run_ffmpeg
 
 from app.audio_engine.analyzer import ProblemDetection
@@ -27,7 +28,7 @@ _HUM_NOTCH_FILTERS = ['bandreject=f=60:width_type=h:w=4', 'bandreject=f=120:widt
 
 # Gentle limiter to tame residual peaks after clipping-restoration — not the
 # final master limiter (that's in master()'s chain, with the real loudness target).
-_POST_RESTORE_LIMITER = 'alimiter=limit=0.95:level=disabled'
+_POST_RESTORE_LIMITER = 'alimiter=limit=0.95:level=disabled:latency=1'
 
 # A phase-corrective downmix-toward-mono — only applied when analyzer.py
 # flagged phase_issues_detected (real negative stereo correlation), never
@@ -41,7 +42,7 @@ _PHASE_CORRECTION_FILTER = 'pan=stereo|c0=0.5*c0+0.5*c1|c1=0.5*c0+0.5*c1'
 # already has stable input dynamics before the final normalization pass.
 _MASTER_EQ = 'equalizer=f=100:t=q:w=1:g=1,equalizer=f=8000:t=q:w=1:g=1'
 _MASTER_COMPRESSOR = 'acompressor=threshold=-18dB:ratio=3:attack=20:release=250'
-_MASTER_LIMITER = 'alimiter=limit=0.97:level=disabled'
+_MASTER_LIMITER = 'alimiter=limit=0.97:level=disabled:latency=1'
 
 DEFAULT_TARGET_LUFS = -14.0  # streaming-platform-style target (Spotify/YouTube Music range)
 
@@ -95,6 +96,9 @@ def master(
     exciter = _exciter_for(bandwidth_hz)
     if exciter:
         filters.append(exciter)
+    # loudnorm trabalha a 192 kHz por dentro e SAI a 192 kHz: sem o aresample,
+    # uma musica de 44,1 kHz virava um WAV 4x maior, com agudos que nao existem.
+    taxa = sf.info(input_path).samplerate
     filters.extend([_MASTER_COMPRESSOR, _MASTER_LIMITER,
-                    f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11'])
+                    f'loudnorm=I={target_lufs}:TP=-1.5:LRA=11', f'aresample={taxa}'])
     run_ffmpeg(lambda f: f.input(input_path).output(output_path, {'af': ','.join(filters)}))

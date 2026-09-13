@@ -71,7 +71,8 @@
       "installing": "Установка…",
       "installed": "Установлено",
       "updateAvailable": "Доступно обновление",
-      "comingSoon": "Скоро"
+      "comingSoon": "Скоро",
+      "builtIn": "Встроено в приложение"
     },
     "title": "Компоненты",
     "totalOnDisk": "{size} на диске"

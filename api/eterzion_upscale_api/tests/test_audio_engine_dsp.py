@@ -174,3 +174,12 @@ def test_master_with_the_exciter_adds_energy_above_the_cutoff(tmp_path):
     dsp.master(src, sem)
     dsp.master(src, com, bandwidth_hz=11000)
     assert energia_acima(com) > 10 * energia_acima(sem)
+
+
+def test_master_keeps_the_input_sample_rate(tmp_path):
+    """loudnorm sai a 192 kHz por dentro; a masterizacao devolvia um WAV 4x
+    maior que o original. A saida tem a taxa da entrada."""
+    src = _write_wav(tmp_path, 'in.wav', _quiet_tone())
+    out = str(tmp_path / 'out.wav')
+    dsp.master(src, out)
+    assert sf.info(out).samplerate == _RATE

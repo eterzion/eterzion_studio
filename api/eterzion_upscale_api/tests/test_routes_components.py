@@ -59,7 +59,7 @@ class TestListComponents:
         for component in res.json():
             assert set(component.keys()) == {
                 'id', 'capability_label', 'size_mb', 'install_state', 'update_available',
-                'available',
+                'available', 'built_in',
             }
 
     def test_only_music_is_marked_unavailable_in_the_app(self, client):
@@ -98,6 +98,15 @@ class TestComponentDetails:
         assert body['technical_name'] == 'nomos-webphoto'
         assert body['license']
         assert body['available'] is True
+
+    def test_music_is_built_in(self, client):
+        """A musica funciona pela masterizacao DSP, que vem no app: a tela
+        mostra "Incluido no app" em vez de "Em breve". As outras cinco sao
+        downloads."""
+        body = client.get('/components').json()
+        embutido = {c['id']: c['built_in'] for c in body}
+        assert embutido.pop('music') is True
+        assert not any(embutido.values())
 
     def test_details_carry_the_same_availability_as_the_list(self, client):
         assert client.get('/components/music/details').json()['available'] is False
