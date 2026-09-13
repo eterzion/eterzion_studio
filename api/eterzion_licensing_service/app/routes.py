@@ -65,6 +65,30 @@ def status(install_id: str):
     }
 
 
+# ------------------------------- /downloads ------------------------------- #
+#
+# Links de download do Studio (instaladores e modelos no R2 privado). Pedido
+# assinado pela propria instalacao; ver app/downloads.py.
+
+downloads_router = APIRouter()
+
+
+class DownloadTokenRequest(BaseModel):
+    install_id: str
+    timestamp: int
+    signature_b64: str
+
+
+@downloads_router.post('/token')
+def download_token(body: DownloadTokenRequest):
+    from app import downloads
+
+    try:
+        return downloads.emitir_token(body.install_id, body.timestamp, body.signature_b64)
+    except downloads.DownloadTokenError as error:
+        raise HTTPException(error.status, error.motivo) from error
+
+
 # ------------------------------- /authorizations ------------------------------- #
 
 authorizations_router = APIRouter()

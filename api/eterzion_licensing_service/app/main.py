@@ -6,7 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db
 from app.licensing import get_public_key_b64
-from app.routes import activation_router, authorizations_router, packages_router, webhooks_router
+from app.routes import (activation_router, authorizations_router, downloads_router, packages_router,
+                        webhooks_router)
 
 
 @asynccontextmanager
@@ -28,6 +29,7 @@ app.include_router(webhooks_router, prefix='/webhooks', tags=['webhooks'])
 app.include_router(activation_router, prefix='/activations', tags=['activations'])
 app.include_router(authorizations_router, prefix='/authorizations', tags=['authorizations'])
 app.include_router(packages_router, prefix='/packages', tags=['packages'])
+app.include_router(downloads_router, prefix='/downloads', tags=['downloads'])
 
 
 @app.get('/health')
