@@ -563,7 +563,7 @@ const outputFolderLabel = computed(
 .settings-column {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
   width: 100%;
   max-width: 860px;
   margin: 0 auto;
@@ -649,7 +649,7 @@ const outputFolderLabel = computed(
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-3);
   border-top: 1px solid var(--surface-border-soft);
   background: var(--surface-2);
   border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -672,7 +672,7 @@ const outputFolderLabel = computed(
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-3);
   border-bottom: 1px solid var(--surface-border-soft);
   background: var(--surface-2);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
@@ -697,7 +697,7 @@ const outputFolderLabel = computed(
 }
 
 .group-body {
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
 }
 
 .folder-picker {
