@@ -188,6 +188,28 @@ jobs:
             'signed=false' | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
+      # As novidades da versao, em linguagem de usuario, vao no latest.yml e
+      # aparecem na secao Atualizacoes do app. O electron-builder le
+      # `build/release-notes.md` sozinho; o arquivo versionado fica em
+      # `release-notes/<versao>.md` para que uma versao nunca herde as notas da
+      # anterior. Sem o arquivo, a versao sai sem novidades -- o app so' nao as
+      # mostra.
+      - name: Release notes
+        working-directory: interface
+        shell: pwsh
+        env:
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          $versao = $env:TAG -replace '^v', ''
+          $origem = "release-notes\$versao.md"
+          Remove-Item build\release-notes.md -ErrorAction SilentlyContinue
+          if (Test-Path $origem) {
+            Copy-Item $origem build\release-notes.md
+            Get-Content build\release-notes.md
+          } else {
+            Write-Output "Sem $origem; a versao sai sem novidades."
+          }
+
       - name: Build NSIS installer
         if: steps.signing.outputs.signed == 'true'
         working-directory: interface

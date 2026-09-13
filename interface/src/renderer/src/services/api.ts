@@ -354,6 +354,16 @@ export async function cancelJob(jobId: string): Promise<void> {
   await fetch(`${BASE_URL}/jobs/${jobId}`, { method: 'DELETE' })
 }
 
+/** Processamentos em fila ou em andamento, de qualquer tela. O backend e' o
+ *  unico que conhece todos: a fila de Imagem mora em store/jobs.ts, mas as de
+ *  Video, Audio e Compressao ficam no estado de cada tela. */
+export async function countActiveJobs(): Promise<number> {
+  const res = await fetch(`${BASE_URL}/jobs`)
+  if (!res.ok) throw new Error(await extractError(res))
+  const data = (await res.json()) as { jobs: { status: string }[] }
+  return data.jobs.filter((j) => j.status === 'queued' || j.status === 'processing').length
+}
+
 export async function getJob(jobId: string): Promise<JobStatus> {
   const res = await fetch(`${BASE_URL}/jobs/${jobId}`)
   if (!res.ok) throw new Error(await extractError(res))

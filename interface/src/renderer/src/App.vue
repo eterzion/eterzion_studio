@@ -14,10 +14,12 @@ import AudioView from './views/AudioView.vue'
 import LicenseActivationView from './views/LicenseActivationView.vue'
 import CompressionView from './views/CompressionView.vue'
 import ComponentsView from './views/ComponentsView.vue'
+import UpdateToast from './components/UpdateToast.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
 import { initLicense, isHardBlocked, licenseState } from './store/license'
+import { initUpdates } from './store/updates'
 import { currentResolvedTheme } from './theme'
 import { hasNativeApi } from './services/native'
 
@@ -48,6 +50,9 @@ onMounted(() => {
     Notification.requestPermission()
   }
   initLicense()
+  // Mesmo com a tela de ativacao ocupando a janela: e' daqui que o processo
+  // principal recebe a preferencia de procurar atualizacoes (ver updater.ts).
+  void initUpdates()
 })
 
 const { t } = useI18n()
@@ -97,6 +102,8 @@ const { t } = useI18n()
           <p>{{ t('app.notImplemented') }}</p>
         </div>
       </KeepAlive>
+
+      <UpdateToast @open-updates="active = 'configuracoes'" />
     </template>
   </div>
 </template>

@@ -22,6 +22,17 @@ export interface ApiReadyResult {
   error?: string
 }
 
+/** Estado da atualizacao automatica. Espelha UpdateSnapshot em preload/index.ts. */
+export type UpdatePhase =
+  'disabled' | 'idle' | 'checking' | 'downloading' | 'ready' | 'up_to_date' | 'error'
+
+export interface UpdateSnapshot {
+  phase: UpdatePhase
+  version: string | null
+  percent: number | null
+  notes: string | null
+}
+
 /** True when running inside Electron with the preload bridge available.
  *  False when previewed in a plain browser tab (e.g. during UI development). */
 export const hasNativeApi = typeof window !== 'undefined' && !!window.api
@@ -47,5 +58,11 @@ export const api = {
   saveTempImage: (buffer: ArrayBuffer, ext: string): Promise<string> =>
     window.api.saveTempImage(buffer, ext),
   getAppVersion: (): Promise<string> => window.api.getAppVersion(),
+  getUpdateState: (): Promise<UpdateSnapshot> => window.api.getUpdateState(),
+  checkForUpdates: (): Promise<UpdateSnapshot> => window.api.checkForUpdates(),
+  installUpdate: (): Promise<boolean> => window.api.installUpdate(),
+  setAutoCheckUpdates: (enabled: boolean): Promise<void> => window.api.setAutoCheckUpdates(enabled),
+  onUpdateState: (callback: (snapshot: UpdateSnapshot) => void): (() => void) =>
+    window.api.onUpdateState(callback),
   openDevTools: (): Promise<void> => window.api.openDevTools()
 }

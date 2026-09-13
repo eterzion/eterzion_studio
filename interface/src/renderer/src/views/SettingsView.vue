@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Settings2,
@@ -20,7 +20,8 @@ import {
   AudioLines,
   Music2,
   Scan,
-  PlayCircle
+  PlayCircle,
+  RefreshCw
 } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
 import SettingRow from '../components/SettingRow.vue'
@@ -30,11 +31,19 @@ import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
 import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
+import ProgressBar from '../components/atoms/ProgressBar.vue'
 import { settingsState, setTheme, setLanguage } from '../store/settings'
 import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../i18n'
 import { clearHistory, historyState } from '../store/history'
 import { listComponents } from '../services/api'
 import { api, hasNativeApi } from '../services/native'
+import {
+  cancelRestart,
+  checkForUpdates,
+  installNow,
+  requestRestart,
+  updatesState
+} from '../store/updates'
 
 const { t } = useI18n()
 
@@ -205,6 +214,61 @@ loadDiagnostics()
 
 const historyCount = computed(() => historyState.entries.length)
 
+// ---------------------------- Atualizacoes ----------------------------
+// O estado vem do processo principal (store/updates.ts). Esta secao e' o unico
+// lugar com o detalhe: o aviso flutuante e o selo da barra lateral trazem a
+// pessoa ate' aqui.
+const updatesSection = ref<HTMLElement | null>(null)
+
+const updateStatusText = computed(() => {
+  const version = updatesState.version ?? ''
+  switch (updatesState.phase) {
+    case 'checking':
+      return t('settings.updates.status.checking')
+    case 'downloading':
+      return t('settings.updates.status.downloading', {
+        version,
+        percent: updatesState.percent ?? 0
+      })
+    case 'ready':
+      return t('settings.updates.status.ready', { version })
+    case 'up_to_date':
+      return t('settings.updates.status.upToDate')
+    case 'error':
+      return t('settings.updates.status.error')
+    case 'disabled':
+      return t('settings.updates.status.disabled')
+    default:
+      return t('settings.updates.status.idle')
+  }
+})
+
+const canCheckUpdates = computed(
+  () =>
+    hasNativeApi &&
+    updatesState.phase !== 'checking' &&
+    updatesState.phase !== 'downloading' &&
+    updatesState.phase !== 'disabled'
+)
+
+// As novidades chegam como o texto do arquivo de notas da versao
+// (interface/release-notes/<versao>.md). Mostradas como texto puro, linha a
+// linha -- nunca como HTML --, sem os marcadores de lista do markdown.
+const updateNotes = computed(() =>
+  (updatesState.notes ?? '')
+    .split(/\r?\n/)
+    .map((linha) => linha.replace(/^\s*(?:[-*+]|#+)\s*/, '').trim())
+    .filter(Boolean)
+)
+
+function focusUpdates(): void {
+  if (!updatesState.focusRequested) return
+  updatesState.focusRequested = false
+  void nextTick(() => updatesSection.value?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
+}
+onMounted(focusUpdates)
+watch(() => updatesState.focusRequested, focusUpdates)
+
 const outputFolderLabel = computed(
   () => settingsState.defaultOutputFolder ?? t('settings.general.outputFolder.same')
 )
@@ -251,12 +315,6 @@ const outputFolderLabel = computed(
               />
             </SettingRow>
             <SettingRow
-              :label="t('settings.general.autoUpdate.label')"
-              :description="t('settings.general.autoUpdate.description')"
-            >
-              <SettingSwitch v-model="settingsState.autoCheckUpdates" disabled />
-            </SettingRow>
-            <SettingRow
               :label="t('settings.general.outputFolder.label')"
               :description="t('settings.general.outputFolder.description')"
             >
@@ -286,6 +344,87 @@ const outputFolderLabel = computed(
                   { value: 'webp', label: '.webp' }
                 ]"
               />
+            </SettingRow>
+          </div>
+        </section>
+
+        <!-- ---------------------------- ATUALIZACOES ---------------------------- -->
+        <section ref="updatesSection" class="settings-group">
+          <div class="group-header">
+            <div class="group-icon icon-chip"><RefreshCw :size="18" /></div>
+            <div>
+              <h2 class="group-title">{{ t('settings.updates.title') }}</h2>
+              <p class="group-description">{{ t('settings.updates.description') }}</p>
+            </div>
+          </div>
+          <div class="group-body">
+            <SettingRow
+              :label="t('settings.updates.installedVersion', { version: appVersion ?? '' })"
+              :description="updateStatusText"
+              :divided="
+                updatesState.phase !== 'downloading' &&
+                updatesState.confirmActiveJobs == null &&
+                updateNotes.length === 0
+              "
+            >
+              <AppButton
+                v-if="updatesState.phase === 'ready'"
+                variant="primary"
+                :loading="updatesState.installing"
+                :disabled="updatesState.confirmActiveJobs != null"
+                @click="requestRestart"
+              >
+                {{ t('updates.restartNow') }}
+              </AppButton>
+              <AppButton
+                v-else
+                variant="secondary"
+                :loading="updatesState.phase === 'checking'"
+                :disabled="!canCheckUpdates"
+                @click="checkForUpdates"
+              >
+                {{ t('settings.updates.check') }}
+              </AppButton>
+            </SettingRow>
+
+            <div v-if="updatesState.phase === 'downloading'" class="update-extra">
+              <ProgressBar :value="updatesState.percent ?? 0" />
+            </div>
+
+            <!-- Reiniciar cancela o que estiver processando: com algo em
+                 andamento, o botao so' arma esta confirmacao. -->
+            <div v-if="updatesState.confirmActiveJobs != null" class="update-extra update-confirm">
+              <p>{{ t('settings.updates.confirmRestart', updatesState.confirmActiveJobs) }}</p>
+              <div class="update-confirm-actions">
+                <AppButton variant="ghost" size="sm" @click="cancelRestart">
+                  {{ t('settings.updates.cancel') }}
+                </AppButton>
+                <AppButton variant="danger" size="sm" @click="installNow">
+                  {{ t('settings.updates.restartAnyway') }}
+                </AppButton>
+              </div>
+            </div>
+
+            <div
+              v-if="
+                updateNotes.length > 0 &&
+                (updatesState.phase === 'ready' || updatesState.phase === 'downloading')
+              "
+              class="update-extra update-notes"
+            >
+              <p class="update-notes-title">
+                {{ t('settings.updates.whatsNew', { version: updatesState.version ?? '' }) }}
+              </p>
+              <ul>
+                <li v-for="(linha, i) in updateNotes" :key="i">{{ linha }}</li>
+              </ul>
+            </div>
+
+            <SettingRow
+              :label="t('settings.updates.autoLabel')"
+              :description="t('settings.updates.autoDescription')"
+            >
+              <SettingSwitch v-model="settingsState.autoCheckUpdates" :disabled="!hasNativeApi" />
             </SettingRow>
           </div>
         </section>
@@ -779,5 +918,45 @@ const outputFolderLabel = computed(
   gap: 4px;
   font-size: 11px;
   color: var(--color-success);
+}
+
+.update-extra {
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--surface-border-soft);
+}
+
+.update-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--fs-caption);
+  color: var(--color-warning);
+}
+
+.update-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.update-notes {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  font-size: var(--fs-caption);
+  color: var(--text-secondary);
+}
+
+.update-notes-title {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.update-notes ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-3);
+  list-style: disc;
 }
 </style>

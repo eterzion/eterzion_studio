@@ -823,10 +823,6 @@
     "density": "Densité de l’interface",
     "densityDescription": "Espacement entre les éléments",
     "general": {
-      "autoUpdate": {
-        "description": "Rechercher de nouvelles versions au démarrage (bientôt disponible)",
-        "label": "Mises à jour automatiques"
-      },
       "description": "Préférences générales de l'application",
       "exportFormat": {
         "description": "Présélectionné à l'ouverture du panneau d'exportation",
@@ -872,7 +868,28 @@
     "standard": "Standard",
     "thumbnailSize": "Taille des vignettes",
     "thumbnailSizeDescription": "File, éditeur et historique",
-    "title": "Paramètres"
+    "title": "Paramètres",
+    "updates": {
+      "autoDescription": "À l'ouverture de l'application et toutes les 6 heures. La nouvelle version se télécharge en arrière-plan.",
+      "autoLabel": "Rechercher les mises à jour automatiquement",
+      "cancel": "Annuler",
+      "check": "Rechercher des mises à jour",
+      "confirmRestart": "{n} traitement est en cours. Redémarrer maintenant va l’annuler. | {n} traitements sont en cours. Redémarrer maintenant va les annuler.",
+      "description": "Version installée et nouvelles versions de l'application",
+      "installedVersion": "Version {version}",
+      "restartAnyway": "Redémarrer quand même",
+      "status": {
+        "checking": "Recherche de mises à jour…",
+        "disabled": "Les mises à jour ne fonctionnent que dans l'application installée.",
+        "downloading": "Téléchargement de la version {version}… {percent} %",
+        "error": "Recherche impossible pour le moment. Réessayez plus tard.",
+        "idle": "Lancez une recherche pour savoir si une nouvelle version existe.",
+        "ready": "La version {version} est prête. Elle sera installée à la fermeture de l'application.",
+        "upToDate": "Vous utilisez la version la plus récente."
+      },
+      "title": "Mises à jour",
+      "whatsNew": "Nouveautés de la version {version}"
+    }
   },
   "sidebar": {
     "collapse": "Réduire la barre latérale",
@@ -886,8 +903,10 @@
       "help": "Centre d'aide",
       "site": "Site officiel"
     },
+    "openUpdates": "Voir les mises à jour",
     "support": "Assistance",
-    "toggleTheme": "Basculer le thème clair/sombre"
+    "toggleTheme": "Basculer le thème clair/sombre",
+    "updateReady": "Mise à jour prête"
   },
   "stats": {
     "adjustmentsApplied": "Réglages appliqués",
@@ -907,6 +926,14 @@
     "error": "Échec",
     "processing": "Traitement",
     "queued": "En attente"
+  },
+  "updates": {
+    "later": "Plus tard",
+    "restartNow": "Redémarrer et mettre à jour",
+    "toast": {
+      "body": "Elle sera installée à la fermeture de l'application. Vous pouvez aussi redémarrer maintenant.",
+      "title": "Version {version} prête"
+    }
   },
   "upload": {
     "aria": "Déposez des fichiers ici, ou appuyez sur Entrée pour choisir",

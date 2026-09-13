@@ -62,11 +62,26 @@ export function detectSystemLocale(): SupportedLocale {
   return 'pt-BR'
 }
 
+/** O russo tem tres formas -- 1 (21, 31…), 2-4 (22-24…) e o resto, com 11-14
+ *  no "resto" --, e a regra padrao do vue-i18n para tres formas e' outra
+ *  (zero | um | varios): "1 dia" saia na segunda forma, "0 dias" na primeira.
+ *  Com menos de tres formas na mensagem, vale a regra padrao. */
+export function russianPlural(choice: number, choicesLength: number): number {
+  if (choicesLength < 3) return choice === 1 ? 0 : 1
+  const n = Math.abs(choice) % 100
+  const unidade = n % 10
+  if (n > 10 && n < 20) return 2
+  if (unidade === 1) return 0
+  if (unidade >= 2 && unidade <= 4) return 1
+  return 2
+}
+
 export const i18n = createI18n({
   legacy: false,
   locale: 'pt-BR', // App.vue sets the real initial locale before mount, from settingsState
   fallbackLocale: 'pt-BR',
-  messages
+  messages,
+  pluralRules: { ru: russianPlural }
 })
 
 export function setLocale(locale: SupportedLocale): void {

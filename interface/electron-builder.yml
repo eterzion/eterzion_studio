@@ -10,6 +10,7 @@ files:
   - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
   - '!scripts/**'
+  - '!release-notes/**'
   # resources/ffmpeg/<platform> is copied to the packaged resources dir via the
   # per-platform extraResources below (not through the app.asar), so exclude it
   # here to avoid bundling every platform's binaries into every installer.
