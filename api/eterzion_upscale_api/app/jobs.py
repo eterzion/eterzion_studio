@@ -184,7 +184,16 @@ class WorkerSupervisor:
 
         self._runtime_dir = create_private_dir()
         self._authkey = secrets.token_hex(32)
-        self._listener = Listener(family='AF_PIPE', authkey=self._authkey.encode('utf-8'))
+        if os.name == 'nt':
+            self._listener = Listener(family='AF_PIPE', authkey=self._authkey.encode('utf-8'))
+        else:
+            # O pipe nomeado so' existe no Windows. No Linux, um socket Unix na
+            # pasta privada deste worker (0700): so' este usuario o alcanca, e o
+            # authkey continua exigido. O Client do worker deduz o tipo pelo
+            # endereco, entao o lado de la' nao muda.
+            self._listener = Listener(
+                address=os.path.join(self._runtime_dir, 'worker.sock'), family='AF_UNIX',
+                authkey=self._authkey.encode('utf-8'))
         self._process = subprocess.Popen(
             [self._python_executable, *self._spawn_args, self._listener.address],
             cwd=str(_API_ROOT),
