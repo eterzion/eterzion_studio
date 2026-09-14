@@ -1,6 +1,8 @@
 import { spawn, ChildProcess } from 'node:child_process'
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
+import { homedir } from 'node:os'
+import { localDataDir, migrarPastaDeModelos } from './modelsDir'
 
 // A porta vem por variável, e não fixada: o app empacotado e uma execução de
 // desenvolvimento precisam poder ficar abertos ao mesmo tempo sem um recusar
@@ -84,6 +86,23 @@ export function resolvePythonExecutable(repoRoot: string): string {
   return process.platform === 'win32' ? 'python' : 'python3'
 }
 
+/** A pasta de modelos do app empacotado, trazida do `userData` na primeira
+ *  abertura depois da mudanca (ver modelsDir.ts). */
+function pastaDeModelos(userDataPath: string): string {
+  const m = migrarPastaDeModelos(
+    join(userDataPath, 'models'),
+    join(
+      localDataDir({ platform: process.platform, env: process.env, homedir: homedir() }),
+      'models'
+    )
+  )
+  if (m.resultado === 'movida') console.info('[modelos] pasta movida para', m.dir)
+  if (m.resultado === 'mantida-antiga') {
+    console.warn('[modelos] mantida em', m.dir, '— não foi possível mover:', m.erro)
+  }
+  return m.dir
+}
+
 let ownedProcess: ChildProcess | null = null
 
 async function pingHealth(timeoutMs: number): Promise<boolean> {
@@ -150,12 +169,16 @@ export async function ensureApiRunning(
   // primeiro uso de cada capacidade baixa o modelo, e é ele que a tela de
   // Componentes esvazia ao remover.
   //
-  // Precisa ser gravável, e é por isso que fica em userData. Sem a variável, o
-  // backend usa o default de `app/config.py`, que resolve para dentro do próprio
-  // pacote — em Program Files no Windows. O download falharia por permissão, com
-  // um erro que não menciona permissão nenhuma.
-  const modelsDir = bundledModelsDir ?? join(userDataPath, 'models')
-  mkdirSync(modelsDir, { recursive: true })
+  // Precisa ser gravável. Sem a variável, o backend usa o default de
+  // `app/config.py`, que resolve para dentro do próprio pacote — em Program
+  // Files no Windows. O download falharia por permissão, com um erro que não
+  // menciona permissão nenhuma.
+  //
+  // So' o app empacotado escolhe (e migra) a pasta. Em desenvolvimento o
+  // `userData` do Electron e' o mesmo do app instalado, e mover os modelos dali
+  // tiraria a pasta de baixo de uma versao instalada que ainda os procura no
+  // lugar antigo. O backend de desenvolvimento usa a pasta do repositorio.
+  const modelsDir = bundledApi ? (bundledModelsDir ?? pastaDeModelos(userDataPath)) : null
 
   let command: string
   let args: string[]
@@ -180,7 +203,7 @@ export async function ensureApiRunning(
       ASTROS_DEV_ALLOW_UNLICENSED: 'false',
       ASTROS_UPLOADS_DIR: join(storageDir, 'uploads'),
       ASTROS_OUTPUTS_DIR: join(storageDir, 'outputs'),
-      ASTROS_MODELS_DIR: modelsDir
+      ASTROS_MODELS_DIR: modelsDir ?? undefined
     }
   } else {
     const apiDir = join(repoRoot, 'api', 'eterzion_upscale_api')
