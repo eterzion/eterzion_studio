@@ -5,6 +5,7 @@
   "main": "./out/main/index.js",
   "author": "Eric Inácio",
   "homepage": "https://eterzion.com",
+  "desktopName": "eterzion-studio.desktop",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",

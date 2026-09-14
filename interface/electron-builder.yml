@@ -90,6 +90,9 @@ linux:
     - AppImage
     - deb
   executableName: eterzion-studio
+  # O WM_CLASS da janela igual ao nome do .desktop: sem isto o desktop nao liga
+  # a janela aberta ao icone do app no painel.
+  syncDesktopName: true
   # A mesma arte 512x512 do icone do Windows (resources/icon.png).
   icon: resources/icon.png
   maintainer: Eterzion <contato@eterzion.com>
@@ -106,6 +109,11 @@ linux:
       to: ffmpeg
 appImage:
   artifactName: ${name}-${version}.${ext}
+# Runtime novo do AppImage (type2 estatico, 20251108). O padrao (0.0.0) exige
+# a libfuse2 do sistema, que o Ubuntu 22.04+ nao traz mais: o AppImage abria
+# com "dlopen(): error loading libfuse.so.2" num Ubuntu 24.04 limpo (testado).
+toolsets:
+  appimage: '1.0.3'
 deb:
   artifactName: ${name}_${version}_${arch}.${ext}
 npmRebuild: false
