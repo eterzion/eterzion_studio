@@ -94,7 +94,7 @@ jobs:
       # EFEMERO. Este roda na VPS, que persiste -- cachear ali era subir e
       # baixar ~547 MiB para uma maquina que ja tinha os arquivos. O cache do
       # uv vive em UV_CACHE_DIR, escrito pelo passo logo apos o checkout.
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           version: '0.12.9'
           enable-cache: false
@@ -193,7 +193,7 @@ jobs:
           python-version: '3.13'
       # Versao fixa e cache em disco local: ver o comentario no job de
       # licensing acima.
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         with:
           version: '0.12.9'
           enable-cache: false
@@ -289,7 +289,7 @@ jobs:
         working-directory: interface
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6.0.10
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: 11
           dest: ${{ runner.temp }}/pnpm-upscale-${{ github.run_id }}-${{ github.job }}

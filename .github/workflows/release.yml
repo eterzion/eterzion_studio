@@ -126,12 +126,12 @@ jobs:
         if: steps.backend-cache.outputs.cache-hit != 'true'
         with:
           python-version: '3.13'
-      - uses: astral-sh/setup-uv@v10.0.1
+      - uses: astral-sh/setup-uv@v10.1.0
         if: steps.backend-cache.outputs.cache-hit != 'true'
         with:
           enable-cache: true
           cache-dependency-glob: api/eterzion_upscale_api/requirements*.txt
-      - uses: pnpm/action-setup@v6.0.10
+      - uses: pnpm/action-setup@v6.1.0
         with:
           version: 11
           # Mesmo motivo do tests.yml: os runners locais dividem o $HOME e o
