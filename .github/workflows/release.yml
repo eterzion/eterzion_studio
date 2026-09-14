@@ -603,6 +603,11 @@ jobs:
     timeout-minutes: 150
     container:
       image: ubuntu:22.04
+    # Dentro de container o GitHub roda os passos com `sh` (o dash do Ubuntu),
+    # que nao entende `set -o pipefail` nem `${!nome}`.
+    defaults:
+      run:
+        shell: bash
     env:
       DEBIAN_FRONTEND: noninteractive
     steps:
