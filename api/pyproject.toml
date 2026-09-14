@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "eterzion_upscale"
-version = "1.2.1"
+version = "1.2.2"
 description = "Upscale de imagens e vídeos com IA, sem dependência de BasicSR"
 readme = "README.md"
 requires-python = ">=3.10"
