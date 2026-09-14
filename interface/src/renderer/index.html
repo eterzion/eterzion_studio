@@ -7,11 +7,17 @@
          The API origin is substituted at build time by the astrosApiOrigin()
          plugin in electron.vite.config.ts — the port moves between packaged
          and development, and a CSP that named one of them would silently block
-         every call in the other. 8766 is the licensing service, whose port does
-         not move. -->
+         every call in the other.
+
+         Nada mais entra em connect-src. A porta 8766 ficou aqui por muito
+         tempo como "o servico de licencas", mas o renderer nunca falou com
+         ele: a licenca passa pelo backend, que conversa com
+         license.eterzion.com do lado do servidor, fora do alcance do CSP.
+         Origem liberada que ninguem usa nao e inofensiva -- e permissao
+         esperando alguem que a use. -->
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: eterzion-media: https://cdn.eterzion.com https://assets.ericinacio.com; media-src 'self' eterzion-media:; connect-src 'self' %ASTROS_API_ORIGIN% %ASTROS_API_WS_ORIGIN% http://127.0.0.1:8766"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: eterzion-media: https://cdn.eterzion.com; media-src 'self' eterzion-media:; connect-src 'self' %ASTROS_API_ORIGIN% %ASTROS_API_WS_ORIGIN%"
     />
   </head>
 
