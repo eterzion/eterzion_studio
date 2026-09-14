@@ -113,6 +113,16 @@ class TestRealWorkerLifecycle:
 def _pid_exists(pid: int) -> bool:
     import subprocess
 
+    if os.name != 'nt':
+        # O tasklist so' existe no Windows; no Linux, o sinal 0 pergunta ao
+        # kernel se o processo existe sem mandar nada a ele.
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return False
+        except PermissionError:
+            return True
+        return True
     result = subprocess.run(['tasklist', '/FI', f'PID eq {pid}'], capture_output=True, text=True, check=False)
     return str(pid) in result.stdout
 
@@ -395,15 +405,6 @@ class TestAudioWorkerIdleWatchdog:
         monkeypatch.setattr(worker_supervisor, '_audio_worker_supervisor', None)
 
 
-@pytest.mark.skipif(
-    os.name != 'nt',
-    reason=(
-        'WorkerSupervisor abre um Listener AF_PIPE (app/jobs.py), que so existe '
-        'no Windows. O supervisor roda junto do app Electron na maquina do '
-        'usuario, entao isso e projeto e nao limitacao: no Linux estes testes '
-        'nao tem o que exercitar.'
-    ),
-)
 class TestSpawnFailureIsNotCalledATimeout:
     """Um filho que **já morreu** não é um timeout.
 

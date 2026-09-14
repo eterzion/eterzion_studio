@@ -13,7 +13,6 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Literal
 
 from eterzion_upscale import __version__
@@ -69,13 +68,15 @@ def compute_offline_state(days_since_last_success: float | None) -> tuple[Offlin
 # the same reason that one picked %LOCALAPPDATA%/%APPDATA%: per-user,
 # survives reinstalls of the app itself.
 
-_CACHE_DIRNAME = 'AstrosUpscale'
 _CACHE_FILENAME = 'license_cache.json'
 
 
 def _cache_dir() -> str:
-    base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA') or str(Path.home())
-    path = os.path.join(base, _CACHE_DIRNAME, 'license')
+    # A mesma raiz da identidade da instalacao (security.user_data_root): no
+    # Windows, %LOCALAPPDATA%\\AstrosUpscale como sempre; no Linux, o XDG.
+    from app.security import user_data_root
+
+    path = os.path.join(user_data_root(), 'license')
     os.makedirs(path, exist_ok=True)
     return path
 

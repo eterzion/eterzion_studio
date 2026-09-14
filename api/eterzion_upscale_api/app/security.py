@@ -134,15 +134,21 @@ _ROOT_DIRNAME = 'eterzion-studio-worker'
 
 
 def _base_root() -> str:
-    """%LOCALAPPDATA%\\Temp on Windows (per-user already), a generic temp dir
-    elsewhere — always under a private, user-owned parent, never a shared
-    system-wide temp root."""
+    """%LOCALAPPDATA% on Windows (per-user already). No Linux, o
+    $XDG_RUNTIME_DIR (/run/user/<uid>): privado do usuario, em memoria, e
+    limpo no logout -- o lugar certo para o socket do worker e os arquivos de
+    passagem. Sem ele, um temp generico, com a raiz restrita ao usuario: um
+    /tmp compartilhado deixaria a pasta de outro usuario no caminho."""
     base = os.environ.get('LOCALAPPDATA') or os.environ.get('TEMP') or os.environ.get('TMP')
+    if not base and sys.platform != 'win32':
+        base = os.environ.get('XDG_RUNTIME_DIR')
     if not base:
         import tempfile
         base = tempfile.gettempdir()
     root = os.path.join(base, _ROOT_DIRNAME)
     os.makedirs(root, exist_ok=True)
+    if sys.platform != 'win32':
+        restrict_to_current_user(root)
     return root
 
 
@@ -309,11 +315,30 @@ _IDENTITY_FILENAME = 'identity.json'
 _HKDF_INFO = b'astros-upscale-package-key-wrap'
 
 
-def _identity_dir() -> str:
+def user_data_root() -> str:
+    """Pasta dos dados deste usuario que precisam durar entre reinstalacoes
+    (identidade da instalacao, cache da licenca).
+
+    No Windows, a de sempre: %LOCALAPPDATA%\\AstrosUpscale -- mudar o caminho
+    faria cada maquina perder a identidade e reativar (ver o bloco acima). Fora
+    do Windows nao ha' LOCALAPPDATA, e o padrao do Linux e' o XDG:
+    $XDG_DATA_HOME/eterzion-studio, ou ~/.local/share/eterzion-studio. Antes caia
+    em ~/AstrosUpscale, uma pasta solta na home; nenhuma instalacao Linux existia.
+
+    LOCALAPPDATA definido vale em qualquer sistema: e' assim que os testes
+    isolam essas pastas.
+    """
     base = os.environ.get('LOCALAPPDATA') or os.environ.get('APPDATA')
-    if not base:
-        base = str(Path.home())
-    path = os.path.join(base, _DIRNAME, 'identity')
+    if base:
+        return os.path.join(base, _DIRNAME)
+    if sys.platform == 'win32':
+        return os.path.join(str(Path.home()), _DIRNAME)
+    xdg = os.environ.get('XDG_DATA_HOME') or os.path.join(str(Path.home()), '.local', 'share')
+    return os.path.join(xdg, 'eterzion-studio')
+
+
+def _identity_dir() -> str:
+    path = os.path.join(user_data_root(), 'identity')
     os.makedirs(path, exist_ok=True)
     return path
 

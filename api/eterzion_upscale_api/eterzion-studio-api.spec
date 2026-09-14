@@ -34,11 +34,20 @@ datas = protected_sources + [
 # extensao dos modulos compilados do Python no Windows. Sem isso o bundle sai
 # com as DLLs de imagem e sem `_C_stable.pyd`, que e' o arquivo que registra os
 # operadores; medido num build real antes de acertar.
-binaries = collect_dynamic_libs('torchvision', search_patterns=['*.dll', '*.pyd'])
+#
+# No Linux as mesmas extensoes sao `.so` (inclusive os modulos do Python, como
+# `_C_stable.cpython-312-x86_64-linux-gnu.so`), e o padrao `lib*.so` do
+# PyInstaller perderia justamente essas.
+_NATIVOS = ['*.dll', '*.pyd'] if sys.platform == 'win32' else ['*.so', '*.so.*']
+binaries = collect_dynamic_libs('torchvision', search_patterns=_NATIVOS)
 # Mesmo motivo para o onnxruntime, que o motor de voz usa: a extensao
 # `onnxruntime_pybind11_state.pyd` fica ao lado de `onnxruntime.dll` e
 # `onnxruntime_providers_shared.dll`, e sem ela o import do onnxruntime falha.
-binaries += collect_dynamic_libs('onnxruntime', search_patterns=['*.dll', '*.pyd'])
+binaries += collect_dynamic_libs('onnxruntime', search_patterns=_NATIVOS)
+
+# UPX so' no Windows: no Linux ele comprime as .so do torch e as quebra no load
+# (problema conhecido do PyInstaller com bibliotecas grandes).
+_UPX = sys.platform == 'win32'
 
 hiddenimports = sorted(set(
     collect_submodules('app')
@@ -94,7 +103,7 @@ exe = EXE(
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
+    upx=_UPX,
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
@@ -108,7 +117,7 @@ coll = COLLECT(
     a.binaries,
     a.datas,
     strip=False,
-    upx=True,
+    upx=_UPX,
     upx_exclude=[],
     name='eterzion-studio-api',
 )
