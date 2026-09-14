@@ -289,14 +289,30 @@ jobs:
         working-directory: interface
     steps:
       - uses: actions/checkout@v7
+      # Runner do GitHub: instala o pnpm a cada job.
       - uses: pnpm/action-setup@v6.1.0
+        if: runner.environment == 'github-hosted'
         with:
           version: 11
           dest: ${{ runner.temp }}/pnpm-upscale-${{ github.run_id }}-${{ github.job }}
+      # Runner do PC: o pnpm ja esta instalado em ~/.local (sem sudo). O
+      # action-setup o baixava e reinstalava a cada job, e os runners dividem o
+      # $HOME: dois jobs juntos ja quebraram o instalador ("Worker pnpm#1 exited
+      # with code 1").
+      - name: pnpm do runner
+        if: runner.environment == 'self-hosted'
+        run: |
+          if [ ! -x "$HOME/.local/bin/pnpm" ]; then
+            echo "::error::pnpm nao esta em ~/.local/bin neste runner. Instale: npm install -g pnpm@11.20.0 --prefix ~/.local"
+            exit 1
+          fi
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          "$HOME/.local/bin/pnpm" --version
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
-          cache: pnpm
+          # No runner do PC o cache do actions/cache baixa pela internet a cada job: so no do GitHub.
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
           cache-dependency-path: interface/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
