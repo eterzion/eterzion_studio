@@ -4,6 +4,8 @@
   "description": "Upscale de imagens e vídeos com IA — aplicativo desktop",
   "main": "./out/main/index.js",
   "author": "Eric Inácio",
+  "homepage": "https://eterzion.com",
+  "desktopName": "eterzion-studio.desktop",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
@@ -22,7 +24,8 @@
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && npm run build:backend:win && npm run fetch:ffmpeg:win && electron-builder --win --publish never",
     "build:mac": "npm run build && electron-builder --mac",
-    "build:linux": "npm run build && npm run fetch:ffmpeg:linux && electron-builder --linux",
+    "build:backend:linux": "node scripts/build-python-backend.mjs linux",
+    "build:linux": "npm run build && npm run build:backend:linux && npm run fetch:ffmpeg:linux && electron-builder --linux --publish never",
     "build:win:unsigned": "npm run build && npm run build:backend:win && npm run fetch:ffmpeg:win && electron-builder --win --publish never --config.win.forceCodeSigning=false --config.nsis.artifactName=${name}-${version}-setup-NAO-ASSINADO.${ext}"
   },
   "dependencies": {

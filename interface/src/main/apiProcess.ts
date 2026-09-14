@@ -45,8 +45,11 @@ export function resolveBundledFfmpegDir(resourcesPath: string, repoRoot?: string
 }
 
 export function resolveBundledApiExecutable(resourcesPath: string): string | null {
-  if (process.platform !== 'win32') return null
-  const executable = join(resourcesPath, 'backend', 'eterzion-studio-api.exe')
+  // Windows e Linux (AppImage/.deb) levam o backend congelado pelo PyInstaller
+  // em resources/backend. No macOS ainda nao ha' backend empacotado.
+  if (process.platform !== 'win32' && process.platform !== 'linux') return null
+  const name = process.platform === 'win32' ? 'eterzion-studio-api.exe' : 'eterzion-studio-api'
+  const executable = join(resourcesPath, 'backend', name)
   return existsSync(executable) ? executable : null
 }
 
@@ -195,7 +198,15 @@ export async function ensureApiRunning(
     cwd = apiDir
   }
 
-  if (bundledFfmpegDir) env.ASTROS_FFMPEG_DIR = bundledFfmpegDir
+  if (bundledFfmpegDir) {
+    env.ASTROS_FFMPEG_DIR = bundledFfmpegDir
+    // O FFmpeg LGPL do Linux e' a build compartilhada: as .so ficam ao lado dos
+    // binarios, e o RPATH gravado neles pelo BtbN nao aponta para la' (ver
+    // scripts/fetch-ffmpeg.mjs). Sem isto o ffmpeg nem carrega.
+    if (process.platform === 'linux') {
+      env.LD_LIBRARY_PATH = [bundledFfmpegDir, env.LD_LIBRARY_PATH].filter(Boolean).join(':')
+    }
+  }
 
   const child = spawn(command, args, { cwd, env, windowsHide: true })
   // Sem isto o `stopOwnedApiProcess()` nao tinha o que encerrar: o processo

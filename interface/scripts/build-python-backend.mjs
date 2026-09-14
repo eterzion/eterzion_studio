@@ -5,8 +5,14 @@ import { spawnSync } from 'node:child_process'
 import process from 'node:process'
 
 const platform = process.argv[2]
-if (platform !== 'win32') {
+// O PyInstaller nao cruza plataformas: o backend Linux precisa ser construido
+// num Linux (a CI usa um Ubuntu 22.04 -- a glibc dele e' o piso de suporte).
+if (platform !== 'win32' && platform !== 'linux') {
   console.error(`Unsupported backend target: ${platform || '(missing)'}`)
+  process.exit(1)
+}
+if (platform !== process.platform) {
+  console.error(`O backend ${platform} precisa ser construido em ${platform} (este e' ${process.platform}).`)
   process.exit(1)
 }
 
@@ -17,7 +23,8 @@ const specPath = resolve(apiDir, 'eterzion-studio-api.spec')
 const distPath = resolve(interfaceDir, 'resources', 'backend', platform)
 const workPath = resolve(apiDir, 'build', 'pyinstaller')
 const python = process.env.PYTHON_EXE || process.env.PYTHON || 'python'
-const executable = resolve(distPath, 'eterzion-studio-api', 'eterzion-studio-api.exe')
+const executableName = platform === 'win32' ? 'eterzion-studio-api.exe' : 'eterzion-studio-api'
+const executable = resolve(distPath, 'eterzion-studio-api', executableName)
 
 // Empacotar o PyTorch leva ~4,5 minutos e domina o tempo do release, mas o
 // resultado só muda quando `api/**`, o `.spec` ou os requirements mudam. Com

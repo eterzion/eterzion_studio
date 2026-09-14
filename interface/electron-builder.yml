@@ -82,20 +82,40 @@ mac:
 dmg:
   artifactName: ${name}-${version}.${ext}
 linux:
+  # AppImage e .deb, os dois atualizados pelo electron-updater a partir do CDN
+  # (latest-linux.yml). O Flatpak vem depois, por um repositorio proprio -- o
+  # electron-updater nao o atualiza. O snap saiu: nao esta' nos formatos
+  # decididos e exigiria a Snap Store.
   target:
     - AppImage
-    - snap
     - deb
-  maintainer: electronjs.org
-  category: Utility
+  executableName: eterzion-studio
+  # O WM_CLASS da janela igual ao nome do .desktop: sem isto o desktop nao liga
+  # a janela aberta ao icone do app no painel.
+  syncDesktopName: true
+  # A mesma arte 512x512 do icone do Windows (resources/icon.png).
+  icon: resources/icon.png
+  maintainer: Eterzion <contato@eterzion.com>
+  vendor: Eterzion
+  synopsis: Melhoria de imagens, vídeos e áudio com IA
+  category: AudioVideo
   # LGPL FFmpeg build (linux64-lgpl-shared, no --enable-gpl/--enable-nonfree) fetched
   # by `npm run fetch:ffmpeg:linux` (scripts/fetch-ffmpeg.mjs) ahead of packaging.
   # See docs/models/MODEL_LICENSES.md §5 for the licensing verification.
   extraResources:
+    - from: resources/backend/linux/eterzion-studio-api
+      to: backend
     - from: resources/ffmpeg/linux
       to: ffmpeg
 appImage:
   artifactName: ${name}-${version}.${ext}
+# Runtime novo do AppImage (type2 estatico, 20251108). O padrao (0.0.0) exige
+# a libfuse2 do sistema, que o Ubuntu 22.04+ nao traz mais: o AppImage abria
+# com "dlopen(): error loading libfuse.so.2" num Ubuntu 24.04 limpo (testado).
+toolsets:
+  appimage: '1.0.3'
+deb:
+  artifactName: ${name}_${version}_${arch}.${ext}
 npmRebuild: false
 # De onde o app instalado se atualiza: o CDN privado do Studio (bucket R2 atras
 # do Worker de cdn.eterzion.com). Isto so' vai para o `app-update.yml`; em tempo
