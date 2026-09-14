@@ -336,6 +336,40 @@ def _get_vad_model():
 _CLASSIFY_WINDOW_SECONDS = 30
 
 
+# Assinatura de uma mixagem: base grave forte e quase nenhum silencio. Uma musica
+# cantada do inicio ao fim engana os dois sinais do classificador -- o VAD
+# dispara no canto e a musica e' MAIS harmonica que a fala, nao menos --, mas
+# nenhuma fala tem estes dois juntos: a voz quase nao tem energia abaixo de
+# 150 Hz, e para entre as frases. Medido em 2026-09-13:
+#   musica cantada (o arquivo que o app classificava como fala): graves 0,69, pausas 0,2%
+#   rock:                                                         graves 0,61, pausas 0%
+#   voz real (gravacao do silero-vad):                            graves 0,005, pausas 17%
+#   voz masculina sintetizada:                                    graves 0,09, pausas 28%
+#   fala com musica de fundo a -20 dB:                            graves 0,15, pausas 0%
+# O ultimo caso e' o que o "e" protege: sem pausas, mas sem graves de mixagem.
+_MIX_MIN_BASS_RATIO = 0.35
+_MIX_MAX_PAUSE_RATIO = 0.05
+
+
+def _mix_signature(samples: np.ndarray, sample_rate: int) -> tuple[float, float]:
+    """(fracao da energia entre 30 e 150 Hz, dentro de 30-8000 Hz;
+    fracao de quadros de 50 ms 20 dB abaixo da mediana)."""
+    if samples.size == 0:
+        return 0.0, 1.0
+    espectro = np.abs(np.fft.rfft(samples)) ** 2
+    freqs = np.fft.rfftfreq(samples.size, 1.0 / sample_rate)
+    total = float(espectro[(freqs >= 30) & (freqs < 8000)].sum())
+    graves = float(espectro[(freqs >= 30) & (freqs < 150)].sum()) / total if total > 0 else 0.0
+    quadro = max(1, int(0.05 * sample_rate))
+    n = samples.size // quadro
+    if n == 0:
+        return graves, 1.0
+    rms = np.sqrt(np.mean(samples[: n * quadro].reshape(n, quadro) ** 2, axis=1)) + 1e-9
+    db = 20 * np.log10(rms)
+    pausas = float(np.mean(db < np.median(db) - 20))
+    return graves, pausas
+
+
 def _harmonic_energy_ratio(
     samples: np.ndarray,
     n_fft: int = 2048,
@@ -462,6 +496,11 @@ def classify_audio(samples: np.ndarray, sample_rate: int) -> AudioClassification
 
     speech_score = 0.6 * speech_ratio + 0.4 * min(harmonic_ratio / 0.7, 1.0)
     if speech_score >= 0.5:
+        graves, pausas = _mix_signature(samples, sample_rate)
+        if graves >= _MIX_MIN_BASS_RATIO and pausas <= _MIX_MAX_PAUSE_RATIO:
+            # Voz do comeco ao fim sobre uma base grave continua: e' uma musica
+            # cantada, nao uma fala -- ver _mix_signature.
+            return AudioClassification('music', confidence=min(0.5 + graves / 2, 0.9))
         return AudioClassification('speech', confidence=min(speech_score, 1.0))
     return AudioClassification('music', confidence=1.0 - speech_score)
 
