@@ -9,6 +9,12 @@ on:
       - models/**
       - .github/workflows/release.yml
   workflow_dispatch:
+    inputs:
+      plataforma:
+        description: Quais pacotes construir (fora da main, nada e' publicado)
+        type: choice
+        options: [todas, windows, linux]
+        default: todas
 
 permissions:
   contents: write
@@ -69,7 +75,15 @@ jobs:
           # falhou no meio, ela nao existe e a proxima execucao refaz (o upload
           # e' idempotente). Perguntar ao CDN pularia o build com a publicacao
           # pela metade.
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+          #
+          # Fora da main e' build de teste: os passos de publicacao sao todos
+          # `if: github.ref == 'refs/heads/main'`, entao construir de novo uma
+          # versao ja' publicada nao publica nada -- e e' o unico jeito de testar
+          # a esteira numa branch sem mudar a versao.
+          if [ "$GITHUB_REF" != 'refs/heads/main' ]; then
+            echo "Branch $GITHUB_REF: build de teste, sem publicacao."
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          elif gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release $TAG already exists; skipping all build jobs."
             echo 'exists=true' >> "$GITHUB_OUTPUT"
           else
@@ -79,7 +93,7 @@ jobs:
   windows-installer:
     name: Build and publish Windows installer
     needs: prepare
-    if: needs.prepare.outputs.exists != 'true'
+    if: needs.prepare.outputs.exists != 'true' && inputs.plataforma != 'linux'
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS_WINDOWS || '["windows-latest"]') }}
     timeout-minutes: 120
     env:
@@ -584,7 +598,7 @@ jobs:
   linux-packages:
     name: Build and publish Linux packages
     needs: prepare
-    if: needs.prepare.outputs.exists != 'true'
+    if: needs.prepare.outputs.exists != 'true' && inputs.plataforma != 'windows'
     runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
     timeout-minutes: 150
     container:
