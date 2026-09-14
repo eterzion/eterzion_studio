@@ -1,4 +1,5 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, shell } from 'electron'
+import { readdirSync } from 'fs'
 import { electronApp, optimizer } from '@electron-toolkit/utils'
 import { resolveRepoRoot, stopOwnedApiProcess } from './apiProcess'
 import { registerMediaProtocolHandler } from './protocols/mediaProtocol'
@@ -6,8 +7,35 @@ import { createWindow } from './windows/mainWindow'
 import { registerDialogIpc } from './ipc/dialog.ipc'
 import { registerAppIpc } from './ipc/app.ipc'
 import { initializeUpdater, stopUpdater } from './updater'
+import { APP_USER_MODEL_ID, reconcileShortcuts, shortcutDirs } from './windows/appUserModelId'
 
 const repoRoot = resolveRepoRoot()
+
+/** Traz para o id atual os atalhos que o instalador deixou com o antigo.
+ *  So no Windows empacotado: em desenvolvimento o executavel e' o do Electron, e
+ *  nenhum atalho aponta para ele. Adiado para nao atrasar a janela; uma falha
+ *  aqui so' registra, porque o app funciona -- o que se perde e' o agrupamento. */
+function alinharAtalhosAoAppUserModelId(): void {
+  if (process.platform !== 'win32' || !app.isPackaged) return
+  setImmediate(() => {
+    const result = reconcileShortcuts(
+      shortcutDirs(app.getPath('appData'), app.getPath('desktop')),
+      process.execPath,
+      APP_USER_MODEL_ID,
+      {
+        listDir: (dir) => readdirSync(dir),
+        readShortcutLink: (path) => shell.readShortcutLink(path),
+        writeShortcutLink: (path, target, id) => {
+          if (!shell.writeShortcutLink(path, 'update', { target, appUserModelId: id })) {
+            throw new Error('writeShortcutLink devolveu false')
+          }
+        }
+      }
+    )
+    for (const path of result.atualizados) console.info('[aumid] atalho alinhado', path)
+    for (const f of result.falhas) console.warn('[aumid] atalho nao alinhado', f.path, f.erro)
+  })
+}
 
 function initWindow(): void {
   const win = createWindow()
@@ -19,11 +47,10 @@ function initWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  // Set app user model id for windows
-  // Precisa bater com o appId do electron-builder. Com 'com.electron', o
-  // valor de template, o Windows agrupa a janela e as notificacoes sob uma
-  // identidade que nao e' a do app.
-  electronApp.setAppUserModelId('com.astrosupscale.app')
+  // Precisa bater com o appId do electron-builder -- ver appUserModelId.ts,
+  // onde o valor mora e onde o teste confere os dois lados.
+  electronApp.setAppUserModelId(APP_USER_MODEL_ID)
+  alinharAtalhosAoAppUserModelId()
 
   // Default open or close DevTools by F12 in development
   // and ignore CommandOrControl + R in production.
