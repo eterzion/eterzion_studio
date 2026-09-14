@@ -611,9 +611,10 @@ jobs:
           apt-get update
           # git: checkout e changelog; xz-utils/tar: FFmpeg do BtbN (.tar.xz);
           # binutils/file: o PyInstaller le as dependencias das .so; zstd/unzip:
-          # ferramentas do electron-builder e o zip do rclone.
+          # ferramentas do electron-builder e o zip do rclone; libatomic1: o
+          # executavel do pnpm (@pnpm/exe) nao abre sem ela.
           apt-get install -y --no-install-recommends \
-            git ca-certificates curl xz-utils unzip zstd binutils file
+            git ca-certificates curl xz-utils unzip zstd binutils file libatomic1
       - uses: actions/checkout@v7
 
       - name: Cache do backend empacotado
