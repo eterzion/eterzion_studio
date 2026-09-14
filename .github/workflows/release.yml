@@ -571,3 +571,200 @@ jobs:
           } finally {
             Remove-Item $notas -ErrorAction SilentlyContinue
           }
+
+  # AppImage e .deb. Construidos DENTRO de um container ubuntu:22.04, e nao no
+  # host do runner (Ubuntu 24.04): o executavel do backend (PyInstaller) e o
+  # Electron ficam presos a' glibc da maquina que os construiu, e um build na
+  # 24.04 (glibc 2.39) nao abre na 22.04 nem no Debian 12. A 22.04 (glibc 2.35)
+  # e' o piso de suporte: roda de la' para cima.
+  #
+  # Em paralelo ao Windows, mas so' publica depois que a release do Windows
+  # existir: ela e' o sinal de que a versao saiu (ver `prepare`). Se o Windows
+  # falhar, o Linux nao anuncia uma versao sem release.
+  linux-packages:
+    name: Build and publish Linux packages
+    needs: prepare
+    if: needs.prepare.outputs.exists != 'true'
+    runs-on: ${{ fromJSON(vars.RUNNER_LABELS || '["ubuntu-24.04"]') }}
+    timeout-minutes: 150
+    container:
+      image: ubuntu:22.04
+    env:
+      DEBIAN_FRONTEND: noninteractive
+    steps:
+      - name: System packages
+        run: |
+          apt-get update
+          # git: checkout e changelog; xz-utils/tar: FFmpeg do BtbN (.tar.xz);
+          # binutils/file: o PyInstaller le as dependencias das .so; zstd/unzip:
+          # ferramentas do electron-builder e o zip do rclone.
+          apt-get install -y --no-install-recommends \
+            git ca-certificates curl xz-utils unzip zstd binutils file
+      - uses: actions/checkout@v7
+
+      - name: Cache do backend empacotado
+        id: backend-cache
+        uses: actions/cache@v6
+        with:
+          path: interface/resources/backend/linux
+          key: backend-linux-jammy-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
+
+      - uses: astral-sh/setup-uv@v10.1.0
+        if: steps.backend-cache.outputs.cache-hit != 'true'
+      - uses: pnpm/action-setup@v6.1.0
+        with:
+          version: 11
+          dest: ${{ runner.temp }}/setup-pnpm-${{ github.run_id }}-${{ github.job }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: interface/pnpm-lock.yaml
+
+      # O Python do uv (python-build-standalone) e nao o da 22.04, que e' 3.10:
+      # a mesma versao do job do Windows, para o backend ser o mesmo nos dois.
+      - name: Create isolated Python environment
+        if: steps.backend-cache.outputs.cache-hit != 'true'
+        run: uv venv --clear .venv --python 3.13
+      - name: Install CPU PyTorch stack
+        if: steps.backend-cache.outputs.cache-hit != 'true'
+        run: >-
+          uv pip install --python .venv/bin/python
+          torch torchvision torchaudio
+          --index-url https://download.pytorch.org/whl/cpu
+      - name: Install backend build dependencies
+        if: steps.backend-cache.outputs.cache-hit != 'true'
+        run: |
+          uv pip install --python .venv/bin/python -r api/eterzion_upscale_api/requirements.txt
+          uv pip install --python .venv/bin/python --no-deps -e api
+          uv pip install --python .venv/bin/python pyinstaller==6.14.1
+      - name: Install desktop dependencies
+        working-directory: interface
+        run: pnpm install --frozen-lockfile
+
+      - name: Build AppImage and .deb
+        working-directory: interface
+        env:
+          PYTHON_EXE: ${{ github.workspace }}/.venv/bin/python
+          REUSE_BACKEND_BUILD: "1"
+        run: pnpm run build:linux
+
+      # O mesmo autoteste do Windows, dentro do executavel congelado: as partes
+      # nativas (torchvision, scipy, onnxruntime, a voz, a musica) carregam de
+      # verdade. Sem `if: cache-hit`, de proposito: um cache de um build ruim
+      # repetiria o defeito em silencio.
+      - name: Self-check the packaged backend (native parts really load)
+        run: |
+          set -euo pipefail
+          exe=interface/dist/linux-unpacked/resources/backend/eterzion-studio-api
+          test -x "$exe" || { echo "backend nao empacotado: $exe"; exit 1; }
+          relatorio="$RUNNER_TEMP/self-check.json"
+          "$exe" --eterzion-self-check "$relatorio" || true
+          cat "$relatorio"
+          grep -q '"ok": true' "$relatorio" || { echo "::error::autoteste do backend Linux falhou"; exit 1; }
+
+      - name: Confirm the Linux packages exist
+        working-directory: interface
+        run: |
+          set -euo pipefail
+          ls -la dist/*.AppImage dist/*.deb dist/latest-linux.yml
+          cat dist/latest-linux.yml
+
+      - name: Wait for the Windows release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          # O job do Windows cria a release no fim dele (depois do R2). Ate' ela
+          # existir, a versao nao saiu -- e se o Windows falhar, este job tambem
+          # falha aqui, sem publicar nada.
+          apt-get install -y --no-install-recommends gh >/dev/null 2>&1 || true
+          if ! command -v gh >/dev/null; then
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg -o /usr/share/keyrings/githubcli-archive-keyring.gpg
+            echo "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+            apt-get update >/dev/null && apt-get install -y --no-install-recommends gh >/dev/null
+          fi
+          for tentativa in $(seq 1 90); do
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+              echo "release $TAG encontrada"; exit 0
+            fi
+            sleep 60
+          done
+          echo "::error::a release $TAG nao apareceu em 90 minutos -- o Linux nao sera publicado"
+          exit 1
+
+      # Mesmo bucket e prefixo do Windows (updates/). O app Linux le o
+      # latest-linux.yml; o Worker o serve sem cache (eterzion_assets, cdn/).
+      - name: Upload to the Studio CDN (R2)
+        if: github.ref == 'refs/heads/main'
+        env:
+          R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # Fora do prefixo RCLONE_, que o rclone le como parametros dele.
+          VERSAO_RCLONE: v1.75.1
+          SHA256_RCLONE: 982b5aa772841168f8e380f139e9e787b2a105403e32b94da8676a0e1c0a13ab
+          # A versao atual e a anterior, como no Windows.
+          MANTER_VERSOES: '2'
+        run: |
+          set -euo pipefail
+          for nome in R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY; do
+            if [ -z "${!nome:-}" ]; then echo "::error::segredo $nome ausente"; exit 1; fi
+          done
+          zip="$RUNNER_TEMP/rclone.zip"
+          curl -fsSL "https://downloads.rclone.org/$VERSAO_RCLONE/rclone-$VERSAO_RCLONE-linux-amd64.zip" -o "$zip"
+          echo "$SHA256_RCLONE  $zip" | sha256sum -c -
+          unzip -q -o "$zip" -d "$RUNNER_TEMP"
+          rclone="$RUNNER_TEMP/rclone-$VERSAO_RCLONE-linux-amd64/rclone"
+          "$rclone" version | head -1
+
+          export RCLONE_CONFIG_R2_TYPE=s3 RCLONE_CONFIG_R2_PROVIDER=Cloudflare
+          export RCLONE_CONFIG_R2_ACCESS_KEY_ID="$R2_ACCESS_KEY_ID"
+          export RCLONE_CONFIG_R2_SECRET_ACCESS_KEY="$R2_SECRET_ACCESS_KEY"
+          export RCLONE_CONFIG_R2_ENDPOINT="https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com"
+          export RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true
+          destino='r2:eterzion-studio/updates'
+
+          # Pacotes ANTES do latest-linux.yml: um app que leia o yml novo precisa
+          # encontrar no bucket o pacote que ele cita.
+          for arquivo in interface/dist/*.AppImage interface/dist/*.deb; do
+            "$rclone" copyto "$arquivo" "$destino/$(basename "$arquivo")" --retries 3
+          done
+          "$rclone" copyto interface/dist/latest-linux.yml "$destino/latest-linux.yml" --retries 3
+
+          # Retencao so' dos pacotes Linux (os nomes do Windows tem -setup e
+          # ficam com a retencao do job de la').
+          versoes=$("$rclone" lsf "$destino" --files-only \
+            | sed -nE 's/^eterzion-studio-([0-9]+\.[0-9]+\.[0-9]+)\.AppImage$/\1/p; s/^eterzion-studio_([0-9]+\.[0-9]+\.[0-9]+)_amd64\.deb$/\1/p' \
+            | sort -uV)
+          manter=$(printf '%s\n' "$versoes" | tail -n "$MANTER_VERSOES")
+          for v in $versoes; do
+            if ! printf '%s\n' "$manter" | grep -qx "$v"; then
+              for alvo in "eterzion-studio-$v.AppImage" "eterzion-studio_${v}_amd64.deb"; do
+                "$rclone" deletefile "$destino/$alvo" 2>/dev/null && echo "removido pela retencao: $alvo" || true
+              done
+            fi
+          done
+          echo '--- no CDN agora ---'
+          "$rclone" lsl "$destino"
+
+      - name: Attach Linux packages to the release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.prepare.outputs.tag }}
+        run: |
+          set -euo pipefail
+          gh release upload "$TAG" interface/dist/*.AppImage interface/dist/*.deb interface/dist/latest-linux.yml \
+            --repo "$GITHUB_REPOSITORY" --clobber
+
+      # O container roda como root, e o workspace e as ferramentas sao pastas do
+      # host do runner. Sem devolver a posse, o proximo job neste runner (fora
+      # do container, como o usuario do servico) nao consegue limpar nem
+      # reescrever esses arquivos.
+      - name: Give the workspace back to the runner user
+        if: always()
+        run: |
+          dono=$(stat -c '%u:%g' /__w)
+          chown -R "$dono" /__w /__t 2>/dev/null || true
