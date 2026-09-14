@@ -295,10 +295,18 @@ jobs:
         with:
           version: 11
           dest: ${{ runner.temp }}/pnpm-upscale-${{ github.run_id }}-${{ github.job }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          # No runner do PC o cache do actions/cache baixa pela internet a cada job: so no do GitHub.
+          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
+          cache-dependency-path: interface/pnpm-lock.yaml
+
       # Runner do PC: o pnpm ja esta instalado em ~/.local (sem sudo). O
       # action-setup o baixava e reinstalava a cada job, e os runners dividem o
       # $HOME: dois jobs juntos ja quebraram o instalador ("Worker pnpm#1 exited
       # with code 1").
+      # Fica depois do setup-node: o bin do node dele traz um shim de pnpm do corepack que ganharia do ~/.local/bin.
       - name: pnpm do runner
         if: runner.environment == 'self-hosted'
         run: |
@@ -308,12 +316,6 @@ jobs:
           fi
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/pnpm" --version
-      - uses: actions/setup-node@v7
-        with:
-          node-version: '24'
-          # No runner do PC o cache do actions/cache baixa pela internet a cada job: so no do GitHub.
-          cache: ${{ runner.environment == 'github-hosted' && 'pnpm' || '' }}
-          cache-dependency-path: interface/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm run lint
       - run: pnpm run typecheck
