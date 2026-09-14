@@ -803,11 +803,8 @@
     "search": "検索…"
   },
   "settings": {
-    "advancedDescription": "診断と技術情報",
-    "advancedTitle": "詳細設定",
     "animations": "アニメーションを有効にする",
     "animationsDescription": "画面遷移とマイクロアニメーション",
-    "appVersion": "アプリのバージョン",
     "autoCleanup": "自動クリーンアップ",
     "autoCleanupDescription": "下の期間より古い記録を削除します",
     "cacheRefreshFailed": "キャッシュを更新できませんでした。",
@@ -883,7 +880,7 @@
       "cancel": "キャンセル",
       "check": "アップデートを確認",
       "confirmRestart": "{n} 件の処理が進行中です。今すぐ再起動すると処理はキャンセルされます。",
-      "description": "インストール済みのバージョンと新しいバージョン",
+      "description": "インストール済みのバージョン、新しいバージョン、技術情報",
       "installedVersion": "バージョン {version}",
       "restartAnyway": "それでも再起動",
       "status": {
@@ -895,7 +892,7 @@
         "ready": "バージョン {version} の準備ができました。アプリを閉じるとインストールされます。",
         "upToDate": "最新バージョンを使用しています。"
       },
-      "title": "アップデート",
+      "title": "バージョンとアップデート",
       "whatsNew": "バージョン {version} の新機能"
     }
   },

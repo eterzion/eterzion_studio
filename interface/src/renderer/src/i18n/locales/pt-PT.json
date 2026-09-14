@@ -803,11 +803,8 @@
     "search": "Pesquisar…"
   },
   "settings": {
-    "advancedDescription": "Diagnóstico e informações técnicas",
-    "advancedTitle": "Avançado",
     "animations": "Ativar animações",
     "animationsDescription": "Transições e microanimações da interface",
-    "appVersion": "Versão da aplicação",
     "autoCleanup": "Limpeza automática",
     "autoCleanupDescription": "Remove registos mais antigos do que o período abaixo",
     "cacheRefreshFailed": "Falha ao atualizar a cache.",
@@ -883,7 +880,7 @@
       "cancel": "Cancelar",
       "check": "Procurar atualizações",
       "confirmRestart": "Há {n} processamento em curso. Reiniciar agora vai cancelá-lo. | Há {n} processamentos em curso. Reiniciar agora vai cancelá-los.",
-      "description": "Versão instalada e novas versões da aplicação",
+      "description": "Versão instalada, novas versões e detalhes técnicos",
       "installedVersion": "Versão {version}",
       "restartAnyway": "Reiniciar mesmo assim",
       "status": {
@@ -895,7 +892,7 @@
         "ready": "A versão {version} está pronta. Será instalada quando fechar a aplicação.",
         "upToDate": "Tem a versão mais recente."
       },
-      "title": "Atualizações",
+      "title": "Versão e atualizações",
       "whatsNew": "Novidades da versão {version}"
     }
   },

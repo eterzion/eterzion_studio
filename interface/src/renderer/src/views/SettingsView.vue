@@ -6,7 +6,6 @@ import {
   Cpu,
   History as HistoryIcon,
   LayoutGrid,
-  Wrench,
   FolderOpen,
   Trash2,
   RotateCcw,
@@ -325,7 +324,7 @@ const outputFolderLabel = computed(
           </div>
         </section>
 
-        <!-- ---------------------------- ATUALIZACOES ---------------------------- -->
+        <!-- ------------------------ VERSAO E ATUALIZACOES ------------------------ -->
         <section ref="updatesSection" class="settings-group">
           <div class="group-header">
             <div class="group-icon icon-chip"><RefreshCw :size="18" /></div>
@@ -402,6 +401,16 @@ const outputFolderLabel = computed(
               :description="t('settings.updates.autoDescription')"
             >
               <SettingSwitch v-model="settingsState.autoCheckUpdates" :disabled="!hasNativeApi" />
+            </SettingRow>
+            <!-- Vinham num cartao "Avancado" separado, que repetia a versao do
+                 app ja mostrada no topo deste. Quem procura a versao do Electron
+                 esta' investigando um problema -- o mesmo momento em que olha se
+                 ha' atualizacao. -->
+            <SettingRow v-if="electronVersions" :label="t('settings.runtimeVersions')">
+              <span class="fixed-value mono">
+                Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
+                Node {{ electronVersions.node }}
+              </span>
             </SettingRow>
           </div>
         </section>
@@ -585,28 +594,6 @@ const outputFolderLabel = computed(
                   { value: 'comfortable', label: t('settings.comfortable') }
                 ]"
               />
-            </SettingRow>
-          </div>
-        </section>
-
-        <!-- ---------------------------- AVANÇADO ---------------------------- -->
-        <section class="settings-group">
-          <div class="group-header">
-            <div class="group-icon icon-chip"><Wrench :size="18" /></div>
-            <div>
-              <h2 class="group-title">{{ t('settings.advancedTitle') }}</h2>
-              <p class="group-description">{{ t('settings.advancedDescription') }}</p>
-            </div>
-          </div>
-          <div class="group-body">
-            <SettingRow :label="t('settings.appVersion')">
-              <span class="fixed-value">{{ appVersion ?? '—' }}</span>
-            </SettingRow>
-            <SettingRow v-if="electronVersions" :label="t('settings.runtimeVersions')">
-              <span class="fixed-value mono">
-                Electron {{ electronVersions.electron }} · Chromium {{ electronVersions.chrome }} ·
-                Node {{ electronVersions.node }}
-              </span>
             </SettingRow>
           </div>
         </section>

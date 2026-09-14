@@ -803,11 +803,8 @@
     "search": "Cerca…"
   },
   "settings": {
-    "advancedDescription": "Diagnostica e informazioni tecniche",
-    "advancedTitle": "Avanzate",
     "animations": "Attiva le animazioni",
     "animationsDescription": "Transizioni e microanimazioni dell’interfaccia",
-    "appVersion": "Versione dell’app",
     "autoCleanup": "Pulizia automatica",
     "autoCleanupDescription": "Rimuove le voci più vecchie del periodo indicato sotto",
     "cacheRefreshFailed": "Impossibile aggiornare la cache.",
@@ -883,7 +880,7 @@
       "cancel": "Annulla",
       "check": "Cerca aggiornamenti",
       "confirmRestart": "C'è {n} elaborazione in corso. Il riavvio la annullerà. | Ci sono {n} elaborazioni in corso. Il riavvio le annullerà.",
-      "description": "Versione installata e nuove versioni dell'app",
+      "description": "Versione installata, nuove versioni e dettagli tecnici",
       "installedVersion": "Versione {version}",
       "restartAnyway": "Riavvia comunque",
       "status": {
@@ -895,7 +892,7 @@
         "ready": "La versione {version} è pronta. Verrà installata alla chiusura dell'app.",
         "upToDate": "Stai usando la versione più recente."
       },
-      "title": "Aggiornamenti",
+      "title": "Versione e aggiornamenti",
       "whatsNew": "Novità della versione {version}"
     }
   },
