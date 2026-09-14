@@ -22,8 +22,10 @@ export default defineConfig({
     // requestVideoFrameCallback, and happy-dom is the faster of the two for the
     // narrow DOM surface these tests need.
     environment: 'happy-dom',
-    include: ['src/renderer/src/**/*.spec.ts'],
-    // The main and preload bundles are Node-side and are not covered here.
+    // O processo principal entra com testes de logica pura, que nao importam o
+    // Electron: cada arquivo declara `// @vitest-environment node` no topo. O
+    // happy-dom daqui continua valendo para o renderer.
+    include: ['src/renderer/src/**/*.spec.ts', 'src/main/**/*.spec.ts'],
     exclude: ['node_modules/**', 'out/**', 'dist/**']
   }
 })
