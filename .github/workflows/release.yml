@@ -620,11 +620,19 @@ jobs:
           # executavel do pnpm (@pnpm/exe) nao abre sem ela.
           apt-get install -y --no-install-recommends \
             git ca-certificates curl xz-utils unzip zstd binutils file libatomic1
+      # Sem credencial persistida: este job nao faz git depois do checkout, e o
+      # post-step que a remove reescreveria o .git/config como root DEPOIS da
+      # devolucao de posse no fim do job (post-steps rodam por ultimo).
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
+      # restore/save separados, e nao `actions/cache` inteiro: o save dele e' um
+      # post-step, que rodaria como root depois da devolucao de posse e deixaria
+      # arquivos de root no _temp do runner.
       - name: Cache do backend empacotado
         id: backend-cache
-        uses: actions/cache@v6
+        uses: actions/cache/restore@v6
         with:
           path: interface/resources/backend/linux
           key: backend-linux-jammy-py313-pyinstaller6.14.1-${{ hashFiles('api/**/*.py', 'api/**/*.spec', 'api/**/requirements*.txt', 'api/pyproject.toml') }}
@@ -682,6 +690,13 @@ jobs:
           "$exe" --eterzion-self-check "$relatorio" || true
           cat "$relatorio"
           grep -q '"ok": true' "$relatorio" || { echo "::error::autoteste do backend Linux falhou"; exit 1; }
+
+      - name: Save the backend cache
+        if: steps.backend-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: interface/resources/backend/linux
+          key: ${{ steps.backend-cache.outputs.cache-primary-key }}
 
       - name: Confirm the Linux packages exist
         working-directory: interface
@@ -782,7 +797,9 @@ jobs:
       # O container roda como root, e o workspace e as ferramentas sao pastas do
       # host do runner. Sem devolver a posse, o proximo job neste runner (fora
       # do container, como o usuario do servico) nao consegue limpar nem
-      # reescrever esses arquivos.
+      # reescrever esses arquivos. Por isso nenhum passo deste job tem post-step
+      # que escreva no disco (checkout sem credencial, cache restore/save): eles
+      # rodariam depois deste.
       - name: Give the workspace back to the runner user
         if: always()
         run: |
