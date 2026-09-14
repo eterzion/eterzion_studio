@@ -4,6 +4,7 @@
   "description": "Upscale de imagens e vídeos com IA — aplicativo desktop",
   "main": "./out/main/index.js",
   "author": "Eric Inácio",
+  "homepage": "https://eterzion.com",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint --cache .",
