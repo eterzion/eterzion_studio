@@ -6,7 +6,7 @@ código. Uma linha por item, começando com `- `.
 
 O workflow de release copia o arquivo da versão para `build/release-notes.md`;
 o electron-builder o coloca no `latest.yml`, e o app mostra as linhas na seção
-**Configurações → Atualizações** enquanto a versão nova baixa e quando fica
+**Configurações → Versão e atualizações** enquanto a versão nova baixa e quando fica
 pronta. O texto é exibido como texto puro: markdown além do `- ` não é
 interpretado.
 
