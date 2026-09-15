@@ -1025,7 +1025,6 @@
       "hue_degrees": "Matiz",
       "hue_degreesHint": "Roda todas as cores na roda cromática. Valores pequenos corrigem dominância; grandes trocam as cores.",
       "notInLivePreview": "Alguns ajustes ativos não aparecem na pré-visualização em movimento — só no ficheiro exportado.",
-      "outputSize": "Tamanho de saída",
       "reset": "Voltar ao neutro",
       "rotation": "Rotação",
       "saturation": "Saturação",
@@ -1037,7 +1036,6 @@
       "trim": "Excerto",
       "trimEnd": "Fim do excerto",
       "trimStart": "Início do excerto",
-      "wholeVideo": "Vídeo inteiro",
       "adjustmentsDescription": "Brilho, contraste, saturação e cor",
       "effectsDescription": "Redução de ruído, desfoque e grão",
       "transformDescription": "Rodar, espelhar e cortar o trecho"

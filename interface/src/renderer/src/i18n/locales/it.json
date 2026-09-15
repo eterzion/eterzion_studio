@@ -1025,7 +1025,6 @@
       "hue_degrees": "Tonalità",
       "hue_degreesHint": "Ruota tutti i colori sulla ruota cromatica. Valori piccoli correggono una dominante, grandi scambiano i colori.",
       "notInLivePreview": "Alcune regolazioni attive non compaiono nell’anteprima in movimento, solo nel file esportato.",
-      "outputSize": "Dimensione di uscita",
       "reset": "Torna al neutro",
       "rotation": "Rotazione",
       "saturation": "Saturazione",
@@ -1037,7 +1036,6 @@
       "trim": "Spezzone",
       "trimEnd": "Fine spezzone",
       "trimStart": "Inizio spezzone",
-      "wholeVideo": "Video intero",
       "adjustmentsDescription": "Luminosità, contrasto, saturazione e colore",
       "effectsDescription": "Riduzione del rumore, sfocatura e grana",
       "transformDescription": "Ruota, rifletti e taglia il tratto"

@@ -1025,7 +1025,6 @@
       "hue_degrees": "色相",
       "hue_degreesHint": "让所有颜色在色轮上旋转。小幅度用于校正偏色，大幅度则是换色。",
       "notInLivePreview": "部分已启用的设置不会出现在动态预览中，只会体现在导出的文件里。",
-      "outputSize": "输出尺寸",
       "reset": "恢复默认",
       "rotation": "旋转",
       "saturation": "饱和度",
@@ -1037,7 +1036,6 @@
       "trim": "片段",
       "trimEnd": "片段终点",
       "trimStart": "片段起点",
-      "wholeVideo": "整个视频",
       "adjustmentsDescription": "亮度、对比度、饱和度和颜色",
       "effectsDescription": "降噪、模糊和颗粒",
       "transformDescription": "旋转、翻转和裁剪片段"

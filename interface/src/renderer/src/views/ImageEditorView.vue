@@ -967,8 +967,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             image
             :transform="job.edits.transform"
             :trim="null"
-            :source-width="job.sourceMeta.width"
-            :source-height="job.sourceMeta.height"
             :format-time="() => ''"
             @update-transform="setTransform"
           />

@@ -411,8 +411,6 @@ function remove(id: string): void {
           <VideoTransformPanel
             :transform="edits.current.value.transform"
             :trim="edits.current.value.trim"
-            :source-width="active?.handle.width ?? null"
-            :source-height="active?.handle.height ?? null"
             :format-time="timeline.formatTime"
             :disabled="!active"
             @update-transform="setTransform"

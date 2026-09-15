@@ -1025,7 +1025,6 @@
       "hue_degrees": "색조",
       "hue_degreesHint": "모든 색을 색상환에서 회전시킵니다. 작은 값은 색 틀어짐을 잡고, 큰 값은 색을 바꿉니다.",
       "notInLivePreview": "일부 설정은 재생 중 미리보기에 반영되지 않고 내보낸 파일에만 적용됩니다.",
-      "outputSize": "출력 크기",
       "reset": "기본값으로",
       "rotation": "회전",
       "saturation": "채도",
@@ -1037,7 +1036,6 @@
       "trim": "구간",
       "trimEnd": "구간 끝",
       "trimStart": "구간 시작",
-      "wholeVideo": "전체 영상",
       "adjustmentsDescription": "밝기, 대비, 채도, 색상",
       "effectsDescription": "노이즈 감소, 흐림, 그레인",
       "transformDescription": "회전, 뒤집기, 구간 자르기"

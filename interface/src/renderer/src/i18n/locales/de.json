@@ -1025,7 +1025,6 @@
       "hue_degrees": "Farbton",
       "hue_degreesHint": "Dreht alle Farben auf dem Farbkreis. Kleine Werte korrigieren einen Farbstich, große tauschen die Farben.",
       "notInLivePreview": "Einige aktive Einstellungen erscheinen nicht in der bewegten Vorschau, nur in der exportierten Datei.",
-      "outputSize": "Ausgabegröße",
       "reset": "Zurück auf neutral",
       "rotation": "Drehung",
       "saturation": "Sättigung",
@@ -1037,7 +1036,6 @@
       "trim": "Ausschnitt",
       "trimEnd": "Ausschnittende",
       "trimStart": "Ausschnittbeginn",
-      "wholeVideo": "Ganzes Video",
       "adjustmentsDescription": "Helligkeit, Kontrast, Sättigung und Farbe",
       "effectsDescription": "Rauschreduzierung, Weichzeichnen und Körnung",
       "transformDescription": "Drehen, spiegeln und zuschneiden"

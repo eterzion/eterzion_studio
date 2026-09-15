@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Crop, RotateCw } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -17,11 +16,9 @@ import type { VideoTransform, VideoTrim } from '../../composables/useVideoEdits'
 const props = defineProps<{
   transform: VideoTransform
   trim: VideoTrim | null
-  sourceWidth: number | null
-  sourceHeight: number | null
   formatTime: (seconds: number) => string
   disabled?: boolean
-  /** A Imagem nao tem trecho, e o tamanho de saida daqui ignoraria a escala. */
+  /** A Imagem nao tem trecho. */
   image?: boolean
 }>()
 
@@ -31,26 +28,6 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-
-// Rotating by a quarter turn swaps the output's dimensions. Showing the result
-// means the exported file's shape is not a surprise.
-const outputSize = computed(() => {
-  const crop = props.transform.crop
-  let width = crop?.width ?? props.sourceWidth ?? 0
-  let height = crop?.height ?? props.sourceHeight ?? 0
-  if (props.transform.rotation_degrees === 90 || props.transform.rotation_degrees === 270) {
-    const swap = width
-    width = height
-    height = swap
-  }
-  // Even, because encoders reject odd dimensions in yuv420p. The same rounding
-  // video_edits.py applies, shown before the export rather than discovered
-  // after it.
-  return {
-    width: Math.max(2, Math.floor(width / 2) * 2),
-    height: Math.max(2, Math.floor(height / 2) * 2)
-  }
-})
 
 function rotate(): void {
   const next = ((props.transform.rotation_degrees + 90) % 360) as 0 | 90 | 180 | 270
@@ -87,29 +64,15 @@ function rotate(): void {
       />
     </SettingRow>
 
-    <SettingRow v-if="!image" :label="t('videoEditor.edits.outputSize')">
-      <span class="text-(length:--fs-caption) tabular-nums text-text-tertiary">
-        {{ outputSize.width }} &times; {{ outputSize.height }}
-      </span>
-    </SettingRow>
-
     <!-- Trim is set on the timeline, not typed here. This is the readout and
-         the way back out of it (FR-013d). -->
-    <SettingRow v-if="!image" :label="t('videoEditor.edits.trim')">
+         the way back out of it (FR-013d) -- so it only appears when there is a
+         trim: "whole video" told nobody anything. -->
+    <SettingRow v-if="!image && trim" :label="t('videoEditor.edits.trim')">
       <div class="flex items-center gap-2">
         <span class="text-(length:--fs-caption) tabular-nums text-text-tertiary">
-          <template v-if="trim">
-            {{ formatTime(trim.start_seconds) }} &ndash; {{ formatTime(trim.end_seconds) }}
-          </template>
-          <template v-else>{{ t('videoEditor.edits.wholeVideo') }}</template>
+          {{ formatTime(trim.start_seconds) }} &ndash; {{ formatTime(trim.end_seconds) }}
         </span>
-        <AppButton
-          v-if="trim"
-          variant="ghost"
-          size="sm"
-          :disabled="disabled"
-          @click="emit('clearTrim')"
-        >
+        <AppButton variant="ghost" size="sm" :disabled="disabled" @click="emit('clearTrim')">
           {{ t('videoEditor.edits.clearTrim') }}
         </AppButton>
       </div>
