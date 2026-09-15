@@ -7,7 +7,6 @@
     "noAudioSelected": "선택된 오디오 없음",
     "noImageSelected": "선택된 이미지 없음",
     "noVideoSelected": "선택된 비디오 없음",
-    "openFolder": "폴더 열기",
     "processAll": "모두 처리",
     "undo": "실행 취소"
   },
@@ -48,7 +47,7 @@
     "unsupportedFormat": "지원하지 않는 형식: {name}",
     "export": {
       "title": "내보내기",
-      "description": "형식, 품질, 저장 위치",
+      "description": "형식, 품질, 저장 위치, 이름",
       "format": "형식",
       "keep": "원본과 동일",
       "qualityLabel": "품질",
@@ -132,7 +131,10 @@
       "resolution": "해상도",
       "sameAsSource": "원본과 동일",
       "size": "크기",
-      "videoNote": "동영상으로 만들면 훨씬 작아지지만, GIF만 받는 곳에서는 동작하지 않습니다."
+      "videoNote": "동영상으로 만들면 훨씬 작아지지만, GIF만 받는 곳에서는 동작하지 않습니다.",
+      "outputDescription": "형식과 품질",
+      "paletteDescription": "팔레트와 디더링",
+      "sizeDescription": "해상도와 프레임 속도"
     },
     "audio": {
       "advanced": "고급 설정",
@@ -162,7 +164,10 @@
       "signal": "신호",
       "stereo": "스테레오",
       "vbr": "가변",
-      "vbrHint": "필요한 곳에 더 씁니다. 보통 더 낫습니다."
+      "vbrHint": "필요한 곳에 더 씁니다. 보통 더 낫습니다.",
+      "outputDescription": "형식과 품질",
+      "signalDescription": "샘플 레이트와 채널",
+      "advancedDescription": "비트레이트 모드"
     },
     "back": "뒤로",
     "batch": {
@@ -230,7 +235,8 @@
       "pattern": "이름 패턴",
       "patternHint": "{'{'}filename{'}'}은 파일 이름으로 바뀝니다.",
       "sameFolder": "원본과 같은 폴더",
-      "title": "내보내기"
+      "title": "내보내기",
+      "description": "저장 위치, 이름 패턴, 충돌"
     },
     "history": {
       "clear": "기록 지우기",
@@ -296,7 +302,11 @@
       },
       "size": "크기",
       "speed": "속도",
-      "speedHint": "빠를수록 덜 압축합니다."
+      "speedHint": "빠를수록 덜 압축합니다.",
+      "outputDescription": "형식과 품질",
+      "sizeDescription": "결과 크기",
+      "metadataDescription": "이미지 외에 파일에 담기는 정보",
+      "advancedDescription": "압축, 색상, 로딩"
     },
     "info": {
       "alpha": "투명도",
@@ -484,7 +494,11 @@
         "medium": "보통",
         "slow": "느리게",
         "slowHint": "파일이 작아지고 시간이 더 걸립니다."
-      }
+      },
+      "outputDescription": "형식과 품질",
+      "sizeDescription": "해상도와 프레임 속도",
+      "audioDescription": "트랙, 코덱, 비트레이트",
+      "advancedDescription": "코덱, 속도, 처리"
     }
   },
   "contentType": {
@@ -701,7 +715,6 @@
       "balanced": "균형",
       "quality": "최고"
     },
-    "savedAt": "저장 위치: {path}",
     "adjustAndReprocess": "조정 후 다시 처리"
   },
   "importing": {
@@ -999,7 +1012,7 @@
       "uploadTitle": "여기에 비디오를 놓으세요"
     },
     "edits": {
-      "adjustments": "이미지 조정",
+      "adjustments": "조정",
       "blurHint": "화면 전체를 부드럽게 합니다. 압축 흔적을 가릴 수 있지만 선명도를 잃습니다.",
       "blur_enabled": "흐림",
       "brightness": "밝기",
@@ -1031,7 +1044,10 @@
       "trim": "구간",
       "trimEnd": "구간 끝",
       "trimStart": "구간 시작",
-      "wholeVideo": "전체 영상"
+      "wholeVideo": "전체 영상",
+      "adjustmentsDescription": "밝기, 대비, 채도, 색상",
+      "effectsDescription": "노이즈 감소, 흐림, 그레인",
+      "transformDescription": "회전, 뒤집기, 구간 자르기"
     },
     "enhance": {
       "animeVideo": "애니메이션",
@@ -1067,12 +1083,12 @@
       "cancel": "취소",
       "container": "형식",
       "destination": "저장 위치",
-      "done": "파일을 내보냈습니다.",
       "profile": "품질",
       "sameFolder": "원본과 같은 폴더",
       "start": "내보내기",
       "title": "내보내기",
-      "working": "처리 중…"
+      "working": "처리 중…",
+      "description": "형식, 품질, 저장 위치, 이름"
     },
     "limits": {
       "ceilingExceeded": "이 작업의 {factor} 한도를 초과했습니다.",
@@ -1122,7 +1138,9 @@
       "idle": "준비됨",
       "processing": "처리 중",
       "queued": "대기열"
-    }
+    },
+    "applyToAll": "이 설정을 모두에 적용 ({n})",
+    "applyToAllHint": "자르기와 구간은 각 동영상 그대로 유지됩니다."
   },
   "initialModels": {
     "downloading": "AI 모델 다운로드 중 ({done}/{total})",
@@ -1156,5 +1174,10 @@
       "encoder_unavailable": "이 컴퓨터에서는 이 형식으로 저장할 수 없습니다.",
       "insufficient_disk": "결과를 저장할 디스크 공간이 부족합니다."
     }
+  },
+  "savedResult": {
+    "title": "파일 저장됨",
+    "open": "열기",
+    "showInFolder": "폴더에서 보기"
   }
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Expand, FileType, Tags, Wrench } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -113,7 +114,11 @@ function set(field: string, value: unknown): void {
 
 <template>
   <div class="image-settings">
-    <CollapsiblePanel :title="t('compression.image.output')">
+    <CollapsiblePanel
+      :title="t('compression.image.output')"
+      :description="t('compression.image.outputDescription')"
+      :icon="FileType"
+    >
       <SettingRow :label="t('compression.image.format.label')">
         <AppSelect
           :model-value="format"
@@ -148,7 +153,11 @@ function set(field: string, value: unknown): void {
       />
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.image.size')">
+    <CollapsiblePanel
+      :title="t('compression.image.size')"
+      :description="t('compression.image.sizeDescription')"
+      :icon="Expand"
+    >
       <SettingRow :label="t('compression.image.resolution.label')">
         <AppSelect
           :model-value="String(settings.resolution ?? 'original')"
@@ -176,7 +185,12 @@ function set(field: string, value: unknown): void {
       />
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.image.metadataTitle')" :default-open="false">
+    <CollapsiblePanel
+      :title="t('compression.image.metadataTitle')"
+      :description="t('compression.image.metadataDescription')"
+      :icon="Tags"
+      :default-open="false"
+    >
       <SettingRow
         :label="t('compression.image.metadataPolicy')"
         :description="t('compression.image.metadataPolicyHint')"
@@ -194,6 +208,8 @@ function set(field: string, value: unknown): void {
     <CollapsiblePanel
       v-if="mode === 'advanced' && format !== 'keep'"
       :title="t('compression.image.advanced')"
+      :description="t('compression.image.advancedDescription')"
+      :icon="Wrench"
       :default-open="false"
     >
       <template v-if="format === 'png'">

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ArrowLeft, Zap } from '@lucide/vue'
+import { ArrowLeft, FileOutput, Zap } from '@lucide/vue'
 import MediaEditorShell, { type EditorItem } from '../components/MediaEditorShell.vue'
 import UploadZone from '../components/UploadZone.vue'
 import AppButton from '../components/atoms/AppButton.vue'
@@ -497,7 +497,12 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
 
           <CompressionSummary :settings="payload" :media-kind="mediaKind" :mode="mode" />
 
-          <CollapsiblePanel :title="t('compression.export.title')" :default-open="false">
+          <CollapsiblePanel
+            :title="t('compression.export.title')"
+            :description="t('compression.export.description')"
+            :icon="FileOutput"
+            :default-open="false"
+          >
             <CompressionExportPanel v-model="exportOptions" />
           </CollapsiblePanel>
 

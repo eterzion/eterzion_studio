@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Expand, FileType, Music, Wrench } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -183,7 +184,11 @@ function set(field: string, value: unknown): void {
 
 <template>
   <div class="video-settings">
-    <CollapsiblePanel :title="t('compression.video.output')">
+    <CollapsiblePanel
+      :title="t('compression.video.output')"
+      :description="t('compression.video.outputDescription')"
+      :icon="FileType"
+    >
       <!-- So' no Avancado. O container e' campo tecnico: o modo Basico nao o
            envia (condicao 2 da excecao do Principio V, conferida no backend).
            Mostrado aqui, a pessoa escolhia WebM e recebia o formato original,
@@ -216,7 +221,11 @@ function set(field: string, value: unknown): void {
       </p>
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.video.size')">
+    <CollapsiblePanel
+      :title="t('compression.video.size')"
+      :description="t('compression.video.sizeDescription')"
+      :icon="Expand"
+    >
       <SettingRow :label="t('compression.video.resolution')">
         <AppSelect
           :model-value="String(settings.resolution ?? 'original')"
@@ -242,7 +251,12 @@ function set(field: string, value: unknown): void {
       />
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.video.audioTitle')" :default-open="false">
+    <CollapsiblePanel
+      :title="t('compression.video.audioTitle')"
+      :description="t('compression.video.audioDescription')"
+      :icon="Music"
+      :default-open="false"
+    >
       <SettingRow :label="t('compression.video.audio.label')" :divided="audioMode !== 'recompress'">
         <AppSelect
           :model-value="audioMode"
@@ -287,6 +301,8 @@ function set(field: string, value: unknown): void {
     <CollapsiblePanel
       v-if="mode === 'advanced'"
       :title="t('compression.video.advanced')"
+      :description="t('compression.video.advancedDescription')"
+      :icon="Wrench"
       :default-open="false"
     >
       <SettingRow

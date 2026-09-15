@@ -35,6 +35,7 @@ import {
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import { addVideo, removeVideo, videoQueue, type EditorVideo } from '../store/videoQueue'
 import { settingsState } from '../store/settings'
+import { copiarConfiguracao } from '../utils/videoApplyAll'
 
 // The one Vídeo screen (specs/007-video-editor-player, FR-032 as amended).
 //
@@ -218,6 +219,33 @@ function runAll(): void {
   }
 }
 
+/** Os videos que ainda podem receber a configuracao (os que nao estao rodando). */
+const applyTargets = computed(() =>
+  videos.value.filter((v) => !processing.isBusy(v.handle.handle_id))
+)
+
+/** Como o "Aplicar esta configuracao a todos" da Imagem (utils/videoApplyAll.ts
+ *  diz o que vai e o que fica de cada video). */
+function applyToAll(): void {
+  const origem = active.value
+  if (!origem) return
+  const de = {
+    edits: edits.editsFor(origem.handle.handle_id),
+    enhance: enhanceFor(origem.handle.handle_id),
+    width: origem.handle.width,
+    height: origem.handle.height
+  }
+  for (const video of applyTargets.value) {
+    if (video.handle.handle_id === origem.handle.handle_id) continue
+    copiarConfiguracao(de, {
+      edits: edits.editsFor(video.handle.handle_id),
+      enhance: enhanceFor(video.handle.handle_id),
+      width: video.handle.width,
+      height: video.handle.height
+    })
+  }
+}
+
 const pendingCount = computed(
   () => videos.value.filter((v) => !processing.isBusy(v.handle.handle_id)).length
 )
@@ -391,6 +419,18 @@ function remove(id: string): void {
             @clear-trim="setTrim(null)"
           />
 
+          <div class="apply-all">
+            <AppButton
+              variant="secondary"
+              class="w-full"
+              :disabled="!active || applyTargets.length < 2"
+              @click="applyToAll"
+            >
+              {{ t('videoEditor.applyToAll', { n: applyTargets.length }) }}
+            </AppButton>
+            <p class="apply-all-hint">{{ t('videoEditor.applyToAllHint') }}</p>
+          </div>
+
           <VideoExportPanel
             :state="activeState"
             :directory="exportDirectory"
@@ -408,6 +448,19 @@ function remove(id: string): void {
 </template>
 
 <style scoped>
+.apply-all {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.apply-all-hint {
+  margin: 0;
+  font-size: var(--fs-caption);
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
 /* Mirrors AudioView/ImageEditorView so the three media screens share one
    shape — height, padding, and an empty state that fills the area instead of
    sitting as a strip at the top. */

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Expand, FileType, Palette } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -104,7 +105,11 @@ function set(field: string, value: unknown): void {
 
 <template>
   <div class="animation-settings">
-    <CollapsiblePanel :title="t('compression.animation.output')">
+    <CollapsiblePanel
+      :title="t('compression.animation.output')"
+      :description="t('compression.animation.outputDescription')"
+      :icon="FileType"
+    >
       <SettingRow :label="t('compression.animation.format')">
         <AppSelect
           :model-value="format"
@@ -133,7 +138,12 @@ function set(field: string, value: unknown): void {
 
     <!-- Cores e dithering só existem onde há paleta. Num MP4 eles não estão
          desabilitados: não fazem parte do formato. -->
-    <CollapsiblePanel v-if="usesPalette" :title="t('compression.animation.palette')">
+    <CollapsiblePanel
+      v-if="usesPalette"
+      :title="t('compression.animation.palette')"
+      :description="t('compression.animation.paletteDescription')"
+      :icon="Palette"
+    >
       <SettingRow
         :label="t('compression.animation.autoColors')"
         :description="t('compression.animation.autoColorsHint')"
@@ -172,7 +182,11 @@ function set(field: string, value: unknown): void {
       </SettingRow>
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.animation.size')">
+    <CollapsiblePanel
+      :title="t('compression.animation.size')"
+      :description="t('compression.animation.sizeDescription')"
+      :icon="Expand"
+    >
       <SettingRow :label="t('compression.animation.resolution')">
         <AppSelect
           :model-value="String(settings.resolution ?? 'original')"
