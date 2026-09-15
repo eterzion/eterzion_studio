@@ -419,18 +419,6 @@ function remove(id: string): void {
             @clear-trim="setTrim(null)"
           />
 
-          <div class="apply-all">
-            <AppButton
-              variant="secondary"
-              class="w-full"
-              :disabled="!active || applyTargets.length < 2"
-              @click="applyToAll"
-            >
-              {{ t('videoEditor.applyToAll', { n: applyTargets.length }) }}
-            </AppButton>
-            <p class="apply-all-hint">{{ t('videoEditor.applyToAllHint') }}</p>
-          </div>
-
           <VideoExportPanel
             :state="activeState"
             :directory="exportDirectory"
@@ -439,7 +427,21 @@ function remove(id: string): void {
             @export="runActive"
             @cancel="activeId && processing.cancel(activeId)"
             @pick-directory="pickDirectory"
-          />
+          >
+            <template #before-actions>
+              <div class="apply-all">
+                <AppButton
+                  variant="secondary"
+                  class="w-full"
+                  :disabled="!active || applyTargets.length < 2"
+                  @click="applyToAll"
+                >
+                  {{ t('videoEditor.applyToAll', { n: applyTargets.length }) }}
+                </AppButton>
+                <p class="apply-all-hint">{{ t('videoEditor.applyToAllHint') }}</p>
+              </div>
+            </template>
+          </VideoExportPanel>
         </template>
       </MediaEditorShell>
     </div>
