@@ -200,8 +200,6 @@
       "wouldGrow": "Mit diesen Einstellungen würde die Datei größer als das Original."
     },
     "export": {
-      "applyToAll": "Auf alle anwenden",
-      "applyToAllHint": "Nutzt diese Wahl für den gesamten Stapel.",
       "choose": "Ordner wählen",
       "conflict": {
         "ask": "Nachfragen",
@@ -211,7 +209,7 @@
       "destination": "Ziel",
       "onConflict": "Wenn schon vorhanden",
       "pattern": "Namensmuster",
-      "patternHint": "{filename} wird durch den Dateinamen ersetzt.",
+      "patternHint": "{'{'}filename{'}'} wird durch den Dateinamen ersetzt.",
       "sameFolder": "Derselbe Ordner wie das Original",
       "title": "Export"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "Zielgröße zu klein",
       "unknown": "fehlgeschlagen",
       "unreadable": "nicht lesbar",
-      "unsupported_media": "keine erkannte Mediendatei"
+      "unsupported_media": "keine erkannte Mediendatei",
+      "invalid_naming_pattern": "Das Namensmuster enthält einen Platzhalter, den es nicht gibt. Verwenden Sie {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} oder {'{'}codec{'}'}."
     },
     "result": {
       "elapsed": "{seconds} s",
@@ -405,10 +404,9 @@
     },
     "title": "Komprimierung",
     "unavailable": {
-      "format_not_writable": "dieser Computer kann dieses Format nicht schreiben",
       "no_encoder_available": "dieser Computer kann dieses Format nicht schreiben",
-      "not_supported_by_build": "in dieser Installation nicht verfügbar",
-      "requires_hardware_encoder": "braucht Videobeschleunigung, die dieser Rechner nicht hat"
+      "requires_hardware_encoder": "braucht Videobeschleunigung, die dieser Rechner nicht hat",
+      "unsupported_build": "in dieser Installation nicht verfügbar"
     },
     "upload": {
       "selectPrompt": "Wähle eine Datei aus der Warteschlange",

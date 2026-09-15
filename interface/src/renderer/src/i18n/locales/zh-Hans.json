@@ -200,8 +200,6 @@
       "wouldGrow": "按当前设置，文件会比原来更大。"
     },
     "export": {
-      "applyToAll": "应用到全部",
-      "applyToAllHint": "整批都使用这个选择。",
       "choose": "选择文件夹",
       "conflict": {
         "ask": "询问",
@@ -211,7 +209,7 @@
       "destination": "保存位置",
       "onConflict": "如果已存在",
       "pattern": "命名模式",
-      "patternHint": "{filename} 会替换为文件名。",
+      "patternHint": "{'{'}filename{'}'} 会替换为文件名。",
       "sameFolder": "与原文件相同的文件夹",
       "title": "导出"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "目标体积过小",
       "unknown": "失败",
       "unreadable": "无法读取",
-      "unsupported_media": "不是可识别的媒体文件"
+      "unsupported_media": "不是可识别的媒体文件",
+      "invalid_naming_pattern": "名称模式中有不存在的占位符。请使用 {'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'} 或 {'{'}codec{'}'}。"
     },
     "result": {
       "elapsed": "{seconds} 秒",
@@ -405,10 +404,9 @@
     },
     "title": "压缩",
     "unavailable": {
-      "format_not_writable": "这台电脑无法写入该格式",
       "no_encoder_available": "这台电脑无法写入该格式",
-      "not_supported_by_build": "此安装中不可用",
-      "requires_hardware_encoder": "需要这台机器没有的视频加速"
+      "requires_hardware_encoder": "需要这台机器没有的视频加速",
+      "unsupported_build": "此安装中不可用"
     },
     "upload": {
       "selectPrompt": "从队列中选择一个文件",

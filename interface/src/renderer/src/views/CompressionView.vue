@@ -84,8 +84,7 @@ const presetModified = ref(false)
 const exportOptions = ref<CompressionExport>({
   directory: null,
   naming_pattern: '{filename}_compressed',
-  conflict_policy: 'rename',
-  apply_to_all: false
+  conflict_policy: 'rename'
 })
 
 const activeHandle = computed(() => queue.active.value?.media?.handle_id ?? null)

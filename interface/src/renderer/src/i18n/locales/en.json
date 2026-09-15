@@ -200,8 +200,6 @@
       "wouldGrow": "With these settings the file would end up larger than the original."
     },
     "export": {
-      "applyToAll": "Apply to all",
-      "applyToAllHint": "Use this choice for the whole batch.",
       "choose": "Choose folder",
       "conflict": {
         "ask": "Ask",
@@ -211,7 +209,7 @@
       "destination": "Destination",
       "onConflict": "If it already exists",
       "pattern": "Naming pattern",
-      "patternHint": "{filename} is replaced by the file’s name.",
+      "patternHint": "{'{'}filename{'}'} is replaced by the file’s name.",
       "sameFolder": "Same folder as the original",
       "title": "Export"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "target size too small",
       "unknown": "failed",
       "unreadable": "could not be read",
-      "unsupported_media": "not a recognised media file"
+      "unsupported_media": "not a recognised media file",
+      "invalid_naming_pattern": "The naming pattern uses a placeholder that doesn't exist. Use {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} or {'{'}codec{'}'}."
     },
     "result": {
       "elapsed": "{seconds} s",
@@ -405,10 +404,9 @@
     },
     "title": "Compression",
     "unavailable": {
-      "format_not_writable": "this computer cannot write this format",
       "no_encoder_available": "this computer cannot write this format",
-      "not_supported_by_build": "not available in this installation",
-      "requires_hardware_encoder": "needs video acceleration this machine does not have"
+      "requires_hardware_encoder": "needs video acceleration this machine does not have",
+      "unsupported_build": "not available in this installation"
     },
     "upload": {
       "selectPrompt": "Select a file from the queue",

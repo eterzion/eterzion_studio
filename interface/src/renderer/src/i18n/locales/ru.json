@@ -200,8 +200,6 @@
       "wouldGrow": "С этими настройками файл получится больше оригинала."
     },
     "export": {
-      "applyToAll": "Применить ко всем",
-      "applyToAllHint": "Использовать этот выбор для всей партии.",
       "choose": "Выбрать папку",
       "conflict": {
         "ask": "Спросить",
@@ -211,7 +209,7 @@
       "destination": "Куда",
       "onConflict": "Если файл уже есть",
       "pattern": "Шаблон имени",
-      "patternHint": "{filename} заменяется именем файла.",
+      "patternHint": "{'{'}filename{'}'} заменяется именем файла.",
       "sameFolder": "Та же папка, что и у оригинала",
       "title": "Экспорт"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "целевой размер слишком мал",
       "unknown": "ошибка",
       "unreadable": "не удалось прочитать",
-      "unsupported_media": "не распознано как медиафайл"
+      "unsupported_media": "не распознано как медиафайл",
+      "invalid_naming_pattern": "В шаблоне имени есть несуществующий заполнитель. Используйте {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} или {'{'}codec{'}'}."
     },
     "result": {
       "elapsed": "{seconds} с",
@@ -405,10 +404,9 @@
     },
     "title": "Сжатие",
     "unavailable": {
-      "format_not_writable": "этот компьютер не может записать такой формат",
       "no_encoder_available": "этот компьютер не может записать такой формат",
-      "not_supported_by_build": "недоступно в этой установке",
-      "requires_hardware_encoder": "нужно видеоускорение, которого нет на этой машине"
+      "requires_hardware_encoder": "нужно видеоускорение, которого нет на этой машине",
+      "unsupported_build": "недоступно в этой установке"
     },
     "upload": {
       "selectPrompt": "Выберите файл из очереди",

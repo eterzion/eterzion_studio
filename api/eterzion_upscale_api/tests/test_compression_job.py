@@ -60,7 +60,7 @@ def test_comprime_uma_imagem_de_ponta_a_ponta(client, imagem, tmp_path):
 
     r = client.post('/compression/jobs', json=_pedido(
         handle, export={'directory': str(destino), 'naming_pattern': '{filename}_compressed',
-                        'conflict_policy': 'rename', 'apply_to_all': False}))
+                        'conflict_policy': 'rename'}))
     assert r.status_code == 202
     job_id = r.json()['job_id']
 
@@ -366,3 +366,70 @@ def _aguardar(job_id: str, limite: float = 30.0) -> None:
     if job and job['status'] == 'pending':
         job['status'] = 'queued'
     asyncio.run(jobs._process_job(job_id))
+
+
+# ------------------------------- destino e nome ------------------------------- #
+
+from app import routes  # noqa: E402
+from app.compression.runner import CompressionRefused  # noqa: E402
+from app.schemas import CompressionJobRequest  # noqa: E402
+
+
+def _destino(tmp_path, media_kind: str, settings: dict, origem: str = 'origem.mp4',
+             padrao: str = '{filename}_compressed') -> str:
+    fonte = tmp_path / origem
+    fonte.write_bytes(b'x')
+    pedido = CompressionJobRequest(handle_id='h', media_kind=media_kind, settings=settings,
+                                   advanced=True,
+                                   export={'directory': str(tmp_path), 'naming_pattern': padrao})
+    return routes._compression_output_path(str(fonte), pedido)
+
+
+@pytest.mark.parametrize('container', ['webm', 'mkv', 'mp4'])
+def test_video_sai_com_a_extensao_do_container_escolhido(tmp_path, container):
+    # O video escolhe o formato por `container`. Ler so' `output_format` fazia
+    # um WebM pedido a partir de um .mp4 sair chamado .mp4 -- e o ffmpeg, que
+    # deduz o container pela extensao, gravava mesmo um MP4.
+    assert _destino(tmp_path, 'video', {'container': container}).endswith(f'.{container}')
+
+
+def test_video_sem_container_mantem_a_extensao_da_origem(tmp_path):
+    # Modo Basico nao envia container (campo tecnico): fica o formato original.
+    for settings in ({}, {'container': 'auto'}):
+        assert _destino(tmp_path, 'video', settings, origem='clipe.mkv').endswith('.mkv')
+
+
+def test_imagem_audio_e_animacao_continuam_por_output_format(tmp_path):
+    assert _destino(tmp_path, 'image', {'output_format': 'jpeg'}, origem='f.png').endswith('.jpg')
+    assert _destino(tmp_path, 'audio', {'output_format': 'opus'}, origem='a.wav').endswith('.opus')
+    assert _destino(tmp_path, 'animation', {'output_format': 'webp'}, origem='g.gif').endswith('.webp')
+
+
+@pytest.mark.parametrize('padrao', [
+    '{xyz}',              # marcador desconhecido: era KeyError
+    '{0}',                # posicional: era IndexError
+    '{filename.upper}',   # atributo
+    '{filename!r}',       # conversao
+    '{filename:>20}',     # especificacao de formato
+    '{filename',          # chave sem par: era ValueError
+])
+def test_padrao_de_nome_invalido_e_recusado_com_motivo(tmp_path, padrao):
+    with pytest.raises(CompressionRefused) as erro:
+        _destino(tmp_path, 'image', {'output_format': 'jpeg'}, origem='f.png', padrao=padrao)
+    assert erro.value.reason == 'invalid_naming_pattern'
+
+
+@pytest.mark.parametrize('padrao', ['{filename}_{quality}', '{resolution}-{codec}-{filename}',
+                                    'fixo', '{{literal}}_{filename}'])
+def test_padroes_validos_continuam_funcionando(tmp_path, padrao):
+    _destino(tmp_path, 'image', {'output_format': 'jpeg', 'quality': 70}, origem='f.png', padrao=padrao)
+
+
+def test_padrao_invalido_vira_422_e_nao_500(client, imagem):
+    # O caminho completo: antes, o KeyError escapava do except e virava 500.
+    handle = media_handles.register_media(imagem)
+    r = client.post('/compression/jobs', json=_pedido(
+        handle, export={'naming_pattern': '{nome_que_nao_existe}'}))
+    assert r.status_code == 422
+    assert r.json()['detail']['reason'] == 'invalid_naming_pattern'
+

@@ -200,8 +200,6 @@
       "wouldGrow": "이 설정이면 파일이 원본보다 커집니다."
     },
     "export": {
-      "applyToAll": "전체에 적용",
-      "applyToAllHint": "이 선택을 전체 묶음에 적용합니다.",
       "choose": "폴더 선택",
       "conflict": {
         "ask": "물어보기",
@@ -211,7 +209,7 @@
       "destination": "저장 위치",
       "onConflict": "이미 있을 때",
       "pattern": "이름 패턴",
-      "patternHint": "{filename}은 파일 이름으로 바뀝니다.",
+      "patternHint": "{'{'}filename{'}'}은 파일 이름으로 바뀝니다.",
       "sameFolder": "원본과 같은 폴더",
       "title": "내보내기"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "목표 크기가 너무 작습니다",
       "unknown": "실패했습니다",
       "unreadable": "읽을 수 없습니다",
-      "unsupported_media": "인식할 수 없는 미디어 파일입니다"
+      "unsupported_media": "인식할 수 없는 미디어 파일입니다",
+      "invalid_naming_pattern": "이름 패턴에 없는 자리 표시자가 있습니다. {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'}, {'{'}codec{'}'}을(를) 사용하세요."
     },
     "result": {
       "elapsed": "{seconds}초",
@@ -405,10 +404,9 @@
     },
     "title": "압축",
     "unavailable": {
-      "format_not_writable": "이 컴퓨터에서는 이 형식을 저장할 수 없습니다",
       "no_encoder_available": "이 컴퓨터에서는 이 형식을 저장할 수 없습니다",
-      "not_supported_by_build": "이 설치본에서는 사용할 수 없습니다",
-      "requires_hardware_encoder": "이 컴퓨터에 없는 영상 가속이 필요합니다"
+      "requires_hardware_encoder": "이 컴퓨터에 없는 영상 가속이 필요합니다",
+      "unsupported_build": "이 설치본에서는 사용할 수 없습니다"
     },
     "upload": {
       "selectPrompt": "대기열에서 파일을 선택하세요",
