@@ -1099,5 +1099,15 @@
       "processing": "处理中",
       "queued": "排队中"
     }
+  },
+  "initialModels": {
+    "downloading": "正在下载 AI 模型（{done}/{total}）",
+    "downloadingBody": "在此期间你可以继续使用应用。",
+    "ready": "AI 模型已就绪",
+    "readyBody": "所有功能都无需再下载即可使用。",
+    "failed": "部分 AI 模型未能下载",
+    "failedBody": "应用会在下次打开时重试。你也可以在“组件”中下载。",
+    "openComponents": "查看组件",
+    "close": "关闭"
   }
 }

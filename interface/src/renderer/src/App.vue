@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ServerCrash } from '@lucide/vue'
 import AppSidebar from './components/AppSidebar.vue'
@@ -15,11 +15,13 @@ import LicenseActivationView from './views/LicenseActivationView.vue'
 import CompressionView from './views/CompressionView.vue'
 import ComponentsView from './views/ComponentsView.vue'
 import UpdateToast from './components/UpdateToast.vue'
+import ModelosIniciaisToast from './components/ModelosIniciaisToast.vue'
 import type { NavKey } from './types'
 import { apiStatus, checkApiStatus } from './store/apiStatus'
 import { setTheme } from './store/settings'
 import { initLicense, isHardBlocked, licenseState } from './store/license'
 import { initUpdates } from './store/updates'
+import { baixarModelosIniciais } from './store/modelosIniciais'
 import { currentResolvedTheme } from './theme'
 import { hasNativeApi } from './services/native'
 
@@ -54,6 +56,18 @@ onMounted(() => {
   // principal recebe a preferencia de procurar atualizacoes (ver updater.ts).
   void initUpdates()
 })
+
+// Os modelos que o instalador pediu ("baixar depois de ativar") so' podem
+// descer com a licenca ativa -- o download pelo nosso servidor exige isso. So'
+// 'active', e nao os estados de tolerancia offline: sem rede, o download
+// falharia e so' serviria para mostrar um aviso de erro.
+watch(
+  () => licenseState.status,
+  (status) => {
+    if (status === 'active') void baixarModelosIniciais()
+  },
+  { immediate: true }
+)
 
 const { t } = useI18n()
 </script>
@@ -103,12 +117,34 @@ const { t } = useI18n()
         </div>
       </KeepAlive>
 
-      <UpdateToast @open-updates="active = 'configuracoes'" />
+      <!-- Os avisos do canto empilham aqui: dois ao mesmo tempo (modelos
+           baixando e uma versao nova pronta) ficam um sobre o outro. -->
+      <div class="toast-stack">
+        <ModelosIniciaisToast @open-components="active = 'componentes'" />
+        <UpdateToast @open-updates="active = 'configuracoes'" />
+      </div>
     </template>
   </div>
 </template>
 
 <style scoped>
+.toast-stack {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--space-2);
+  /* A pilha cobre um canto da janela; so' os cartoes recebem clique. */
+  pointer-events: none;
+}
+
+.toast-stack > * {
+  pointer-events: auto;
+}
+
 .app-shell {
   display: flex;
   height: 100vh;

@@ -50,6 +50,9 @@ export const api = {
   openPath: (path: string): Promise<string> => window.api.openPath(path),
   getAppPaths: (): Promise<{ documents: string; repoRoot: string; apiBaseUrl: string }> =>
     window.api.getAppPaths(),
+  getInitialModelsState: (): Promise<'pendente' | 'concluido' | null> =>
+    window.api.getInitialModelsState(),
+  completeInitialModels: (): Promise<void> => window.api.completeInitialModels(),
   getPathForFile: (file: File): string => window.api.getPathForFile(file),
   toFileUrl: (path: string): string => window.api.toFileUrl(path),
   joinPath: (...parts: string[]): string => window.api.joinPath(...parts),

@@ -61,6 +61,9 @@ const api = {
   openPath: (path: string): Promise<string> => ipcRenderer.invoke('shell:openPath', path),
   getAppPaths: (): Promise<{ documents: string; repoRoot: string; apiBaseUrl: string }> =>
     ipcRenderer.invoke('app:paths'),
+  getInitialModelsState: (): Promise<'pendente' | 'concluido' | null> =>
+    ipcRenderer.invoke('modelos-iniciais:estado'),
+  completeInitialModels: (): Promise<void> => ipcRenderer.invoke('modelos-iniciais:concluir'),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
   // "eterzion-media://local/C:/Users/..." — the "local" host is mandatory because the
   // scheme is registered as standard (see MEDIA_SCHEME comment in src/main/index.ts);

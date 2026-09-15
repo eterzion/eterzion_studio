@@ -32,6 +32,11 @@ function alinharAtalhosAoAppUserModelId(): void {
         }
       }
     )
+    console.info(
+      '[aumid] atalhos do app:',
+      result.doApp.map((a) => `${a.path} = ${a.appUserModelId || '(sem id)'}`).join(' | ') ||
+        'nenhum'
+    )
     for (const path of result.atualizados) console.info('[aumid] atalho alinhado', path)
     for (const f of result.falhas) console.warn('[aumid] atalho nao alinhado', f.path, f.erro)
   })

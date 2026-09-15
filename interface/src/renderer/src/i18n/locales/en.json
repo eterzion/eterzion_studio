@@ -1099,5 +1099,15 @@
       "processing": "Processing",
       "queued": "Queued"
     }
+  },
+  "initialModels": {
+    "downloading": "Downloading AI models ({done} of {total})",
+    "downloadingBody": "You can keep using the app in the meantime.",
+    "ready": "AI models ready",
+    "readyBody": "Every feature now works without further downloads.",
+    "failed": "Not all AI models were downloaded",
+    "failedBody": "The app will try again the next time it opens. You can also download them in Components.",
+    "openComponents": "View components",
+    "close": "Close"
   }
 }
