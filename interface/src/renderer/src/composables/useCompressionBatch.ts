@@ -23,6 +23,7 @@ import {
 } from '../services/compression'
 import type { CompressionResultData } from '../components/compression/CompressionResult.vue'
 import type { CompressionMode, MediaKind } from '../constants/compression'
+import type { RespostaDeConflito } from './usePerguntaDeConflito'
 
 export type BatchItemStatus = 'pending' | 'running' | 'done' | 'error' | 'cancelled'
 
@@ -70,7 +71,12 @@ export interface CompressionBatchApi {
   stop: () => void
 }
 
-export function useCompressionBatch(): CompressionBatchApi {
+export interface CompressionBatchOptions {
+  /** A mesma pergunta do job unico (useCompressionJob). */
+  perguntarConflito?: (caminho: string) => Promise<RespostaDeConflito>
+}
+
+export function useCompressionBatch(options: CompressionBatchOptions = {}): CompressionBatchApi {
   const items = ref<BatchItem[]>([])
   const running = ref(false)
 
@@ -155,6 +161,15 @@ export function useCompressionBatch(): CompressionBatchApi {
     try {
       criado = await createJob(corpo)
     } catch (e) {
+      if (e instanceof CompressionError && e.reason === 'conflict' && options.perguntarConflito) {
+        // A fila espera a resposta deste arquivo antes de seguir para o proximo.
+        const resposta = await options.perguntarConflito(String(e.detail.path ?? ''))
+        if (resposta) {
+          return _runOne({ ...pedido, export: { ...pedido.export, conflict_policy: resposta } })
+        }
+        item.status = 'cancelled'
+        return
+      }
       // Uma recusa é deste arquivo, e a fila segue. Parar aqui faria um arquivo
       // com configuração impossível levar os outros junto.
       item.status = 'error'
@@ -197,7 +212,8 @@ export function useCompressionBatch(): CompressionBatchApi {
     if (typeof status.progress === 'number') item.progress = status.progress
     if (status.status === 'error') {
       item.status = 'error'
-      item.error = status.error_category ?? 'unknown'
+      // O motivo antes da categoria, como no job unico (useCompressionJob).
+      item.error = status.error_reason ?? status.error_category ?? 'unknown'
       return
     }
     if (status.status === 'cancelled') {

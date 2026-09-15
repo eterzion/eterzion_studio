@@ -620,7 +620,6 @@
     "beyondNative": "Alvo acima do fator nativo ({factor}x) — o excedente é interpolação, com menos ganho de detalhe.",
     "cancel": "Cancelar",
     "cancelled": "Processamento cancelado.",
-    "conflictPrompt": "Já existe um arquivo com esse nome. O que fazer?",
     "denoiseAfterAlt": "Depois da redução de ruído",
     "denoiseBeforeAlt": "Antes da redução de ruído",
     "denoiseHint": "Remove granulação e marcas de compressão sem borrar os contornos. Útil em fotos de celular, com pouca luz, ou salvas em JPG muitas vezes.",
@@ -1108,5 +1107,22 @@
     "failedBody": "O app tenta de novo na próxima vez que abrir. Você também pode baixá-los em Componentes.",
     "openComponents": "Ver componentes",
     "close": "Fechar"
+  },
+  "destination": {
+    "fileName": "Nome do arquivo",
+    "onConflict": "Se já existir",
+    "conflict": {
+      "rename": "Manter os dois",
+      "overwrite": "Substituir",
+      "ask": "Perguntar"
+    },
+    "dialog": {
+      "title": "Já existe um arquivo com esse nome",
+      "keepBoth": "Manter os dois",
+      "keepBothHint": "O novo arquivo recebe outro nome.",
+      "replace": "Substituir",
+      "replaceHint": "O arquivo existente só é trocado quando o novo estiver pronto.",
+      "cancel": "Cancelar"
+    }
   }
 }

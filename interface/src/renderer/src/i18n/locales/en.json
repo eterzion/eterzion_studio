@@ -620,7 +620,6 @@
     "beyondNative": "Target above the native factor ({factor}x) — the excess is interpolation, with less detail gained.",
     "cancel": "Cancel",
     "cancelled": "Processing cancelled.",
-    "conflictPrompt": "A file with that name already exists. What now?",
     "denoiseAfterAlt": "After noise reduction",
     "denoiseBeforeAlt": "Before noise reduction",
     "denoiseHint": "Removes grain and compression artefacts without blurring the edges. Useful for phone photos, low light, or images saved as JPG many times.",
@@ -1108,5 +1107,22 @@
     "failedBody": "The app will try again the next time it opens. You can also download them in Components.",
     "openComponents": "View components",
     "close": "Close"
+  },
+  "destination": {
+    "fileName": "File name",
+    "onConflict": "If it already exists",
+    "conflict": {
+      "rename": "Keep both",
+      "overwrite": "Replace",
+      "ask": "Ask"
+    },
+    "dialog": {
+      "title": "A file with this name already exists",
+      "keepBoth": "Keep both",
+      "keepBothHint": "The new file gets a different name.",
+      "replace": "Replace",
+      "replaceHint": "The existing file is only replaced once the new one is ready.",
+      "cancel": "Cancel"
+    }
   }
 }

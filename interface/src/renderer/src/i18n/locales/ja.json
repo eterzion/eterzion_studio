@@ -620,7 +620,6 @@
     "beyondNative": "ネイティブ倍率（{factor}x）を超えています。超過分は補間で、ディテールはあまり増えません。",
     "cancel": "キャンセル",
     "cancelled": "処理をキャンセルしました。",
-    "conflictPrompt": "同じ名前のファイルがすでにあります。どうしますか？",
     "denoiseAfterAlt": "ノイズ除去後",
     "denoiseBeforeAlt": "ノイズ除去前",
     "denoiseHint": "輪郭をぼかさずに、粒状ノイズと圧縮ノイズを取り除きます。スマホ写真、暗所での撮影、JPG で何度も保存した画像に向いています。",
@@ -1108,5 +1107,22 @@
     "failedBody": "次回アプリを開いたときに再試行します。コンポーネントからダウンロードすることもできます。",
     "openComponents": "コンポーネントを表示",
     "close": "閉じる"
+  },
+  "destination": {
+    "fileName": "ファイル名",
+    "onConflict": "すでに存在する場合",
+    "conflict": {
+      "rename": "両方残す",
+      "overwrite": "置き換える",
+      "ask": "確認する"
+    },
+    "dialog": {
+      "title": "同じ名前のファイルがすでにあります",
+      "keepBoth": "両方残す",
+      "keepBothHint": "新しいファイルは別の名前になります。",
+      "replace": "置き換える",
+      "replaceHint": "既存のファイルは、新しいファイルの準備ができてから置き換えられます。",
+      "cancel": "キャンセル"
+    }
   }
 }

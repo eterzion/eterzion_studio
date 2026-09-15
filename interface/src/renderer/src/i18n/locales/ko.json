@@ -620,7 +620,6 @@
     "beyondNative": "네이티브 배율({factor}x)을 넘었습니다. 초과분은 보간이라 디테일이 크게 늘지 않습니다.",
     "cancel": "취소",
     "cancelled": "처리를 취소했습니다.",
-    "conflictPrompt": "같은 이름의 파일이 이미 있습니다. 어떻게 할까요?",
     "denoiseAfterAlt": "노이즈 감소 후",
     "denoiseBeforeAlt": "노이즈 감소 전",
     "denoiseHint": "윤곽을 흐리지 않으면서 입자와 압축 자국을 제거합니다. 휴대폰 사진, 저조도 사진, JPG로 여러 번 저장한 이미지에 유용합니다.",
@@ -1108,5 +1107,22 @@
     "failedBody": "다음에 앱을 열 때 다시 시도합니다. 구성 요소에서 직접 다운로드할 수도 있습니다.",
     "openComponents": "구성 요소 보기",
     "close": "닫기"
+  },
+  "destination": {
+    "fileName": "파일 이름",
+    "onConflict": "이미 있는 경우",
+    "conflict": {
+      "rename": "둘 다 유지",
+      "overwrite": "바꾸기",
+      "ask": "묻기"
+    },
+    "dialog": {
+      "title": "같은 이름의 파일이 이미 있습니다",
+      "keepBoth": "둘 다 유지",
+      "keepBothHint": "새 파일은 다른 이름으로 저장됩니다.",
+      "replace": "바꾸기",
+      "replaceHint": "기존 파일은 새 파일이 준비된 후에만 바뀝니다.",
+      "cancel": "취소"
+    }
   }
 }

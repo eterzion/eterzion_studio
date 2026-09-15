@@ -108,6 +108,8 @@ export interface Job {
   exportError?: string
   /** The last export failed because the name was taken. */
   exportConflicted?: boolean
+  /** O caminho que ja' existia, para a pergunta de conflito. */
+  exportConflictPath?: string
   lastExportPath?: string
   thumbnail?: string
 }
@@ -693,6 +695,7 @@ export async function exportOne(
     // used to compare against this exact sentence, which a translation breaks
     // the moment it is no longer written in Portuguese.
     job.exportConflicted = message.startsWith('CONFLICT:')
+    job.exportConflictPath = job.exportConflicted ? message.slice('CONFLICT:'.length) : undefined
     job.exportError = job.exportConflicted ? t('validation.nameConflict') : message
     return { ok: false, error: job.exportError }
   }

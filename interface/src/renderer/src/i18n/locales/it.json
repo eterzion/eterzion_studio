@@ -620,7 +620,6 @@
     "beyondNative": "Obiettivo oltre il fattore nativo ({factor}x): l’eccesso è interpolazione, con meno dettaglio guadagnato.",
     "cancel": "Annulla",
     "cancelled": "Elaborazione annullata.",
-    "conflictPrompt": "Esiste già un file con questo nome. Cosa facciamo?",
     "denoiseAfterAlt": "Dopo la riduzione del rumore",
     "denoiseBeforeAlt": "Prima della riduzione del rumore",
     "denoiseHint": "Rimuove grana e segni di compressione senza sfocare i contorni. Utile per foto da telefono, con poca luce o salvate più volte in JPG.",
@@ -1108,5 +1107,22 @@
     "failedBody": "L'app riproverà alla prossima apertura. Puoi anche scaricarli in Componenti.",
     "openComponents": "Vedi componenti",
     "close": "Chiudi"
+  },
+  "destination": {
+    "fileName": "Nome del file",
+    "onConflict": "Se esiste già",
+    "conflict": {
+      "rename": "Mantieni entrambi",
+      "overwrite": "Sostituisci",
+      "ask": "Chiedi"
+    },
+    "dialog": {
+      "title": "Esiste già un file con questo nome",
+      "keepBoth": "Mantieni entrambi",
+      "keepBothHint": "Il nuovo file riceve un altro nome.",
+      "replace": "Sostituisci",
+      "replaceHint": "Il file esistente viene sostituito solo quando quello nuovo è pronto.",
+      "cancel": "Annulla"
+    }
   }
 }

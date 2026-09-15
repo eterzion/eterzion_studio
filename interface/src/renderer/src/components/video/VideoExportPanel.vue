@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Download, FolderOpen, X } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -9,6 +9,7 @@ import AppButton from '../atoms/AppButton.vue'
 import ProgressBar from '../atoms/ProgressBar.vue'
 import {
   getVideoExportOptions,
+  type ConflictMode,
   type VideoContainer,
   type VideoExportOptions
 } from '../../services/api'
@@ -29,11 +30,21 @@ const props = defineProps<{
       here so the button label reflects the real destination — a local ref would
       always have read "same folder" no matter what was picked. */
   directory: string | null
+  /** Nome do video ativo, para o exemplo no campo de nome. */
+  sourceName?: string | null
   disabled?: boolean
 }>()
 
+export interface VideoExportChoice {
+  container: VideoContainer
+  profile: Profile
+  /** Sem extensao; `null` = o nome do original. */
+  filename: string | null
+  conflict: ConflictMode
+}
+
 const emit = defineEmits<{
-  export: [payload: { container: VideoContainer; profile: Profile }]
+  export: [payload: VideoExportChoice]
   cancel: []
   pickDirectory: []
 }>()
@@ -48,6 +59,26 @@ const options = ref<VideoExportOptions | null>(null)
 // error flag to fall out of sync with.
 const container = ref<VideoContainer>('mp4')
 const profile = ref<Profile>('balanced')
+// Nome e conflito com as regras da Imagem (app/destino.py): o nome do
+// original, e o sufixo so' quando o destino cairia no proprio original.
+const filename = ref<string | null>(null)
+const conflict = ref<ConflictMode>('rename')
+
+// O nome digitado e' de um video; trocar de video volta ao nome do original.
+watch(
+  () => props.sourceName,
+  () => (filename.value = null)
+)
+
+const conflictOptions = computed(() => [
+  { value: 'rename', label: t('destination.conflict.rename') },
+  { value: 'overwrite', label: t('destination.conflict.overwrite') },
+  { value: 'ask', label: t('destination.conflict.ask') }
+])
+
+const namePlaceholder = computed(() =>
+  props.sourceName ? `${props.sourceName.replace(/\.[^.]+$/, '')}.${container.value}` : ''
+)
 
 onMounted(async () => {
   try {
@@ -121,6 +152,27 @@ const refusalMessage = computed(() => {
       </AppButton>
     </SettingRow>
 
+    <SettingRow :label="t('destination.fileName')">
+      <input
+        class="name-input"
+        type="text"
+        :placeholder="namePlaceholder"
+        :value="filename ?? ''"
+        :disabled="disabled || running"
+        :aria-label="t('destination.fileName')"
+        @input="filename = ($event.target as HTMLInputElement).value.trim() || null"
+      />
+    </SettingRow>
+
+    <SettingRow :label="t('destination.onConflict')">
+      <AppSelect
+        :model-value="conflict"
+        :options="conflictOptions"
+        :disabled="disabled || running"
+        @update:model-value="conflict = $event as ConflictMode"
+      />
+    </SettingRow>
+
     <!-- FR-027, at the moment it helps: before choosing, not after failing. -->
     <p
       v-if="nothingAvailable"
@@ -147,7 +199,7 @@ const refusalMessage = computed(() => {
       v-else
       variant="primary"
       :disabled="disabled || nothingAvailable"
-      @click="emit('export', { container, profile })"
+      @click="emit('export', { container, profile, filename, conflict })"
     >
       <template #icon><Download :size="15" /></template>
       {{ t('videoEditor.export.start') }}
@@ -168,3 +220,22 @@ const refusalMessage = computed(() => {
     </p>
   </CollapsiblePanel>
 </template>
+
+<style scoped>
+/* O mesmo campo do padrao de nome da Compressao (CompressionExportPanel.vue). */
+.name-input {
+  width: min(180px, 100%);
+  min-width: 0;
+  padding: var(--space-1) var(--space-1-5);
+  border: 1px solid var(--surface-border-soft);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--fs-label);
+}
+
+.name-input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+</style>

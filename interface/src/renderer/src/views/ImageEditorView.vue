@@ -45,6 +45,7 @@ import { errorCategoryCopy, getImageExportOptions, type ImageExportOptions } fro
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
+import ConflictDialog from '../components/ConflictDialog.vue'
 import {
   addFiles,
   queueState,
@@ -188,11 +189,11 @@ watch(exportFormatOptions, (options) => {
   const usable = options.find((option) => !option.disabled)
   if (usable) exportFormat.value = usable.value
 })
-const conflictOptions = [
-  { value: 'rename', label: 'Renomear automaticamente' },
-  { value: 'overwrite', label: 'Sobrescrever' },
-  { value: 'ask', label: 'Perguntar' }
-]
+const conflictOptions = computed(() => [
+  { value: 'rename', label: t('destination.conflict.rename') },
+  { value: 'overwrite', label: t('destination.conflict.overwrite') },
+  { value: 'ask', label: t('destination.conflict.ask') }
+])
 
 // ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
 const {
@@ -339,9 +340,8 @@ const {
   exportDestFolder,
   exportFilename,
   exportConflict,
-  conflictPrompt,
+  pergunta,
   runExport,
-  resolveConflict,
   pickExportFolder
 } = useExportPanel()
 
@@ -1055,27 +1055,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
               />
             </div>
 
-            <div v-if="conflictPrompt" class="conflict-prompt">
-              <p>{{ t('imageEditor.conflictPrompt') }}</p>
-              <div class="conflict-actions">
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  class="flex-1"
-                  @click="resolveConflict('rename')"
-                  >Renomear</AppButton
-                >
-                <AppButton
-                  variant="outline"
-                  size="sm"
-                  class="flex-1"
-                  @click="resolveConflict('overwrite')"
-                  >Sobrescrever</AppButton
-                >
-              </div>
-            </div>
-
-            <p v-if="job.exportState === 'error' && !conflictPrompt" class="banner-error">
+            <p v-if="job.exportState === 'error' && !pergunta.caminho.value" class="banner-error">
               <AlertCircle :size="14" /> {{ job.exportError }}
             </p>
             <p v-if="job.exportState === 'exported'" class="banner-info">
@@ -1109,6 +1089,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
     </div>
 
     <BatchExportModal v-if="showBatchModal" :jobs="doneJobs" @close="showBatchModal = false" />
+    <ConflictDialog :caminho="pergunta.caminho.value" @responder="pergunta.responder" />
   </div>
 </template>
 
@@ -1893,21 +1874,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
 .processing-stage {
   font-size: var(--fs-caption);
   color: var(--text-secondary);
-}
-
-.conflict-prompt {
-  background: var(--color-warning-soft);
-  border: 1px solid var(--color-warning);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2);
-  font-size: var(--fs-caption);
-  color: var(--text-primary);
-}
-
-.conflict-actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
 }
 
 @media (max-width: 1000px) {
