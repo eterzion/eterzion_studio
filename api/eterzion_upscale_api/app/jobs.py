@@ -865,14 +865,25 @@ def _entregar_video(job: dict, params: dict, interno: str) -> str:
 
 
 def _com_imagem_entregue(job: dict, params: dict, resultado: dict, on_stage) -> dict:
-    """Leva o PNG intermediario ao destino, no formato e na qualidade pedidos
-    (app/exportacao_de_imagem.py). Sem destino, nada muda."""
-    if not params.get('output_path'):
-        return resultado
+    """Aplica os ajustes, efeitos e transformacao da Imagem ao PNG que o modelo
+    gravou, e leva o resultado ao destino, no formato e na qualidade pedidos
+    (app/exportacao_de_imagem.py). Sem destino, o PNG ajustado fica na pasta
+    interna."""
     from app import destino, exportacao_de_imagem
 
-    alvo = params.get('output_target') or {}
     intermediario = _master_path(job['id'])
+    if params.get('edits') and os.path.isfile(intermediario):
+        if on_stage:
+            on_stage('Aplicando ajustes')
+        tamanho = exportacao_de_imagem.aplicar_edicoes(intermediario, params['edits'])
+        if tamanho:
+            # Girar 90 graus troca largura e altura: o tamanho que o modelo
+            # informou deixou de ser o do arquivo.
+            resultado = {**resultado, 'output_size': tamanho}
+    if not params.get('output_path'):
+        return resultado
+
+    alvo = params.get('output_target') or {}
     final = destino.confirmar_antes_de_gravar(
         params['output_path'], alvo.get('conflict', 'rename'), destino.SUFIXOS['image'])
     formato = os.path.splitext(final)[1].lstrip('.').lower()

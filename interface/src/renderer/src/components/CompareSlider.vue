@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MoveHorizontal } from '@lucide/vue'
 
 withDefaults(
@@ -39,6 +40,8 @@ function onPointerMove(e: PointerEvent): void {
 function onPointerUp(): void {
   dragging.value = false
 }
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -50,14 +53,26 @@ function onPointerUp(): void {
     @pointerup="onPointerUp"
   >
     <div class="layer-clip">
-      <img :src="afterSrc" alt="Depois" class="media" draggable="false" :style="mediaStyle" />
+      <img
+        :src="afterSrc"
+        :alt="t('imageEditor.after')"
+        class="media"
+        draggable="false"
+        :style="mediaStyle"
+      />
     </div>
     <div class="layer-clip" :style="{ clipPath: `inset(0 ${100 - position}% 0 0)` }">
-      <img :src="beforeSrc" alt="Antes" class="media" draggable="false" :style="mediaStyle" />
+      <img
+        :src="beforeSrc"
+        :alt="t('imageEditor.before')"
+        class="media"
+        draggable="false"
+        :style="mediaStyle"
+      />
     </div>
 
-    <span class="tag tag-before">Antes</span>
-    <span class="tag tag-after">Depois</span>
+    <span class="tag tag-before">{{ t('imageEditor.before') }}</span>
+    <span class="tag tag-after">{{ t('imageEditor.after') }}</span>
 
     <div class="handle" :style="{ left: position + '%' }">
       <div class="handle-line" />

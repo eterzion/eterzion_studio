@@ -641,8 +641,6 @@
     "title": "Que souhaitez-vous améliorer aujourd'hui ?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Réglages fins de qualité",
-    "adjustmentsTitle": "Réglages",
     "after": "Après",
     "animeDescription": "Art numérique, anime, illustration aux traits nets",
     "animeLabel": "Anime / illustration",
@@ -653,10 +651,6 @@
     "beyondNative": "Cible au-dessus du facteur natif ({factor}x) — l’excédent est de l’interpolation, avec moins de détail gagné.",
     "cancel": "Annuler",
     "cancelled": "Traitement annulé.",
-    "denoiseAfterAlt": "Après réduction du bruit",
-    "denoiseBeforeAlt": "Avant réduction du bruit",
-    "denoiseHint": "Retire le grain et les marques de compression sans flouter les contours. Utile pour les photos de téléphone, en basse lumière, ou réenregistrées plusieurs fois en JPG.",
-    "denoiseLabel": "Filtre de réduction du bruit",
     "destinationFolder": "Dossier de destination",
     "detectedContent": "Contenu détecté",
     "detecting": "Détection…",
@@ -700,8 +694,6 @@
     "sameAsSource": "Même dossier que l’original",
     "scaleDescription": "Taille finale de l’image",
     "scaleTitle": "Échelle",
-    "sharpenHint": "Accentue les contours pour donner une impression de netteté. En excès, cela crée des halos clairs autour des bords.",
-    "sharpenLabel": "Netteté",
     "sideBySide": "Côte à côte",
     "sizeLabel": "Taille",
     "sliderView": "Curseur avant/après",
@@ -715,7 +707,8 @@
       "balanced": "Équilibrée",
       "quality": "Maximale"
     },
-    "adjustAndReprocess": "Ajuster et retraiter"
+    "adjustAndReprocess": "Ajuster et retraiter",
+    "notInLivePreview": "Certains réglages actifs n’apparaissent pas dans l’aperçu — seulement dans le fichier final."
   },
   "importing": {
     "alreadyQueued": "Déjà dans la file : {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Traitement",
       "queued": "En file"
     },
-    "applyToAll": "Appliquer cette configuration à tous ({n})",
-    "applyToAllHint": "Le recadrage et l’extrait restent ceux de chaque vidéo."
+    "applyToAll": "Appliquer cette configuration à tous ({n})"
   },
   "initialModels": {
     "downloading": "Téléchargement des modèles d'IA ({done} sur {total})",

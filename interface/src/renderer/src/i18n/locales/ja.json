@@ -641,8 +641,6 @@
     "title": "今日は何を改善しますか？"
   },
   "imageEditor": {
-    "adjustmentsDescription": "画質の微調整",
-    "adjustmentsTitle": "調整",
     "after": "処理後",
     "animeDescription": "デジタルアート、アニメ、線のはっきりしたイラスト",
     "animeLabel": "アニメ・イラスト",
@@ -653,10 +651,6 @@
     "beyondNative": "ネイティブ倍率（{factor}x）を超えています。超過分は補間で、ディテールはあまり増えません。",
     "cancel": "キャンセル",
     "cancelled": "処理をキャンセルしました。",
-    "denoiseAfterAlt": "ノイズ除去後",
-    "denoiseBeforeAlt": "ノイズ除去前",
-    "denoiseHint": "輪郭をぼかさずに、粒状ノイズと圧縮ノイズを取り除きます。スマホ写真、暗所での撮影、JPG で何度も保存した画像に向いています。",
-    "denoiseLabel": "ノイズ除去フィルター",
     "destinationFolder": "保存先フォルダー",
     "detectedContent": "検出された種類",
     "detecting": "判別中…",
@@ -700,8 +694,6 @@
     "sameAsSource": "元ファイルと同じフォルダー",
     "scaleDescription": "最終的な画像サイズ",
     "scaleTitle": "拡大率",
-    "sharpenHint": "輪郭を強調してピントが合ったように見せます。強すぎると縁に明るいふちどりが出ます。",
-    "sharpenLabel": "シャープネス",
     "sideBySide": "並べて表示",
     "sizeLabel": "サイズ",
     "sliderView": "前後スライダー",
@@ -715,7 +707,8 @@
       "balanced": "バランス",
       "quality": "最高"
     },
-    "adjustAndReprocess": "調整して再処理"
+    "adjustAndReprocess": "調整して再処理",
+    "notInLivePreview": "一部の有効な調整はプレビューに表示されず、最終ファイルにのみ反映されます。"
   },
   "importing": {
     "alreadyQueued": "すでにキューにあります: {files}。",
@@ -1139,8 +1132,7 @@
       "processing": "処理中",
       "queued": "待機中"
     },
-    "applyToAll": "この設定をすべてに適用 ({n})",
-    "applyToAllHint": "切り抜きと区間は各動画のままです。"
+    "applyToAll": "この設定をすべてに適用 ({n})"
   },
   "initialModels": {
     "downloading": "AI モデルをダウンロード中（{done}/{total}）",

@@ -641,8 +641,6 @@
     "title": "오늘은 무엇을 개선하시겠습니까?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "세밀한 품질 조정",
-    "adjustmentsTitle": "조정",
     "after": "처리 후",
     "animeDescription": "디지털 아트, 애니메이션, 선이 뚜렷한 일러스트",
     "animeLabel": "애니메이션/일러스트",
@@ -653,10 +651,6 @@
     "beyondNative": "네이티브 배율({factor}x)을 넘었습니다. 초과분은 보간이라 디테일이 크게 늘지 않습니다.",
     "cancel": "취소",
     "cancelled": "처리를 취소했습니다.",
-    "denoiseAfterAlt": "노이즈 감소 후",
-    "denoiseBeforeAlt": "노이즈 감소 전",
-    "denoiseHint": "윤곽을 흐리지 않으면서 입자와 압축 자국을 제거합니다. 휴대폰 사진, 저조도 사진, JPG로 여러 번 저장한 이미지에 유용합니다.",
-    "denoiseLabel": "노이즈 감소 필터",
     "destinationFolder": "대상 폴더",
     "detectedContent": "감지된 콘텐츠",
     "detecting": "감지 중…",
@@ -700,8 +694,6 @@
     "sameAsSource": "원본과 같은 폴더",
     "scaleDescription": "최종 이미지 크기",
     "scaleTitle": "배율",
-    "sharpenHint": "윤곽을 강조해 초점이 맞은 느낌을 줍니다. 지나치면 가장자리에 밝은 테가 생깁니다.",
-    "sharpenLabel": "선명도",
     "sideBySide": "나란히 보기",
     "sizeLabel": "크기",
     "sliderView": "전후 슬라이더",
@@ -715,7 +707,8 @@
       "balanced": "균형",
       "quality": "최고"
     },
-    "adjustAndReprocess": "조정 후 다시 처리"
+    "adjustAndReprocess": "조정 후 다시 처리",
+    "notInLivePreview": "일부 활성화된 조정은 미리보기에 표시되지 않고 최종 파일에만 적용됩니다."
   },
   "importing": {
     "alreadyQueued": "이미 대기열에 있습니다: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "처리 중",
       "queued": "대기열"
     },
-    "applyToAll": "이 설정을 모두에 적용 ({n})",
-    "applyToAllHint": "자르기와 구간은 각 동영상 그대로 유지됩니다."
+    "applyToAll": "이 설정을 모두에 적용 ({n})"
   },
   "initialModels": {
     "downloading": "AI 모델 다운로드 중 ({done}/{total})",

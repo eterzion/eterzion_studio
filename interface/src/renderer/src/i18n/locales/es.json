@@ -641,8 +641,6 @@
     "title": "¿Qué te gustaría mejorar hoy?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Ajustes finos de calidad",
-    "adjustmentsTitle": "Ajustes",
     "after": "Después",
     "animeDescription": "Arte digital, anime, ilustración de trazo definido",
     "animeLabel": "Anime/Ilustración",
@@ -653,10 +651,6 @@
     "beyondNative": "Objetivo por encima del factor nativo ({factor}x): el exceso es interpolación, con menos ganancia de detalle.",
     "cancel": "Cancelar",
     "cancelled": "Procesamiento cancelado.",
-    "denoiseAfterAlt": "Después de la reducción de ruido",
-    "denoiseBeforeAlt": "Antes de la reducción de ruido",
-    "denoiseHint": "Elimina el grano y las marcas de compresión sin difuminar los contornos. Útil en fotos de móvil, con poca luz o guardadas muchas veces en JPG.",
-    "denoiseLabel": "Filtro de reducción de ruido",
     "destinationFolder": "Carpeta de destino",
     "detectedContent": "Contenido detectado",
     "detecting": "Detectando…",
@@ -700,8 +694,6 @@
     "sameAsSource": "La misma carpeta que el original",
     "scaleDescription": "Tamaño final de la imagen",
     "scaleTitle": "Escala",
-    "sharpenHint": "Realza los contornos para dar sensación de enfoque. En exceso crea halos claros alrededor de los bordes.",
-    "sharpenLabel": "Nitidez",
     "sideBySide": "Lado a lado",
     "sizeLabel": "Tamaño",
     "sliderView": "Control antes/después",
@@ -715,7 +707,8 @@
       "balanced": "Equilibrada",
       "quality": "Máxima"
     },
-    "adjustAndReprocess": "Ajustar y reprocesar"
+    "adjustAndReprocess": "Ajustar y reprocesar",
+    "notInLivePreview": "Algunos ajustes activos no aparecen en la vista previa: solo en el archivo final."
   },
   "importing": {
     "alreadyQueued": "Ya está en la cola: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Procesando",
       "queued": "En cola"
     },
-    "applyToAll": "Aplicar esta configuración a todos ({n})",
-    "applyToAllHint": "El recorte y el tramo siguen siendo los de cada vídeo."
+    "applyToAll": "Aplicar esta configuración a todos ({n})"
   },
   "initialModels": {
     "downloading": "Descargando los modelos de IA ({done} de {total})",

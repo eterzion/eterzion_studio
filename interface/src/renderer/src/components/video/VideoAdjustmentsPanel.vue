@@ -32,6 +32,9 @@ const props = defineProps<{
   /** True when something in this panel will not appear in the moving preview
       (FR-015). Decided centrally by hasUnpreviewableEffects, not here. */
   showsDisclosure: boolean
+  /** O aviso de "nao aparece na previa", no texto do modo (a Imagem nao tem
+   *  previa "em movimento"). */
+  disclosureText?: string
   disabled?: boolean
 }>()
 
@@ -181,7 +184,7 @@ const effectsAreNeutral = computed(
       class="flex items-start gap-2 rounded border border-surface-border bg-surface-2 px-3 py-2 text-(length:--fs-caption) text-text-tertiary"
     >
       <AlertTriangle :size="14" class="mt-0.5 shrink-0" />
-      {{ t('videoEditor.edits.notInLivePreview') }}
+      {{ disclosureText ?? t('videoEditor.edits.notInLivePreview') }}
     </p>
   </div>
 </template>

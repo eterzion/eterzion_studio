@@ -641,8 +641,6 @@
     "title": "Cosa vuoi migliorare oggi?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Regolazioni fini di qualità",
-    "adjustmentsTitle": "Regolazioni",
     "after": "Dopo",
     "animeDescription": "Arte digitale, anime, illustrazione dal tratto definito",
     "animeLabel": "Anime/Illustrazione",
@@ -653,10 +651,6 @@
     "beyondNative": "Obiettivo oltre il fattore nativo ({factor}x): l’eccesso è interpolazione, con meno dettaglio guadagnato.",
     "cancel": "Annulla",
     "cancelled": "Elaborazione annullata.",
-    "denoiseAfterAlt": "Dopo la riduzione del rumore",
-    "denoiseBeforeAlt": "Prima della riduzione del rumore",
-    "denoiseHint": "Rimuove grana e segni di compressione senza sfocare i contorni. Utile per foto da telefono, con poca luce o salvate più volte in JPG.",
-    "denoiseLabel": "Filtro di riduzione del rumore",
     "destinationFolder": "Cartella di destinazione",
     "detectedContent": "Contenuto rilevato",
     "detecting": "Rilevamento…",
@@ -700,8 +694,6 @@
     "sameAsSource": "Stessa cartella dell’originale",
     "scaleDescription": "Dimensione finale dell’immagine",
     "scaleTitle": "Scala",
-    "sharpenHint": "Accentua i contorni per dare un’impressione di messa a fuoco. In eccesso crea aloni chiari attorno ai bordi.",
-    "sharpenLabel": "Nitidezza",
     "sideBySide": "Affiancati",
     "sizeLabel": "Dimensione",
     "sliderView": "Cursore prima/dopo",
@@ -715,7 +707,8 @@
       "balanced": "Bilanciata",
       "quality": "Massima"
     },
-    "adjustAndReprocess": "Regola e rielabora"
+    "adjustAndReprocess": "Regola e rielabora",
+    "notInLivePreview": "Alcune regolazioni attive non compaiono nell’anteprima: solo nel file finale."
   },
   "importing": {
     "alreadyQueued": "Già in coda: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Elaborazione",
       "queued": "In coda"
     },
-    "applyToAll": "Applica questa configurazione a tutti ({n})",
-    "applyToAllHint": "Ritaglio e tratto restano quelli di ogni video."
+    "applyToAll": "Applica questa configurazione a tutti ({n})"
   },
   "initialModels": {
     "downloading": "Download dei modelli di IA ({done} di {total})",
