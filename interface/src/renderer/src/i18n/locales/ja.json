@@ -354,7 +354,8 @@
       "unknown": "失敗しました",
       "unreadable": "読み込めませんでした",
       "unsupported_media": "メディアファイルとして認識できません",
-      "invalid_naming_pattern": "名前のパターンに存在しないプレースホルダーがあります。{'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'}、{'{'}codec{'}'} を使ってください。"
+      "invalid_naming_pattern": "名前のパターンに存在しないプレースホルダーがあります。{'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'}、{'{'}codec{'}'} を使ってください。",
+      "conflict": "同じ名前のファイルがすでにあります"
     },
     "result": {
       "elapsed": "{seconds} 秒",

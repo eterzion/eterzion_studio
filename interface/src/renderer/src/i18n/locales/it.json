@@ -354,7 +354,8 @@
       "unknown": "non riuscito",
       "unreadable": "illeggibile",
       "unsupported_media": "non è un file multimediale riconosciuto",
-      "invalid_naming_pattern": "Il modello del nome usa un segnaposto che non esiste. Usa {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} o {'{'}codec{'}'}."
+      "invalid_naming_pattern": "Il modello del nome usa un segnaposto che non esiste. Usa {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} o {'{'}codec{'}'}.",
+      "conflict": "esiste già un file con questo nome"
     },
     "result": {
       "elapsed": "{seconds} s",

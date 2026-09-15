@@ -354,7 +354,8 @@
       "unknown": "실패했습니다",
       "unreadable": "읽을 수 없습니다",
       "unsupported_media": "인식할 수 없는 미디어 파일입니다",
-      "invalid_naming_pattern": "이름 패턴에 없는 자리 표시자가 있습니다. {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'}, {'{'}codec{'}'}을(를) 사용하세요."
+      "invalid_naming_pattern": "이름 패턴에 없는 자리 표시자가 있습니다. {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'}, {'{'}codec{'}'}을(를) 사용하세요.",
+      "conflict": "같은 이름의 파일이 이미 있습니다"
     },
     "result": {
       "elapsed": "{seconds}초",

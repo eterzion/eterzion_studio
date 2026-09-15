@@ -354,7 +354,8 @@
       "unknown": "falhou",
       "unreadable": "não foi possível ler",
       "unsupported_media": "não é uma mídia reconhecida",
-      "invalid_naming_pattern": "O padrão de nome usa um marcador que não existe. Use {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} ou {'{'}codec{'}'}."
+      "invalid_naming_pattern": "O padrão de nome usa um marcador que não existe. Use {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} ou {'{'}codec{'}'}.",
+      "conflict": "já existe um arquivo com esse nome"
     },
     "result": {
       "elapsed": "{seconds} s",

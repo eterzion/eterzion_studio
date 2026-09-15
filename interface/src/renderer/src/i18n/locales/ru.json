@@ -354,7 +354,8 @@
       "unknown": "ошибка",
       "unreadable": "не удалось прочитать",
       "unsupported_media": "не распознано как медиафайл",
-      "invalid_naming_pattern": "В шаблоне имени есть несуществующий заполнитель. Используйте {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} или {'{'}codec{'}'}."
+      "invalid_naming_pattern": "В шаблоне имени есть несуществующий заполнитель. Используйте {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} или {'{'}codec{'}'}.",
+      "conflict": "файл с таким именем уже существует"
     },
     "result": {
       "elapsed": "{seconds} с",

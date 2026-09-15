@@ -220,6 +220,19 @@ class TestShutdown:
         finally:
             jobs.jobs.pop('job_shutdown', None)
 
+    def test_shutdown_removes_the_partial_of_any_job_not_only_video_edit(self, tmp_path):
+        # Todo job que grava pelo nucleo (app/destino.py) deixa o parcial na
+        # pasta do destino -- a Compressao tambem.
+        partial = tmp_path / 'foto.a1b2c3.partial.jpg'
+        partial.write_bytes(b'bytes parciais')
+        jobs.jobs['job_comp'] = {'id': 'job_comp', 'status': 'processing',
+                                 'operation': 'compression', 'partial_output': str(partial)}
+        try:
+            jobs.shutdown()
+            assert not partial.exists(), 'o parcial da compressao sobreviveu ao encerramento'
+        finally:
+            jobs.jobs.pop('job_comp', None)
+
     def test_shutdown_leaves_a_finished_export_alone(self, tmp_path):
         """A completed job is not retroactively cancelled, and its output is not
         a partial to sweep."""

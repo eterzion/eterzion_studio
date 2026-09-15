@@ -354,7 +354,8 @@
       "unknown": "échec",
       "unreadable": "illisible",
       "unsupported_media": "ce n’est pas un média reconnu",
-      "invalid_naming_pattern": "Le modèle de nom utilise un marqueur qui n'existe pas. Utilisez {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} ou {'{'}codec{'}'}."
+      "invalid_naming_pattern": "Le modèle de nom utilise un marqueur qui n'existe pas. Utilisez {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} ou {'{'}codec{'}'}.",
+      "conflict": "un fichier portant ce nom existe déjà"
     },
     "result": {
       "elapsed": "{seconds} s",

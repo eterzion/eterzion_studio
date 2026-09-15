@@ -16,7 +16,9 @@ from typing import Any, Callable
 
 from eterzion_upscale.media import Cancelado
 
-from . import animation, audio, capabilities, config, image, video, workspace
+from app import destino
+
+from . import animation, audio, capabilities, config, image, video
 
 
 # Log técnico, e **só** no log (FR-066). Encoder, codec e parâmetros resolvidos
@@ -179,7 +181,8 @@ def check_disk(source_path: str, output_dir: str) -> None:
 
 def run(media_kind: str, source_path: str, output_path: str, settings: dict[str, Any],
         *, on_progress: Callable[[int], None] | None = None,
-        on_stage: Callable[[str], None] | None = None) -> dict[str, Any]:
+        on_stage: Callable[[str], None] | None = None,
+        registrar_parcial: Callable[[str | None], None] | None = None) -> dict[str, Any]:
     """Comprime, medindo o que de fato saiu.
 
     Os números do resultado são **medidos**, nunca a estimativa repetida: o
@@ -205,13 +208,16 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
     if on_stage:
         on_stage('Comprimindo')
 
-    with workspace.workspace() as trabalho:
-        temporario = os.path.join(trabalho, 'saida' + os.path.splitext(output_path)[1])
+    # O temporario fica na pasta do destino (app/destino.py). Antes era o
+    # temporario do sistema, seguido de um `shutil.move`: em outro disco o move
+    # vira copia, e um "sobrescrever" que falhasse no meio estragaria o arquivo
+    # que existia.
+    with destino.gravacao_segura(output_path, registrar_parcial=registrar_parcial) as temporario:
         try:
             aplicado = _compress(media_kind, source_path, temporario, settings,
                                  on_progress=avancar, on_stage=on_stage)
         except Cancelado:
-            # O workspace e' apagado ao sair do `with`, e nada chega ao destino.
+            # O temporario e' apagado ao sair do `with`, e nada chega ao destino.
             # Nao e' falha, entao nao entra no log de falhas.
             raise
         except Exception as error:
@@ -232,11 +238,6 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
             raise
 
         avancar(90)
-
-        os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
-        # `move` e não `copy`: o resultado atravessa o limite do temporário uma
-        # vez só, e nada fica no meio do caminho.
-        shutil.move(temporario, output_path)
 
     tamanho_final = os.path.getsize(output_path)
     avancar(100)
