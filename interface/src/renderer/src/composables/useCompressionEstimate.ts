@@ -19,7 +19,7 @@ import {
   type CompressionSettings,
   type SizeTarget
 } from '../services/compression'
-import type { MediaKind } from '../constants/compression'
+import type { CompressionMode, MediaKind } from '../constants/compression'
 
 const DEBOUNCE_MS = 250
 
@@ -28,6 +28,9 @@ export interface EstimateSource {
   mediaKind: Ref<MediaKind>
   settings: Ref<CompressionSettings>
   target: Ref<SizeTarget | null>
+  presetId: Ref<string | null>
+  historyId: Ref<string | null>
+  mode: Ref<CompressionMode>
 }
 
 export interface CompressionEstimateApi {
@@ -61,7 +64,10 @@ export function useCompressionEstimate(source: EstimateSource): CompressionEstim
         handle_id: handle,
         media_kind: source.mediaKind.value,
         settings: source.settings.value,
-        target: source.target.value
+        target: source.target.value,
+        preset_id: source.presetId.value,
+        history_id: source.historyId.value,
+        advanced: source.mode.value === 'advanced'
       })
       // Chegou tarde: outra estimativa já foi pedida depois desta, e escrever
       // aqui mostraria o número da configuração anterior.
@@ -92,7 +98,10 @@ export function useCompressionEstimate(source: EstimateSource): CompressionEstim
       source.handleId.value,
       source.mediaKind.value,
       JSON.stringify(source.settings.value),
-      JSON.stringify(source.target.value)
+      JSON.stringify(source.target.value),
+      source.presetId.value,
+      source.historyId.value,
+      source.mode.value
     ],
     schedule,
     { immediate: true }

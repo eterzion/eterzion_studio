@@ -48,6 +48,7 @@ import {
 } from '../services/compression'
 import { api, hasNativeApi } from '../services/native'
 import type { MediaKind } from '../constants/compression'
+import { origemParaMidia } from '../utils/compressionOrigin'
 
 // specs/008-compression-centre — a Central, com Imagem funcionando ponta a ponta.
 //
@@ -79,6 +80,12 @@ const capabilities = ref<CompressionCapabilities | null>(null)
 const presets = ref<CompressionPreset[]>([])
 const history = ref<CompressionHistoryEntry[]>([])
 const selectedPreset = ref<string | null>(null)
+// De qual registro do historico a configuracao atual veio ("Repetir"). O
+// backend o resolve no modo Basico, onde os campos tecnicos do registro nao
+// podem viajar -- sem isto, repetir uma compressao de video no Basico nao
+// repetia nada do que importava.
+const historyId = ref<string | null>(null)
+const historyKind = ref<MediaKind | null>(null)
 const presetModified = ref(false)
 
 const exportOptions = ref<CompressionExport>({
@@ -99,7 +106,10 @@ const {
   handleId: activeHandle,
   mediaKind,
   settings: payload,
-  target
+  target,
+  presetId: selectedPreset,
+  historyId,
+  mode
 })
 
 onMounted(async () => {
@@ -145,6 +155,28 @@ watch(
   }
 )
 
+// Trocar de midia descarta a origem de outra midia: o backend recusaria um
+// preset de video mandado com uma imagem (utils/compressionOrigin.ts).
+watch(mediaKind, (kind) => {
+  const origem = origemParaMidia(
+    {
+      presetId: selectedPreset.value,
+      presetKind: presets.value.find((p) => p.id === selectedPreset.value)?.media_kind ?? null,
+      historyId: historyId.value,
+      historyKind: historyKind.value
+    },
+    kind
+  )
+  if (origem.presetId !== selectedPreset.value) {
+    selectedPreset.value = origem.presetId
+    presetModified.value = false
+  }
+  if (origem.historyId !== historyId.value) {
+    historyId.value = origem.historyId
+    historyKind.value = null
+  }
+})
+
 // Mexer numa configuração desfaz a afirmação "isto é o preset X". Um preset que
 // continua selecionado enquanto os valores já são outros é falso sobre o que vai
 // acontecer.
@@ -156,6 +188,8 @@ const presetsForKind = computed(() => presets.value.filter((p) => p.media_kind =
 
 function choosePreset(id: string | null): void {
   selectedPreset.value = id
+  historyId.value = null
+  historyKind.value = null
   presetModified.value = false
   if (!id) return
   const preset = presets.value.find((p) => p.id === id)
@@ -187,6 +221,7 @@ function batchRequests(): BatchRequest[] {
     target: target.value,
     mode: mode.value,
     presetId: selectedPreset.value,
+    historyId: historyId.value,
     export: exportOptions.value
   }))
 }
@@ -210,6 +245,7 @@ async function run(): Promise<void> {
     target: target.value,
     mode: mode.value,
     presetId: selectedPreset.value,
+    historyId: historyId.value,
     export: exportOptions.value
   })
 }
@@ -268,6 +304,8 @@ function repeatFromHistory(entry: CompressionHistoryEntry): void {
   // Nenhum preset fica selecionado: o que está na tela agora veio do histórico,
   // e apontar para um preset afirmaria uma origem que pode não bater.
   selectedPreset.value = null
+  historyId.value = entry.id
+  historyKind.value = entry.media_kind
   presetModified.value = false
 }
 

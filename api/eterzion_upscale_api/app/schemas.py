@@ -596,6 +596,11 @@ class CompressionEstimateRequest(BaseModel):
     # o segundo lugar a divergir.
     settings: dict[str, Any] = Field(default_factory=dict)
     target: CompressionTarget | None = None
+    # Os mesmos da compressao: a estimativa precisa partir das configuracoes
+    # que a compressao de fato vai usar, ou mostra um numero que nao acontece.
+    preset_id: str | None = None
+    history_id: str | None = None
+    advanced: bool = False
 
 
 class CompressionEstimateResponse(BaseModel):
@@ -748,6 +753,9 @@ class CompressionJobRequest(BaseModel):
     settings: dict[str, Any] = Field(default_factory=dict)
     target: CompressionTarget | None = None
     preset_id: str | None = None
+    # "Repetir" do historico. Como o preset, e' resolvido no backend: no modo
+    # Basico os campos tecnicos da configuracao repetida nao podem viajar.
+    history_id: str | None = None
     # Falso por padrão, e o backend verifica: a condição 2 da exceção do
     # Princípio V se perderia no dia em que alguém mexesse só na interface.
     advanced: bool = False

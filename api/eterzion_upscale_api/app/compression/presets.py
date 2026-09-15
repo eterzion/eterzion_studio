@@ -219,6 +219,15 @@ def all_presets(media_kind: str | None = None) -> list[dict[str, Any]]:
             + user_presets(media_kind))
 
 
+def get(preset_id: str) -> dict[str, Any] | None:
+    """Um preset pelo id, de qualquer origem (interno, plataforma, da pessoa).
+
+    E' o que deixa o backend resolver o preset em vez de confiar nos campos que
+    a tela copiou dele: no modo Basico os campos tecnicos nao podem viajar, e um
+    preset de video ou de animacao e' feito so' deles."""
+    return next((p for p in all_presets() if p['id'] == preset_id), None)
+
+
 def clear_user_presets() -> None:
     """Restaurar os padrões (FR-013) — e o que os testes usam para isolar."""
     with _lock:
