@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { RotateCw } from '@lucide/vue'
+import { Crop, RotateCw } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
 import SettingRow from '../SettingRow.vue'
 import SettingSwitch from '../SettingSwitch.vue'
@@ -57,7 +57,11 @@ function rotate(): void {
 </script>
 
 <template>
-  <CollapsiblePanel :title="t('videoEditor.edits.transform')">
+  <CollapsiblePanel
+    :title="t('videoEditor.edits.transform')"
+    :description="t('videoEditor.edits.transformDescription')"
+    :icon="Crop"
+  >
     <SettingRow :label="t('videoEditor.edits.rotation')">
       <AppButton variant="outline" size="sm" :disabled="disabled" @click="rotate">
         <template #icon><RotateCw :size="14" /></template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, RotateCcw } from '@lucide/vue'
+import { AlertTriangle, RotateCcw, SlidersHorizontal, WandSparkles } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
 import SliderField from '../SliderField.vue'
 import SettingRow from '../SettingRow.vue'
@@ -83,7 +83,12 @@ const effectsAreNeutral = computed(
 
 <template>
   <div class="flex flex-col gap-2">
-    <CollapsiblePanel :title="t('videoEditor.edits.adjustments')" open>
+    <CollapsiblePanel
+      :title="t('videoEditor.edits.adjustments')"
+      :description="t('videoEditor.edits.adjustmentsDescription')"
+      :icon="SlidersHorizontal"
+      open
+    >
       <template v-for="slider in SLIDERS" :key="slider.key">
         <SettingRow
           :label="t(`videoEditor.edits.${slider.key}`)"
@@ -125,7 +130,11 @@ const effectsAreNeutral = computed(
       </AppButton>
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('videoEditor.edits.effects')">
+    <CollapsiblePanel
+      :title="t('videoEditor.edits.effects')"
+      :description="t('videoEditor.edits.effectsDescription')"
+      :icon="WandSparkles"
+    >
       <template v-for="effect in EFFECTS" :key="effect.toggle">
         <SettingRow
           :label="t(`videoEditor.edits.${effect.toggle}`)"

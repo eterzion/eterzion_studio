@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, Download, FolderOpen, X } from '@lucide/vue'
+import { AlertTriangle, Download, FileOutput, FolderOpen, X } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
 import SettingRow from '../SettingRow.vue'
 import AppSelect from '../AppSelect.vue'
 import AppButton from '../atoms/AppButton.vue'
 import ProgressBar from '../atoms/ProgressBar.vue'
+import SavedResultCard from '../SavedResultCard.vue'
 import {
   getVideoExportOptions,
   type ConflictMode,
@@ -127,7 +128,12 @@ const refusalMessage = computed(() => {
 </script>
 
 <template>
-  <CollapsiblePanel :title="t('videoEditor.export.title')" open>
+  <CollapsiblePanel
+    :title="t('videoEditor.export.title')"
+    :description="t('videoEditor.export.description')"
+    :icon="FileOutput"
+    open
+  >
     <SettingRow :label="t('videoEditor.export.container')">
       <AppSelect
         v-model="container"
@@ -215,9 +221,10 @@ const refusalMessage = computed(() => {
       {{ refusalMessage }}
     </p>
 
-    <p v-else-if="state?.status === 'done'" class="text-(length:--fs-caption) text-text-tertiary">
-      {{ t('videoEditor.export.done') }}
-    </p>
+    <SavedResultCard
+      v-else-if="state?.status === 'done' && state.outputPath"
+      :path="state.outputPath"
+    />
   </CollapsiblePanel>
 </template>
 

@@ -7,7 +7,6 @@
     "noAudioSelected": "Nenhum áudio selecionado",
     "noImageSelected": "Nenhuma imagem selecionada",
     "noVideoSelected": "Nenhum vídeo selecionado",
-    "openFolder": "Abrir pasta",
     "processAll": "Processar todos",
     "undo": "Anular"
   },
@@ -47,8 +46,8 @@
     "speechLabel": "Fala / voz",
     "unsupportedFormat": "Formato não suportado: {name}",
     "export": {
-      "title": "Exportação",
-      "description": "Formato, qualidade e onde guardar",
+      "title": "Exportar",
+      "description": "Formato, qualidade, destino e nome",
       "format": "Formato",
       "keep": "Igual ao original",
       "qualityLabel": "Qualidade",
@@ -132,7 +131,10 @@
       "resolution": "Resolução",
       "sameAsSource": "Como no original",
       "size": "Tamanho",
-      "videoNote": "Como vídeo, o ficheiro fica bem menor — mas deixa de funcionar como imagem animada onde só se aceita GIF."
+      "videoNote": "Como vídeo, o ficheiro fica bem menor — mas deixa de funcionar como imagem animada onde só se aceita GIF.",
+      "outputDescription": "Formato e qualidade",
+      "paletteDescription": "Paleta e difusão",
+      "sizeDescription": "Resolução e fotogramas por segundo"
     },
     "audio": {
       "advanced": "Definições avançadas",
@@ -162,7 +164,10 @@
       "signal": "Sinal",
       "stereo": "Estéreo",
       "vbr": "Variável",
-      "vbrHint": "Gasta mais onde é preciso; costuma render melhor."
+      "vbrHint": "Gasta mais onde é preciso; costuma render melhor.",
+      "outputDescription": "Formato e qualidade",
+      "signalDescription": "Taxa de amostragem e canais",
+      "advancedDescription": "Modo de débito"
     },
     "back": "Voltar",
     "batch": {
@@ -230,7 +235,8 @@
       "pattern": "Padrão de nome",
       "patternHint": "{'{'}filename{'}'} é substituído pelo nome do ficheiro.",
       "sameFolder": "Mesma pasta do ficheiro original",
-      "title": "Exportação"
+      "title": "Exportar",
+      "description": "Destino, padrão de nome e conflito"
     },
     "history": {
       "clear": "Limpar histórico",
@@ -296,7 +302,11 @@
       },
       "size": "Tamanho",
       "speed": "Velocidade",
-      "speedHint": "Mais rápido comprime menos."
+      "speedHint": "Mais rápido comprime menos.",
+      "outputDescription": "Formato e qualidade",
+      "sizeDescription": "Resolução do resultado",
+      "metadataDescription": "O que o ficheiro leva além da imagem",
+      "advancedDescription": "Compressão, cor e carregamento"
     },
     "info": {
       "alpha": "Transparência",
@@ -484,7 +494,11 @@
         "medium": "Média",
         "slow": "Devagar",
         "slowHint": "Ficheiro mais pequeno, demora mais."
-      }
+      },
+      "outputDescription": "Formato e qualidade",
+      "sizeDescription": "Resolução e fotogramas por segundo",
+      "audioDescription": "Faixa, codec e débito",
+      "advancedDescription": "Codec, velocidade e processamento"
     }
   },
   "contentType": {
@@ -701,7 +715,6 @@
       "balanced": "Equilibrada",
       "quality": "Máxima"
     },
-    "savedAt": "Guardado em: {path}",
     "adjustAndReprocess": "Ajustar e reprocessar"
   },
   "importing": {
@@ -999,7 +1012,7 @@
       "uploadTitle": "Arraste vídeos para aqui"
     },
     "edits": {
-      "adjustments": "Ajustes de imagem",
+      "adjustments": "Ajustes",
       "blurHint": "Suaviza a imagem inteira. Útil para disfarçar compressão, ao custo de nitidez.",
       "blur_enabled": "Desfocagem",
       "brightness": "Brilho",
@@ -1031,7 +1044,10 @@
       "trim": "Excerto",
       "trimEnd": "Fim do excerto",
       "trimStart": "Início do excerto",
-      "wholeVideo": "Vídeo inteiro"
+      "wholeVideo": "Vídeo inteiro",
+      "adjustmentsDescription": "Brilho, contraste, saturação e cor",
+      "effectsDescription": "Redução de ruído, desfoque e grão",
+      "transformDescription": "Rodar, espelhar e cortar o trecho"
     },
     "enhance": {
       "animeVideo": "Vídeo de anime/animação",
@@ -1067,12 +1083,12 @@
       "cancel": "Cancelar",
       "container": "Formato",
       "destination": "Destino",
-      "done": "Ficheiro exportado.",
       "profile": "Qualidade",
       "sameFolder": "Mesma pasta do original",
       "start": "Exportar",
       "title": "Exportar",
-      "working": "A processar…"
+      "working": "A processar…",
+      "description": "Formato, qualidade, destino e nome"
     },
     "limits": {
       "ceilingExceeded": "Excede o limite de {factor} desta operação.",
@@ -1122,7 +1138,9 @@
       "idle": "Pronto",
       "processing": "A processar",
       "queued": "Na fila"
-    }
+    },
+    "applyToAll": "Aplicar esta configuração a todos ({n})",
+    "applyToAllHint": "O recorte e o trecho continuam os de cada vídeo."
   },
   "initialModels": {
     "downloading": "A transferir os modelos de IA ({done} de {total})",
@@ -1156,5 +1174,10 @@
       "encoder_unavailable": "Este computador não grava este formato.",
       "insufficient_disk": "Não há espaço em disco para o resultado."
     }
+  },
+  "savedResult": {
+    "title": "Ficheiro guardado",
+    "open": "Abrir",
+    "showInFolder": "Mostrar na pasta"
   }
 }

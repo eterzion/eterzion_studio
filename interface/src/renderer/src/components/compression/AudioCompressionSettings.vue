@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { AudioWaveform, FileType, Wrench } from '@lucide/vue'
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -121,7 +122,11 @@ function setNumericOrOriginal(field: string, value: unknown): void {
 
 <template>
   <div class="audio-settings">
-    <CollapsiblePanel :title="t('compression.audio.output')">
+    <CollapsiblePanel
+      :title="t('compression.audio.output')"
+      :description="t('compression.audio.outputDescription')"
+      :icon="FileType"
+    >
       <SettingRow :label="t('compression.audio.format')">
         <AppSelect
           :model-value="format"
@@ -153,7 +158,12 @@ function setNumericOrOriginal(field: string, value: unknown): void {
       />
     </CollapsiblePanel>
 
-    <CollapsiblePanel :title="t('compression.audio.signal')" :default-open="false">
+    <CollapsiblePanel
+      :title="t('compression.audio.signal')"
+      :description="t('compression.audio.signalDescription')"
+      :icon="AudioWaveform"
+      :default-open="false"
+    >
       <SettingRow
         :label="t('compression.audio.sampleRate')"
         :description="t('compression.audio.sampleRateHint')"
@@ -179,6 +189,8 @@ function setNumericOrOriginal(field: string, value: unknown): void {
     <CollapsiblePanel
       v-if="mode === 'advanced' && !lossless"
       :title="t('compression.audio.advanced')"
+      :description="t('compression.audio.advancedDescription')"
+      :icon="Wrench"
       :default-open="false"
     >
       <SettingRow

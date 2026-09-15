@@ -7,7 +7,6 @@
     "noAudioSelected": "Aucun audio sélectionné",
     "noImageSelected": "Aucune image sélectionnée",
     "noVideoSelected": "Aucune vidéo sélectionnée",
-    "openFolder": "Ouvrir le dossier",
     "processAll": "Tout traiter",
     "undo": "Annuler"
   },
@@ -47,8 +46,8 @@
     "speechLabel": "Parole / voix",
     "unsupportedFormat": "Format non pris en charge : {name}",
     "export": {
-      "title": "Exportation",
-      "description": "Format, qualité et emplacement",
+      "title": "Exporter",
+      "description": "Format, qualité, destination et nom",
       "format": "Format",
       "keep": "Identique à l’original",
       "qualityLabel": "Qualité",
@@ -132,7 +131,10 @@
       "resolution": "Résolution",
       "sameAsSource": "Comme l’original",
       "size": "Taille",
-      "videoNote": "En vidéo le fichier devient bien plus léger — mais il cesse de fonctionner comme image animée là où seul le GIF est accepté."
+      "videoNote": "En vidéo le fichier devient bien plus léger — mais il cesse de fonctionner comme image animée là où seul le GIF est accepté.",
+      "outputDescription": "Format et qualité",
+      "paletteDescription": "Palette et tramage",
+      "sizeDescription": "Résolution et images par seconde"
     },
     "audio": {
       "advanced": "Réglages avancés",
@@ -162,7 +164,10 @@
       "signal": "Signal",
       "stereo": "Stéréo",
       "vbr": "Variable",
-      "vbrHint": "Dépense plus là où il faut ; rend souvent mieux."
+      "vbrHint": "Dépense plus là où il faut ; rend souvent mieux.",
+      "outputDescription": "Format et qualité",
+      "signalDescription": "Fréquence d’échantillonnage et canaux",
+      "advancedDescription": "Mode de débit"
     },
     "back": "Retour",
     "batch": {
@@ -230,7 +235,8 @@
       "pattern": "Modèle de nom",
       "patternHint": "{'{'}filename{'}'} est remplacé par le nom du fichier.",
       "sameFolder": "Même dossier que l’original",
-      "title": "Export"
+      "title": "Exporter",
+      "description": "Destination, modèle de nom et conflit"
     },
     "history": {
       "clear": "Vider l’historique",
@@ -296,7 +302,11 @@
       },
       "size": "Taille",
       "speed": "Vitesse",
-      "speedHint": "Plus rapide compresse moins."
+      "speedHint": "Plus rapide compresse moins.",
+      "outputDescription": "Format et qualité",
+      "sizeDescription": "Taille du résultat",
+      "metadataDescription": "Ce que le fichier contient en plus de l’image",
+      "advancedDescription": "Compression, couleur et chargement"
     },
     "info": {
       "alpha": "Transparence",
@@ -484,7 +494,11 @@
         "medium": "Moyenne",
         "slow": "Lente",
         "slowHint": "Fichier plus petit, plus long à produire."
-      }
+      },
+      "outputDescription": "Format et qualité",
+      "sizeDescription": "Résolution et images par seconde",
+      "audioDescription": "Piste, codec et débit",
+      "advancedDescription": "Codec, vitesse et traitement"
     }
   },
   "contentType": {
@@ -701,7 +715,6 @@
       "balanced": "Équilibrée",
       "quality": "Maximale"
     },
-    "savedAt": "Enregistré dans : {path}",
     "adjustAndReprocess": "Ajuster et retraiter"
   },
   "importing": {
@@ -999,7 +1012,7 @@
       "uploadTitle": "Déposez des vidéos ici"
     },
     "edits": {
-      "adjustments": "Réglages d’image",
+      "adjustments": "Réglages",
       "blurHint": "Adoucit toute l'image. Utile pour masquer la compression, au prix de la netteté.",
       "blur_enabled": "Flou",
       "brightness": "Luminosité",
@@ -1031,7 +1044,10 @@
       "trim": "Extrait",
       "trimEnd": "Fin de l’extrait",
       "trimStart": "Début de l’extrait",
-      "wholeVideo": "Vidéo entière"
+      "wholeVideo": "Vidéo entière",
+      "adjustmentsDescription": "Luminosité, contraste, saturation et couleur",
+      "effectsDescription": "Réduction du bruit, flou et grain",
+      "transformDescription": "Pivoter, retourner et découper"
     },
     "enhance": {
       "animeVideo": "Anime / animation",
@@ -1067,12 +1083,12 @@
       "cancel": "Annuler",
       "container": "Format",
       "destination": "Destination",
-      "done": "Fichier exporté.",
       "profile": "Qualité",
       "sameFolder": "Même dossier que l’original",
       "start": "Exporter",
       "title": "Exporter",
-      "working": "Traitement…"
+      "working": "Traitement…",
+      "description": "Format, qualité, destination et nom"
     },
     "limits": {
       "ceilingExceeded": "Dépasse la limite de {factor} de cette opération.",
@@ -1122,7 +1138,9 @@
       "idle": "Prêt",
       "processing": "Traitement",
       "queued": "En file"
-    }
+    },
+    "applyToAll": "Appliquer cette configuration à tous ({n})",
+    "applyToAllHint": "Le recadrage et l’extrait restent ceux de chaque vidéo."
   },
   "initialModels": {
     "downloading": "Téléchargement des modèles d'IA ({done} sur {total})",
@@ -1156,5 +1174,10 @@
       "encoder_unavailable": "Cet ordinateur ne peut pas écrire ce format.",
       "insufficient_disk": "Espace disque insuffisant pour le résultat."
     }
+  },
+  "savedResult": {
+    "title": "Fichier enregistré",
+    "open": "Ouvrir",
+    "showInFolder": "Afficher dans le dossier"
   }
 }

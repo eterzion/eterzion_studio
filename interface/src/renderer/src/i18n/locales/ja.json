@@ -7,7 +7,6 @@
     "noAudioSelected": "音声が選択されていません",
     "noImageSelected": "画像が選択されていません",
     "noVideoSelected": "動画が選択されていません",
-    "openFolder": "フォルダーを開く",
     "processAll": "すべて処理",
     "undo": "元に戻す"
   },
@@ -48,7 +47,7 @@
     "unsupportedFormat": "未対応の形式: {name}",
     "export": {
       "title": "書き出し",
-      "description": "形式、品質、保存先",
+      "description": "形式、品質、保存先、名前",
       "format": "形式",
       "keep": "元のファイルと同じ",
       "qualityLabel": "品質",
@@ -132,7 +131,10 @@
       "resolution": "解像度",
       "sameAsSource": "元のまま",
       "size": "サイズ",
-      "videoNote": "動画にするとかなり小さくなりますが、GIF しか受け付けない場所では動かなくなります。"
+      "videoNote": "動画にするとかなり小さくなりますが、GIF しか受け付けない場所では動かなくなります。",
+      "outputDescription": "形式と品質",
+      "paletteDescription": "パレットとディザリング",
+      "sizeDescription": "解像度とフレームレート"
     },
     "audio": {
       "advanced": "詳細設定",
@@ -162,7 +164,10 @@
       "signal": "信号",
       "stereo": "ステレオ",
       "vbr": "可変",
-      "vbrHint": "必要な場所に多く割り当てます。多くの場合こちらが有利です。"
+      "vbrHint": "必要な場所に多く割り当てます。多くの場合こちらが有利です。",
+      "outputDescription": "形式と品質",
+      "signalDescription": "サンプルレートとチャンネル",
+      "advancedDescription": "ビットレートモード"
     },
     "back": "戻る",
     "batch": {
@@ -230,7 +235,8 @@
       "pattern": "名前のパターン",
       "patternHint": "{'{'}filename{'}'} はファイル名に置き換わります。",
       "sameFolder": "元のファイルと同じフォルダー",
-      "title": "書き出し"
+      "title": "書き出し",
+      "description": "保存先、名前のパターン、競合"
     },
     "history": {
       "clear": "履歴を消去",
@@ -296,7 +302,11 @@
       },
       "size": "サイズ",
       "speed": "速度",
-      "speedHint": "速いほど圧縮率は下がります。"
+      "speedHint": "速いほど圧縮率は下がります。",
+      "outputDescription": "形式と品質",
+      "sizeDescription": "結果のサイズ",
+      "metadataDescription": "画像以外にファイルに含まれるもの",
+      "advancedDescription": "圧縮、色、読み込み"
     },
     "info": {
       "alpha": "透過",
@@ -484,7 +494,11 @@
         "medium": "標準",
         "slow": "遅い",
         "slowHint": "ファイルは小さく、時間はかかります。"
-      }
+      },
+      "outputDescription": "形式と品質",
+      "sizeDescription": "解像度とフレームレート",
+      "audioDescription": "トラック、コーデック、ビットレート",
+      "advancedDescription": "コーデック、速度、処理"
     }
   },
   "contentType": {
@@ -701,7 +715,6 @@
       "balanced": "バランス",
       "quality": "最高"
     },
-    "savedAt": "保存先: {path}",
     "adjustAndReprocess": "調整して再処理"
   },
   "importing": {
@@ -999,7 +1012,7 @@
       "uploadTitle": "ここに動画をドロップ"
     },
     "edits": {
-      "adjustments": "画像調整",
+      "adjustments": "調整",
       "blurHint": "画面全体を柔らかくします。圧縮の粗を隠せますが、シャープさを失います。",
       "blur_enabled": "ぼかし",
       "brightness": "明るさ",
@@ -1031,7 +1044,10 @@
       "trim": "範囲",
       "trimEnd": "範囲の終了",
       "trimStart": "範囲の開始",
-      "wholeVideo": "動画全体"
+      "wholeVideo": "動画全体",
+      "adjustmentsDescription": "明るさ、コントラスト、彩度、色",
+      "effectsDescription": "ノイズ除去、ぼかし、粒子",
+      "transformDescription": "回転、反転、区間のカット"
     },
     "enhance": {
       "animeVideo": "アニメ / アニメーション",
@@ -1067,12 +1083,12 @@
       "cancel": "キャンセル",
       "container": "形式",
       "destination": "保存先",
-      "done": "ファイルを書き出しました。",
       "profile": "画質",
       "sameFolder": "元ファイルと同じフォルダー",
       "start": "書き出す",
       "title": "書き出し",
-      "working": "処理中…"
+      "working": "処理中…",
+      "description": "形式、品質、保存先、名前"
     },
     "limits": {
       "ceilingExceeded": "この操作の{factor}の上限を超えています。",
@@ -1122,7 +1138,9 @@
       "idle": "準備完了",
       "processing": "処理中",
       "queued": "待機中"
-    }
+    },
+    "applyToAll": "この設定をすべてに適用 ({n})",
+    "applyToAllHint": "切り抜きと区間は各動画のままです。"
   },
   "initialModels": {
     "downloading": "AI モデルをダウンロード中（{done}/{total}）",
@@ -1156,5 +1174,10 @@
       "encoder_unavailable": "このコンピューターではこの形式を書き出せません。",
       "insufficient_disk": "結果を保存するディスク容量が足りません。"
     }
+  },
+  "savedResult": {
+    "title": "ファイルを保存しました",
+    "open": "開く",
+    "showInFolder": "フォルダーで表示"
   }
 }

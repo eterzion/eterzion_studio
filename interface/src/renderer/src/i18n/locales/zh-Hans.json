@@ -7,7 +7,6 @@
     "noAudioSelected": "未选择音频",
     "noImageSelected": "未选择图片",
     "noVideoSelected": "未选择视频",
-    "openFolder": "打开文件夹",
     "processAll": "全部处理",
     "undo": "撤销"
   },
@@ -48,7 +47,7 @@
     "unsupportedFormat": "不支持的格式：{name}",
     "export": {
       "title": "导出",
-      "description": "格式、质量和保存位置",
+      "description": "格式、质量、保存位置和名称",
       "format": "格式",
       "keep": "与原文件相同",
       "qualityLabel": "质量",
@@ -132,7 +131,10 @@
       "resolution": "分辨率",
       "sameAsSource": "与原文件相同",
       "size": "尺寸",
-      "videoNote": "转成视频后体积小很多，但在只接受 GIF 的地方就无法使用了。"
+      "videoNote": "转成视频后体积小很多，但在只接受 GIF 的地方就无法使用了。",
+      "outputDescription": "格式和质量",
+      "paletteDescription": "调色板和抖动",
+      "sizeDescription": "分辨率和帧率"
     },
     "audio": {
       "advanced": "高级设置",
@@ -162,7 +164,10 @@
       "signal": "信号",
       "stereo": "立体声",
       "vbr": "可变",
-      "vbrHint": "在需要的地方多分配，通常效果更好。"
+      "vbrHint": "在需要的地方多分配，通常效果更好。",
+      "outputDescription": "格式和质量",
+      "signalDescription": "采样率和声道",
+      "advancedDescription": "比特率模式"
     },
     "back": "返回",
     "batch": {
@@ -230,7 +235,8 @@
       "pattern": "命名模式",
       "patternHint": "{'{'}filename{'}'} 会替换为文件名。",
       "sameFolder": "与原文件相同的文件夹",
-      "title": "导出"
+      "title": "导出",
+      "description": "保存位置、命名模式和冲突"
     },
     "history": {
       "clear": "清空历史",
@@ -296,7 +302,11 @@
       },
       "size": "尺寸",
       "speed": "速度",
-      "speedHint": "越快压缩率越低。"
+      "speedHint": "越快压缩率越低。",
+      "outputDescription": "格式和质量",
+      "sizeDescription": "结果尺寸",
+      "metadataDescription": "文件在图像之外包含的信息",
+      "advancedDescription": "压缩、颜色和加载"
     },
     "info": {
       "alpha": "透明度",
@@ -484,7 +494,11 @@
         "medium": "中",
         "slow": "慢",
         "slowHint": "文件更小，耗时更久。"
-      }
+      },
+      "outputDescription": "格式和质量",
+      "sizeDescription": "分辨率和帧率",
+      "audioDescription": "音轨、编解码器和比特率",
+      "advancedDescription": "编解码器、速度和处理"
     }
   },
   "contentType": {
@@ -701,7 +715,6 @@
       "balanced": "均衡",
       "quality": "最高"
     },
-    "savedAt": "已保存到：{path}",
     "adjustAndReprocess": "调整后重新处理"
   },
   "importing": {
@@ -999,7 +1012,7 @@
       "uploadTitle": "将视频拖放到这里"
     },
     "edits": {
-      "adjustments": "图像调整",
+      "adjustments": "调整",
       "blurHint": "柔化整个画面。可用于掩盖压缩痕迹，代价是锐度。",
       "blur_enabled": "模糊",
       "brightness": "亮度",
@@ -1031,7 +1044,10 @@
       "trim": "片段",
       "trimEnd": "片段终点",
       "trimStart": "片段起点",
-      "wholeVideo": "整个视频"
+      "wholeVideo": "整个视频",
+      "adjustmentsDescription": "亮度、对比度、饱和度和颜色",
+      "effectsDescription": "降噪、模糊和颗粒",
+      "transformDescription": "旋转、翻转和裁剪片段"
     },
     "enhance": {
       "animeVideo": "动画 / 动漫",
@@ -1067,12 +1083,12 @@
       "cancel": "取消",
       "container": "格式",
       "destination": "保存位置",
-      "done": "文件已导出。",
       "profile": "画质",
       "sameFolder": "与原文件相同的文件夹",
       "start": "导出",
       "title": "导出",
-      "working": "处理中…"
+      "working": "处理中…",
+      "description": "格式、质量、保存位置和名称"
     },
     "limits": {
       "ceilingExceeded": "超出本次操作的{factor}上限。",
@@ -1122,7 +1138,9 @@
       "idle": "就绪",
       "processing": "处理中",
       "queued": "排队中"
-    }
+    },
+    "applyToAll": "将此配置应用到全部 ({n})",
+    "applyToAllHint": "裁切和片段仍保持各视频自己的设置。"
   },
   "initialModels": {
     "downloading": "正在下载 AI 模型（{done}/{total}）",
@@ -1156,5 +1174,10 @@
       "encoder_unavailable": "这台电脑无法写入此格式。",
       "insufficient_disk": "磁盘空间不足，无法保存结果。"
     }
+  },
+  "savedResult": {
+    "title": "文件已保存",
+    "open": "打开",
+    "showInFolder": "在文件夹中显示"
   }
 }

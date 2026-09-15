@@ -10,18 +10,10 @@ import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
 import AudioExportPanel, { type AudioExport } from '../components/audio/AudioExportPanel.vue'
 import ConflictDialog from '../components/ConflictDialog.vue'
+import SavedResultCard from '../components/SavedResultCard.vue'
 import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
 import { settingsState } from '../store/settings'
-import {
-  Upload,
-  FolderOpen,
-  AlertCircle,
-  Download,
-  Cpu,
-  CircleX,
-  Sparkles,
-  FileOutput
-} from '@lucide/vue'
+import { Upload, AlertCircle, Download, Cpu, CircleX, Sparkles, FileOutput } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -457,18 +449,10 @@ function exportAll(): void {
                 <template #icon><CircleX :size="14" /></template>
                 {{ t('imageEditor.cancel') }}
               </AppButton>
-              <div v-else-if="activeJob.status === 'done'" class="done-row">
+              <template v-else-if="activeJob.status === 'done'">
                 <StatusBadge state="done" />
-                <AppButton
-                  v-if="hasNativeApi && activeJob.outputPath"
-                  variant="outline"
-                  size="sm"
-                  @click="api.showItemInFolder(activeJob.outputPath!)"
-                >
-                  <template #icon><FolderOpen :size="14" /></template>
-                  {{ t('actions.openFolder') }}
-                </AppButton>
-              </div>
+                <SavedResultCard v-if="activeJob.outputPath" :path="activeJob.outputPath" />
+              </template>
               <StatusBadge
                 v-else-if="activeJob.status === 'error'"
                 state="error"
@@ -539,11 +523,5 @@ function exportAll(): void {
 .field-label {
   font-size: var(--fs-label);
   color: var(--text-secondary);
-}
-.done-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
 }
 </style>

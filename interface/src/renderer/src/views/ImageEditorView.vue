@@ -44,6 +44,7 @@ import { useViewportPanZoom } from '../composables/useViewportPanZoom'
 import { useDenoisePreview } from '../composables/useDenoisePreview'
 import { useExportPanel } from '../composables/useExportPanel'
 import ConflictDialog from '../components/ConflictDialog.vue'
+import SavedResultCard from '../components/SavedResultCard.vue'
 import {
   addFiles,
   queueState,
@@ -1082,24 +1083,11 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <ComparisonStats :job="job" />
           </CollapsiblePanel>
 
-          <div class="field">
-            <p v-if="job.outputPath" class="banner-info">
-              {{ t('imageEditor.savedAt', { path: job.outputPath }) }}
-            </p>
-            <AppButton
-              v-if="hasNativeApi && job.outputPath"
-              variant="outline"
-              class="w-full"
-              @click="api.showItemInFolder(job.outputPath!)"
-            >
-              <template #icon><FolderOpen :size="14" /></template>
-              {{ t('actions.openFolder') }}
-            </AppButton>
-            <AppButton variant="ghost" @click="reprocess(job)">
-              <template #icon><RotateCcw :size="14" /></template>
-              {{ t('imageEditor.adjustAndReprocess') }}
-            </AppButton>
-          </div>
+          <SavedResultCard v-if="job.outputPath" :path="job.outputPath" />
+          <AppButton variant="ghost" class="w-full" @click="reprocess(job)">
+            <template #icon><RotateCcw :size="14" /></template>
+            {{ t('imageEditor.adjustAndReprocess') }}
+          </AppButton>
         </template>
       </aside>
     </div>
