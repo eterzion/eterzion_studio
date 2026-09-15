@@ -429,17 +429,14 @@ function remove(id: string): void {
             @pick-directory="pickDirectory"
           >
             <template #before-actions>
-              <div class="apply-all">
-                <AppButton
-                  variant="secondary"
-                  class="w-full"
-                  :disabled="!active || applyTargets.length < 2"
-                  @click="applyToAll"
-                >
-                  {{ t('videoEditor.applyToAll', { n: applyTargets.length }) }}
-                </AppButton>
-                <p class="apply-all-hint">{{ t('videoEditor.applyToAllHint') }}</p>
-              </div>
+              <AppButton
+                variant="secondary"
+                class="w-full"
+                :disabled="!active || applyTargets.length < 2"
+                @click="applyToAll"
+              >
+                {{ t('videoEditor.applyToAll', { n: applyTargets.length }) }}
+              </AppButton>
             </template>
           </VideoExportPanel>
         </template>
@@ -450,19 +447,6 @@ function remove(id: string): void {
 </template>
 
 <style scoped>
-.apply-all {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1-5);
-}
-
-.apply-all-hint {
-  margin: 0;
-  font-size: var(--fs-caption);
-  color: var(--text-tertiary);
-  text-align: center;
-}
-
 /* Mirrors AudioView/ImageEditorView so the three media screens share one
    shape — height, padding, and an empty state that fills the area instead of
    sitting as a strip at the top. */

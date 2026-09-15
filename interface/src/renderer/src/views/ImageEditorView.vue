@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import UploadZone from '../components/UploadZone.vue'
@@ -41,7 +41,17 @@ import { api, hasNativeApi } from '../services/native'
 import { type ContentType, type Profile } from '../services/api'
 import { errorCategoryCopy, getImageExportOptions, type ImageExportOptions } from '../services/api'
 import { useViewportPanZoom } from '../composables/useViewportPanZoom'
-import { useDenoisePreview } from '../composables/useDenoisePreview'
+import { useVideoPreviewPipeline } from '../composables/useVideoPreviewPipeline'
+import {
+  hasUnpreviewableEffects,
+  neutralAdjustments,
+  neutralEffects,
+  type VideoAdjustments,
+  type VideoEffects,
+  type VideoTransform
+} from '../composables/useVideoEdits'
+import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
+import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
 import { useExportPanel } from '../composables/useExportPanel'
 import ConflictDialog from '../components/ConflictDialog.vue'
 import SavedResultCard from '../components/SavedResultCard.vue'
@@ -212,17 +222,81 @@ const conflictOptions = computed(() => [
   { value: 'ask', label: t('destination.conflict.ask') }
 ])
 
-// ------------------------------- denoise filter (real OpenCV, independent of the model) ------------------------------- //
-const {
-  denoisePresets,
-  denoiseActivePresetKey,
-  denoisePreview,
-  denoisePreviewLoading,
-  denoisePreviewError,
-  requestDenoisePreview,
-  setDenoisePreset,
-  toggleDenoiseFilter
-} = useDenoisePreview(job)
+// ------------------------------- ajustes, efeitos e transformacao ------------------------------- //
+// Os mesmos paineis e os mesmos filtros do Video, aplicados ao resultado depois
+// do modelo (app/exportacao_de_imagem.py). A previa e' o shader do Video, que
+// reproduz o eq/hue do FFmpeg -- agora tambem sobre uma imagem, com girar e
+// espelhar.
+// Os `<chave>_enabled` sao booleanos e os valores sao numeros; a chave decide
+// qual, como no Video (VideoEditorView.vue).
+function setAdjustment(key: keyof VideoAdjustments, value: number | boolean): void {
+  if (!job.value) return
+  const adjustments = job.value.edits.adjustments
+  if (typeof value === 'boolean') (adjustments[key] as boolean) = value
+  else (adjustments[key] as number) = value
+}
+function setEffect(key: keyof VideoEffects, value: number | boolean): void {
+  if (!job.value) return
+  const effects = job.value.edits.effects
+  if (typeof value === 'boolean') (effects[key] as boolean) = value
+  else (effects[key] as number) = value
+}
+function setTransform(patch: Partial<VideoTransform>): void {
+  if (job.value) Object.assign(job.value.edits.transform, patch)
+}
+function resetAdjustments(): void {
+  if (job.value) Object.assign(job.value.edits.adjustments, neutralAdjustments())
+}
+function resetEffects(): void {
+  if (job.value) Object.assign(job.value.edits.effects, neutralEffects())
+}
+
+const previewPipeline = useVideoPreviewPipeline()
+const previewSource = ref<HTMLImageElement | null>(null)
+const previewCanvas = ref<HTMLCanvasElement | null>(null)
+
+/** A previa so' entra quando ha' o que mostrar -- sem ajuste, a imagem
+ *  original, sem passar pela GPU. */
+const previewActive = computed(() => {
+  const j = job.value
+  if (!j || j.status === 'done' || !previewPipeline.supported.value) return false
+  const e = j.edits
+  return (
+    JSON.stringify(e.adjustments) !== JSON.stringify(neutralAdjustments()) ||
+    e.transform.rotation_degrees !== 0 ||
+    e.transform.flip_horizontal ||
+    e.transform.flip_vertical
+  )
+})
+
+function startPreview(): void {
+  if (previewSource.value && previewCanvas.value) {
+    previewPipeline.start(previewSource.value, previewCanvas.value)
+  }
+}
+
+watch(
+  () => [previewActive.value, job.value?.id] as const,
+  async ([ativa]) => {
+    await nextTick()
+    if (ativa) startPreview()
+    else previewPipeline.stop()
+  }
+)
+
+watch(
+  () => job.value?.edits,
+  (edits) => {
+    if (!edits) return
+    previewPipeline.apply(edits.adjustments)
+    previewPipeline.geometry(edits.transform)
+  },
+  { deep: true, immediate: true }
+)
+
+const editsNeedDisclosure = computed(() =>
+  job.value ? hasUnpreviewableEffects(job.value.edits) : false
+)
 // Elapsed-time ticker for the processing panel (spec 5.2: elapsed time alongside
 // progress, since the model step can be long).
 const nowTick = ref(Date.now())
@@ -521,7 +595,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           <div v-if="spaceHeld" class="pan-surface">
             <img
               :src="afterSrc"
-              alt="Depois"
+              :alt="t('imageEditor.after')"
               class="viewport-img"
               :style="mediaStyle"
               draggable="false"
@@ -534,12 +608,24 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             @pointermove="onPanMove"
             @pointerup="onPanUp"
           >
+            <!-- crossorigin: o shader le os pixels, e o protocolo de midia e'
+                 outra origem (o mesmo do <video> do Video). -->
             <img
+              v-show="!previewActive"
+              ref="previewSource"
               :src="beforeSrc"
               alt=""
               class="viewport-img"
               :style="mediaStyle"
+              crossorigin="anonymous"
               draggable="false"
+              @load="previewActive && startPreview()"
+            />
+            <canvas
+              v-show="previewActive"
+              ref="previewCanvas"
+              class="viewport-img"
+              :style="mediaStyle"
             />
           </div>
           <CompareSlider
@@ -556,20 +642,20 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             @pointerup="onPanUp"
           >
             <div class="side-pane">
-              <span class="side-label">Antes</span>
+              <span class="side-label">{{ t('imageEditor.before') }}</span>
               <img
                 :src="beforeSrc"
-                alt="Antes"
+                :alt="t('imageEditor.before')"
                 class="viewport-img"
                 :style="mediaStyle"
                 draggable="false"
               />
             </div>
             <div class="side-pane">
-              <span class="side-label">Depois</span>
+              <span class="side-label">{{ t('imageEditor.after') }}</span>
               <img
                 :src="afterSrc"
-                alt="Depois"
+                :alt="t('imageEditor.after')"
                 class="viewport-img"
                 :style="mediaStyle"
                 draggable="false"
@@ -752,6 +838,29 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
                 @update:model-value="(v) => (job!.scaleConfig.device = String(v))"
               />
             </div>
+
+            <!-- Aqui, e nao em Ajustes: e' um modelo (GFPGAN), nao um filtro. -->
+            <div class="toggle-row">
+              <label class="field-label">{{ t('imageEditor.faceRecoveryLabel') }}</label>
+              <button
+                class="switch"
+                :class="{ on: job.scaleConfig.faceRecovery }"
+                type="button"
+                @click="job.scaleConfig.faceRecovery = !job.scaleConfig.faceRecovery"
+              >
+                <span class="knob" />
+              </button>
+            </div>
+            <div v-if="job.scaleConfig.faceRecovery" class="slider-field">
+              <div class="slider-head">
+                <label class="field-label">{{ t('videoEditor.edits.strength') }}</label>
+                <span class="slider-value">{{ job.scaleConfig.faceRecoveryStrength }}</span>
+              </div>
+              <RangeSlider v-model="job.scaleConfig.faceRecoveryStrength" :default-value="80" />
+              <p class="field-hint">
+                {{ t('imageEditor.faceRecoveryHint') }}
+              </p>
+            </div>
           </CollapsiblePanel>
 
           <CollapsiblePanel
@@ -843,120 +952,26 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           <!-- Shown in every mode, unlike the three above: these filters are real
                OpenCV post-processing, and in Original mode they ARE the
                processing. See Upscaler.process_without_model(). -->
-          <CollapsiblePanel
-            :title="t('imageEditor.adjustmentsTitle')"
-            :description="t('imageEditor.adjustmentsDescription')"
-            :icon="SlidersHorizontal"
-          >
-            <div class="toggle-row">
-              <label class="field-label">{{ t('imageEditor.denoiseLabel') }}</label>
-              <button
-                class="switch"
-                :class="{ on: job.scaleConfig.denoiseFilterEnabled }"
-                type="button"
-                @click="toggleDenoiseFilter"
-              >
-                <span class="knob" />
-              </button>
-            </div>
-            <div v-if="job.scaleConfig.denoiseFilterEnabled" class="denoise-filter-panel">
-              <div class="denoise-preset-row">
-                <button
-                  v-for="preset in denoisePresets"
-                  :key="preset.key"
-                  type="button"
-                  class="preset-btn"
-                  :class="{ active: denoiseActivePresetKey === preset.key }"
-                  @click="setDenoisePreset(preset)"
-                >
-                  {{ preset.label }}
-                </button>
-              </div>
-              <div v-if="denoiseActivePresetKey === 'custom'" class="slider-field">
-                <div class="slider-head">
-                  <label class="field-label">Intensidade</label>
-                  <span class="slider-value">{{ job.scaleConfig.denoiseFilterStrength }}</span>
-                </div>
-                <RangeSlider
-                  v-model="job.scaleConfig.denoiseFilterStrength"
-                  :default-value="45"
-                  @update:model-value="requestDenoisePreview"
-                />
-              </div>
-              <p class="field-hint">
-                {{ t('imageEditor.denoiseHint') }}
-              </p>
-              <div v-if="!hasNativeApi" class="field-hint">
-                {{ t('imageEditor.previewDesktopOnly') }}
-              </div>
-              <div v-else class="denoise-preview">
-                <AppSpinner v-if="denoisePreviewLoading" :size="16" />
-                <p v-else-if="denoisePreviewError" class="field-warning">
-                  {{ denoisePreviewError }}
-                </p>
-                <div v-else-if="denoisePreview" class="denoise-preview-images">
-                  <div class="denoise-preview-item">
-                    <span class="denoise-preview-label">Antes</span>
-                    <img
-                      :src="`data:image/png;base64,${denoisePreview.before}`"
-                      :alt="t('imageEditor.denoiseBeforeAlt')"
-                    />
-                  </div>
-                  <div class="denoise-preview-item">
-                    <span class="denoise-preview-label">Depois</span>
-                    <img
-                      :src="`data:image/png;base64,${denoisePreview.after}`"
-                      :alt="t('imageEditor.denoiseAfterAlt')"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
+          <VideoAdjustmentsPanel
+            :adjustments="job.edits.adjustments"
+            :effects="job.edits.effects"
+            :shows-disclosure="editsNeedDisclosure"
+            :disclosure-text="t('imageEditor.notInLivePreview')"
+            @reset-adjustments="resetAdjustments"
+            @reset-effects="resetEffects"
+            @update-adjustment="setAdjustment"
+            @update-effect="setEffect"
+          />
 
-            <div class="toggle-row">
-              <label class="field-label">{{ t('imageEditor.sharpenLabel') }}</label>
-              <button
-                class="switch"
-                :class="{ on: job.scaleConfig.sharpenEnabled }"
-                type="button"
-                @click="job.scaleConfig.sharpenEnabled = !job.scaleConfig.sharpenEnabled"
-              >
-                <span class="knob" />
-              </button>
-            </div>
-            <div v-if="job.scaleConfig.sharpenEnabled" class="slider-field">
-              <div class="slider-head">
-                <label class="field-label">Intensidade</label>
-                <span class="slider-value">{{ job.scaleConfig.sharpen }}</span>
-              </div>
-              <RangeSlider v-model="job.scaleConfig.sharpen" :default-value="50" />
-              <p class="field-hint">
-                {{ t('imageEditor.sharpenHint') }}
-              </p>
-            </div>
-
-            <div class="toggle-row">
-              <label class="field-label">{{ t('imageEditor.faceRecoveryLabel') }}</label>
-              <button
-                class="switch"
-                :class="{ on: job.scaleConfig.faceRecovery }"
-                type="button"
-                @click="job.scaleConfig.faceRecovery = !job.scaleConfig.faceRecovery"
-              >
-                <span class="knob" />
-              </button>
-            </div>
-            <div v-if="job.scaleConfig.faceRecovery" class="slider-field">
-              <div class="slider-head">
-                <label class="field-label">Intensidade</label>
-                <span class="slider-value">{{ job.scaleConfig.faceRecoveryStrength }}</span>
-              </div>
-              <RangeSlider v-model="job.scaleConfig.faceRecoveryStrength" :default-value="80" />
-              <p class="field-hint">
-                {{ t('imageEditor.faceRecoveryHint') }}
-              </p>
-            </div>
-          </CollapsiblePanel>
+          <VideoTransformPanel
+            image
+            :transform="job.edits.transform"
+            :trim="null"
+            :source-width="job.sourceMeta.width"
+            :source-height="job.sourceMeta.height"
+            :format-time="() => ''"
+            @update-transform="setTransform"
+          />
 
           <CollapsiblePanel
             :title="t('imageEditor.exportTitle')"
@@ -1320,17 +1335,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   border-radius: var(--radius-sm);
   cursor: pointer;
   white-space: nowrap;
-}
-
-/* Only the denoise row divides a fixed width between four options. The zoom bar
-   shares this class but sits in a toolbar that can grow, and squeezing its
-   "Ajustar" button to a quarter of the row is what truncated it to "...". */
-.denoise-preset-row .preset-btn {
-  flex: 1;
-  min-width: 0;
-  padding: 5px 4px;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .preset-btn.active {
@@ -1793,59 +1797,8 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
   transform: translateX(14px);
 }
 
-.denoise-filter-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
 /* Rounded rectangle, not a pill: this row wraps to a second line, and a
    full-radius container reads as a broken capsule the moment it does. */
-.denoise-preset-row {
-  display: flex;
-  /* One line: four options that wrap stop reading as one control. They share
-     the width equally and the labels shrink instead of falling over. */
-  flex-wrap: nowrap;
-  gap: 2px;
-  background: var(--surface-2);
-  border: 1px solid var(--surface-border-soft);
-  border-radius: var(--radius-md);
-  padding: 4px;
-}
-
-.denoise-preview {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-2) 0;
-}
-
-.denoise-preview-images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  width: 100%;
-}
-
-.denoise-preview-item {
-  flex: 1;
-  min-width: 100px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  align-items: center;
-}
-
-.denoise-preview-item img {
-  width: 100%;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--surface-border-soft);
-}
-
-.denoise-preview-label {
-  font-size: 11px;
-  font-weight: var(--fw-medium);
-  color: var(--text-tertiary);
-}
 
 .folder-row {
   display: flex;

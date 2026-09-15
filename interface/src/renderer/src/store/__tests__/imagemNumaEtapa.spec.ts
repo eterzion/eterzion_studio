@@ -33,7 +33,8 @@ vi.mock('../../services/websocket', () => ({
 const historico = vi.hoisted(() => ({ recordJob: vi.fn(), recordSimpleJob: vi.fn() }))
 vi.mock('../history', () => historico)
 
-import { startProcessing, type ImageExport, type Job } from '../jobs'
+import { applyConfigToAll, queueState, startProcessing, type ImageExport, type Job } from '../jobs'
+import { neutralEdits } from '../../composables/useVideoEdits'
 import { ComponentActionError } from '../../services/api'
 import { perfilDaQualidade } from '../settings'
 import { setLocale } from '../../i18n'
@@ -67,6 +68,7 @@ function job(): Job {
     status: 'configuring',
     progress: 0,
     queuePosition: null,
+    edits: neutralEdits(),
     createdAt: 0
   } as Job
 }
@@ -150,5 +152,40 @@ describe('qualidade salva como numero vira perfil', () => {
     expect(perfilDaQualidade(97)).toBe('quality')
     expect(perfilDaQualidade(90)).toBe('balanced')
     expect(perfilDaQualidade(60)).toBe('fast')
+  })
+})
+
+describe('ajustes, efeitos e transformacao da Imagem', () => {
+  it('vao no pedido, sem trecho nem audio', async () => {
+    api.createLocalJob.mockResolvedValueOnce('b3')
+    api.getJob.mockResolvedValue({ status: 'queued', progress: 0, queue_position: 1 })
+    const j = job()
+    j.edits.adjustments.brightness = 0.1
+    j.edits.adjustments.brightness_enabled = true
+    j.edits.transform.rotation_degrees = 90
+
+    await startProcessing(j, { exportacao })
+
+    const edits = api.createLocalJob.mock.calls[0][0].edits
+    expect(edits.adjustments.brightness).toBe(0.1)
+    expect(edits.transform.rotation_degrees).toBe(90)
+    expect(edits).not.toHaveProperty('trim')
+    expect(edits).not.toHaveProperty('audio')
+  })
+
+  it('"Aplicar a todos" leva as edicoes junto com a configuracao', () => {
+    const origem = { ...job(), id: 'a' }
+    const destino = { ...job(), id: 'b', edits: neutralEdits() }
+    origem.edits.adjustments.saturation = 1.5
+    origem.edits.adjustments.saturation_enabled = true
+    origem.edits.transform.flip_horizontal = true
+    queueState.jobs.splice(0, queueState.jobs.length, origem, destino)
+
+    applyConfigToAll(origem)
+
+    const copiado = queueState.jobs[1]
+    expect(copiado.edits.adjustments.saturation).toBe(1.5)
+    expect(copiado.edits.transform.flip_horizontal).toBe(true)
+    queueState.jobs.splice(0)
   })
 })

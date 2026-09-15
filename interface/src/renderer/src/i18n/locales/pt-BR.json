@@ -641,8 +641,6 @@
     "title": "O que você gostaria de melhorar hoje?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Ajustes finos de qualidade",
-    "adjustmentsTitle": "Ajustes",
     "after": "Depois",
     "animeDescription": "Arte digital, anime, ilustração com traços definidos",
     "animeLabel": "Anime/Ilustração",
@@ -653,10 +651,6 @@
     "beyondNative": "Alvo acima do fator nativo ({factor}x) — o excedente é interpolação, com menos ganho de detalhe.",
     "cancel": "Cancelar",
     "cancelled": "Processamento cancelado.",
-    "denoiseAfterAlt": "Depois da redução de ruído",
-    "denoiseBeforeAlt": "Antes da redução de ruído",
-    "denoiseHint": "Remove granulação e marcas de compressão sem borrar os contornos. Útil em fotos de celular, com pouca luz, ou salvas em JPG muitas vezes.",
-    "denoiseLabel": "Filtro de redução de ruído",
     "destinationFolder": "Pasta de destino",
     "detectedContent": "Conteúdo detectado",
     "detecting": "Detectando…",
@@ -700,8 +694,6 @@
     "sameAsSource": "Mesma pasta do original",
     "scaleDescription": "Tamanho final da imagem",
     "scaleTitle": "Escala",
-    "sharpenHint": "Realça os contornos para dar impressão de foco. Em excesso, cria halos claros em volta das bordas.",
-    "sharpenLabel": "Nitidez",
     "sideBySide": "Lado a lado",
     "sizeLabel": "Tamanho",
     "sliderView": "Slider antes/depois",
@@ -715,7 +707,8 @@
       "balanced": "Equilibrada",
       "quality": "Máxima"
     },
-    "adjustAndReprocess": "Ajustar e reprocessar"
+    "adjustAndReprocess": "Ajustar e reprocessar",
+    "notInLivePreview": "Alguns ajustes ativos não aparecem na prévia — só no arquivo final."
   },
   "importing": {
     "alreadyQueued": "Já está na fila: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Processando",
       "queued": "Na fila"
     },
-    "applyToAll": "Aplicar esta configuração a todos ({n})",
-    "applyToAllHint": "Recorte e trecho continuam os de cada vídeo."
+    "applyToAll": "Aplicar esta configuração a todos ({n})"
   },
   "initialModels": {
     "downloading": "Baixando os modelos de IA ({done} de {total})",

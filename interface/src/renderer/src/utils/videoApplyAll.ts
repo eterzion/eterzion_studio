@@ -51,10 +51,16 @@ export function copiarConfiguracao(origem: VideoConfig, destino: VideoConfig): v
     destino.enhance.customHeight = null
   }
 
-  Object.assign(destino.edits.adjustments, copia(origem.edits.adjustments))
-  Object.assign(destino.edits.effects, copia(origem.edits.effects))
-  Object.assign(destino.edits.audio, copia(origem.edits.audio))
-  destino.edits.transform.rotation_degrees = origem.edits.transform.rotation_degrees
-  destino.edits.transform.flip_horizontal = origem.edits.transform.flip_horizontal
-  destino.edits.transform.flip_vertical = origem.edits.transform.flip_vertical
+  copiarEdicoes(origem.edits, destino.edits)
+}
+
+/** So' as edicoes: ajustes, efeitos, audio, rotacao e espelhamento. Recorte e
+ *  trecho ficam os do destino. A Imagem usa esta parte no "Aplicar a todos". */
+export function copiarEdicoes(origem: VideoEditSet, destino: VideoEditSet): void {
+  Object.assign(destino.adjustments, copia(origem.adjustments))
+  Object.assign(destino.effects, copia(origem.effects))
+  Object.assign(destino.audio, copia(origem.audio))
+  destino.transform.rotation_degrees = origem.transform.rotation_degrees
+  destino.transform.flip_horizontal = origem.transform.flip_horizontal
+  destino.transform.flip_vertical = origem.transform.flip_vertical
 }

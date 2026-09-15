@@ -46,6 +46,11 @@ uniform float u_saturation;
 uniform float u_gamma;
 uniform float u_hueCos;
 uniform float u_hueSin;
+// Geometria da Imagem (girar/espelhar), na mesma ordem do FFmpeg: transpose e
+// depois hflip/vflip. No Video fica em 0 -- la' a rotacao nao passa por aqui.
+uniform int u_rotation;   // quartos de volta no sentido horario: 0..3
+uniform bool u_flipH;
+uniform bool u_flipV;
 
 // BT.709, the coefficients HD video is encoded with. Using BT.601 here would
 // shift colour on exactly the material this editor is for.
@@ -69,8 +74,20 @@ const mat3 YUV_TO_RGB = mat3(
 float toStoredLuma(float yFull) { return (16.0 + 219.0 * yFull) / 255.0; }
 float fromStoredLuma(float yStored) { return (yStored * 255.0 - 16.0) / 219.0; }
 
+// Do pixel de saida para o de origem: desfaz o espelhamento (aplicado por
+// ultimo) e depois o giro.
+vec2 origem(vec2 o) {
+  if (u_flipH) o.x = 1.0 - o.x;
+  if (u_flipV) o.y = 1.0 - o.y;
+  if (u_rotation == 1) return vec2(o.y, 1.0 - o.x);
+  if (u_rotation == 2) return vec2(1.0 - o.x, 1.0 - o.y);
+  if (u_rotation == 3) return vec2(1.0 - o.y, o.x);
+  return o;
+}
+
 void main() {
-  vec3 rgb = texture(u_frame, v_uv).rgb;
+  vec4 texel = texture(u_frame, origem(v_uv));
+  vec3 rgb = texel.rgb;
   vec3 yuv = RGB_TO_YUV * rgb;
 
   // Luma: contrast about the midpoint, then additive brightness, then gamma —
@@ -88,17 +105,44 @@ void main() {
   vec2 uv = yuv.yz * u_saturation;
   uv = vec2(uv.x * u_hueCos - uv.y * u_hueSin, uv.x * u_hueSin + uv.y * u_hueCos);
 
-  fragColor = vec4(clamp(YUV_TO_RGB * vec3(y, uv), 0.0, 1.0), 1.0);
+  // O alfa passa intacto: numa imagem transparente a previa nao pode ficar
+  // opaca (o arquivo nao fica -- app/exportacao_de_imagem.py).
+  fragColor = vec4(clamp(YUV_TO_RGB * vec3(y, uv), 0.0, 1.0), texel.a);
 }`
+
+/** Girar e espelhar, para a previa da Imagem. */
+export interface PreviewGeometry {
+  rotation_degrees: 0 | 90 | 180 | 270
+  flip_horizontal: boolean
+  flip_vertical: boolean
+}
 
 export interface PreviewPipeline {
   /** False when WebGL2 is unavailable. The caller must then fall back to the
       untouched <video>, and say that adjustments are not being previewed —
       never show an unfiltered frame as if it were filtered. */
   supported: Ref<boolean>
-  start: (video: HTMLVideoElement, canvas: HTMLCanvasElement) => boolean
+  /** Um <video> (redesenha a cada quadro) ou um <img> (redesenha so' quando
+   *  algo muda -- reenviar uma foto grande a cada quadro seria trabalho sem
+   *  efeito). */
+  start: (source: HTMLVideoElement | HTMLImageElement, canvas: HTMLCanvasElement) => boolean
   stop: () => void
   apply: (adjustments: VideoAdjustments) => void
+  geometry: (value: PreviewGeometry) => void
+}
+
+function isImage(source: HTMLVideoElement | HTMLImageElement): source is HTMLImageElement {
+  return typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement
+}
+
+function sourceSize(source: HTMLVideoElement | HTMLImageElement): [number, number] {
+  return isImage(source)
+    ? [source.naturalWidth, source.naturalHeight]
+    : [source.videoWidth, source.videoHeight]
+}
+
+function sourceReady(source: HTMLVideoElement | HTMLImageElement): boolean {
+  return isImage(source) ? source.complete && source.naturalWidth > 0 : source.readyState >= 2
 }
 
 function compile(gl: WebGL2RenderingContext, type: number, source: string): WebGLShader | null {
@@ -119,25 +163,45 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
   let gl: WebGL2RenderingContext | null = null
   let program: WebGLProgram | null = null
   let texture: WebGLTexture | null = null
-  let source: HTMLVideoElement | null = null
+  let source: HTMLVideoElement | HTMLImageElement | null = null
   let rafHandle: number | null = null
   let current: VideoAdjustments | null = null
+  let geometria: PreviewGeometry = {
+    rotation_degrees: 0,
+    flip_horizontal: false,
+    flip_vertical: false
+  }
+  // Imagem: a textura sobe uma vez, e so' se redesenha quando algo muda.
+  let textureLoaded = false
+  let dirty = true
 
   function draw(): void {
-    if (!gl || !program || !source || source.readyState < 2) {
+    if (!gl || !program || !source || !sourceReady(source)) {
+      rafHandle = requestAnimationFrame(draw)
+      return
+    }
+    const image = isImage(source)
+    if (image && !dirty && textureLoaded) {
       rafHandle = requestAnimationFrame(draw)
       return
     }
     const canvas = gl.canvas as HTMLCanvasElement
-    if (canvas.width !== source.videoWidth || canvas.height !== source.videoHeight) {
-      canvas.width = source.videoWidth
-      canvas.height = source.videoHeight
+    const [largura, altura] = sourceSize(source)
+    // Um quarto de volta troca largura e altura do resultado.
+    const deitada = geometria.rotation_degrees === 90 || geometria.rotation_degrees === 270
+    const [w, h] = deitada ? [altura, largura] : [largura, altura]
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w
+      canvas.height = h
       gl.viewport(0, 0, canvas.width, canvas.height)
     }
 
     gl.bindTexture(gl.TEXTURE_2D, texture)
     try {
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
+      if (!image || !textureLoaded) {
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source)
+        textureLoaded = true
+      }
     } catch {
       // A tainted texture throws here — the media scheme is a different origin
       // from the renderer, so the video needs crossorigin AND the handler needs
@@ -168,12 +232,16 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
     gl.uniform1f(gl.getUniformLocation(program, 'u_gamma'), Math.max(0.1, a.gamma))
     gl.uniform1f(gl.getUniformLocation(program, 'u_hueCos'), Math.cos(radians))
     gl.uniform1f(gl.getUniformLocation(program, 'u_hueSin'), Math.sin(radians))
+    gl.uniform1i(gl.getUniformLocation(program, 'u_rotation'), geometria.rotation_degrees / 90)
+    gl.uniform1i(gl.getUniformLocation(program, 'u_flipH'), geometria.flip_horizontal ? 1 : 0)
+    gl.uniform1i(gl.getUniformLocation(program, 'u_flipV'), geometria.flip_vertical ? 1 : 0)
 
     gl.drawArrays(gl.TRIANGLES, 0, 6)
+    dirty = false
     rafHandle = requestAnimationFrame(draw)
   }
 
-  function start(video: HTMLVideoElement, canvas: HTMLCanvasElement): boolean {
+  function start(video: HTMLVideoElement | HTMLImageElement, canvas: HTMLCanvasElement): boolean {
     stop()
     const context = canvas.getContext('webgl2', { premultipliedAlpha: false })
     if (!context) {
@@ -220,6 +288,8 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
     gl.uniform1i(gl.getUniformLocation(program, 'u_frame'), 0)
 
     source = video
+    textureLoaded = false
+    dirty = true
     supported.value = true
     rafHandle = requestAnimationFrame(draw)
     return true
@@ -233,11 +303,17 @@ export function useVideoPreviewPipeline(): PreviewPipeline {
 
   function apply(adjustments: VideoAdjustments): void {
     current = adjustments
+    dirty = true
+  }
+
+  function geometry(value: PreviewGeometry): void {
+    geometria = { ...value }
+    dirty = true
   }
 
   onBeforeUnmount(stop)
 
-  return { supported, start, stop, apply }
+  return { supported, start, stop, apply, geometry }
 }
 
 /** The CPU-side twin of the shader's luma path, exported so parity with FFmpeg

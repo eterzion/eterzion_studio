@@ -8,12 +8,15 @@ import {
   getJob,
   ComponentActionError,
   type JobStatus as ApiJobStatus,
+  type MediaRequest,
   type ErrorCategory,
   type ConflictMode,
   type ContentType,
   type Profile
 } from '../services/api'
 import type { RespostaDeConflito } from '../composables/usePerguntaDeConflito'
+import { neutralEdits, type VideoEditSet } from '../composables/useVideoEdits'
+import { copiarEdicoes } from '../utils/videoApplyAll'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
@@ -127,6 +130,10 @@ export interface Job {
   processingEndedAt?: number
   /** Onde o resultado foi gravado -- o destino escolhido, numa etapa so'. */
   outputPath?: string
+  /** Ajustes de cor, efeitos e transformacao -- os mesmos do Video, aplicados
+   *  ao resultado depois do modelo (app/exportacao_de_imagem.py). Trecho e
+   *  audio existem no tipo e ficam neutros: numa imagem nao ha' o que cortar. */
+  edits: VideoEditSet
   thumbnail?: string
 }
 
@@ -255,6 +262,7 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       status: 'configuring',
       progress: 0,
       queuePosition: null,
+      edits: neutralEdits(),
       createdAt: Date.now(),
       thumbnail
     }
@@ -430,6 +438,7 @@ export function applyConfigToAll(sourceJob: Job): void {
   for (const job of queueState.jobs) {
     if (job.id === sourceJob.id || job.status !== 'configuring') continue
     job.scaleConfig = { ...sourceJob.scaleConfig }
+    copiarEdicoes(sourceJob.edits, job.edits)
     if (customFactor && job.sourceMeta.width && job.sourceMeta.height) {
       job.scaleConfig.customWidth = Math.min(
         MAX_OUTPUT_DIMENSION,
@@ -623,6 +632,12 @@ export async function startProcessing(job: Job, options: ProcessingOptions = {})
         input_path: job.sourcePath,
         device: job.scaleConfig.device,
         custom_size: customSize,
+        // So' o que vale para um quadro; trecho e audio nao existem numa imagem.
+        edits: {
+          adjustments: job.edits.adjustments,
+          effects: job.edits.effects,
+          transform: job.edits.transform
+        } as unknown as MediaRequest['edits'],
         output_target: exportacao
           ? {
               format: exportacao.format,

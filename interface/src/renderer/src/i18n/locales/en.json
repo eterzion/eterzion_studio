@@ -641,8 +641,6 @@
     "title": "What would you like to improve today?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Fine quality adjustments",
-    "adjustmentsTitle": "Adjustments",
     "after": "After",
     "animeDescription": "Digital art, anime, illustration with defined lines",
     "animeLabel": "Anime / illustration",
@@ -653,10 +651,6 @@
     "beyondNative": "Target above the native factor ({factor}x) — the excess is interpolation, with less detail gained.",
     "cancel": "Cancel",
     "cancelled": "Processing cancelled.",
-    "denoiseAfterAlt": "After noise reduction",
-    "denoiseBeforeAlt": "Before noise reduction",
-    "denoiseHint": "Removes grain and compression artefacts without blurring the edges. Useful for phone photos, low light, or images saved as JPG many times.",
-    "denoiseLabel": "Noise reduction filter",
     "destinationFolder": "Destination folder",
     "detectedContent": "Detected content",
     "detecting": "Detecting…",
@@ -700,8 +694,6 @@
     "sameAsSource": "Same folder as the original",
     "scaleDescription": "Final size of the image",
     "scaleTitle": "Scale",
-    "sharpenHint": "Emphasises edges to give an impression of focus. Too much creates bright halos around them.",
-    "sharpenLabel": "Sharpness",
     "sideBySide": "Side by side",
     "sizeLabel": "Size",
     "sliderView": "Before/after slider",
@@ -715,7 +707,8 @@
       "balanced": "Balanced",
       "quality": "Maximum"
     },
-    "adjustAndReprocess": "Adjust and reprocess"
+    "adjustAndReprocess": "Adjust and reprocess",
+    "notInLivePreview": "Some active adjustments do not show in the preview — only in the final file."
   },
   "importing": {
     "alreadyQueued": "Already in the queue: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Processing",
       "queued": "Queued"
     },
-    "applyToAll": "Apply this configuration to all ({n})",
-    "applyToAllHint": "Crop and trim stay as each video has them."
+    "applyToAll": "Apply this configuration to all ({n})"
   },
   "initialModels": {
     "downloading": "Downloading AI models ({done} of {total})",

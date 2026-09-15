@@ -21,6 +21,8 @@ const props = defineProps<{
   sourceHeight: number | null
   formatTime: (seconds: number) => string
   disabled?: boolean
+  /** A Imagem nao tem trecho, e o tamanho de saida daqui ignoraria a escala. */
+  image?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -85,7 +87,7 @@ function rotate(): void {
       />
     </SettingRow>
 
-    <SettingRow :label="t('videoEditor.edits.outputSize')">
+    <SettingRow v-if="!image" :label="t('videoEditor.edits.outputSize')">
       <span class="text-(length:--fs-caption) tabular-nums text-text-tertiary">
         {{ outputSize.width }} &times; {{ outputSize.height }}
       </span>
@@ -93,7 +95,7 @@ function rotate(): void {
 
     <!-- Trim is set on the timeline, not typed here. This is the readout and
          the way back out of it (FR-013d). -->
-    <SettingRow :label="t('videoEditor.edits.trim')">
+    <SettingRow v-if="!image" :label="t('videoEditor.edits.trim')">
       <div class="flex items-center gap-2">
         <span class="text-(length:--fs-caption) tabular-nums text-text-tertiary">
           <template v-if="trim">

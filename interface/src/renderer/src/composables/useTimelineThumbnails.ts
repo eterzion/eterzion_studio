@@ -3,7 +3,7 @@ import { BASE_URL, type MediaHandle } from '../services/api'
 
 // T038 (specs/007-video-editor-player) — the timeline's thumbnail strip.
 //
-// Follows the shape useDenoisePreview.ts established for asynchronous preview
+// Follows the shape the old denoise preview established for asynchronous preview
 // state (research.md Decisão 2): its own request-race guard, and invalidation
 // when the subject changes. Reusing that shape rather than inventing another is
 // Princípio II applied to a pattern instead of to a function.
@@ -53,7 +53,7 @@ export function useTimelineThumbnails(handle: Ref<MediaHandle | null>): Timeline
       if (!res.ok) throw new Error(String(res.status))
       const blob = await res.blob()
       // A reply for the previous file must not land on the current one — the
-      // exact bug useDenoisePreview was fixed for.
+      // exact bug the old denoise preview was fixed for.
       if (id !== requestId) return
       spriteUrl.value = URL.createObjectURL(blob)
       count.value = Number(res.headers.get('X-Astros-Thumb-Count') ?? 0)

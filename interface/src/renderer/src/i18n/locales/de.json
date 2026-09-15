@@ -641,8 +641,6 @@
     "title": "Was möchten Sie heute verbessern?"
   },
   "imageEditor": {
-    "adjustmentsDescription": "Feine Qualitätsanpassungen",
-    "adjustmentsTitle": "Feinabstimmung",
     "after": "Nachher",
     "animeDescription": "Digitale Kunst, Anime, Illustration mit klaren Linien",
     "animeLabel": "Anime/Illustration",
@@ -653,10 +651,6 @@
     "beyondNative": "Ziel über dem nativen Faktor ({factor}x) — der Überschuss ist Interpolation, mit weniger Detailgewinn.",
     "cancel": "Abbrechen",
     "cancelled": "Verarbeitung abgebrochen.",
-    "denoiseAfterAlt": "Nach der Rauschminderung",
-    "denoiseBeforeAlt": "Vor der Rauschminderung",
-    "denoiseHint": "Entfernt Korn und Kompressionsartefakte, ohne die Konturen weichzuzeichnen. Nützlich bei Handyfotos, wenig Licht oder mehrfach als JPG gespeicherten Bildern.",
-    "denoiseLabel": "Rauschminderung",
     "destinationFolder": "Zielordner",
     "detectedContent": "Erkannter Inhalt",
     "detecting": "Wird erkannt…",
@@ -700,8 +694,6 @@
     "sameAsSource": "Derselbe Ordner wie das Original",
     "scaleDescription": "Endgröße des Bildes",
     "scaleTitle": "Skalierung",
-    "sharpenHint": "Betont Konturen und lässt das Bild schärfer wirken. Zu viel davon erzeugt helle Höfe um die Kanten.",
-    "sharpenLabel": "Schärfe",
     "sideBySide": "Nebeneinander",
     "sizeLabel": "Größe",
     "sliderView": "Vorher/Nachher-Regler",
@@ -715,7 +707,8 @@
       "balanced": "Ausgewogen",
       "quality": "Maximal"
     },
-    "adjustAndReprocess": "Anpassen und neu verarbeiten"
+    "adjustAndReprocess": "Anpassen und neu verarbeiten",
+    "notInLivePreview": "Einige aktive Anpassungen erscheinen nicht in der Vorschau – nur in der fertigen Datei."
   },
   "importing": {
     "alreadyQueued": "Bereits in der Warteschlange: {files}.",
@@ -1139,8 +1132,7 @@
       "processing": "Wird verarbeitet",
       "queued": "In Warteschlange"
     },
-    "applyToAll": "Diese Konfiguration auf alle anwenden ({n})",
-    "applyToAllHint": "Zuschnitt und Ausschnitt bleiben die jedes Videos."
+    "applyToAll": "Diese Konfiguration auf alle anwenden ({n})"
   },
   "initialModels": {
     "downloading": "KI-Modelle werden heruntergeladen ({done} von {total})",
