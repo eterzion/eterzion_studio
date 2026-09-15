@@ -15,7 +15,7 @@ import string
 import shutil
 import tempfile
 import urllib.error
-from typing import get_args
+from typing import Any, get_args
 
 import cv2
 from fastapi import APIRouter, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
@@ -1002,14 +1002,85 @@ def estimate_compression(payload: CompressionEstimateRequest) -> CompressionEsti
         raise HTTPException(_handle_error_status(error.reason),
                             {'reason': error.reason, 'message': str(error)}) from error
 
-    alvo_bytes = None
+    try:
+        settings, alvo_do_preset = _configuracoes_efetivas(
+            payload.media_kind, payload.settings, payload.preset_id, payload.history_id,
+            advanced=payload.advanced)
+    except compression_runner.CompressionRefused as error:
+        raise HTTPException(
+            _COMPRESSION_REFUSAL_STATUS.get(error.reason, 422),
+            {'reason': error.reason, 'message': str(error), **error.detail}) from error
+
+    alvo_bytes = alvo_do_preset
     if payload.target is not None:
         alvo_bytes = compression_estimator.target_to_bytes(payload.target.value,
                                                            payload.target.unit)
 
     resultado = compression_estimator.estimate_for_kind(
-        payload.media_kind, source, info, payload.settings, alvo_bytes)
+        payload.media_kind, source, info, settings, alvo_bytes)
     return CompressionEstimateResponse(**resultado.as_dict())
+
+
+def _configuracoes_efetivas(media_kind: str, settings_cliente: dict[str, Any],
+                            preset_id: str | None, history_id: str | None, *,
+                            advanced: bool) -> tuple[dict[str, Any], int | None]:
+    """As configuracoes que a compressao vai de fato usar, e o alvo de tamanho
+    que um preset de plataforma traz.
+
+    **No modo Basico, a base vem do servidor.** Os presets de video e de
+    animacao sao feitos so' de campos tecnicos (crf, encoding_preset,
+    max_colors, dither), e o Basico nao pode envia-los -- condicao 2 da excecao
+    do Principio V. Quando a tela copiava o preset para o pedido, esses campos
+    saiam e o preset virava nada: os dez de video e animacao nao faziam efeito
+    no Basico. Resolvido aqui, o preset e' do servidor, o cliente continua sem
+    mandar campo tecnico, e a regra continua de pe'. O mesmo vale para o
+    "Repetir" do historico.
+
+    **No Avancado, vale so' o cliente.** La' a tela carrega o preset inteiro no
+    painel e manda tudo explicito; um campo que a pessoa voltou para
+    "automatico" sai do pedido de proposito, e reaplicar o preset por baixo
+    desfaria a escolha dela.
+
+    **Presets de plataforma** (Discord, WhatsApp...) guardam so' `target_bytes`.
+    Ninguem o lia dentro de settings, entao os cinco tambem nao faziam nada, em
+    modo nenhum. Agora ele vira o alvo de tamanho quando a pessoa nao definiu um.
+    """
+    compression_runner.validate(media_kind, settings_cliente, advanced=advanced)
+    if preset_id and history_id:
+        raise compression_runner.CompressionRefused(
+            'invalid_settings', 'Um pedido parte de um preset ou de um histórico, não dos dois.')
+
+    base: dict[str, Any] = {}
+    if history_id:
+        entrada = compression_history.get(history_id)
+        if entrada is None:
+            raise compression_runner.CompressionRefused('not_found', 'Registro do histórico não encontrado.')
+        if entrada.get('media_kind') != media_kind:
+            raise compression_runner.CompressionRefused(
+                'invalid_settings', 'O registro do histórico é de outro tipo de mídia.')
+        base = dict(compression_history.settings_to_repeat(history_id) or {})
+    elif preset_id:
+        preset = compression_presets.get(preset_id)
+        if preset is None:
+            raise compression_runner.CompressionRefused('not_found', 'Preset não encontrado.')
+        if preset['media_kind'] != media_kind:
+            raise compression_runner.CompressionRefused(
+                'invalid_settings', 'O preset é de outro tipo de mídia.')
+        base = dict(preset['settings'])
+
+    if advanced:
+        efetivas = dict(settings_cliente)
+    else:
+        efetivas = {**base, **settings_cliente}
+    alvo = efetivas.pop('target_bytes', None)
+    if advanced and base.get('target_bytes') is not None and alvo is None:
+        # O alvo da plataforma nao e' campo tecnico: vale nos dois modos.
+        alvo = base['target_bytes']
+    if efetivas != settings_cliente:
+        # O que veio do servidor tambem passa pela validacao -- agora como
+        # Avancado, porque os campos tecnicos dele sao legitimos.
+        compression_runner.validate(media_kind, efetivas, advanced=True)
+    return efetivas, (int(alvo) if alvo is not None else None)
 
 
 def _preset_error_status(reason: str) -> int:
@@ -1118,15 +1189,17 @@ async def create_compression_job(payload: CompressionJobRequest) -> CompressionJ
     if source is None or not os.path.isfile(source):
         raise HTTPException(404, {'reason': 'not_found', 'message': 'Arquivo não encontrado.'})
 
-    settings = dict(payload.settings)
     estimativa = None
 
     try:
-        compression_runner.validate(payload.media_kind, settings, advanced=payload.advanced)
+        settings, alvo = _configuracoes_efetivas(
+            payload.media_kind, payload.settings, payload.preset_id, payload.history_id,
+            advanced=payload.advanced)
 
         if payload.target is not None:
             alvo = compression_estimator.target_to_bytes(payload.target.value,
                                                          payload.target.unit)
+        if alvo is not None:
             estimativa = compression_estimator.estimate_for_kind(
                 payload.media_kind, source, info, settings, alvo)
             if estimativa.feasibility == 'below_floor':
@@ -1137,7 +1210,7 @@ async def create_compression_job(payload: CompressionJobRequest) -> CompressionJ
             # alvo seria decoração, e o arquivo sairia com a qualidade padrão.
             settings.update(estimativa.resolved_settings or {})
 
-        destino = _compression_output_path(source, payload)
+        destino = _compression_output_path(source, payload, settings)
         compression_runner.check_disk(source, os.path.dirname(destino))
     except compression_runner.CompressionRefused as error:
         raise HTTPException(
@@ -1185,7 +1258,8 @@ def _validar_padrao_de_nome(padrao: str) -> None:
                 {'placeholder': campo})
 
 
-def _compression_output_path(source: str, payload: CompressionJobRequest) -> str:
+def _compression_output_path(source: str, payload: CompressionJobRequest,
+                             settings_efetivas: dict[str, Any] | None = None) -> str:
     """Onde o resultado vai, aplicando o padrão de nome (FR-060).
 
     **Nunca a origem** (Princípio XV/FR-059). A decisão é aqui e não confiada ao
@@ -1198,8 +1272,11 @@ def _compression_output_path(source: str, payload: CompressionJobRequest) -> str
     # `output_format`. Ler so' o segundo fazia um video comprimido para WebM a
     # partir de um .mp4 sair chamado .mp4 -- e o ffmpeg, que deduz o container
     # pela extensao do arquivo temporario, gravava mesmo um MP4.
+    # As efetivas, e nao as do cliente: um preset resolvido no backend (modo
+    # Basico) pode trazer o formato, e o nome precisa dizer o que foi gravado.
+    configuracoes = settings_efetivas if settings_efetivas is not None else payload.settings
     campo = 'container' if payload.media_kind == 'video' else 'output_format'
-    formato = (payload.settings.get(campo) or '').lower()
+    formato = (configuracoes.get(campo) or '').lower()
     if not formato or formato in ('keep', 'auto'):
         extensao = os.path.splitext(source)[1].lstrip('.').lower()
     else:
@@ -1208,9 +1285,9 @@ def _compression_output_path(source: str, payload: CompressionJobRequest) -> str
     _validar_padrao_de_nome(payload.export.naming_pattern)
     nome = payload.export.naming_pattern.format(
         filename=base,
-        quality=payload.settings.get('quality', ''),
-        resolution=_resolution_token(payload.settings),
-        codec=payload.settings.get('video_codec') or payload.settings.get('codec') or '',
+        quality=configuracoes.get('quality', ''),
+        resolution=_resolution_token(configuracoes),
+        codec=configuracoes.get('video_codec') or configuracoes.get('codec') or '',
     ).strip('_- ') or f'{base}_compressed'
 
     destino = os.path.join(diretorio, f'{nome}.{extensao}')

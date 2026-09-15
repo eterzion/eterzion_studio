@@ -49,6 +49,7 @@ export interface BatchRequest {
   target: SizeTarget | null
   mode: CompressionMode
   presetId: string | null
+  historyId: string | null
   export: CompressionExport
 }
 
@@ -145,6 +146,7 @@ export function useCompressionBatch(): CompressionBatchApi {
       settings: pedido.settings,
       target: pedido.target,
       preset_id: pedido.presetId,
+      history_id: pedido.historyId,
       advanced: pedido.mode === 'advanced',
       export: pedido.export
     }

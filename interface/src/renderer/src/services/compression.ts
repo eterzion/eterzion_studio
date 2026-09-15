@@ -99,6 +99,9 @@ export interface CompressionJobRequest {
   settings: CompressionSettings
   target?: SizeTarget | null
   preset_id?: string | null
+  /** "Repetir" do historico. Resolvido no backend, como o preset: no modo
+   *  Basico os campos tecnicos da configuracao repetida nao podem viajar. */
+  history_id?: string | null
   advanced?: boolean
   export?: CompressionExport | null
 }
@@ -210,6 +213,11 @@ export function estimate(body: {
   media_kind: MediaKind
   settings: CompressionSettings
   target?: SizeTarget | null
+  // Os mesmos da compressao: sem eles a estimativa partiria de outras
+  // configuracoes e mostraria um numero que a compressao nao produz.
+  preset_id?: string | null
+  history_id?: string | null
+  advanced?: boolean
 }): Promise<CompressionEstimate> {
   return request<CompressionEstimate>('/compression/estimate', {
     method: 'POST',
