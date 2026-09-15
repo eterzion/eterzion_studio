@@ -354,7 +354,8 @@
       "unknown": "fehlgeschlagen",
       "unreadable": "nicht lesbar",
       "unsupported_media": "keine erkannte Mediendatei",
-      "invalid_naming_pattern": "Das Namensmuster enthält einen Platzhalter, den es nicht gibt. Verwenden Sie {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} oder {'{'}codec{'}'}."
+      "invalid_naming_pattern": "Das Namensmuster enthält einen Platzhalter, den es nicht gibt. Verwenden Sie {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} oder {'{'}codec{'}'}.",
+      "conflict": "eine Datei mit diesem Namen existiert bereits"
     },
     "result": {
       "elapsed": "{seconds} s",

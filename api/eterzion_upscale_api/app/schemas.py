@@ -439,7 +439,8 @@ class VideoExportRequest(BaseModel):
     profile: Profile = 'balanced'
     output_directory: str | None = None
     output_filename: str | None = None
-    conflict: Literal['rename', 'overwrite'] = 'rename'
+    # 'ask' recusa com 409 antes do job (app/destino.py).
+    conflict: ConflictMode = 'rename'
 
 
 class VideoPreviewFrameRequest(BaseModel):

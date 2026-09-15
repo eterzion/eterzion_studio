@@ -23,6 +23,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app import jobs, licensing, media_handles, processing, security, video_edits, video_thumbnails
+from app import destino as destino_de_exportacao
 from app.compression import capabilities as compression_capabilities
 from app.compression import history as compression_history
 from app.compression import estimator as compression_estimator
@@ -1212,6 +1213,10 @@ async def create_compression_job(payload: CompressionJobRequest) -> CompressionJ
 
         destino = _compression_output_path(source, payload, settings)
         compression_runner.check_disk(source, os.path.dirname(destino))
+    except destino_de_exportacao.ConflitoDeDestino as error:
+        # "Perguntar": a pergunta vem antes de processar, com o caminho que ja' existe.
+        raise HTTPException(409, {'reason': 'conflict', 'message': str(error),
+                                  'path': error.caminho}) from error
     except compression_runner.CompressionRefused as error:
         raise HTTPException(
             _COMPRESSION_REFUSAL_STATUS.get(error.reason, 422),
@@ -1221,7 +1226,8 @@ async def create_compression_job(payload: CompressionJobRequest) -> CompressionJ
         source, info.get('display_name') or os.path.basename(source),
         {'media_kind': payload.media_kind, 'settings': settings,
          'output_path': destino, 'preset_id': payload.preset_id,
-         'advanced': payload.advanced},
+         'advanced': payload.advanced,
+         'conflict_policy': payload.export.conflict_policy},
         media_type='image' if payload.media_kind == 'image' else 'video',
         operation='compression')
     await jobs.enqueue(job_id)
@@ -1266,7 +1272,6 @@ def _compression_output_path(source: str, payload: CompressionJobRequest,
     cliente: mesmo com `conflict_policy: overwrite`, sobrescrever o arquivo de
     onde a pessoa está partindo não é o que "substituir" significa.
     """
-    diretorio = payload.export.directory or os.path.dirname(source) or settings.outputs_dir
     base = os.path.splitext(os.path.basename(source))[0]
     # O video escolhe o formato pelo `container`; imagem, audio e animacao, por
     # `output_format`. Ler so' o segundo fazia um video comprimido para WebM a
@@ -1290,13 +1295,13 @@ def _compression_output_path(source: str, payload: CompressionJobRequest,
         codec=configuracoes.get('video_codec') or configuracoes.get('codec') or '',
     ).strip('_- ') or f'{base}_compressed'
 
-    destino = os.path.join(diretorio, f'{nome}.{extensao}')
-
-    if os.path.abspath(destino) == os.path.abspath(source):
-        destino = os.path.join(diretorio, f'{nome}_compressed.{extensao}')
-    if os.path.exists(destino) and payload.export.conflict_policy != 'overwrite':
-        destino = _free_path(destino)
-    return destino
+    # O resto -- nunca a origem, conflito, pasta -- e' o do nucleo comum. O
+    # nome vai com a extensao para o nucleo tirar exatamente ela, e nao um
+    # trecho do nome que por acaso tenha ponto ('foto.2024').
+    return destino_de_exportacao.resolver(
+        source, pasta=payload.export.directory, nome=f'{nome}.{extensao}', extensao=extensao,
+        sufixo=destino_de_exportacao.SUFIXOS['compression'],
+        conflito=payload.export.conflict_policy, pasta_padrao=settings.outputs_dir)
 
 
 def _resolution_token(settings: dict) -> str:
@@ -1469,8 +1474,16 @@ async def create_video_edit_job(payload: VideoExportRequest):
         ))
         video_edits.resolve_encoder(payload.container, payload.profile,
                                     want_audio=metadata['has_audio'])
-        video_edits.check_disk_space(
-            payload.output_directory or os.path.dirname(input_path), metadata['size_bytes'])
+        # Resolvido aqui, antes do job, e nao na hora de rodar: e' o que deixa
+        # "perguntar" perguntar antes de processar (app/destino.py).
+        output_path = destino_de_exportacao.resolver(
+            input_path, pasta=payload.output_directory, nome=payload.output_filename,
+            extensao=payload.container, sufixo=destino_de_exportacao.SUFIXOS['video_edit'],
+            conflito=payload.conflict, pasta_padrao=settings.outputs_dir)
+        video_edits.check_disk_space(os.path.dirname(output_path), metadata['size_bytes'])
+    except destino_de_exportacao.ConflitoDeDestino as error:
+        raise HTTPException(409, {'reason': 'conflict', 'message': str(error),
+                                  'path': error.caminho}) from error
     except video_edits.EditError as error:
         raise HTTPException(422, {'reason': error.reason, 'message': str(error), **error.detail}) from error
 
@@ -1497,6 +1510,7 @@ async def create_video_edit_job(payload: VideoExportRequest):
             'source_width': metadata['width'],
             'source_height': metadata['height'],
             'has_audio': metadata['has_audio'],
+            'output_path': output_path,
             'output_target': {
                 'format': payload.container,
                 'directory': payload.output_directory,

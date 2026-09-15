@@ -354,7 +354,8 @@
       "unknown": "失败",
       "unreadable": "无法读取",
       "unsupported_media": "不是可识别的媒体文件",
-      "invalid_naming_pattern": "名称模式中有不存在的占位符。请使用 {'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'} 或 {'{'}codec{'}'}。"
+      "invalid_naming_pattern": "名称模式中有不存在的占位符。请使用 {'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'} 或 {'{'}codec{'}'}。",
+      "conflict": "已存在同名文件"
     },
     "result": {
       "elapsed": "{seconds} 秒",

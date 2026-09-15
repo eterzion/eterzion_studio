@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { mount } from '@vue/test-utils'
 import { i18n, setLocale } from '../../../i18n'
@@ -70,6 +70,18 @@ describe('textos com marcadores de nome', () => {
     const recusa = t('compression.refusal.invalid_naming_pattern')
     for (const m of ['{filename}', '{quality}', '{resolution}', '{codec}']) {
       expect(recusa).toContain(m)
+    }
+  })
+})
+
+describe('recusa por arquivo que ja existe', () => {
+  // Com "perguntar", o backend recusa com 409 `conflict` antes do job. Sem a
+  // chave, a tela mostraria o caminho da chave no lugar da frase.
+  it('tem traducao em todos os idiomas', () => {
+    const pasta = resolve(process.cwd(), 'src/renderer/src/i18n/locales')
+    for (const arquivo of readdirSync(pasta).filter((f) => f.endsWith('.json'))) {
+      const msgs = JSON.parse(readFileSync(resolve(pasta, arquivo), 'utf8'))
+      expect(msgs.compression.refusal.conflict, arquivo).toBeTruthy()
     }
   })
 })

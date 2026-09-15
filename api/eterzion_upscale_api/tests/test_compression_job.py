@@ -10,19 +10,24 @@ from __future__ import annotations
 
 import asyncio
 import os
-import tempfile
 
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from app import jobs, media_handles
-from app.compression import runner, workspace
+from app.compression import runner
 from app.main import app
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    # Sem o laco de jobs da aplicacao: quem processa e' `_aguardar`. O primeiro
+    # TestClient do processo iniciava o laco de verdade, e o job rodava duas
+    # vezes -- duas entradas no historico, e o segundo "renomear" achava o
+    # arquivo do primeiro. So' no primeiro teste de cada processo, entao a
+    # falha dependia da ordem (e do -n auto).
+    monkeypatch.setattr(jobs, 'start_worker', lambda: None)
     media_handles.clear()
     jobs.jobs.clear()
     with TestClient(app) as test_client:
@@ -286,70 +291,66 @@ def test_campo_desconhecido_e_recusado(client, imagem):
 
 
 # ------------------------------- temporários ------------------------------- #
+# O parcial fica na pasta do destino (app/destino.py) e some em qualquer saída.
 
-def test_o_espaco_de_trabalho_some_no_sucesso():
-    with workspace.workspace() as caminho:
-        assert os.path.isdir(caminho)
-        open(os.path.join(caminho, 'x'), 'w').close()
-    assert not os.path.exists(caminho)
-
-
-def test_o_espaco_de_trabalho_some_no_erro():
-    """Um `finally` cobre isto. O teste existe porque a versão sem ele parece
-    igualmente correta."""
-    with pytest.raises(RuntimeError):
-        with workspace.workspace() as caminho:
-            guardado = caminho
-            raise RuntimeError('falha proposital')
-    assert not os.path.exists(guardado)
-
-
-def test_a_varredura_apaga_orfaos_de_execucoes_que_nao_terminaram():
-    """A rede que pega o que nem o `finally` nem o `atexit` pegam — travamento,
-    queda de energia, processo morto. Sem ela, um travamento por semana enche o
-    disco em silêncio."""
-    orfao = tempfile.mkdtemp(prefix='astros-compression-')
-    open(os.path.join(orfao, 'restou'), 'w').close()
-
-    workspace.sweep_orphans()
-    assert not os.path.exists(orfao)
-
-
-def test_a_varredura_nao_toca_execucao_em_curso():
-    with workspace.workspace() as vivo:
-        workspace.sweep_orphans()
-        assert os.path.isdir(vivo), 'a varredura apagou um trabalho em andamento'
-
-
-def test_nenhum_temporario_sobra_depois_de_comprimir(client, imagem, tmp_path, tempdir_isolado):
+def test_nenhum_parcial_sobra_depois_de_comprimir(client, imagem, tmp_path):
     handle = media_handles.register_media(imagem)
     destino = tmp_path / 'saida'
     destino.mkdir()
-    antes = _temporarios_da_central()
 
     job_id = client.post('/compression/jobs',
                          json=_pedido(handle, export={'directory': str(destino)})).json()['job_id']
     _aguardar(job_id)
 
-    assert _temporarios_da_central() == antes
+    assert jobs.get_job(job_id)['status'] == 'done'
+    assert _parciais(destino) == []
+    assert 'partial_output' not in jobs.get_job(job_id)
 
 
-def test_nenhum_temporario_sobra_depois_de_um_erro(tmp_path, tempdir_isolado):
-    """Uma compressão que levanta não pode deixar o diretório de trabalho."""
-    antes = _temporarios_da_central()
-    with pytest.raises(runner.CompressionRefused):
-        runner.run('video', str(tmp_path), str(tmp_path / 'x.mp4'), {})
-    assert _temporarios_da_central() == antes
+def test_nenhum_parcial_sobra_depois_de_um_erro_no_meio(imagem, tmp_path, monkeypatch):
+    """Uma compressão que levanta depois de começar a gravar não pode deixar o
+    parcial -- nem tocar no arquivo que já estava no destino."""
+    alvo = tmp_path / 'foto.jpg'
+    alvo.write_bytes(b'antigo intacto')
+
+    def meio_caminho(media_kind, origem, saida, *a, **k):
+        with open(saida, 'wb') as f:
+            f.write(b'metade')
+        raise RuntimeError('o encoder caiu')
+
+    monkeypatch.setattr(runner, '_compress', meio_caminho)
+    with pytest.raises(RuntimeError):
+        runner.run('image', imagem, str(alvo), {})
+    assert _parciais(tmp_path) == []
+    assert alvo.read_bytes() == b'antigo intacto'
+
+
+def test_perguntar_recusa_com_409_antes_do_job(client, imagem, tmp_path):
+    handle = media_handles.register_media(imagem)
+    (tmp_path / 'foto_compressed.jpg').write_bytes(b'ja existe')
+    r = client.post('/compression/jobs', json=_pedido(handle, export={
+        'directory': str(tmp_path), 'conflict_policy': 'ask'}))
+    assert r.status_code == 409
+    detalhe = r.json()['detail']
+    assert detalhe['reason'] == 'conflict'
+    assert detalhe['path'] == str(tmp_path / 'foto_compressed.jpg')
+    assert jobs.jobs == {}
+
+
+def test_renomear_nunca_grava_por_cima(client, imagem, tmp_path):
+    handle = media_handles.register_media(imagem)
+    (tmp_path / 'foto_compressed.jpg').write_bytes(b'ja existe')
+    job_id = client.post('/compression/jobs', json=_pedido(handle, export={
+        'directory': str(tmp_path)})).json()['job_id']
+    _aguardar(job_id)
+    assert (tmp_path / 'foto_compressed.jpg').read_bytes() == b'ja existe'
+    assert jobs.get_job(job_id)['output_path'] == str(tmp_path / 'foto_compressed (1).jpg')
 
 
 # ------------------------------- auxiliares ------------------------------- #
 
-def _temporarios_da_central() -> set[str]:
-    raiz = tempfile.gettempdir()
-    try:
-        return {n for n in os.listdir(raiz) if n.startswith('astros-compression-')}
-    except OSError:
-        return set()
+def _parciais(pasta) -> list[str]:
+    return [n for n in os.listdir(pasta) if '.partial.' in n]
 
 
 def _aguardar(job_id: str, limite: float = 30.0) -> None:

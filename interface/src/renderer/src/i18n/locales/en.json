@@ -354,7 +354,8 @@
       "unknown": "failed",
       "unreadable": "could not be read",
       "unsupported_media": "not a recognised media file",
-      "invalid_naming_pattern": "The naming pattern uses a placeholder that doesn't exist. Use {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} or {'{'}codec{'}'}."
+      "invalid_naming_pattern": "The naming pattern uses a placeholder that doesn't exist. Use {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} or {'{'}codec{'}'}.",
+      "conflict": "a file with this name already exists"
     },
     "result": {
       "elapsed": "{seconds} s",

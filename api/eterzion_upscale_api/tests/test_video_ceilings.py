@@ -119,3 +119,47 @@ class TestDiskSpace:
         """Refusing because the destination could not be measured would turn an
         unrelated problem into a capacity error."""
         video_edits.check_disk_space('\x00://caminho/invalido/saida.webm', 1024)
+
+
+class TestDestinationIsDecidedBeforeTheJob:
+    """O destino e' resolvido na rota (app/destino.py): "perguntar" pergunta
+    antes de processar, e o original nunca e' o destino."""
+
+    def test_ask_refuses_with_409_and_creates_no_job(self, client, handle_id, tmp_path):
+        from app import jobs
+
+        (tmp_path / 'curto.webm').write_bytes(b'ja existe')
+        antes = set(jobs.jobs)
+        response = client.post('/video/edit-jobs', json=_request(
+            handle_id, output_directory=str(tmp_path), conflict='ask'))
+
+        assert response.status_code == 409
+        assert response.json()['detail']['reason'] == 'conflict'
+        assert response.json()['detail']['path'] == str(tmp_path / 'curto.webm')
+        assert set(jobs.jobs) == antes
+
+    def test_rename_uses_the_mode_suffix(self, client, handle_id, tmp_path):
+        from app import jobs
+
+        (tmp_path / 'curto.webm').write_bytes(b'ja existe')
+        with patch.object(jobs, 'enqueue', new=_nada):
+            response = client.post('/video/edit-jobs', json=_request(
+                handle_id, output_directory=str(tmp_path)))
+        assert response.status_code == 202
+        params = jobs.jobs.pop(response.json()['job_id'])['params']
+        assert params['output_path'] == str(tmp_path / 'curto_edited.webm')
+
+    def test_the_source_is_never_the_destination_even_with_overwrite(self, client, handle_id):
+        from app import jobs
+
+        # O encoder de MP4 nao existe em toda build; aqui so' o destino importa.
+        with patch.object(jobs, 'enqueue', new=_nada), patch.object(video_edits, 'resolve_encoder'):
+            response = client.post('/video/edit-jobs', json=_request(
+                handle_id, container='mp4', conflict='overwrite'))
+        assert response.status_code == 202
+        params = jobs.jobs.pop(response.json()['job_id'])['params']
+        assert params['output_path'] == str(FIXTURES / 'curto_edited.mp4')
+
+
+async def _nada(*_args, **_kwargs):
+    return None

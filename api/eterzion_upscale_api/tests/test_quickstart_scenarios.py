@@ -39,7 +39,13 @@ NOMES_PROIBIDOS = (
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
+    # Sem o laco de jobs da aplicacao: quem processa e' `_aguardar`. O primeiro
+    # TestClient do processo iniciava o laco de verdade, e o job rodava duas
+    # vezes -- duas entradas no historico, e o segundo "renomear" achava o
+    # arquivo do primeiro. So' no primeiro teste de cada processo, entao a
+    # falha dependia da ordem (e do -n auto).
+    monkeypatch.setattr(jobs, 'start_worker', lambda: None)
     media_handles.clear()
     jobs.jobs.clear()
     with TestClient(app) as c:
@@ -223,18 +229,13 @@ def test_cenario_10_a_origem_nao_muda_um_byte(client, foto, tmp_path):
 
 # ------------------------- 11 — nada órfão ------------------------- #
 
-def test_cenario_11_nenhum_temporario_sobra(client, foto, tmp_path, tempdir_isolado):
-    import tempfile
-
-    def temporarios() -> set[str]:
-        raiz = tempfile.gettempdir()
-        return {n for n in os.listdir(raiz) if n.startswith('astros-compression-')}
-
+def test_cenario_11_nenhum_temporario_sobra(client, foto, tmp_path):
+    # O parcial e' gravado na pasta do destino (app/destino.py); e' la' que
+    # nada pode sobrar.
     destino = tmp_path / 'saida'
     destino.mkdir()
-    antes = temporarios()
     _comprimir(client, foto, destino)
-    assert temporarios() == antes
+    assert [n for n in os.listdir(destino) if '.partial.' in n] == []
 
 
 # ------------------------- 13 — metadados sob controle ------------------------- #

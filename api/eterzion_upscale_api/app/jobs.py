@@ -467,10 +467,10 @@ def shutdown() -> None:
     global _supervisor, _audio_worker_supervisor
 
     for job in jobs.values():
-        if job.get('operation') != 'video_edit':
-            continue
-        if job['status'] in ('pending', 'queued', 'processing'):
+        if job.get('operation') == 'video_edit' and job['status'] in ('pending', 'queued', 'processing'):
             job['status'] = 'cancelled'
+        # Qualquer job que grava pelo nucleo de exportacao (app/destino.py)
+        # deixa o parcial na pasta do destino, nao so' a edicao de video.
         partial = job.get('partial_output')
         if partial and os.path.exists(partial):
             try:
@@ -632,7 +632,25 @@ def _video_edit_output_path(job: dict, params: dict) -> str:
     and Princípio XV requires that overwriting be an explicit per-operation
     instruction — never a fallback when a destination is ambiguous.
     """
+    from app import destino
+
+    if params.get('output_path'):
+        # Resolvido na rota, antes do job (app/destino.py) -- e' o que deixa
+        # "perguntar" perguntar antes de processar. Revisto aqui pelo mesmo
+        # motivo da compressao: a fila pode ter gravado o nome nesse meio-tempo.
+        conflito = (params.get('output_target') or {}).get('conflict', 'rename')
+        return destino.confirmar_antes_de_gravar(
+            params['output_path'], conflito, destino.SUFIXOS['video_edit'])
     return _compress_convert_output_path(job, params)
+
+
+def _registrar_parcial(job: dict, caminho: str | None) -> None:
+    """Guarda no job o arquivo parcial em curso, para `shutdown()` apaga-lo se
+    o app fechar no meio."""
+    if caminho:
+        job['partial_output'] = caminho
+    else:
+        job.pop('partial_output', None)
 
 
 def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
@@ -644,30 +662,19 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
     removed too — FR-023 forbids leaving one behind, and ffmpeg will have
     written bytes before any interruption.
     """
-    from app import video_edits
+    from app import destino, video_edits
 
     output_path = _video_edit_output_path(job, params)
-    os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
-
-    # Written to a temporary name and moved into place only on success. Without
-    # this, a cancellation halfway leaves a playable-looking file at the
-    # destination that is not the export the person asked for.
-    #
-    # The marker goes BEFORE the extension: ffmpeg infers the container from the
-    # suffix, and 'saida.webm.partial' fails with "Invalid argument" because
-    # .partial is not a format. Found by the export test, which is what it is
-    # for.
-    stem, extension = os.path.splitext(output_path)
-    temp_output = f'{stem}.partial{extension}'
-    # Recorded on the job so shutdown() can remove exactly this file. Sweeping
-    # the destination directory by pattern would mean deleting from a folder the
-    # person chose, on a guess about which files are ours — not a trade worth
-    # making for a cleanup.
-    job['partial_output'] = temp_output
     if on_stage:
         on_stage('Exportando')
 
-    try:
+    # Gravado num temporario na pasta do destino e trocado de lugar so' no
+    # sucesso (app/destino.py). Sem isto, um cancelamento no meio deixaria no
+    # destino um arquivo que parece reproduzivel e nao e' a exportacao pedida.
+    # O parcial fica registrado no job para shutdown() apaga-lo -- varrer a
+    # pasta por padrao seria apagar da pasta que a pessoa escolheu por palpite.
+    with destino.gravacao_segura(
+            output_path, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temp_output:
         video_edits.export(
             job['input_path'], temp_output, params.get('edits') or {},
             container=params['container'], profile=params.get('profile', 'balanced'),
@@ -675,18 +682,10 @@ def _run_video_edit(job: dict, params: dict, on_progress, on_stage) -> dict:
             has_audio=params.get('has_audio', True),
         )
         if job['status'] == 'cancelled':
+            # Antes de sair do `with`: a troca de lugar nao pode acontecer.
             raise RuntimeError('cancelado')
-        os.replace(temp_output, output_path)
-        if on_progress:
-            on_progress(100)
-    finally:
-        # Success moved it; anything else leaves it here to remove. One place,
-        # every outcome.
-        if os.path.exists(temp_output):
-            try:
-                os.remove(temp_output)
-            except OSError:
-                pass
+    if on_progress:
+        on_progress(100)
 
     # Same shape _run_compress_convert returns, because both are consumed by the
     # same branch of _process_job. Dimensions are derived there; size is not, so
@@ -770,12 +769,18 @@ def _run_compression(job: dict, params: dict, on_progress, on_stage) -> dict:
     economia e o que de fato aplicou, e aquele devolve caminho e tamanho.
     Fundi-los mudaria o contrato de um caminho que já está em uso (FR-069).
     """
+    from app import destino
     from app.compression import runner
 
+    # Resolvido quando o job foi criado; revisto agora, porque outro job da fila
+    # pode ter gravado o mesmo nome enquanto este esperava.
+    output_path = destino.confirmar_antes_de_gravar(
+        params['output_path'], params.get('conflict_policy', 'rename'), destino.SUFIXOS['compression'])
     resultado = runner.run(
-        params['media_kind'], job['input_path'], params['output_path'],
+        params['media_kind'], job['input_path'], output_path,
         params.get('settings') or {},
-        on_progress=on_progress, on_stage=on_stage)
+        on_progress=on_progress, on_stage=on_stage,
+        registrar_parcial=lambda caminho: _registrar_parcial(job, caminho))
     # `output_meta` é o que a fila e o histórico leem; `compression` carrega o
     # que só esta tela usa, sem alargar o contrato compartilhado.
     return {
@@ -844,7 +849,7 @@ def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage
     order — sharpening or denoising before an upscale would feed the model an
     altered picture, and the person adjusted against a preview of the result.
     """
-    from app import video_edits
+    from app import destino, video_edits
 
     edits = params.get('edits')
     if not has_meaningful_edits(edits):
@@ -858,10 +863,10 @@ def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage
     if on_stage:
         on_stage('Aplicando ajustes')
 
-    stem, extension = os.path.splitext(output_path)
-    temp_output = f'{stem}.edited{extension}'
-    job['partial_output'] = temp_output
-    try:
+    # Por cima do proprio resultado do upscale, pelo nucleo: o arquivo so' e'
+    # trocado quando a segunda passada terminou.
+    with destino.gravacao_segura(
+            output_path, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temp_output:
         video_edits.export(
             output_path, temp_output, edits,
             # The upscale already produced an .mp4; keeping the container avoids
@@ -871,14 +876,6 @@ def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage
             source_width=width, source_height=height,
             has_audio=params.get('has_audio', True),
         )
-        os.replace(temp_output, output_path)
-    finally:
-        if os.path.exists(temp_output):
-            try:
-                os.remove(temp_output)
-            except OSError:
-                pass
-
 
 def create_job(
         input_path: str, filename: str, params: dict,
