@@ -84,7 +84,7 @@ export function usePickFiles(
       importError.value = null
       for (const d of described) if (d) await addFile(d)
     } catch (error) {
-      importError.value = error instanceof Error ? error.message : 'Falha ao importar os arquivos.'
+      importError.value = error instanceof Error ? error.message : i18n.global.t('upload.failed')
     } finally {
       uploading.value = false
     }

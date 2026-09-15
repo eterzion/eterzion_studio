@@ -12,7 +12,7 @@ import AudioExportPanel, { type AudioExport } from '../components/audio/AudioExp
 import ConflictDialog from '../components/ConflictDialog.vue'
 import SavedResultCard from '../components/SavedResultCard.vue'
 import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
-import { settingsState } from '../store/settings'
+import { audioExportChoices } from '../store/exportChoices'
 import { Upload, AlertCircle, Download, Cpu, CircleX, Sparkles, FileOutput } from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
@@ -96,13 +96,21 @@ const importError = ref<string | null>(null)
 
 // A exportacao, com as regras dos outros modos (app/destino.py). Antes o
 // resultado ficava so' na pasta interna do app, no formato do original.
-const exportOptions = ref<AudioExport>({
-  format: 'keep',
-  profile: 'balanced',
-  directory: settingsState.defaultOutputFolder,
-  filename: null,
-  conflict: 'rename'
-})
+// As escolhas vem de store/exportChoices.ts e voltam para la' a cada mudanca:
+// sair da tela e voltar nao as leva de volta ao padrao. O nome e' so' desta
+// tela (vale para o arquivo ativo).
+const exportOptions = ref<AudioExport>({ ...audioExportChoices(), filename: null })
+watch(
+  exportOptions,
+  (o) =>
+    Object.assign(audioExportChoices(), {
+      format: o.format,
+      profile: o.profile,
+      directory: o.directory,
+      conflict: o.conflict
+    }),
+  { deep: true }
+)
 const pergunta = usePerguntaDeConflito()
 
 // As recusas que o backend faz antes do job, com a frase na lingua do app.
@@ -259,7 +267,7 @@ async function runJob(
           job.outputPath = status.output_path ?? undefined
         } else if (status.status === 'error') {
           job.status = 'error'
-          job.error = status.error ?? 'Falha no processamento.'
+          job.error = status.error ?? t('errors.job.processingFailed')
         } else if (status.status === 'queued' || status.status === 'processing') {
           job.status = status.status
         }
@@ -293,7 +301,7 @@ async function runJob(
     job.error =
       error instanceof ComponentActionError && error.reason && RECUSAS.has(error.reason)
         ? t(`audio.export.refusal.${error.reason}`)
-        : message || 'Falha ao criar o job.'
+        : message || t('errors.job.createFailed')
     syncHistory(job)
   }
 }

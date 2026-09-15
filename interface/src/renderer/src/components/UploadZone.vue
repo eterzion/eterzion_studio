@@ -87,7 +87,7 @@ function onKeydown(e: KeyboardEvent): void {
       <h3 class="upload-title">{{ t('upload.failed') }}</h3>
       <p class="upload-subtitle">{{ error }}</p>
       <AppButton variant="primary" size="lg" @click.stop="emit('pickFiles')">
-        Tentar novamente
+        {{ t('upload.retry') }}
       </AppButton>
     </template>
     <template v-else>

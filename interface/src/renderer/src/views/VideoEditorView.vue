@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertCircle, AlertTriangle, Download, Sparkles, Upload } from '@lucide/vue'
 import TopBar from '../components/TopBar.vue'
@@ -25,16 +25,10 @@ import {
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
 import { useVideoProcessing, type VideoRequest } from '../composables/useVideoProcessing'
-import {
-  detectContentType,
-  registerMediaHandle,
-  type ConflictMode,
-  type Profile,
-  type VideoContainer
-} from '../services/api'
+import { detectContentType, registerMediaHandle } from '../services/api'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import { addVideo, removeVideo, videoQueue, type EditorVideo } from '../store/videoQueue'
-import { settingsState } from '../store/settings'
+import { videoExportChoices } from '../store/exportChoices'
 import { copiarConfiguracao } from '../utils/videoApplyAll'
 
 // The one Vídeo screen (specs/007-video-editor-player, FR-032 as amended).
@@ -64,10 +58,13 @@ const activeId = computed({
 })
 const importError = ref<string | null>(null)
 // A pasta padrao das Configuracoes, como na Imagem; sem ela, a do original.
-const exportDirectory = ref<string | null>(settingsState.defaultOutputFolder)
-const container = ref<VideoContainer>('mp4')
-const exportProfile = ref<Profile>('balanced')
-const conflict = ref<ConflictMode>('rename')
+// Guardadas em store/exportChoices.ts: sair da tela e voltar nao as leva de
+// volta ao padrao.
+const escolhas = videoExportChoices()
+const exportDirectory = toRef(escolhas, 'directory')
+const container = toRef(escolhas, 'container')
+const exportProfile = toRef(escolhas, 'profile')
+const conflict = toRef(escolhas, 'conflict')
 
 const active = computed(
   () => videos.value.find((v) => v.handle.handle_id === activeId.value) ?? null

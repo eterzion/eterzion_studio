@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { AlertTriangle, Download, FileOutput, FolderOpen, X } from '@lucide/vue'
 import CollapsiblePanel from '../CollapsiblePanel.vue'
@@ -8,6 +8,7 @@ import AppSelect from '../AppSelect.vue'
 import AppButton from '../atoms/AppButton.vue'
 import ProgressBar from '../atoms/ProgressBar.vue'
 import SavedResultCard from '../SavedResultCard.vue'
+import { videoExportChoices } from '../../store/exportChoices'
 import {
   getVideoExportOptions,
   type ConflictMode,
@@ -58,12 +59,15 @@ const options = ref<VideoExportOptions | null>(null)
 // Null until the options load, and again if they fail. Both cases mean the same
 // thing to the template — nothing can be offered yet — so there is no separate
 // error flag to fall out of sync with.
-const container = ref<VideoContainer>('mp4')
-const profile = ref<Profile>('balanced')
+// As mesmas escolhas da tela (store/exportChoices.ts), para o painel mostrar o
+// que esta' guardado ao voltar para o Video.
+const escolhas = videoExportChoices()
+const container = toRef(escolhas, 'container')
+const profile = toRef(escolhas, 'profile')
 // Nome e conflito com as regras da Imagem (app/destino.py): o nome do
 // original, e o sufixo so' quando o destino cairia no proprio original.
 const filename = ref<string | null>(null)
-const conflict = ref<ConflictMode>('rename')
+const conflict = toRef(escolhas, 'conflict')
 
 // O nome digitado e' de um video; trocar de video volta ao nome do original.
 watch(
@@ -87,8 +91,11 @@ onMounted(async () => {
     // Land on something usable rather than defaulting to mp4 and disabling the
     // button: on a machine with no hardware H.264 encoder, mp4 is exactly the
     // option that will not work.
+    // So' quando o guardado nao serve aqui: voltar para a tela nao pode
+    // desfazer a escolha da pessoa.
+    const atual = options.value.containers.find((c) => c.value === container.value)
     const usable = options.value.containers.find((c) => c.available)
-    if (usable) container.value = usable.value
+    if (!atual?.available && usable) container.value = usable.value
   } catch {
     options.value = null
   }

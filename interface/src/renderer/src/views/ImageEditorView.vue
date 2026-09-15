@@ -531,7 +531,7 @@ async function handleFilesDropped(dropped: File[]): Promise<void> {
     )
     reportImportResult(await addFiles(described.filter((d) => d !== null)))
   } catch (error) {
-    importError.value = error instanceof Error ? error.message : 'Falha ao importar os arquivos.'
+    importError.value = error instanceof Error ? error.message : t('upload.failed')
   } finally {
     uploading.value = false
   }
@@ -553,7 +553,7 @@ async function handlePaste(event: ClipboardEvent): Promise<void> {
     const described = await api.statPath(path)
     if (described) reportImportResult(await addFiles([described]))
   } catch (error) {
-    importError.value = error instanceof Error ? error.message : 'Falha ao colar a imagem.'
+    importError.value = error instanceof Error ? error.message : t('imageEditor.pasteFailed')
   }
 }
 
@@ -745,20 +745,20 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
           </div>
           <button class="thumb-add" type="button" @click="importFiles">
             <Plus :size="16" />
-            <span>Adicionar imagem</span>
+            <span>{{ t('imageEditor.addImage') }}</span>
           </button>
         </div>
       </div>
 
       <button class="drawer-trigger" type="button" @click="panelOpen = true">
-        <SlidersHorizontal :size="16" /> Ajustes
+        <SlidersHorizontal :size="16" /> {{ t('imageEditor.panelDrawer') }}
       </button>
 
       <div v-if="panelOpen" class="panel-backdrop" @click="panelOpen = false" />
 
       <aside class="side-panel" :class="{ open: panelOpen }">
         <div class="panel-drawer-header">
-          <span>Ajustes</span>
+          <span>{{ t('imageEditor.panelDrawer') }}</span>
           <AppButton variant="ghost" icon-only @click="panelOpen = false">
             <template #icon><X :size="18" /></template>
           </AppButton>

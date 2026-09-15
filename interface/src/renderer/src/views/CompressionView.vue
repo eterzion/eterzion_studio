@@ -19,7 +19,7 @@ import CompressionResult from '../components/compression/CompressionResult.vue'
 import CompressionExportPanel from '../components/compression/CompressionExportPanel.vue'
 import ConflictDialog from '../components/ConflictDialog.vue'
 import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
-import { settingsState } from '../store/settings'
+import { compressionExportChoices } from '../store/exportChoices'
 import ImageCompressionSettings from '../components/compression/ImageCompressionSettings.vue'
 import VideoCompressionSettings from '../components/compression/VideoCompressionSettings.vue'
 import CompressionVideoComparison from '../components/compression/CompressionVideoComparison.vue'
@@ -92,11 +92,11 @@ const historyId = ref<string | null>(null)
 const historyKind = ref<MediaKind | null>(null)
 const presetModified = ref(false)
 
-const exportOptions = ref<CompressionExport>({
-  // A pasta padrao das Configuracoes, como na Imagem; sem ela, a do original.
-  directory: settingsState.defaultOutputFolder,
-  naming_pattern: '{filename}_compressed',
-  conflict_policy: 'rename'
+// As escolhas vem de store/exportChoices.ts e voltam para la' a cada mudanca:
+// sair da tela e voltar nao as leva de volta ao padrao.
+const exportOptions = ref<CompressionExport>({ ...compressionExportChoices() })
+watch(exportOptions, (escolhas) => Object.assign(compressionExportChoices(), escolhas), {
+  deep: true
 })
 
 const activeHandle = computed(() => queue.active.value?.media?.handle_id ?? null)

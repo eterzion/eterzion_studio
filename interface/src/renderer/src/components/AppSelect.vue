@@ -257,7 +257,7 @@ watch(filteredOptions, () => {
         </div>
 
         <div class="options" :class="{ empty: !filteredOptions.length }">
-          <p v-if="!filteredOptions.length" class="empty-text">Nenhum resultado.</p>
+          <p v-if="!filteredOptions.length" class="empty-text">{{ t('select.noResults') }}</p>
           <button
             v-for="(option, i) in filteredOptions"
             :key="option.value"

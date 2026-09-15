@@ -15,6 +15,7 @@ import {
   type VideoExportRequest
 } from '../services/api'
 import { subscribeJobProgress } from '../services/websocket'
+import { i18n } from '../i18n'
 import { recordSimpleJob } from '../store/history'
 import type { EnhanceSettings } from '../components/video/VideoEnhancePanel.vue'
 import type { VideoEditSet } from './useVideoEdits'
@@ -225,7 +226,10 @@ export function useVideoProcessing(options: VideoProcessingOptions = {}): VideoP
           getJob(jobId)
             .then((status) => applyStatus(request, status))
             .catch(() =>
-              set(request.handleId, { status: 'error', error: 'Falha ao acompanhar o job.' })
+              set(request.handleId, {
+                status: 'error',
+                error: i18n.global.t('errors.job.connectionLost')
+              })
             )
         }
       )

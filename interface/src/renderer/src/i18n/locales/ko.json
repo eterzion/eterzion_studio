@@ -708,7 +708,11 @@
       "quality": "최고"
     },
     "adjustAndReprocess": "조정 후 다시 처리",
-    "notInLivePreview": "일부 활성화된 조정은 미리보기에 표시되지 않고 최종 파일에만 적용됩니다."
+    "notInLivePreview": "일부 활성화된 조정은 미리보기에 표시되지 않고 최종 파일에만 적용됩니다.",
+    "estimatedSize": "예상 크기",
+    "addImage": "이미지 추가",
+    "panelDrawer": "설정",
+    "pasteFailed": "이미지를 붙여 넣을 수 없습니다."
   },
   "importing": {
     "alreadyQueued": "이미 대기열에 있습니다: {files}.",
@@ -830,7 +834,8 @@
     "title": "처리 대기열"
   },
   "select": {
-    "search": "검색…"
+    "search": "검색…",
+    "noResults": "결과가 없습니다."
   },
   "settings": {
     "animations": "애니메이션 사용",
@@ -981,7 +986,8 @@
     "pickFiles": "파일 선택",
     "pickFolder": "폴더 선택",
     "subtitle": "아래 버튼을 사용해도 됩니다",
-    "videoTitle": "여기에 비디오를 놓으세요"
+    "videoTitle": "여기에 비디오를 놓으세요",
+    "retry": "다시 시도"
   },
   "validation": {
     "exportFailed": "내보내지 못했습니다.",

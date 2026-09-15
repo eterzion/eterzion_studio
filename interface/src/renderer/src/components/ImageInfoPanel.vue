@@ -69,7 +69,7 @@ function fmtBytes(bytes: number | null): string {
     <div class="info-row highlight">
       <div class="info-icon icon-chip primary"><component :is="scaleIcon" :size="15" /></div>
       <div class="info-body">
-        <span class="info-label">Escala</span>
+        <span class="info-label">{{ t('imageEditor.scaleTitle') }}</span>
         <span class="info-value info-value-lg">
           {{ scaleFactor ? scaleFactor.toFixed(2) + '×' : '—' }}
           <span
@@ -85,7 +85,7 @@ function fmtBytes(bytes: number | null): string {
     <div class="info-row muted">
       <div class="info-icon icon-chip"><HardDrive :size="14" /></div>
       <div class="info-body">
-        <span class="info-label">Tamanho estimado</span>
+        <span class="info-label">{{ t('imageEditor.estimatedSize') }}</span>
         <span class="info-value">{{ fmtBytes(estimatedBytes) }}</span>
       </div>
     </div>
