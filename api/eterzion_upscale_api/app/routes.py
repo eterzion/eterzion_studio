@@ -320,6 +320,10 @@ def _build_job_params(media_request: MediaRequest, adjustments: Adjustments) -> 
         'adjustments': adjustments.model_dump(),
         'quality': media_request.quality,
         'output_target': media_request.output_target.model_dump() if media_request.output_target else None,
+        # As edicoes do Video com IA (ajustes, efeitos, transformacao, corte),
+        # aplicadas ao resultado por jobs._apply_edits_to_upscaled. Faltavam
+        # aqui, e o job sempre as recebia vazias: eram descartadas sem aviso.
+        'edits': media_request.edits.model_dump() if media_request.edits else None,
         # specs/006-audio-engine-masterizacao — None/'enhance' (the default)
         # means jobs._process_job takes the exact same path as before this
         # feature existed; only audio_engine reads these two fields.
