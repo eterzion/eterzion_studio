@@ -8,7 +8,9 @@ import { i18n, setLocale } from '../../../i18n'
 // mostrando o tamanho da origem) e o intervalo so' quando ha' corte ("video
 // inteiro" nao dizia nada).
 
-function montar(trim: { start_seconds: number; end_seconds: number } | null) {
+function montar(
+  trim: { start_seconds: number; end_seconds: number } | null
+): ReturnType<typeof mount> {
   setLocale('pt-BR')
   return mount(VideoTransformPanel, {
     props: {
