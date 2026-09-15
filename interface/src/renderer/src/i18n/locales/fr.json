@@ -45,7 +45,26 @@
     "processingTitle": "Traitement",
     "speechDescription": "Narration, podcast, entretien — une voix au premier plan",
     "speechLabel": "Parole / voix",
-    "unsupportedFormat": "Format non pris en charge : {name}"
+    "unsupportedFormat": "Format non pris en charge : {name}",
+    "export": {
+      "title": "Exportation",
+      "description": "Format, qualité et emplacement",
+      "format": "Format",
+      "keep": "Identique à l’original",
+      "qualityLabel": "Qualité",
+      "quality": {
+        "fast": "Fichier plus léger (192 kbit/s)",
+        "balanced": "Équilibrée (256 kbit/s)",
+        "quality": "Maximale (320 kbit/s)"
+      },
+      "destination": "Destination",
+      "sameFolder": "Même dossier que l’original",
+      "refusal": {
+        "format_unavailable": "Ce format audio n’est pas pris en charge.",
+        "encoder_unavailable": "Cet ordinateur ne peut pas écrire ce format.",
+        "insufficient_disk": "Espace disque insuffisant pour le résultat."
+      }
+    }
   },
   "components": {
     "actions": {

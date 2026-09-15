@@ -45,7 +45,26 @@
     "processingTitle": "処理",
     "speechDescription": "ナレーション、ポッドキャスト、インタビュー — 声が前面にあるもの",
     "speechLabel": "音声・ナレーション",
-    "unsupportedFormat": "未対応の形式: {name}"
+    "unsupportedFormat": "未対応の形式: {name}",
+    "export": {
+      "title": "書き出し",
+      "description": "形式、品質、保存先",
+      "format": "形式",
+      "keep": "元のファイルと同じ",
+      "qualityLabel": "品質",
+      "quality": {
+        "fast": "小さいファイル (192 kbps)",
+        "balanced": "バランス (256 kbps)",
+        "quality": "最高 (320 kbps)"
+      },
+      "destination": "保存先",
+      "sameFolder": "元のファイルと同じフォルダー",
+      "refusal": {
+        "format_unavailable": "この音声形式には対応していません。",
+        "encoder_unavailable": "このコンピューターではこの形式を書き出せません。",
+        "insufficient_disk": "結果を保存するディスク容量が足りません。"
+      }
+    }
   },
   "components": {
     "actions": {

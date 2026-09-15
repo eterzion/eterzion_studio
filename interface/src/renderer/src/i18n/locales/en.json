@@ -45,7 +45,26 @@
     "processingTitle": "Processing",
     "speechDescription": "Narration, podcast, interview — one voice in front",
     "speechLabel": "Speech / voice",
-    "unsupportedFormat": "Unsupported format: {name}"
+    "unsupportedFormat": "Unsupported format: {name}",
+    "export": {
+      "title": "Export",
+      "description": "Format, quality and where to save",
+      "format": "Format",
+      "keep": "Same as original",
+      "qualityLabel": "Quality",
+      "quality": {
+        "fast": "Smaller file (192 kbps)",
+        "balanced": "Balanced (256 kbps)",
+        "quality": "Maximum (320 kbps)"
+      },
+      "destination": "Destination",
+      "sameFolder": "Same folder as the original",
+      "refusal": {
+        "format_unavailable": "This audio format is not supported.",
+        "encoder_unavailable": "This computer cannot write this format.",
+        "insufficient_disk": "Not enough disk space for the result."
+      }
+    }
   },
   "components": {
     "actions": {

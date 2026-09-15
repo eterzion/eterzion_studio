@@ -45,7 +45,26 @@
     "processingTitle": "Verarbeitung",
     "speechDescription": "Sprechertext, Podcast, Interview — eine Stimme im Vordergrund",
     "speechLabel": "Sprache / Stimme",
-    "unsupportedFormat": "Nicht unterstütztes Format: {name}"
+    "unsupportedFormat": "Nicht unterstütztes Format: {name}",
+    "export": {
+      "title": "Export",
+      "description": "Format, Qualität und Speicherort",
+      "format": "Format",
+      "keep": "Wie das Original",
+      "qualityLabel": "Qualität",
+      "quality": {
+        "fast": "Kleinere Datei (192 kbit/s)",
+        "balanced": "Ausgewogen (256 kbit/s)",
+        "quality": "Maximal (320 kbit/s)"
+      },
+      "destination": "Ziel",
+      "sameFolder": "Gleicher Ordner wie das Original",
+      "refusal": {
+        "format_unavailable": "Dieses Audioformat wird nicht unterstützt.",
+        "encoder_unavailable": "Dieser Computer kann dieses Format nicht schreiben.",
+        "insufficient_disk": "Nicht genug Speicherplatz für das Ergebnis."
+      }
+    }
   },
   "components": {
     "actions": {

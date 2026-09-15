@@ -45,7 +45,26 @@
     "processingTitle": "处理",
     "speechDescription": "旁白、播客、访谈 — 以人声为主",
     "speechLabel": "语音 / 人声",
-    "unsupportedFormat": "不支持的格式：{name}"
+    "unsupportedFormat": "不支持的格式：{name}",
+    "export": {
+      "title": "导出",
+      "description": "格式、质量和保存位置",
+      "format": "格式",
+      "keep": "与原文件相同",
+      "qualityLabel": "质量",
+      "quality": {
+        "fast": "较小文件 (192 kbps)",
+        "balanced": "均衡 (256 kbps)",
+        "quality": "最高 (320 kbps)"
+      },
+      "destination": "保存位置",
+      "sameFolder": "与原文件相同的文件夹",
+      "refusal": {
+        "format_unavailable": "不支持此音频格式。",
+        "encoder_unavailable": "这台电脑无法写入此格式。",
+        "insufficient_disk": "磁盘空间不足，无法保存结果。"
+      }
+    }
   },
   "components": {
     "actions": {

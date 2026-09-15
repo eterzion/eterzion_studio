@@ -45,7 +45,26 @@
     "processingTitle": "Обработка",
     "speechDescription": "Закадровый голос, подкаст, интервью — один голос на переднем плане",
     "speechLabel": "Речь / голос",
-    "unsupportedFormat": "Неподдерживаемый формат: {name}"
+    "unsupportedFormat": "Неподдерживаемый формат: {name}",
+    "export": {
+      "title": "Экспорт",
+      "description": "Формат, качество и место сохранения",
+      "format": "Формат",
+      "keep": "Как у оригинала",
+      "qualityLabel": "Качество",
+      "quality": {
+        "fast": "Меньший файл (192 кбит/с)",
+        "balanced": "Сбалансированное (256 кбит/с)",
+        "quality": "Максимальное (320 кбит/с)"
+      },
+      "destination": "Папка",
+      "sameFolder": "Та же папка, что и у оригинала",
+      "refusal": {
+        "format_unavailable": "Этот аудиоформат не поддерживается.",
+        "encoder_unavailable": "Этот компьютер не может записать этот формат.",
+        "insufficient_disk": "Недостаточно места на диске для результата."
+      }
+    }
   },
   "components": {
     "actions": {
