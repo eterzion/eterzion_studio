@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import os
+import string
 import shutil
 import tempfile
 import urllib.error
@@ -1157,6 +1158,33 @@ async def create_compression_job(payload: CompressionJobRequest) -> CompressionJ
         estimate=CompressionEstimateResponse(**estimativa.as_dict()) if estimativa else None)
 
 
+_MARCADORES_DE_NOME = frozenset({'filename', 'quality', 'resolution', 'codec'})
+
+
+def _validar_padrao_de_nome(padrao: str) -> None:
+    """Recusa, antes do job, um padrao de nome que o `.format()` nao consegue
+    montar.
+
+    Um marcador desconhecido (`{xyz}`), posicional (`{0}`), com atributo
+    (`{filename.x}`) ou com as chaves desbalanceadas levantava KeyError,
+    IndexError ou ValueError dentro de `.format()` -- nenhum deles e' uma recusa
+    prevista, entao a pessoa recebia um erro 500 por um campo que ela mesma
+    digitou. Recusa com motivo, que a tela traduz.
+    """
+    try:
+        partes = list(string.Formatter().parse(padrao))
+    except ValueError as error:
+        raise compression_runner.CompressionRefused(
+            'invalid_naming_pattern', 'O padrão de nome tem chaves sem par.') from error
+    for _literal, campo, especificacao, conversao in partes:
+        if campo is None:
+            continue
+        if campo not in _MARCADORES_DE_NOME or especificacao or conversao:
+            raise compression_runner.CompressionRefused(
+                'invalid_naming_pattern', f'Marcador desconhecido no padrão de nome: {{{campo}}}.',
+                {'placeholder': campo})
+
+
 def _compression_output_path(source: str, payload: CompressionJobRequest) -> str:
     """Onde o resultado vai, aplicando o padrão de nome (FR-060).
 
@@ -1166,12 +1194,18 @@ def _compression_output_path(source: str, payload: CompressionJobRequest) -> str
     """
     diretorio = payload.export.directory or os.path.dirname(source) or settings.outputs_dir
     base = os.path.splitext(os.path.basename(source))[0]
-    formato = (payload.settings.get('output_format') or '').lower()
-    if not formato or formato == 'keep':
+    # O video escolhe o formato pelo `container`; imagem, audio e animacao, por
+    # `output_format`. Ler so' o segundo fazia um video comprimido para WebM a
+    # partir de um .mp4 sair chamado .mp4 -- e o ffmpeg, que deduz o container
+    # pela extensao do arquivo temporario, gravava mesmo um MP4.
+    campo = 'container' if payload.media_kind == 'video' else 'output_format'
+    formato = (payload.settings.get(campo) or '').lower()
+    if not formato or formato in ('keep', 'auto'):
         extensao = os.path.splitext(source)[1].lstrip('.').lower()
     else:
         extensao = 'jpg' if formato == 'jpeg' else formato
 
+    _validar_padrao_de_nome(payload.export.naming_pattern)
     nome = payload.export.naming_pattern.format(
         filename=base,
         quality=payload.settings.get('quality', ''),

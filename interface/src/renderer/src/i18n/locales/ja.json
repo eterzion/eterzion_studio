@@ -200,8 +200,6 @@
       "wouldGrow": "この設定では元のファイルより大きくなります。"
     },
     "export": {
-      "applyToAll": "すべてに適用",
-      "applyToAllHint": "この選択をまとめて適用します。",
       "choose": "フォルダーを選択",
       "conflict": {
         "ask": "確認する",
@@ -211,7 +209,7 @@
       "destination": "保存先",
       "onConflict": "同名のファイルがある場合",
       "pattern": "名前のパターン",
-      "patternHint": "{filename} はファイル名に置き換わります。",
+      "patternHint": "{'{'}filename{'}'} はファイル名に置き換わります。",
       "sameFolder": "元のファイルと同じフォルダー",
       "title": "書き出し"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "目標サイズが小さすぎます",
       "unknown": "失敗しました",
       "unreadable": "読み込めませんでした",
-      "unsupported_media": "メディアファイルとして認識できません"
+      "unsupported_media": "メディアファイルとして認識できません",
+      "invalid_naming_pattern": "名前のパターンに存在しないプレースホルダーがあります。{'{'}filename{'}'}、{'{'}quality{'}'}、{'{'}resolution{'}'}、{'{'}codec{'}'} を使ってください。"
     },
     "result": {
       "elapsed": "{seconds} 秒",
@@ -405,10 +404,9 @@
     },
     "title": "圧縮",
     "unavailable": {
-      "format_not_writable": "このコンピューターではこの形式を書き出せません",
       "no_encoder_available": "このコンピューターではこの形式を書き出せません",
-      "not_supported_by_build": "このインストールでは利用できません",
-      "requires_hardware_encoder": "このマシンにない映像アクセラレーションが必要です"
+      "requires_hardware_encoder": "このマシンにない映像アクセラレーションが必要です",
+      "unsupported_build": "このインストールでは利用できません"
     },
     "upload": {
       "selectPrompt": "キューからファイルを選択してください",

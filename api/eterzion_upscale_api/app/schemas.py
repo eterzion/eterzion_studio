@@ -660,7 +660,6 @@ class CompressionExportConfig(BaseModel):
     directory: str | None = None
     naming_pattern: str = '{filename}_compressed'
     conflict_policy: ConflictMode = 'rename'
-    apply_to_all: bool = False
 
 
 class CompressionMediaRequest(BaseModel):

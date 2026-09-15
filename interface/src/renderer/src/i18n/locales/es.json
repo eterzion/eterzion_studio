@@ -200,8 +200,6 @@
       "wouldGrow": "Con estos ajustes el archivo quedaría más grande que el original."
     },
     "export": {
-      "applyToAll": "Aplicar a todos",
-      "applyToAllHint": "Usa esta elección para todo el lote.",
       "choose": "Elegir carpeta",
       "conflict": {
         "ask": "Preguntar",
@@ -211,7 +209,7 @@
       "destination": "Destino",
       "onConflict": "Si ya existe",
       "pattern": "Patrón de nombre",
-      "patternHint": "{filename} se sustituye por el nombre del archivo.",
+      "patternHint": "{'{'}filename{'}'} se sustituye por el nombre del archivo.",
       "sameFolder": "Misma carpeta que el original",
       "title": "Exportación"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "tamaño objetivo demasiado pequeño",
       "unknown": "falló",
       "unreadable": "no se pudo leer",
-      "unsupported_media": "no es un archivo multimedia reconocido"
+      "unsupported_media": "no es un archivo multimedia reconocido",
+      "invalid_naming_pattern": "El patrón de nombre usa un marcador que no existe. Usa {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} o {'{'}codec{'}'}."
     },
     "result": {
       "elapsed": "{seconds} s",
@@ -405,10 +404,9 @@
     },
     "title": "Compresión",
     "unavailable": {
-      "format_not_writable": "este equipo no puede escribir este formato",
       "no_encoder_available": "este equipo no puede escribir este formato",
-      "not_supported_by_build": "no disponible en esta instalación",
-      "requires_hardware_encoder": "necesita aceleración de vídeo que este equipo no tiene"
+      "requires_hardware_encoder": "necesita aceleración de vídeo que este equipo no tiene",
+      "unsupported_build": "no disponible en esta instalación"
     },
     "upload": {
       "selectPrompt": "Selecciona un archivo de la cola",

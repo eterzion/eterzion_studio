@@ -15,8 +15,10 @@ import type { MediaKind } from '../constants/compression'
 export type UnavailableReason =
   | 'no_encoder_available'
   | 'requires_hardware_encoder'
-  | 'not_supported_by_build'
-  | 'format_not_writable'
+  // O que o backend de fato manda (schemas.py). Esta lista tinha
+  // 'not_supported_by_build' e 'format_not_writable', que ele nunca envia, e
+  // nao tinha este -- a pessoa via o motivo sem traducao.
+  | 'unsupported_build'
 
 export interface CapabilityEntry {
   value: string
@@ -89,7 +91,6 @@ export interface CompressionExport {
   directory?: string | null
   naming_pattern?: string
   conflict_policy?: ConflictPolicy
-  apply_to_all?: boolean
 }
 
 export interface CompressionJobRequest {

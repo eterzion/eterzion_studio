@@ -200,8 +200,6 @@
       "wouldGrow": "Con queste impostazioni il file risulterebbe più grande dell’originale."
     },
     "export": {
-      "applyToAll": "Applica a tutti",
-      "applyToAllHint": "Usa questa scelta per l’intero lotto.",
       "choose": "Scegli cartella",
       "conflict": {
         "ask": "Chiedi",
@@ -211,7 +209,7 @@
       "destination": "Destinazione",
       "onConflict": "Se esiste già",
       "pattern": "Schema del nome",
-      "patternHint": "{filename} è sostituito dal nome del file.",
+      "patternHint": "{'{'}filename{'}'} è sostituito dal nome del file.",
       "sameFolder": "Stessa cartella dell’originale",
       "title": "Esportazione"
     },
@@ -355,7 +353,8 @@
       "target_below_floor": "dimensione obiettivo troppo piccola",
       "unknown": "non riuscito",
       "unreadable": "illeggibile",
-      "unsupported_media": "non è un file multimediale riconosciuto"
+      "unsupported_media": "non è un file multimediale riconosciuto",
+      "invalid_naming_pattern": "Il modello del nome usa un segnaposto che non esiste. Usa {'{'}filename{'}'}, {'{'}quality{'}'}, {'{'}resolution{'}'} o {'{'}codec{'}'}."
     },
     "result": {
       "elapsed": "{seconds} s",
@@ -405,10 +404,9 @@
     },
     "title": "Compressione",
     "unavailable": {
-      "format_not_writable": "questo computer non può scrivere questo formato",
       "no_encoder_available": "questo computer non può scrivere questo formato",
-      "not_supported_by_build": "non disponibile in questa installazione",
-      "requires_hardware_encoder": "richiede un’accelerazione video che questa macchina non ha"
+      "requires_hardware_encoder": "richiede un’accelerazione video che questa macchina non ha",
+      "unsupported_build": "non disponibile in questa installazione"
     },
     "upload": {
       "selectPrompt": "Seleziona un file dalla coda",

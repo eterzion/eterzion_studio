@@ -184,9 +184,14 @@ function set(field: string, value: unknown): void {
 <template>
   <div class="video-settings">
     <CollapsiblePanel :title="t('compression.video.output')">
+      <!-- So' no Avancado. O container e' campo tecnico: o modo Basico nao o
+           envia (condicao 2 da excecao do Principio V, conferida no backend).
+           Mostrado aqui, a pessoa escolhia WebM e recebia o formato original,
+           sem aviso -- um controle que parecia funcionar e era descartado. -->
       <SettingRow
+        v-if="mode === 'advanced'"
         :label="t('compression.video.container')"
-        :description="mode === 'advanced' ? t('compression.video.containerHint') : undefined"
+        :description="t('compression.video.containerHint')"
       >
         <AppSelect
           :model-value="container"

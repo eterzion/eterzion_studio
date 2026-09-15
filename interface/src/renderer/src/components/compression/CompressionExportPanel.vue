@@ -5,7 +5,6 @@ import { FolderOpen } from '@lucide/vue'
 import AppSelect, { type SelectOption } from '../AppSelect.vue'
 import AppButton from '../atoms/AppButton.vue'
 import SettingRow from '../SettingRow.vue'
-import SettingSwitch from '../SettingSwitch.vue'
 import { api, hasNativeApi } from '../../services/native'
 import type { CompressionExport, ConflictPolicy } from '../../services/compression'
 
@@ -77,17 +76,6 @@ async function chooseDirectory(): Promise<void> {
         :model-value="modelValue.conflict_policy ?? 'rename'"
         :options="conflictOptions"
         @update:model-value="patch({ conflict_policy: $event as ConflictPolicy })"
-      />
-    </SettingRow>
-
-    <SettingRow
-      :label="t('compression.export.applyToAll')"
-      :description="t('compression.export.applyToAllHint')"
-      :divided="false"
-    >
-      <SettingSwitch
-        :model-value="modelValue.apply_to_all ?? false"
-        @update:model-value="patch({ apply_to_all: $event })"
       />
     </SettingRow>
   </div>
