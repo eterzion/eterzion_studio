@@ -1025,7 +1025,6 @@
       "hue_degrees": "Tono",
       "hue_degreesHint": "Gira todos los colores en la rueda cromática. Valores pequeños corrigen dominantes; grandes cambian los colores.",
       "notInLivePreview": "Algunos ajustes activos no aparecen en la vista previa en movimiento, solo en el archivo exportado.",
-      "outputSize": "Tamaño de salida",
       "reset": "Volver a neutro",
       "rotation": "Rotación",
       "saturation": "Saturación",
@@ -1037,7 +1036,6 @@
       "trim": "Fragmento",
       "trimEnd": "Fin del fragmento",
       "trimStart": "Inicio del fragmento",
-      "wholeVideo": "Vídeo completo",
       "adjustmentsDescription": "Brillo, contraste, saturación y color",
       "effectsDescription": "Reducción de ruido, desenfoque y grano",
       "transformDescription": "Girar, voltear y recortar el tramo"

@@ -1025,7 +1025,6 @@
       "hue_degrees": "Hue",
       "hue_degreesHint": "Rotates every colour around the wheel. Small values fix a colour cast; large ones swap the colours.",
       "notInLivePreview": "Some active settings are not in the moving preview — only in the exported file.",
-      "outputSize": "Output size",
       "reset": "Back to neutral",
       "rotation": "Rotation",
       "saturation": "Saturation",
@@ -1037,7 +1036,6 @@
       "trim": "Range",
       "trimEnd": "Range end",
       "trimStart": "Range start",
-      "wholeVideo": "Whole video",
       "adjustmentsDescription": "Brightness, contrast, saturation and color",
       "effectsDescription": "Noise reduction, blur and grain",
       "transformDescription": "Rotate, flip and trim"

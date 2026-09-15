@@ -1025,7 +1025,6 @@
       "hue_degrees": "色相",
       "hue_degreesHint": "すべての色を色相環上で回転させます。小さい値は色かぶりの補正、大きい値は色の置き換えになります。",
       "notInLivePreview": "一部の設定は再生中のプレビューには反映されません。書き出したファイルにのみ反映されます。",
-      "outputSize": "出力サイズ",
       "reset": "初期値に戻す",
       "rotation": "回転",
       "saturation": "彩度",
@@ -1037,7 +1036,6 @@
       "trim": "範囲",
       "trimEnd": "範囲の終了",
       "trimStart": "範囲の開始",
-      "wholeVideo": "動画全体",
       "adjustmentsDescription": "明るさ、コントラスト、彩度、色",
       "effectsDescription": "ノイズ除去、ぼかし、粒子",
       "transformDescription": "回転、反転、区間のカット"

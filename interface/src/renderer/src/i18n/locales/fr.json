@@ -1025,7 +1025,6 @@
       "hue_degrees": "Teinte",
       "hue_degreesHint": "Fait tourner toutes les couleurs sur la roue chromatique. De petites valeurs corrigent une dominante, de grandes échangent les couleurs.",
       "notInLivePreview": "Certains réglages actifs n’apparaissent pas dans l’aperçu animé, seulement dans le fichier exporté.",
-      "outputSize": "Taille de sortie",
       "reset": "Revenir au neutre",
       "rotation": "Rotation",
       "saturation": "Saturation",
@@ -1037,7 +1036,6 @@
       "trim": "Extrait",
       "trimEnd": "Fin de l’extrait",
       "trimStart": "Début de l’extrait",
-      "wholeVideo": "Vidéo entière",
       "adjustmentsDescription": "Luminosité, contraste, saturation et couleur",
       "effectsDescription": "Réduction du bruit, flou et grain",
       "transformDescription": "Pivoter, retourner et découper"
