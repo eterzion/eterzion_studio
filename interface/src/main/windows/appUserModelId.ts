@@ -28,6 +28,9 @@ export interface ShortcutDeps {
 }
 
 export interface ReconcileResult {
+  /** Todo atalho que abre este executavel, com o id lido nele. E' o que diz,
+   *  no log, por que um atalho foi ou nao regravado. */
+  doApp: { path: string; appUserModelId: string }[]
   atualizados: string[]
   falhas: { path: string; erro: string }[]
 }
@@ -56,7 +59,7 @@ export function reconcileShortcuts(
   appUserModelId: string,
   deps: ShortcutDeps
 ): ReconcileResult {
-  const result: ReconcileResult = { atualizados: [], falhas: [] }
+  const result: ReconcileResult = { doApp: [], atualizados: [], falhas: [] }
 
   for (const dir of dirs) {
     let nomes: string[]
@@ -74,6 +77,7 @@ export function reconcileShortcuts(
       try {
         const link = deps.readShortcutLink(path)
         if (!link.target || !mesmoArquivo(link.target, execPath)) continue
+        result.doApp.push({ path, appUserModelId: link.appUserModelId ?? '' })
         if (link.appUserModelId === appUserModelId) continue
         deps.writeShortcutLink(path, link.target, appUserModelId)
         result.atualizados.push(path)

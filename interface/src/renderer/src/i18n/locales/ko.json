@@ -1099,5 +1099,15 @@
       "processing": "처리 중",
       "queued": "대기열"
     }
+  },
+  "initialModels": {
+    "downloading": "AI 모델 다운로드 중 ({done}/{total})",
+    "downloadingBody": "그동안에도 앱을 계속 사용할 수 있습니다.",
+    "ready": "AI 모델 준비 완료",
+    "readyBody": "이제 모든 기능을 추가 다운로드 없이 사용할 수 있습니다.",
+    "failed": "일부 AI 모델을 다운로드하지 못했습니다",
+    "failedBody": "다음에 앱을 열 때 다시 시도합니다. 구성 요소에서 직접 다운로드할 수도 있습니다.",
+    "openComponents": "구성 요소 보기",
+    "close": "닫기"
   }
 }

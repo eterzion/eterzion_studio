@@ -131,7 +131,7 @@ describe('reconcileShortcuts', () => {
     // Quem nunca fixou o app na barra de tarefas nao tem a pasta de fixados.
     const { deps } = sistema({})
     const r = reconcileShortcuts(['C:\\nao-existe'], EXE, APP_USER_MODEL_ID, deps)
-    expect(r).toEqual({ atualizados: [], falhas: [] })
+    expect(r).toEqual({ doApp: [], atualizados: [], falhas: [] })
   })
 
   it('um atalho ilegivel vira falha registrada e nao interrompe os outros', () => {

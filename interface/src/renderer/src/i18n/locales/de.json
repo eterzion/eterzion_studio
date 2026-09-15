@@ -1099,5 +1099,15 @@
       "processing": "Wird verarbeitet",
       "queued": "In Warteschlange"
     }
+  },
+  "initialModels": {
+    "downloading": "KI-Modelle werden heruntergeladen ({done} von {total})",
+    "downloadingBody": "Sie können die App währenddessen weiter nutzen.",
+    "ready": "KI-Modelle bereit",
+    "readyBody": "Alle Funktionen laufen jetzt ohne weitere Downloads.",
+    "failed": "Nicht alle KI-Modelle wurden heruntergeladen",
+    "failedBody": "Die App versucht es beim nächsten Start erneut. Sie können sie auch unter Komponenten herunterladen.",
+    "openComponents": "Komponenten anzeigen",
+    "close": "Schließen"
   }
 }

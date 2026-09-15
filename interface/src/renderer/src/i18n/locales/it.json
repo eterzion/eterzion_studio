@@ -1099,5 +1099,15 @@
       "processing": "Elaborazione",
       "queued": "In coda"
     }
+  },
+  "initialModels": {
+    "downloading": "Download dei modelli di IA ({done} di {total})",
+    "downloadingBody": "Nel frattempo puoi continuare a usare l'app.",
+    "ready": "Modelli di IA pronti",
+    "readyBody": "Tutte le funzioni funzionano senza altri download.",
+    "failed": "Non tutti i modelli di IA sono stati scaricati",
+    "failedBody": "L'app riproverà alla prossima apertura. Puoi anche scaricarli in Componenti.",
+    "openComponents": "Vedi componenti",
+    "close": "Chiudi"
   }
 }

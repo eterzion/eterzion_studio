@@ -1099,5 +1099,15 @@
       "processing": "処理中",
       "queued": "待機中"
     }
+  },
+  "initialModels": {
+    "downloading": "AI モデルをダウンロード中（{done}/{total}）",
+    "downloadingBody": "その間もアプリを使用できます。",
+    "ready": "AI モデルの準備ができました",
+    "readyBody": "すべての機能が追加のダウンロードなしで使えます。",
+    "failed": "一部の AI モデルをダウンロードできませんでした",
+    "failedBody": "次回アプリを開いたときに再試行します。コンポーネントからダウンロードすることもできます。",
+    "openComponents": "コンポーネントを表示",
+    "close": "閉じる"
   }
 }

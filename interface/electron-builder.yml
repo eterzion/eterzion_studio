@@ -67,7 +67,43 @@ nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
   uninstallDisplayName: ${productName}
-  createDesktopShortcut: always
+  # Instalador assistido: pergunta para quem instalar, onde, e as opcoes da
+  # pagina propria em build/installer.nsh (atalho na area de trabalho e baixar
+  # os modelos depois de ativar). Quem ja' tem o app recebe as versoes novas
+  # pelo electron-updater em modo silencioso (/S --updated): nenhuma pagina
+  # aparece, e o instalador reusa a pasta gravada em InstallLocation.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  # "Para todos os usuarios" e' oferecido, com "so' para mim" marcado. Quem
+  # escolhe "todos" instala em Program Files e passa a ver o pedido de
+  # administrador em cada atualizacao -- a pagina de Opcoes avisa. A licenca
+  # continua por conta do Windows: cada uma ativa a sua.
+  perMachine: false
+  allowElevation: true
+  selectPerMachineByDefault: false
+  # `true`, e nao `always`: o template cria o atalho na instalacao nova e o
+  # remove na desinstalacao; a caixa desmarcada o apaga no customInstall. Numa
+  # atualizacao nenhum dos dois recria atalho, entao a escolha se mantem.
+  createDesktopShortcut: true
+  runAfterFinish: true
+  # Os 11 idiomas do app, no idioma do Windows e sem perguntar. Ingles primeiro
+  # porque e' o que o NSIS usa quando o idioma do sistema nao esta' na lista.
+  # `zh_CN`, e nao `zh-Hans`: o electron-builder nao reconhece o segundo.
+  installerLanguages:
+    - en_US
+    - pt_BR
+    - pt_PT
+    - es_ES
+    - fr_FR
+    - de_DE
+    - it_IT
+    - ja_JP
+    - ko_KR
+    - ru_RU
+    - zh_CN
+  multiLanguageInstaller: true
+  displayLanguageSelector: false
+  include: build/installer.nsh
 mac:
   entitlementsInherit: build/entitlements.mac.plist
   extendInfo:

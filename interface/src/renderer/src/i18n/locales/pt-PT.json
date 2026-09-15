@@ -1099,5 +1099,15 @@
       "processing": "A processar",
       "queued": "Na fila"
     }
+  },
+  "initialModels": {
+    "downloading": "A transferir os modelos de IA ({done} de {total})",
+    "downloadingBody": "Pode continuar a usar a aplicação entretanto.",
+    "ready": "Modelos de IA prontos",
+    "readyBody": "Todos os recursos funcionam sem novas transferências.",
+    "failed": "Nem todos os modelos de IA foram transferidos",
+    "failedBody": "A aplicação tenta novamente da próxima vez que abrir. Também os pode transferir em Componentes.",
+    "openComponents": "Ver componentes",
+    "close": "Fechar"
   }
 }
