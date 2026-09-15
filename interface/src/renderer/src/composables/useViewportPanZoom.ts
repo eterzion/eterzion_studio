@@ -5,7 +5,7 @@ interface ViewportJob {
   id: string
   sourcePath: string
   status: string
-  lastExportPath?: string
+  outputPath?: string
 }
 
 // Extracted from ImageEditorView.vue — pan/zoom/space-held-preview-toggle is a
@@ -77,9 +77,9 @@ export function useViewportPanZoom<T extends ViewportJob>(
     job.value && hasNativeApi ? api.toFileUrl(job.value.sourcePath) : ''
   )
   const afterSrc = computed(() => {
-    if (!job.value || !hasNativeApi || job.value.status !== 'done' || !job.value.lastExportPath)
+    if (!job.value || !hasNativeApi || job.value.status !== 'done' || !job.value.outputPath)
       return beforeSrc.value
-    return api.toFileUrl(job.value.lastExportPath)
+    return api.toFileUrl(job.value.outputPath)
   })
 
   function onKeyDown(e: KeyboardEvent): void {

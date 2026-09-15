@@ -648,7 +648,7 @@
     "detecting": "识别中…",
     "effort": "处理强度",
     "elapsed": "已用时间：{time}",
-    "exportDescription": "格式、目标位置和名称",
+    "exportDescription": "格式、质量、保存位置和名称",
     "exportTitle": "导出",
     "faceRecoveryHint": "重建人脸——它比画面其他部分更早丢失细节。若未检测到人脸，图片将保持原样。",
     "faceRecoveryLabel": "人脸修复",
@@ -695,7 +695,14 @@
     "technicalDetails": "技术细节",
     "whereToProcess": "处理位置",
     "width": "宽度",
-    "willDistort": "图片会被拉伸变形。"
+    "willDistort": "图片会被拉伸变形。",
+    "qualityProfile": {
+      "fast": "较小文件",
+      "balanced": "均衡",
+      "quality": "最高"
+    },
+    "savedAt": "已保存到：{path}",
+    "adjustAndReprocess": "调整后重新处理"
   },
   "importing": {
     "alreadyQueued": "已在队列中：{files}。",
@@ -1142,6 +1149,12 @@
       "replace": "替换",
       "replaceHint": "新文件准备好后才会替换现有文件。",
       "cancel": "取消"
+    },
+    "keepFormat": "与原文件相同",
+    "refusal": {
+      "format_unavailable": "不支持此格式。",
+      "encoder_unavailable": "这台电脑无法写入此格式。",
+      "insufficient_disk": "磁盘空间不足，无法保存结果。"
     }
   }
 }

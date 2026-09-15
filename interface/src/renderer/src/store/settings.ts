@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 import { applyTheme, getInitialTheme, watchSystemTheme, type ThemeMode } from '../theme'
 import { detectSystemLocale, setLocale, type SupportedLocale } from '../i18n'
+import type { Profile } from '../services/api'
 
 const STORAGE_KEY = 'eterzion-studio:settings'
 
@@ -10,7 +11,8 @@ export interface AppSettings {
   defaultExportFormat: 'png' | 'jpg' | 'webp'
   defaultScalePreset: 2 | 4
   defaultLockAspectRatio: boolean
-  defaultQuality: number
+  /** A qualidade do JPEG/WebP, em perfil como a do Video e a do Audio. */
+  defaultImageProfile: Profile
   autoCheckUpdates: boolean
   historyLimit: number
   historyAutoCleanupDays: number | null
@@ -32,7 +34,7 @@ function defaults(): AppSettings {
     defaultExportFormat: 'png',
     defaultScalePreset: 4,
     defaultLockAspectRatio: true,
-    defaultQuality: 90,
+    defaultImageProfile: 'balanced',
     autoCheckUpdates: true,
     historyLimit: 200,
     historyAutoCleanupDays: null,
@@ -45,11 +47,24 @@ function defaults(): AppSettings {
   }
 }
 
+export function perfilDaQualidade(qualidade: number): Profile {
+  if (qualidade >= 95) return 'quality'
+  if (qualidade >= 85) return 'balanced'
+  return 'fast'
+}
+
 function load(): AppSettings {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaults()
-    return { ...defaults(), ...JSON.parse(raw) }
+    const salvo = JSON.parse(raw)
+    // A qualidade era um numero de 1 a 100; virou perfil. Quem tinha escolhido
+    // um numero fica com o perfil mais perto dele.
+    if (typeof salvo.defaultQuality === 'number' && !salvo.defaultImageProfile) {
+      salvo.defaultImageProfile = perfilDaQualidade(salvo.defaultQuality)
+    }
+    delete salvo.defaultQuality
+    return { ...defaults(), ...salvo }
   } catch {
     return defaults()
   }

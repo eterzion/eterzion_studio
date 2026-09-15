@@ -500,9 +500,9 @@ def shutdown() -> None:
 #
 # Status lifecycle: pending (created, being configured) -> queued (user clicked
 # "process", waiting its turn — concurrency is 1, enforced by _executor's single
-# worker thread) -> processing -> done | error | cancelled. Export is a separate,
-# much cheaper step handled by export_job() below — it never touches this state
-# machine or re-runs the model, it only reads the master PNG _process_job() wrote.
+# worker thread) -> processing -> done | error | cancelled. There is no separate
+# export step any more: every job delivers its result to the chosen destination
+# before reaching done (app/destino.py).
 
 jobs: dict[str, dict[str, Any]] = {}
 
@@ -553,14 +553,16 @@ def _now_iso() -> str:
 
 
 def _master_path(job_id: str) -> str:
+    """O PNG sem perda que o modelo grava, na pasta interna. Com destino, e' so'
+    o intermediario da entrega (app/exportacao_de_imagem.py), apagado depois;
+    sem destino, e' o proprio resultado."""
     return os.path.join(settings.outputs_dir, f'{job_id}_master.png')
 
 
 def _video_output_path(job_id: str) -> str:
-    """Unlike the image path's master PNG (re-exportable to any format/quality
-    later), a video job's output is the real, final file the moment
-    VideoUpscaler.process() returns — there is no cheap re-encode step for
-    video yet, so this IS what job['output_path'] points at."""
+    """Where the video upscale writes inside the app's own folder. With a
+    destination, _entregar_video() moves it there; without one, this IS what
+    job['output_path'] points at."""
     return os.path.join(settings.outputs_dir, f'{job_id}.mp4')
 
 
@@ -860,6 +862,33 @@ def _entregar_video(job: dict, params: dict, interno: str) -> str:
             final, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temporario:
         shutil.move(interno, temporario)
     return final
+
+
+def _com_imagem_entregue(job: dict, params: dict, resultado: dict, on_stage) -> dict:
+    """Leva o PNG intermediario ao destino, no formato e na qualidade pedidos
+    (app/exportacao_de_imagem.py). Sem destino, nada muda."""
+    if not params.get('output_path'):
+        return resultado
+    from app import destino, exportacao_de_imagem
+
+    alvo = params.get('output_target') or {}
+    intermediario = _master_path(job['id'])
+    final = destino.confirmar_antes_de_gravar(
+        params['output_path'], alvo.get('conflict', 'rename'), destino.SUFIXOS['image'])
+    formato = os.path.splitext(final)[1].lstrip('.').lower()
+    if on_stage:
+        on_stage('Exportando')
+    try:
+        with destino.gravacao_segura(
+                final, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temporario:
+            exportacao_de_imagem.codificar(intermediario, temporario, formato, alvo.get('profile'))
+    finally:
+        if os.path.exists(intermediario):
+            try:
+                os.remove(intermediario)
+            except OSError:
+                pass
+    return {**resultado, 'delivered_path': final}
 
 
 def _entregar_audio(job: dict, params: dict, intermediario: str, on_stage) -> str:
@@ -1164,8 +1193,9 @@ async def _process_job(job_id: str) -> None:
             # filters, never the model. No engine is resolved and the isolated
             # worker is not involved — that subprocess exists to contain model
             # inference, and there is none here (same reasoning as the
-            # compress/convert branch above). It still writes the job's master,
-            # so export/re-export downstream is unchanged.
+            # compress/convert branch above). It writes the same lossless PNG
+            # the model path does, and the delivery is the same
+            # (_com_imagem_entregue).
             from app.processing import Upscaler
 
             adjustments = params.get('adjustments', {})
@@ -1187,7 +1217,7 @@ async def _process_job(job_id: str) -> None:
                     if probe is not None:
                         resize = (probe.shape[1] * factor, probe.shape[0] * factor)
 
-            return Upscaler.process_without_model(
+            resultado_sem_modelo = Upscaler.process_without_model(
                 job['input_path'],
                 _master_path(job_id),
                 settings.models_dir,
@@ -1202,6 +1232,7 @@ async def _process_job(job_id: str) -> None:
                     if adjustments.get('denoise_filter_enabled') else 0
                 ),
             )
+            return _com_imagem_entregue(job, params, resultado_sem_modelo, on_stage)
 
         audio_mode = params.get('audio_mode')
         if job.get('media_type') == 'audio' and job.get('content_type_detected') == 'music':
@@ -1330,6 +1361,8 @@ async def _process_job(job_id: str) -> None:
             upscale_result = {**upscale_result, 'internal_path': output_path}
             if params.get('output_path'):
                 upscale_result['delivered_path'] = _entregar_audio(job, params, output_path, on_stage)
+        if not is_video and not is_audio:
+            upscale_result = _com_imagem_entregue(job, params, upscale_result, on_stage)
         return upscale_result
 
     cancelamento = Cancelamento()
@@ -1410,7 +1443,11 @@ async def _process_job(job_id: str) -> None:
                 'size_bytes': os.path.getsize(audio_path) if os.path.isfile(audio_path) else None,
             }
         else:
-            master_path = _master_path(job_id)
+            master_path = result_meta.get('delivered_path') or _master_path(job_id)
+            # Numa etapa so': o resultado ja' esta' no destino (ou, sem destino,
+            # e' o PNG da pasta interna). Antes ficava None ate' a pessoa
+            # exportar, e o antes/depois comparava a original com ela mesma.
+            job['output_path'] = master_path
             source_w, source_h = result_meta['source_size']
             output_w, output_h = result_meta['output_size']
             job['source_meta'] = {
@@ -1495,27 +1532,6 @@ def start_worker() -> None:
         _watchdog_task = asyncio.get_event_loop().create_task(_watchdog_loop())
     if _audio_idle_watchdog_task is None:
         _audio_idle_watchdog_task = asyncio.get_event_loop().create_task(_audio_worker_idle_watchdog_loop())
-
-
-def export_job(job_id: str, output_path: str, quality: int | None) -> None:
-    """Re-encodes a done job's cached master result — no model inference, so this
-    is always fast regardless of the original image's size."""
-    from app.processing import Upscaler
-
-    job = jobs.get(job_id)
-    if job is None:
-        raise ValueError('Job não encontrado.')
-    if job['status'] != 'done':
-        raise ValueError('Job ainda não foi concluído.')
-    # An enhance job caches a lossless master to re-encode from. A compress or
-    # convert job has no master — optimize_file() already wrote the real result,
-    # and that file is what this re-encodes from instead.
-    master_path = _master_path(job_id)
-    source_path = master_path if os.path.isfile(master_path) else job.get('output_path')
-    if not source_path or not os.path.isfile(source_path):
-        raise ValueError('Resultado do job não está mais disponível.')
-    Upscaler.export(source_path, output_path, quality)
-    job['output_path'] = output_path
 
 
 # ------------------------------- isolated worker (child process entry point) ------------------------------- #

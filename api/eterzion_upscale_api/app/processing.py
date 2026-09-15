@@ -130,10 +130,9 @@ def check_capacity(
 # Thin wrapper around eterzion_upscale.processing — the same load_model()/enhance()
 # the old GUI and CLI use. No PyTorch/RealESRGAN logic is duplicated here.
 #
-# process() runs the model once and writes a lossless master PNG; export() only
-# re-encodes that master to whatever format/quality/destination is requested — never
-# re-runs the model, so re-exporting after a job is done is always fast (see
-# jobs.py and routes.py's POST /jobs/{id}/export).
+# process() runs the model once and writes a lossless PNG; export() re-encodes it to
+# the requested format/quality. The job delivers the result in one step
+# (app/exportacao_de_imagem.py) -- there is no separate export route any more.
 
 # Lazily built and cached per model_dir — YuNet is small (~230KB) and fast, but there's
 # no reason to reload the ONNX graph on every job.

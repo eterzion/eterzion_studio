@@ -34,7 +34,7 @@ const jobLike = computed(() => ({
   id: 'compression-preview',
   sourcePath: props.sourcePath,
   status: props.outputPath ? 'done' : 'idle',
-  lastExportPath: props.outputPath ?? undefined
+  outputPath: props.outputPath ?? undefined
 }))
 
 const {

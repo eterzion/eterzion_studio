@@ -8,7 +8,6 @@ import RangeSlider from '../components/RangeSlider.vue'
 import { profileOptions, deviceOptions } from '../constants/processing'
 import CompareSlider from '../components/CompareSlider.vue'
 import ComparisonStats from '../components/ComparisonStats.vue'
-import BatchExportModal from '../components/BatchExportModal.vue'
 import AppSelect from '../components/AppSelect.vue'
 import TechnicalDetails from '../components/TechnicalDetails.vue'
 import NumberStepper from '../components/NumberStepper.vue'
@@ -27,9 +26,8 @@ import {
   Link,
   Unlink,
   Upload,
-  Download,
   FolderOpen,
-  Loader2,
+  FileOutput,
   SlidersHorizontal,
   X,
   AlertCircle,
@@ -63,6 +61,7 @@ import {
   startProcessing,
   cancelProcessing,
   removeJob,
+  type ImageExport,
   type Job
 } from '../store/jobs'
 
@@ -76,12 +75,10 @@ const profiles = computed(() => profileOptions())
 const devices = computed(() => deviceOptions())
 
 const panelOpen = ref(false)
-const showBatchModal = ref(false)
 
 // ------------------------------- selected job ------------------------------- //
 const job = computed<Job | undefined>(() => getActiveJob())
 const imageJobs = computed(() => queueState.jobs)
-const doneJobs = computed(() => queueState.jobs.filter((j) => j.status === 'done'))
 const configuringJobs = computed(() => queueState.jobs.filter((j) => j.status === 'configuring'))
 
 // ------------------------------- preview viewport (zoom + pan) ------------------------------- //
@@ -167,8 +164,9 @@ function formatIsAvailable(value: string): boolean {
   return known ? known.available : true
 }
 
-const exportFormatOptions = computed(() =>
-  OFFERED_EXPORT_FORMATS.map((value) => ({
+const exportFormatOptions = computed(() => [
+  { value: 'keep', label: t('destination.keepFormat'), disabled: false, description: undefined },
+  ...OFFERED_EXPORT_FORMATS.map((value) => ({
     value,
     label: `.${value}`,
     disabled: !formatIsAvailable(value),
@@ -176,7 +174,7 @@ const exportFormatOptions = computed(() =>
     // como em qualquer outra.
     description: formatIsAvailable(value) ? undefined : t('imageEditor.formatUnavailable')
   }))
-)
+])
 
 const noExportFormatAvailable = computed(() =>
   OFFERED_EXPORT_FORMATS.every((value) => !formatIsAvailable(value))
@@ -185,10 +183,28 @@ const noExportFormatAvailable = computed(() =>
 // Se o formato escolhido não pode ser escrito aqui, cair num que pode em vez de
 // deixar o botão pronto para falhar.
 watch(exportFormatOptions, (options) => {
-  if (formatIsAvailable(exportFormat.value)) return
-  const usable = options.find((option) => !option.disabled)
-  if (usable) exportFormat.value = usable.value
+  const atual = exportacao.value.format
+  if (atual === 'keep' || formatIsAvailable(atual)) return
+  const usable = options.find((option) => !option.disabled && option.value !== 'keep')
+  if (usable) exportacao.value.format = usable.value as ImageExport['format']
 })
+
+// A qualidade so' existe em JPEG e WebP. Em PNG nao ha' o que escolher, e um
+// controle que nao faz nada e' pior que a sua ausencia.
+const exportIsLossy = computed(() => {
+  const formato =
+    exportacao.value.format === 'keep'
+      ? (/\.([^.]+)$/.exec(job.value?.fileName ?? '')?.[1] ?? '').toLowerCase()
+      : exportacao.value.format
+  return ['jpg', 'jpeg', 'webp'].includes(formato)
+})
+
+const qualityProfileOptions = computed(() =>
+  (['fast', 'balanced', 'quality'] as const).map((value) => ({
+    value,
+    label: t(`imageEditor.qualityProfile.${value}`)
+  }))
+)
 const conflictOptions = computed(() => [
   { value: 'rename', label: t('destination.conflict.rename') },
   { value: 'overwrite', label: t('destination.conflict.overwrite') },
@@ -319,31 +335,44 @@ const customBeyondNative = computed(() => {
 })
 
 async function process(j: Job): Promise<void> {
-  await startProcessing(j)
+  await startProcessing(j, {
+    exportacao: { ...exportacao.value },
+    filename: exportFilename.value,
+    perguntarConflito: pergunta.perguntar
+  })
 }
 
+/** Cada imagem com o nome do proprio original: um nome digitado vale para a
+ *  imagem ativa, e repetido em todas so' geraria conflitos. */
 async function processAll(): Promise<void> {
   for (const j of configuringJobs.value) {
     const v = validateScaleConfig(j)
-    if (v.valid) void startProcessing(j)
+    if (v.valid) {
+      void startProcessing(j, {
+        exportacao: { ...exportacao.value },
+        perguntarConflito: pergunta.perguntar
+      })
+    }
   }
+}
+
+function reprocess(j: Job): void {
+  j.status = 'configuring'
+  j.outputPath = undefined
 }
 
 async function cancel(j: Job): Promise<void> {
   await cancelProcessing(j)
 }
 
-// ------------------------------- export (single job, post-done) ------------------------------- //
-const {
-  exportFormat,
-  exportQuality,
-  exportDestFolder,
-  exportFilename,
-  exportConflict,
-  pergunta,
-  runExport,
-  pickExportFolder
-} = useExportPanel()
+// ------------------------------- export (chosen before processing) ------------------------------- //
+const { exportacao, exportFilename, pergunta, pickExportFolder } = useExportPanel()
+
+// O nome digitado e' de uma imagem; trocar de imagem volta ao nome do original.
+watch(
+  () => job.value?.id,
+  () => (exportFilename.value = null)
+)
 
 // ------------------------------- import / queue ------------------------------- //
 async function importFiles(): Promise<void> {
@@ -468,10 +497,6 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
         <AppButton variant="outline" :disabled="!configuringJobs.length" @click="processAll">
           <template #icon><Sparkles :size="15" /></template>
           {{ t('actions.processAll') }}
-        </AppButton>
-        <AppButton variant="outline" :disabled="!doneJobs.length" @click="showBatchModal = true">
-          <template #icon><Download :size="15" /></template>
-          {{ t('actions.exportAll') }}
         </AppButton>
       </template>
     </TopBar>
@@ -932,6 +957,72 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             </div>
           </CollapsiblePanel>
 
+          <CollapsiblePanel
+            :title="t('imageEditor.exportTitle')"
+            :description="t('imageEditor.exportDescription')"
+            :icon="FileOutput"
+          >
+            <div class="field">
+              <label class="field-label">{{ t('imageEditor.format') }}</label>
+              <AppSelect
+                :model-value="exportacao.format"
+                :options="exportFormatOptions"
+                :disabled="noExportFormatAvailable"
+                @update:model-value="(v) => (exportacao.format = v as ImageExport['format'])"
+              />
+            </div>
+
+            <!-- No momento em que ajuda: antes de escolher, não depois de
+                 falhar. Mesmo desenho do painel de vídeo. -->
+            <p v-if="noExportFormatAvailable" class="banner-error">
+              <AlertCircle :size="14" /> {{ t('imageEditor.noFormatAvailable') }}
+            </p>
+
+            <div v-if="exportIsLossy" class="field">
+              <label class="field-label">{{ t('imageEditor.quality') }}</label>
+              <AppSelect
+                :model-value="exportacao.profile"
+                :options="qualityProfileOptions"
+                @update:model-value="(v) => (exportacao.profile = v as Profile)"
+              />
+            </div>
+
+            <div class="field">
+              <label class="field-label">{{ t('imageEditor.destinationFolder') }}</label>
+              <div class="folder-row">
+                <input
+                  class="select folder-input"
+                  type="text"
+                  :value="exportacao.directory ?? t('imageEditor.sameAsSource')"
+                  readonly
+                />
+                <AppButton variant="secondary" icon-only @click="pickExportFolder">
+                  <template #icon><FolderOpen :size="15" /></template>
+                </AppButton>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label">{{ t('imageEditor.fileName') }}</label>
+              <input
+                class="select"
+                type="text"
+                :placeholder="job.fileName.replace(/\.[^.]+$/, '')"
+                :value="exportFilename ?? ''"
+                @input="exportFilename = ($event.target as HTMLInputElement).value.trim() || null"
+              />
+            </div>
+
+            <div class="field">
+              <label class="field-label">{{ t('imageEditor.onConflict') }}</label>
+              <AppSelect
+                :model-value="exportacao.conflict"
+                :options="conflictOptions"
+                @update:model-value="(v) => (exportacao.conflict = v as ImageExport['conflict'])"
+              />
+            </div>
+          </CollapsiblePanel>
+
           <AppButton
             variant="secondary"
             class="w-full"
@@ -945,7 +1036,7 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             variant="primary"
             size="lg"
             class="w-full"
-            :disabled="!validity.valid"
+            :disabled="!validity.valid || noExportFormatAvailable"
             @click="process(job)"
           >
             {{
@@ -991,104 +1082,28 @@ onUnmounted(() => window.removeEventListener('paste', handlePaste))
             <ComparisonStats :job="job" />
           </CollapsiblePanel>
 
-          <CollapsiblePanel
-            :title="t('imageEditor.exportTitle')"
-            :description="t('imageEditor.exportDescription')"
-            :icon="Download"
-          >
-            <div class="field">
-              <label class="field-label">{{ t('imageEditor.format') }}</label>
-              <AppSelect
-                :model-value="exportFormat"
-                :options="exportFormatOptions"
-                :disabled="noExportFormatAvailable"
-                @update:model-value="(v) => (exportFormat = v as 'png' | 'jpg' | 'webp')"
-              />
-            </div>
-
-            <!-- No momento em que ajuda: antes de escolher, não depois de
-                 falhar. Mesmo desenho do painel de vídeo. -->
-            <p v-if="noExportFormatAvailable" class="banner-error">
-              <AlertCircle :size="14" /> {{ t('imageEditor.noFormatAvailable') }}
+          <div class="field">
+            <p v-if="job.outputPath" class="banner-info">
+              {{ t('imageEditor.savedAt', { path: job.outputPath }) }}
             </p>
-
-            <div v-if="exportFormat !== 'png'" class="field">
-              <div class="slider-head">
-                <label class="field-label">{{ t('imageEditor.quality') }}</label>
-                <span class="slider-value">{{ exportQuality }}</span>
-              </div>
-              <RangeSlider v-model="exportQuality" :default-value="90" :min="1" :max="100" />
-            </div>
-
-            <div class="field">
-              <label class="field-label">{{ t('imageEditor.destinationFolder') }}</label>
-              <div class="folder-row">
-                <input
-                  class="select folder-input"
-                  type="text"
-                  :value="exportDestFolder ?? t('imageEditor.sameAsSource')"
-                  readonly
-                />
-                <AppButton variant="secondary" icon-only @click="pickExportFolder">
-                  <template #icon><FolderOpen :size="15" /></template>
-                </AppButton>
-              </div>
-            </div>
-
-            <div class="field">
-              <label class="field-label">{{ t('imageEditor.fileName') }}</label>
-              <input
-                class="select"
-                type="text"
-                :placeholder="`${job.fileName.replace(/\.[^.]+$/, '')}.${exportFormat}`"
-                :value="exportFilename ?? ''"
-                @input="exportFilename = ($event.target as HTMLInputElement).value || null"
-              />
-            </div>
-
-            <div class="field">
-              <label class="field-label">{{ t('imageEditor.onConflict') }}</label>
-              <AppSelect
-                :model-value="exportConflict"
-                :options="conflictOptions"
-                @update:model-value="(v) => (exportConflict = v as 'overwrite' | 'rename' | 'ask')"
-              />
-            </div>
-
-            <p v-if="job.exportState === 'error' && !pergunta.caminho.value" class="banner-error">
-              <AlertCircle :size="14" /> {{ job.exportError }}
-            </p>
-            <p v-if="job.exportState === 'exported'" class="banner-info">
-              Exportado em: {{ job.lastExportPath }}
-            </p>
-
             <AppButton
-              variant="primary"
-              size="lg"
+              v-if="hasNativeApi && job.outputPath"
+              variant="outline"
               class="w-full"
-              :disabled="job.exportState === 'exporting' || noExportFormatAvailable"
-              @click="runExport(job)"
+              @click="api.showItemInFolder(job.outputPath!)"
             >
-              <template #icon>
-                <component
-                  :is="job.exportState === 'exporting' ? Loader2 : Download"
-                  :size="16"
-                  :class="{ 'animate-spin': job.exportState === 'exporting' }"
-                />
-              </template>
-              {{ job.exportState === 'exporting' ? 'Exportando…' : 'Exportar' }}
+              <template #icon><FolderOpen :size="14" /></template>
+              {{ t('actions.openFolder') }}
             </AppButton>
-
-            <AppButton variant="ghost" @click="job.status = 'configuring'">
+            <AppButton variant="ghost" @click="reprocess(job)">
               <template #icon><RotateCcw :size="14" /></template>
-              Ajustar e reprocessar
+              {{ t('imageEditor.adjustAndReprocess') }}
             </AppButton>
-          </CollapsiblePanel>
+          </div>
         </template>
       </aside>
     </div>
 
-    <BatchExportModal v-if="showBatchModal" :jobs="doneJobs" @close="showBatchModal = false" />
     <ConflictDialog :caminho="pergunta.caminho.value" @responder="pergunta.responder" />
   </div>
 </template>

@@ -648,7 +648,7 @@
     "detecting": "Détection…",
     "effort": "Effort de traitement",
     "elapsed": "Temps écoulé : {time}",
-    "exportDescription": "Format, destination et nom",
+    "exportDescription": "Format, qualité, destination et nom",
     "exportTitle": "Exporter",
     "faceRecoveryHint": "Reconstruit les visages, qui perdent en détail avant le reste de l’image. Si aucun visage n’est trouvé, l’image ressort inchangée.",
     "faceRecoveryLabel": "Récupération des visages",
@@ -695,7 +695,14 @@
     "technicalDetails": "Détails techniques",
     "whereToProcess": "Où traiter",
     "width": "Largeur",
-    "willDistort": "L’image sera déformée."
+    "willDistort": "L’image sera déformée.",
+    "qualityProfile": {
+      "fast": "Fichier plus léger",
+      "balanced": "Équilibrée",
+      "quality": "Maximale"
+    },
+    "savedAt": "Enregistré dans : {path}",
+    "adjustAndReprocess": "Ajuster et retraiter"
   },
   "importing": {
     "alreadyQueued": "Déjà dans la file : {files}.",
@@ -1142,6 +1149,12 @@
       "replace": "Remplacer",
       "replaceHint": "Le fichier existant n’est remplacé qu’une fois le nouveau prêt.",
       "cancel": "Annuler"
+    },
+    "keepFormat": "Identique à l’original",
+    "refusal": {
+      "format_unavailable": "Ce format n’est pas pris en charge.",
+      "encoder_unavailable": "Cet ordinateur ne peut pas écrire ce format.",
+      "insufficient_disk": "Espace disque insuffisant pour le résultat."
     }
   }
 }

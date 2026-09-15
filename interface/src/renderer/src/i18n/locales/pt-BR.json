@@ -648,7 +648,7 @@
     "detecting": "Detectando…",
     "effort": "Esforço do processamento",
     "elapsed": "Tempo decorrido: {time}",
-    "exportDescription": "Formato, destino e nome",
+    "exportDescription": "Formato, qualidade, destino e nome",
     "exportTitle": "Exportar",
     "faceRecoveryHint": "Reconstrói rostos, que perdem detalhe antes do resto da imagem. Se nenhum rosto for encontrado, a imagem sai inalterada.",
     "faceRecoveryLabel": "Recuperação de faces",
@@ -695,7 +695,14 @@
     "technicalDetails": "Detalhes técnicos",
     "whereToProcess": "Onde processar",
     "width": "Largura",
-    "willDistort": "A imagem será distorcida."
+    "willDistort": "A imagem será distorcida.",
+    "qualityProfile": {
+      "fast": "Menor arquivo",
+      "balanced": "Equilibrada",
+      "quality": "Máxima"
+    },
+    "savedAt": "Salvo em: {path}",
+    "adjustAndReprocess": "Ajustar e reprocessar"
   },
   "importing": {
     "alreadyQueued": "Já está na fila: {files}.",
@@ -1142,6 +1149,12 @@
       "replace": "Substituir",
       "replaceHint": "O arquivo existente só é trocado quando o novo estiver pronto.",
       "cancel": "Cancelar"
+    },
+    "keepFormat": "Mesmo do original",
+    "refusal": {
+      "format_unavailable": "Este formato não é suportado.",
+      "encoder_unavailable": "Este computador não grava este formato.",
+      "insufficient_disk": "Não há espaço em disco para o resultado."
     }
   }
 }

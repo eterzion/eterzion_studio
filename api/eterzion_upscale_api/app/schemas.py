@@ -59,8 +59,9 @@ class OutputTarget(BaseModel):
     directory: str | None = None
     filename: str | None = None
     conflict: ConflictMode = 'rename'
-    # A qualidade da codificacao, como na exportacao do Video. So' o Audio a
-    # le, e so' em formato com perda (app/exportacao_de_audio.py).
+    # A qualidade da codificacao, como na exportacao do Video. Audio e Imagem a
+    # leem, e so' em formato com perda (app/exportacao_de_audio.py,
+    # app/exportacao_de_imagem.py).
     profile: Profile | None = None
 
 
@@ -112,17 +113,6 @@ class LocalJobRequest(BaseModel):
 # disponibilidade têm que falar do mesmo conjunto, ou a interface oferece o que
 # a rota recusa.
 ExportFormat = Literal['png', 'jpg', 'jpeg', 'tiff', 'webp']
-
-
-class ExportRequest(BaseModel):
-    """Body for POST /jobs/{id}/export. Only re-encodes the already-upscaled master
-    result (see job_manager._process_job) — never re-runs the model, so switching
-    format/quality/destination after a job is done is always fast."""
-    format: ExportFormat = 'png'
-    quality: int = Field(default=90, ge=1, le=100)
-    output_dir: str | None = None  # None = same folder as the original input
-    filename: str | None = None  # None = the source's own name, "{name}.{ext}"
-    conflict: ConflictMode = 'rename'
 
 
 class SizeMeta(BaseModel):

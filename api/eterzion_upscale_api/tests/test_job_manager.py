@@ -356,31 +356,3 @@ class TestProcessJobStateMachine:
         # the job reaches 'done' (100%) — but we can at least assert no
         # exception occurred and the callbacks didn't corrupt the record.
         assert job_manager.get_job(job_id)['status'] == 'done'
-
-
-class TestExportJob:
-    def test_raises_for_unknown_job(self):
-        with pytest.raises(ValueError, match='não encontrado'):
-            job_manager.export_job('job_ghost', '/tmp/out.png', 90)
-
-    def test_raises_when_job_not_done(self, real_input_file, default_job_params):
-        job_id = job_manager.create_job(real_input_file, 'a.png', default_job_params())
-        with pytest.raises(ValueError, match='não foi concluído'):
-            job_manager.export_job(job_id, '/tmp/out.png', 90)
-
-    def test_raises_when_master_file_is_missing(self, real_input_file, default_job_params):
-        job_id = job_manager.create_job(real_input_file, 'a.png', default_job_params())
-        job_manager.jobs[job_id]['status'] = 'done'
-        with pytest.raises(ValueError, match='não está mais disponível'):
-            job_manager.export_job(job_id, '/tmp/out.png', 90)
-
-    def test_exports_a_done_jobs_master_file(self, real_input_file, default_job_params, fake_supervisor, tmp_path):
-        fake_supervisor.configure_result((10, 10), (20, 20))
-        job_id = _create_photo_job(real_input_file, 'a.png', default_job_params())
-        job_manager.jobs[job_id]['status'] = 'queued'
-        asyncio.run(job_manager._process_job(job_id))
-        assert job_manager.get_job(job_id)['status'] == 'done'
-
-        out_path = str(tmp_path / 'exported.png')
-        job_manager.export_job(job_id, out_path, None)
-        assert job_manager.get_job(job_id)['output_path'] == out_path

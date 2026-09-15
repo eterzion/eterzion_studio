@@ -648,7 +648,7 @@
     "detecting": "Wird erkannt…",
     "effort": "Verarbeitungsaufwand",
     "elapsed": "Verstrichen: {time}",
-    "exportDescription": "Format, Ziel und Name",
+    "exportDescription": "Format, Qualität, Ziel und Name",
     "exportTitle": "Exportieren",
     "faceRecoveryHint": "Baut Gesichter wieder auf, die früher an Detail verlieren als der Rest des Bildes. Wird kein Gesicht gefunden, bleibt das Bild unverändert.",
     "faceRecoveryLabel": "Gesichtswiederherstellung",
@@ -695,7 +695,14 @@
     "technicalDetails": "Technische Details",
     "whereToProcess": "Wo verarbeiten",
     "width": "Breite",
-    "willDistort": "Das Bild wird verzerrt."
+    "willDistort": "Das Bild wird verzerrt.",
+    "qualityProfile": {
+      "fast": "Kleinere Datei",
+      "balanced": "Ausgewogen",
+      "quality": "Maximal"
+    },
+    "savedAt": "Gespeichert unter: {path}",
+    "adjustAndReprocess": "Anpassen und neu verarbeiten"
   },
   "importing": {
     "alreadyQueued": "Bereits in der Warteschlange: {files}.",
@@ -1142,6 +1149,12 @@
       "replace": "Ersetzen",
       "replaceHint": "Die vorhandene Datei wird erst ersetzt, wenn die neue fertig ist.",
       "cancel": "Abbrechen"
+    },
+    "keepFormat": "Wie das Original",
+    "refusal": {
+      "format_unavailable": "Dieses Format wird nicht unterstützt.",
+      "encoder_unavailable": "Dieser Computer kann dieses Format nicht schreiben.",
+      "insufficient_disk": "Nicht genug Speicherplatz für das Ergebnis."
     }
   }
 }

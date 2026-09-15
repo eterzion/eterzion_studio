@@ -5,14 +5,15 @@ import {
   detectContentType,
   processJob as apiProcessJob,
   cancelJob as apiCancelJob,
-  exportJob as apiExportJob,
   getJob,
+  ComponentActionError,
   type JobStatus as ApiJobStatus,
   type ErrorCategory,
-  type ExportRequest,
+  type ConflictMode,
   type ContentType,
   type Profile
 } from '../services/api'
+import type { RespostaDeConflito } from '../composables/usePerguntaDeConflito'
 import { subscribeJobProgress } from '../services/websocket'
 import { recordJob } from './history'
 import { settingsState } from './settings'
@@ -33,7 +34,27 @@ const t = i18n.global.t
 // ------------------------------------------------------------------------- //
 
 export type JobStatus = 'configuring' | 'queued' | 'processing' | 'done' | 'error' | 'cancelled'
-export type ExportState = 'idle' | 'exporting' | 'exported' | 'error'
+
+/** A exportacao da Imagem, escolhida antes de processar (app/exportacao_de_imagem.py). */
+export interface ImageExport {
+  /** 'keep' = o formato do original. */
+  format: 'keep' | 'png' | 'jpg' | 'webp'
+  /** A qualidade do JPEG/WebP, como a do Video e a do Audio. */
+  profile: Profile
+  directory: string | null
+  conflict: ConflictMode
+}
+
+export interface ProcessingOptions {
+  exportacao?: ImageExport
+  /** Sem extensao; `null` = o nome do original. */
+  filename?: string | null
+  /** Abre a pergunta de conflito da tela. Sem ela, a recusa aparece como erro. */
+  perguntarConflito?: (caminho: string) => Promise<RespostaDeConflito>
+}
+
+// As recusas que o backend faz antes do job, com a frase na lingua do app.
+const RECUSAS = new Set(['format_unavailable', 'encoder_unavailable', 'insufficient_disk'])
 
 // 1, not 16. The 16px floor rejected legitimate work — game and UI sprite
 // sheets are routinely 8x8 or 12x10, and upscaling exactly that kind of art is
@@ -104,13 +125,8 @@ export interface Job {
   createdAt: number
   processingStartedAt?: number
   processingEndedAt?: number
-  exportState: ExportState
-  exportError?: string
-  /** The last export failed because the name was taken. */
-  exportConflicted?: boolean
-  /** O caminho que ja' existia, para a pergunta de conflito. */
-  exportConflictPath?: string
-  lastExportPath?: string
+  /** Onde o resultado foi gravado -- o destino escolhido, numa etapa so'. */
+  outputPath?: string
   thumbnail?: string
 }
 
@@ -239,7 +255,6 @@ export async function addFiles(described: DescribedFile[]): Promise<UploadResult
       status: 'configuring',
       progress: 0,
       queuePosition: null,
-      exportState: 'idle',
       createdAt: Date.now(),
       thumbnail
     }
@@ -548,6 +563,9 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
   if (status.status === 'done') {
     job.status = 'done'
     job.progress = 100
+    // Antes do recordJob: e' o que leva o caminho ao Historico, que antes
+    // quase sempre mostrava "nao exportado".
+    job.outputPath = status.output_path ?? undefined
     notifyDone(job)
   } else if (status.status === 'error') {
     job.status = 'error'
@@ -561,9 +579,10 @@ function applyApiStatus(job: Job, status: ApiJobStatus): void {
   recordJob(job, job.status)
 }
 
-/** configuring -> queued: creates the backend job (with the final scaleConfig)
- *  and enqueues it in one go, then subscribes to live progress. */
-export async function startProcessing(job: Job): Promise<void> {
+/** configuring -> queued: creates the backend job (with the final scaleConfig
+ *  and the destination) and enqueues it in one go, then subscribes to live
+ *  progress. */
+export async function startProcessing(job: Job, options: ProcessingOptions = {}): Promise<void> {
   if (!hasNativeApi) return
   const validity = validateScaleConfig(job)
   if (!validity.valid) {
@@ -578,8 +597,10 @@ export async function startProcessing(job: Job): Promise<void> {
   job.errorCategory = undefined
   job.errorReason = undefined
   job.errorDetail = undefined
+  job.outputPath = undefined
   recordJob(job, job.status)
 
+  const exportacao = options.exportacao
   try {
     // Both 'custom' and 'original' express an exact target size; they differ
     // only in which direction it is allowed to go (see validateScaleConfig).
@@ -601,7 +622,16 @@ export async function startProcessing(job: Job): Promise<void> {
         content_type_override: job.scaleConfig.contentType,
         input_path: job.sourcePath,
         device: job.scaleConfig.device,
-        custom_size: customSize
+        custom_size: customSize,
+        output_target: exportacao
+          ? {
+              format: exportacao.format,
+              profile: exportacao.profile,
+              directory: exportacao.directory,
+              filename: options.filename ?? null,
+              conflict: exportacao.conflict
+            }
+          : null
       },
       {
         denoise: job.scaleConfig.denoise,
@@ -634,8 +664,25 @@ export async function startProcessing(job: Job): Promise<void> {
     )
     jobUnsubscribers.set(backendJobId, unsubscribe)
   } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message.startsWith('CONFLICT:') && exportacao && options.perguntarConflito) {
+      // Nada foi processado: o backend recusou antes de criar o job.
+      const resposta = await options.perguntarConflito(message.slice('CONFLICT:'.length))
+      if (resposta) {
+        return startProcessing(job, {
+          ...options,
+          exportacao: { ...exportacao, conflict: resposta }
+        })
+      }
+      job.status = 'configuring'
+      recordJob(job, 'cancelled')
+      return
+    }
     job.status = 'error'
-    job.errorMessage = error instanceof Error ? error.message : t('errors.job.createFailed')
+    job.errorMessage =
+      error instanceof ComponentActionError && error.reason && RECUSAS.has(error.reason)
+        ? t(`destination.refusal.${error.reason}`)
+        : message || t('errors.job.createFailed')
     recordJob(job, job.status)
   }
 }
@@ -657,46 +704,4 @@ export async function cancelProcessing(job: Job): Promise<void> {
   job.progress = 0
   job.queuePosition = null
   job.backendJobId = null
-}
-
-export interface ExportOptions {
-  format: 'png' | 'jpg' | 'webp' | 'tiff'
-  quality: number
-  outputDir: string | null
-  filename: string | null
-  conflict: 'overwrite' | 'rename' | 'ask'
-}
-
-/** done -> exporting -> exported. Never re-runs the model — see services/api.ts's exportJob. */
-export async function exportOne(
-  job: Job,
-  options: ExportOptions
-): Promise<{ ok: boolean; path?: string; error?: string }> {
-  if (!job.backendJobId) return { ok: false, error: t('errors.job.noBackendJob') }
-  job.exportState = 'exporting'
-  job.exportError = undefined
-  job.exportConflicted = false
-  const request: ExportRequest = {
-    format: options.format,
-    quality: options.quality,
-    output_dir: options.outputDir,
-    filename: options.filename,
-    conflict: options.conflict
-  }
-  try {
-    const path = await apiExportJob(job.backendJobId, request)
-    job.exportState = 'exported'
-    job.lastExportPath = path
-    return { ok: true, path }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : t('validation.exportFailed')
-    job.exportState = 'error'
-    // The flag, not the message, is what callers branch on: useExportPanel
-    // used to compare against this exact sentence, which a translation breaks
-    // the moment it is no longer written in Portuguese.
-    job.exportConflicted = message.startsWith('CONFLICT:')
-    job.exportConflictPath = job.exportConflicted ? message.slice('CONFLICT:'.length) : undefined
-    job.exportError = job.exportConflicted ? t('validation.nameConflict') : message
-    return { ok: false, error: job.exportError }
-  }
 }
