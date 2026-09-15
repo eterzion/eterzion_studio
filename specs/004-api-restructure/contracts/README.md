@@ -1,5 +1,7 @@
 # Contratos preservados
 
+> **Atualização 2026-09-15:** `POST /jobs/{id}/export` foi removida. A exportação passou a ser uma etapa só, nos quatro modos: o destino vai no próprio pedido do job e o job entrega o resultado. Ver [docs/exportacao.md](../../../docs/exportacao.md).
+
 Esta feature não cria nenhum contrato novo. Os contratos existentes — HTTP e WebSocket das duas
 APIs — MUST permanecer byte-a-byte idênticos ao estado anterior à reorganização (FR-016, SC-005).
 
