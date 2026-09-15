@@ -1,5 +1,7 @@
 # Contrato — Audio Engine
 
+> **Atualização 2026-09-15:** `POST /jobs/{id}/export` foi removida. A exportação passou a ser uma etapa só, nos quatro modos: o destino vai no próprio pedido do job e o job entrega o resultado. Ver [docs/exportacao.md](../../../docs/exportacao.md). O Áudio ganhou `output_target` (formato, qualidade, pasta, nome, conflito) no mesmo pedido.
+
 Nenhuma rota nova. Este trabalho estende `POST /jobs/local` (e por consequência `GET /jobs/{id}`,
 o WebSocket de progresso, e `POST /jobs/{id}/export`) exatamente como já existem hoje — a extensão
 é aditiva ao schema (Decisão 2 de research.md), preservando 100% do comportamento atual quando os

@@ -176,7 +176,12 @@ parar".
 
 ---
 
-## `POST /compression/jobs/{id}/export`
+## ~~`POST /compression/jobs/{id}/export`~~ (não implementada)
+
+> **Atualização 2026-09-15:** esta rota nunca chegou a existir. O destino vai no campo `export`
+> do próprio `POST /compression/jobs`, resolvido antes do job pelo núcleo comum de exportação
+> (409 `conflict` em "perguntar"); `apply_to_all` saiu. Ver
+> [docs/exportacao.md](../../../docs/exportacao.md). O texto abaixo fica como registro do plano.
 
 ```json
 { "directory": "…", "naming_pattern": "{filename}_compressed",

@@ -126,7 +126,7 @@ Rotas em `app/api/` (não `app/routes/`), registradas em `app/main.py:17-22`:
 | DELETE | `/jobs/{id}` | Cancela (mata o worker) |
 | PATCH | `/jobs/{id}/params` | Atualiza params de job pendente |
 | POST | `/jobs/{id}/process` | Enfileira |
-| POST | `/jobs/{id}/export` | Reencoda master, sem reinferência |
+| POST | `/jobs/{id}/export` | Reencoda master, sem reinferência — *removida em 2026-09-15; ver [exportacao.md](../exportacao.md)* |
 | GET | `/jobs/{id}/download` | Baixa saída |
 | GET | `/identity` | install_id + chaves públicas |
 | POST | `/preview/denoise` | Prévia downscaled do denoise |

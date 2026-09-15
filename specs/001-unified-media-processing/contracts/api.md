@@ -45,9 +45,12 @@ sem essa confirmação (FR-081 a FR-084).
 Reutilizados sem mudança de contrato — já generalizados o suficiente pelo `Job` de
 `data-model.md`. Cancelamento continua real (mata o worker), não cosmético.
 
-### `POST /jobs/{id}/export`
-Reutilizado sem mudança — reencodar sem reprocessar já é o comportamento existente e vale para
-qualquer mídia.
+### ~~`POST /jobs/{id}/export`~~ (removida em 2026-09-15)
+A exportação deixou de ser uma segunda etapa. O destino (formato, qualidade, pasta, nome e
+conflito) vai em `media_request.output_target` no próprio `POST /jobs/local`, e o job entrega o
+resultado no destino antes de chegar a `done` — `job.output_path` aponta para ele. As recusas
+(conflito em "perguntar", formato, espaço) acontecem na criação do job. Regras completas em
+[docs/exportacao.md](../../../docs/exportacao.md).
 
 ### `WS /ws/jobs/{id}`
 Reutilizado sem mudança de protocolo. Progresso para vídeo/áudio longos usa a mesma mecânica de
