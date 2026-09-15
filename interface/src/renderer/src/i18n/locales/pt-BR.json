@@ -708,7 +708,11 @@
       "quality": "Máxima"
     },
     "adjustAndReprocess": "Ajustar e reprocessar",
-    "notInLivePreview": "Alguns ajustes ativos não aparecem na prévia — só no arquivo final."
+    "notInLivePreview": "Alguns ajustes ativos não aparecem na prévia — só no arquivo final.",
+    "estimatedSize": "Tamanho estimado",
+    "addImage": "Adicionar imagem",
+    "panelDrawer": "Ajustes",
+    "pasteFailed": "Falha ao colar a imagem."
   },
   "importing": {
     "alreadyQueued": "Já está na fila: {files}.",
@@ -830,7 +834,8 @@
     "title": "Fila de processamento"
   },
   "select": {
-    "search": "Buscar…"
+    "search": "Buscar…",
+    "noResults": "Nenhum resultado."
   },
   "settings": {
     "animations": "Ativar animações",
@@ -981,7 +986,8 @@
     "pickFiles": "Selecionar arquivos",
     "pickFolder": "Selecionar pasta",
     "subtitle": "ou use os botões abaixo",
-    "videoTitle": "Arraste vídeos aqui"
+    "videoTitle": "Arraste vídeos aqui",
+    "retry": "Tentar novamente"
   },
   "validation": {
     "exportFailed": "Falha ao exportar.",

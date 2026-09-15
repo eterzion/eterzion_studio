@@ -708,7 +708,11 @@
       "quality": "最高"
     },
     "adjustAndReprocess": "调整后重新处理",
-    "notInLivePreview": "部分已启用的调整不会在预览中显示，只会体现在最终文件中。"
+    "notInLivePreview": "部分已启用的调整不会在预览中显示，只会体现在最终文件中。",
+    "estimatedSize": "预计大小",
+    "addImage": "添加图片",
+    "panelDrawer": "设置",
+    "pasteFailed": "无法粘贴图片。"
   },
   "importing": {
     "alreadyQueued": "已在队列中：{files}。",
@@ -830,7 +834,8 @@
     "title": "处理队列"
   },
   "select": {
-    "search": "搜索…"
+    "search": "搜索…",
+    "noResults": "没有结果。"
   },
   "settings": {
     "animations": "启用动画",
@@ -981,7 +986,8 @@
     "pickFiles": "选择文件",
     "pickFolder": "选择文件夹",
     "subtitle": "也可以使用下方按钮",
-    "videoTitle": "将视频拖放到这里"
+    "videoTitle": "将视频拖放到这里",
+    "retry": "重试"
   },
   "validation": {
     "exportFailed": "导出失败。",

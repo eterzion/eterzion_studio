@@ -708,7 +708,11 @@
       "quality": "Maximal"
     },
     "adjustAndReprocess": "Anpassen und neu verarbeiten",
-    "notInLivePreview": "Einige aktive Anpassungen erscheinen nicht in der Vorschau – nur in der fertigen Datei."
+    "notInLivePreview": "Einige aktive Anpassungen erscheinen nicht in der Vorschau – nur in der fertigen Datei.",
+    "estimatedSize": "Geschätzte Größe",
+    "addImage": "Bild hinzufügen",
+    "panelDrawer": "Einstellungen",
+    "pasteFailed": "Das Bild konnte nicht eingefügt werden."
   },
   "importing": {
     "alreadyQueued": "Bereits in der Warteschlange: {files}.",
@@ -830,7 +834,8 @@
     "title": "Verarbeitungswarteschlange"
   },
   "select": {
-    "search": "Suchen…"
+    "search": "Suchen…",
+    "noResults": "Keine Ergebnisse."
   },
   "settings": {
     "animations": "Animationen aktivieren",
@@ -981,7 +986,8 @@
     "pickFiles": "Dateien wählen",
     "pickFolder": "Ordner wählen",
     "subtitle": "oder nutzen Sie die Schaltflächen unten",
-    "videoTitle": "Videos hier ablegen"
+    "videoTitle": "Videos hier ablegen",
+    "retry": "Erneut versuchen"
   },
   "validation": {
     "exportFailed": "Export fehlgeschlagen.",

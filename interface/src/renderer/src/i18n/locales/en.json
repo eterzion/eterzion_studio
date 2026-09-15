@@ -708,7 +708,11 @@
       "quality": "Maximum"
     },
     "adjustAndReprocess": "Adjust and reprocess",
-    "notInLivePreview": "Some active adjustments do not show in the preview — only in the final file."
+    "notInLivePreview": "Some active adjustments do not show in the preview — only in the final file.",
+    "estimatedSize": "Estimated size",
+    "addImage": "Add image",
+    "panelDrawer": "Settings",
+    "pasteFailed": "Could not paste the image."
   },
   "importing": {
     "alreadyQueued": "Already in the queue: {files}.",
@@ -830,7 +834,8 @@
     "title": "Processing queue"
   },
   "select": {
-    "search": "Search…"
+    "search": "Search…",
+    "noResults": "No results."
   },
   "settings": {
     "animations": "Enable animations",
@@ -981,7 +986,8 @@
     "pickFiles": "Choose files",
     "pickFolder": "Choose folder",
     "subtitle": "or use the buttons below",
-    "videoTitle": "Drop videos here"
+    "videoTitle": "Drop videos here",
+    "retry": "Try again"
   },
   "validation": {
     "exportFailed": "Could not export.",

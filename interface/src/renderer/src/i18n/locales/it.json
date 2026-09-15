@@ -708,7 +708,11 @@
       "quality": "Massima"
     },
     "adjustAndReprocess": "Regola e rielabora",
-    "notInLivePreview": "Alcune regolazioni attive non compaiono nell’anteprima: solo nel file finale."
+    "notInLivePreview": "Alcune regolazioni attive non compaiono nell’anteprima: solo nel file finale.",
+    "estimatedSize": "Dimensione stimata",
+    "addImage": "Aggiungi immagine",
+    "panelDrawer": "Impostazioni",
+    "pasteFailed": "Impossibile incollare l’immagine."
   },
   "importing": {
     "alreadyQueued": "Già in coda: {files}.",
@@ -830,7 +834,8 @@
     "title": "Coda di elaborazione"
   },
   "select": {
-    "search": "Cerca…"
+    "search": "Cerca…",
+    "noResults": "Nessun risultato."
   },
   "settings": {
     "animations": "Attiva le animazioni",
@@ -981,7 +986,8 @@
     "pickFiles": "Scegli i file",
     "pickFolder": "Scegli la cartella",
     "subtitle": "oppure usa i pulsanti qui sotto",
-    "videoTitle": "Trascina qui i video"
+    "videoTitle": "Trascina qui i video",
+    "retry": "Riprova"
   },
   "validation": {
     "exportFailed": "Esportazione non riuscita.",

@@ -708,7 +708,11 @@
       "quality": "Máxima"
     },
     "adjustAndReprocess": "Ajustar y reprocesar",
-    "notInLivePreview": "Algunos ajustes activos no aparecen en la vista previa: solo en el archivo final."
+    "notInLivePreview": "Algunos ajustes activos no aparecen en la vista previa: solo en el archivo final.",
+    "estimatedSize": "Tamaño estimado",
+    "addImage": "Añadir imagen",
+    "panelDrawer": "Ajustes",
+    "pasteFailed": "No se pudo pegar la imagen."
   },
   "importing": {
     "alreadyQueued": "Ya está en la cola: {files}.",
@@ -830,7 +834,8 @@
     "title": "Cola de procesamiento"
   },
   "select": {
-    "search": "Buscar…"
+    "search": "Buscar…",
+    "noResults": "Sin resultados."
   },
   "settings": {
     "animations": "Activar animaciones",
@@ -981,7 +986,8 @@
     "pickFiles": "Elegir archivos",
     "pickFolder": "Elegir carpeta",
     "subtitle": "o usa los botones de abajo",
-    "videoTitle": "Arrastra vídeos aquí"
+    "videoTitle": "Arrastra vídeos aquí",
+    "retry": "Reintentar"
   },
   "validation": {
     "exportFailed": "No se pudo exportar.",

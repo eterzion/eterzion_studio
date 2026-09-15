@@ -708,7 +708,11 @@
       "quality": "最高"
     },
     "adjustAndReprocess": "調整して再処理",
-    "notInLivePreview": "一部の有効な調整はプレビューに表示されず、最終ファイルにのみ反映されます。"
+    "notInLivePreview": "一部の有効な調整はプレビューに表示されず、最終ファイルにのみ反映されます。",
+    "estimatedSize": "推定サイズ",
+    "addImage": "画像を追加",
+    "panelDrawer": "設定",
+    "pasteFailed": "画像を貼り付けられませんでした。"
   },
   "importing": {
     "alreadyQueued": "すでにキューにあります: {files}。",
@@ -830,7 +834,8 @@
     "title": "処理キュー"
   },
   "select": {
-    "search": "検索…"
+    "search": "検索…",
+    "noResults": "結果がありません。"
   },
   "settings": {
     "animations": "アニメーションを有効にする",
@@ -981,7 +986,8 @@
     "pickFiles": "ファイルを選ぶ",
     "pickFolder": "フォルダーを選ぶ",
     "subtitle": "下のボタンからも選べます",
-    "videoTitle": "ここに動画をドロップ"
+    "videoTitle": "ここに動画をドロップ",
+    "retry": "もう一度試す"
   },
   "validation": {
     "exportFailed": "書き出しに失敗しました。",
