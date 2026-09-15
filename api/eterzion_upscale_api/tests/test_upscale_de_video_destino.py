@@ -125,3 +125,22 @@ def test_perguntar_recusa_com_409_antes_do_job(client, video, tmp_path):
     assert r.json()['detail']['reason'] == 'conflict'
     assert r.json()['detail']['path'] == str(tmp_path / 'saida' / 'clip.mp4')
     assert set(jobs.jobs) == antes
+
+
+def test_as_edicoes_do_pedido_chegam_ao_job(client, video):
+    # O Video com IA manda ajustes, efeitos, transformacao e corte junto com o
+    # pedido. `_build_job_params` nao os repassava, e _apply_edits_to_upscaled
+    # sempre recebia nada: as edicoes eram descartadas sem aviso.
+    corpo = _corpo(video)
+    corpo['media_request']['edits'] = {
+        'adjustments': {'brightness': 0.2, 'brightness_enabled': True},
+        'transform': {'rotation_degrees': 90},
+        'trim': {'start_seconds': 0.1, 'end_seconds': 0.4},
+    }
+    r = client.post('/jobs/local', json=corpo)
+    assert r.status_code == 200, r.text
+    edits = jobs.get_job(r.json()['id'])['params'].get('edits')
+    assert edits, 'as edicoes do pedido nao chegaram ao job'
+    assert edits['adjustments']['brightness'] == 0.2
+    assert edits['transform']['rotation_degrees'] == 90
+    assert edits['trim'] == {'start_seconds': 0.1, 'end_seconds': 0.4}
