@@ -187,6 +187,12 @@ const refusalMessage = computed(() => {
       <AlertTriangle :size="14" class="mt-0.5 shrink-0" />
       {{ t('videoEditor.limits.noContainerAvailable') }}
     </p>
+  </CollapsiblePanel>
+
+  <!-- As acoes ficam abaixo de tudo, fora do painel, como o "Aplicar a todos"
+       + "Processar" da Imagem. O slot recebe o "Aplicar a todos" da tela. -->
+  <div class="export-actions">
+    <slot name="before-actions" />
 
     <div v-if="running" class="flex flex-col gap-2">
       <ProgressBar :value="state?.progress ?? 0" />
@@ -204,6 +210,8 @@ const refusalMessage = computed(() => {
     <AppButton
       v-else
       variant="primary"
+      size="lg"
+      class="w-full"
       :disabled="disabled || nothingAvailable"
       @click="emit('export', { container, profile, filename, conflict })"
     >
@@ -225,10 +233,16 @@ const refusalMessage = computed(() => {
       v-else-if="state?.status === 'done' && state.outputPath"
       :path="state.outputPath"
     />
-  </CollapsiblePanel>
+  </div>
 </template>
 
 <style scoped>
+.export-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 /* O mesmo campo do padrao de nome da Compressao (CompressionExportPanel.vue). */
 .name-input {
   width: min(180px, 100%);
