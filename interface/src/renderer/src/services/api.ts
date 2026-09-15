@@ -78,6 +78,8 @@ export interface OutputTarget {
   format: string
   directory?: string | null
   filename?: string | null
+  /** Qualidade da codificacao; so' o Audio a le, e so' em formato com perda. */
+  profile?: Profile | null
   conflict?: ConflictMode
 }
 
@@ -324,6 +326,10 @@ export async function createLocalJob(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ media_request: mediaRequest, adjustments })
   })
+  // 422 com `reason` (formato indisponivel, falta de espaco...) chega com a
+  // chave, para a tela escrever a frase na lingua do app. O 409 de conflito
+  // segue como `CONFLICT:<caminho>` (extractError).
+  if (res.status === 422) throw await componentActionError(res)
   if (!res.ok) throw new Error(await extractError(res))
   const data = await res.json()
   return data.id as string

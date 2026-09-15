@@ -45,7 +45,26 @@
     "processingTitle": "Processamento",
     "speechDescription": "Locução, podcast, entrevista — uma voz em primeiro plano",
     "speechLabel": "Fala / voz",
-    "unsupportedFormat": "Formato não suportado: {name}"
+    "unsupportedFormat": "Formato não suportado: {name}",
+    "export": {
+      "title": "Exportação",
+      "description": "Formato, qualidade e onde guardar",
+      "format": "Formato",
+      "keep": "Igual ao original",
+      "qualityLabel": "Qualidade",
+      "quality": {
+        "fast": "Ficheiro mais pequeno (192 kbps)",
+        "balanced": "Equilibrada (256 kbps)",
+        "quality": "Máxima (320 kbps)"
+      },
+      "destination": "Destino",
+      "sameFolder": "Mesma pasta do original",
+      "refusal": {
+        "format_unavailable": "Este formato de áudio não é suportado.",
+        "encoder_unavailable": "Este computador não grava este formato.",
+        "insufficient_disk": "Não há espaço em disco para o resultado."
+      }
+    }
   },
   "components": {
     "actions": {

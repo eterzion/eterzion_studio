@@ -564,10 +564,17 @@ def _video_output_path(job_id: str) -> str:
     return os.path.join(settings.outputs_dir, f'{job_id}.mp4')
 
 
-def _audio_output_path(job_id: str, input_path: str) -> str:
-    """Same reasoning as _video_output_path — app.processing's audio pipeline
-    writes the real, final result directly, preserving the original file's
-    format."""
+def _audio_output_path(job_id: str, input_path: str, params: dict | None = None, *,
+                       musica: bool = False) -> str:
+    """Where the audio pipeline writes, inside the app's own folder.
+
+    WAV -- sem perda -- quando o resultado ainda vai ser entregue num destino
+    (app/exportacao_de_audio.py codifica uma vez so', no formato pedido), e
+    sempre para musica: a restauracao produz WAV, e com a extensao do original
+    uma musica .mp3 saia chamada .mp3 com conteudo WAV. Voz sem destino (clientes
+    antigos) segue no formato do original, como antes."""
+    if musica or (params or {}).get('output_path'):
+        return os.path.join(settings.outputs_dir, f'{job_id}.wav')
     ext = os.path.splitext(input_path)[1] or '.wav'
     return os.path.join(settings.outputs_dir, f'{job_id}{ext}')
 
@@ -852,6 +859,32 @@ def _entregar_video(job: dict, params: dict, interno: str) -> str:
     with destino.gravacao_segura(
             final, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temporario:
         shutil.move(interno, temporario)
+    return final
+
+
+def _entregar_audio(job: dict, params: dict, intermediario: str, on_stage) -> str:
+    """Codifica o intermediario WAV no formato pedido, direto num temporario na
+    pasta do destino (app/destino.py, app/exportacao_de_audio.py)."""
+    from app import destino, exportacao_de_audio
+
+    alvo = params.get('output_target') or {}
+    final = destino.confirmar_antes_de_gravar(
+        params['output_path'], alvo.get('conflict', 'rename'), destino.SUFIXOS['audio'])
+    formato = os.path.splitext(final)[1].lstrip('.').lower()
+    if on_stage:
+        on_stage('Exportando')
+    try:
+        with destino.gravacao_segura(
+                final, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temporario:
+            exportacao_de_audio.codificar(intermediario, temporario, formato, alvo.get('profile'))
+    finally:
+        # O intermediario nao e' resultado de ninguem depois da entrega -- nem
+        # de uma entrega que falhou.
+        if os.path.exists(intermediario):
+            try:
+                os.remove(intermediario)
+            except OSError:
+                pass
     return final
 
 
@@ -1189,7 +1222,7 @@ async def _process_job(job_id: str) -> None:
 
             modo = audio_mode if audio_mode in ('auto_master', 'restore', 'restore_master') else 'auto_master'
 
-            output_path = _audio_output_path(job_id, job['input_path'])
+            output_path = _audio_output_path(job_id, job['input_path'], params, musica=True)
             os.makedirs(os.path.dirname(os.path.abspath(output_path)) or '.', exist_ok=True)
             if on_stage:
                 on_stage('Analisando e restaurando áudio')
@@ -1210,9 +1243,13 @@ async def _process_job(job_id: str) -> None:
                     'outcome': result.quality_verdict.outcome,
                     'reasons': result.quality_verdict.reasons,
                 }
+            resultado_musica = {'source_size': (0, 0), 'output_size': (0, 0),
+                                'internal_path': output_path}
+            if params.get('output_path'):
+                resultado_musica['delivered_path'] = _entregar_audio(job, params, output_path, on_stage)
             if on_progress:
                 on_progress(100)
-            return {'source_size': (0, 0), 'output_size': (0, 0)}
+            return resultado_musica
 
         from app import licensing
 
@@ -1248,7 +1285,7 @@ async def _process_job(job_id: str) -> None:
         is_video = job.get('media_type') == 'video'
         is_audio = job.get('media_type') == 'audio'
         if is_audio:
-            output_path = _audio_output_path(job_id, job['input_path'])
+            output_path = _audio_output_path(job_id, job['input_path'], params)
         elif is_video:
             output_path = _video_output_path(job_id)
         else:
@@ -1289,6 +1326,10 @@ async def _process_job(job_id: str) -> None:
             if params.get('output_path'):
                 upscale_result = {**upscale_result,
                                   'delivered_path': _entregar_video(job, params, output_path)}
+        if is_audio:
+            upscale_result = {**upscale_result, 'internal_path': output_path}
+            if params.get('output_path'):
+                upscale_result['delivered_path'] = _entregar_audio(job, params, output_path, on_stage)
         return upscale_result
 
     cancelamento = Cancelamento()
@@ -1357,7 +1398,8 @@ async def _process_job(job_id: str) -> None:
             # No pixel dimensions for audio (SizeMeta.width/height stay None,
             # same as compress/convert) — duration/channels live in `params`
             # via audio_meta instead, there is no dedicated schema field for them.
-            audio_path = _audio_output_path(job_id, job['input_path'])
+            audio_path = (result_meta.get('delivered_path') or result_meta.get('internal_path')
+                          or _audio_output_path(job_id, job['input_path'], job.get('params')))
             job['output_path'] = audio_path
             job['source_meta'] = {
                 'width': None, 'height': None,

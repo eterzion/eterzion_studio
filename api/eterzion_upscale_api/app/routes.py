@@ -42,7 +42,7 @@ from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvai
                          ExportFormat, ExportRequest,
                          ImageExportOptionsResponse, ImageFormatAvailability,
                          LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
-                         MediaHandleResponse, MediaRequest, VideoCeilingsResponse,
+                         MediaHandleResponse, MediaRequest, OutputTarget, VideoCeilingsResponse,
                          VideoExportOptionsResponse, VideoExportRequest,
                          VideoPreviewFrameRequest)
 from eterzion_upscale.media import image_format_works
@@ -365,24 +365,55 @@ async def create_job(file: UploadFile, media_request: str = Form(...), adjustmen
     return {'id': job_id, 'estimated_duration': capacity_result.estimated_duration if capacity_result else None}
 
 
-def _destino_do_upscale_de_video(media_request: MediaRequest, input_path: str) -> str | None:
-    """Onde o upscale de video e' entregue, resolvido antes do job (app/destino.py).
+def _destino_do_resultado(media_request: MediaRequest, input_path: str) -> str | None:
+    """Onde o resultado de um job de melhoria e' entregue, resolvido antes do
+    job (app/destino.py) -- e' o que deixa "perguntar" perguntar antes de
+    processar, e as recusas virem antes do trabalho.
 
-    Antes o resultado ficava so' na pasta interna do app, com o nome do job: a
-    pasta escolhida no painel de exportacao era ignorada. Sem `output_target`
-    (clientes antigos), continua la'. O formato e' sempre MP4 -- e' o que o
-    upscale produz."""
+    Video: sempre MP4, que e' o que o upscale produz. Audio: o formato pedido
+    (ou o do original), com as recusas de formato e de espaco
+    (app/exportacao_de_audio.py). Antes os dois ficavam so' na pasta interna do
+    app, com o nome do job. Sem `output_target` (clientes antigos), continuam
+    la'. A Imagem ainda exporta pela rota propria."""
     alvo = media_request.output_target
-    if media_request.media_type != 'video' or media_request.operation != 'enhance' or alvo is None:
+    if media_request.operation != 'enhance' or alvo is None:
+        return None
+    if media_request.media_type == 'video':
+        extensao, sufixo = 'mp4', destino_de_exportacao.SUFIXOS['video_upscale']
+    elif media_request.media_type == 'audio':
+        extensao, sufixo = _formato_de_audio(alvo, input_path), destino_de_exportacao.SUFIXOS['audio']
+    else:
         return None
     try:
-        return destino_de_exportacao.resolver(
-            input_path, pasta=alvo.directory, nome=alvo.filename, extensao='mp4',
-            sufixo=destino_de_exportacao.SUFIXOS['video_upscale'], conflito=alvo.conflict,
-            pasta_padrao=settings.outputs_dir)
+        caminho = destino_de_exportacao.resolver(
+            input_path, pasta=alvo.directory, nome=alvo.filename, extensao=extensao,
+            sufixo=sufixo, conflito=alvo.conflict, pasta_padrao=settings.outputs_dir)
     except destino_de_exportacao.ConflitoDeDestino as error:
         raise HTTPException(409, {'reason': 'conflict', 'message': str(error),
                                   'path': error.caminho}) from error
+    if media_request.media_type == 'audio':
+        _verificar_exportacao_de_audio(extensao, alvo.profile, input_path, os.path.dirname(caminho))
+    return caminho
+
+
+def _formato_de_audio(alvo: OutputTarget, input_path: str) -> str:
+    from app import exportacao_de_audio
+
+    return exportacao_de_audio.formato_de_saida(alvo.format, input_path)
+
+
+def _verificar_exportacao_de_audio(formato: str, perfil: str | None, input_path: str, pasta: str) -> None:
+    from app import exportacao_de_audio
+    from eterzion_upscale.media import ProbeError, probe_streams
+
+    try:
+        duracao = probe_streams(input_path)['duration_seconds']
+    except ProbeError:
+        duracao = None
+    try:
+        exportacao_de_audio.verificar(formato, duracao_segundos=duracao, perfil=perfil, pasta=pasta)
+    except exportacao_de_audio.RecusaDeAudio as error:
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error), **error.detail}) from error
 
 
 @jobs_router.post('/local')
@@ -405,7 +436,7 @@ def create_job_local(payload: LocalJobRequest):
                        f'{capacity_result.limiting_resource}).',
             'limiting_resource': capacity_result.limiting_resource,
         })
-    destino_final = _destino_do_upscale_de_video(payload.media_request, input_path)
+    destino_final = _destino_do_resultado(payload.media_request, input_path)
     secondary_elements = _detect_secondary_elements(payload.media_request, input_path)
     params = _build_job_params(payload.media_request, payload.adjustments)
     if destino_final is not None:

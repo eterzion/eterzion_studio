@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import TopBar from '../components/TopBar.vue'
 import AppSelect from '../components/AppSelect.vue'
@@ -8,7 +8,20 @@ import StatusBadge from '../components/atoms/StatusBadge.vue'
 import UploadZone from '../components/UploadZone.vue'
 import MediaEditorShell from '../components/MediaEditorShell.vue'
 import CollapsiblePanel from '../components/CollapsiblePanel.vue'
-import { Upload, FolderOpen, AlertCircle, Download, Cpu, CircleX, Sparkles } from '@lucide/vue'
+import AudioExportPanel, { type AudioExport } from '../components/audio/AudioExportPanel.vue'
+import ConflictDialog from '../components/ConflictDialog.vue'
+import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
+import { settingsState } from '../store/settings'
+import {
+  Upload,
+  FolderOpen,
+  AlertCircle,
+  Download,
+  Cpu,
+  CircleX,
+  Sparkles,
+  FileOutput
+} from '@lucide/vue'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import {
   createLocalJob,
@@ -17,6 +30,8 @@ import {
   getJob,
   cancelJob as apiCancelJob,
   defaultAdjustments,
+  ComponentActionError,
+  type ConflictMode,
   type ContentType,
   type Profile
 } from '../services/api'
@@ -87,6 +102,20 @@ const contentTypeOptions = computed<{ value: ContentType; label: string; descrip
 
 const importError = ref<string | null>(null)
 
+// A exportacao, com as regras dos outros modos (app/destino.py). Antes o
+// resultado ficava so' na pasta interna do app, no formato do original.
+const exportOptions = ref<AudioExport>({
+  format: 'keep',
+  profile: 'balanced',
+  directory: settingsState.defaultOutputFolder,
+  filename: null,
+  conflict: 'rename'
+})
+const pergunta = usePerguntaDeConflito()
+
+// As recusas que o backend faz antes do job, com a frase na lingua do app.
+const RECUSAS = new Set(['format_unavailable', 'encoder_unavailable', 'insufficient_disk'])
+
 // The list and the selection live in store/audioQueue.ts. The screen still
 // edits one file at a time while the strip keeps the rest one click away — but
 // the Início queue has to see this list too, and a ref inside this component is
@@ -97,6 +126,9 @@ const activeId = computed({
   set: (value: string | null) => (audioQueue.activeId = value)
 })
 const activeJob = computed(() => jobs.value.find((j) => j.id === activeId.value) ?? null)
+
+// O nome digitado e' de um arquivo; trocar de arquivo volta ao nome do original.
+watch(activeId, () => (exportOptions.value.filename = null))
 
 function statusLabel(status: LocalStatus): string {
   return t(`localStatus.${status}`)
@@ -192,7 +224,13 @@ async function cancelJob(job: AudioJob): Promise<void> {
   job.backendJobId = null
 }
 
-async function runJob(job: AudioJob): Promise<void> {
+/** `filename` so' vale para o arquivo ativo: "Processar todos" usa o nome de
+ *  cada original, ou todos disputariam o mesmo nome. */
+async function runJob(
+  job: AudioJob,
+  filename: string | null = null,
+  conflict: ConflictMode = exportOptions.value.conflict
+): Promise<void> {
   job.status = 'queued'
   job.progress = 0
   job.error = undefined
@@ -204,7 +242,14 @@ async function runJob(job: AudioJob): Promise<void> {
         input_path: job.file.path,
         content_type_override: job.contentType,
         profile: job.profile,
-        device: job.device
+        device: job.device,
+        output_target: {
+          format: exportOptions.value.format,
+          profile: exportOptions.value.profile,
+          directory: exportOptions.value.directory,
+          filename,
+          conflict
+        }
       },
       defaultAdjustments()
     )
@@ -244,8 +289,19 @@ async function runJob(job: AudioJob): Promise<void> {
       }
     )
   } catch (error) {
+    const message = error instanceof Error ? error.message : ''
+    if (message.startsWith('CONFLICT:')) {
+      // Nada foi processado: o backend recusou antes de criar o job.
+      const resposta = await pergunta.perguntar(message.slice('CONFLICT:'.length))
+      if (resposta) return runJob(job, filename, resposta)
+      job.status = 'configuring'
+      return
+    }
     job.status = 'error'
-    job.error = error instanceof Error ? error.message : 'Falha ao criar o job.'
+    job.error =
+      error instanceof ComponentActionError && error.reason && RECUSAS.has(error.reason)
+        ? t(`audio.export.refusal.${error.reason}`)
+        : message || 'Falha ao criar o job.'
     syncHistory(job)
   }
 }
@@ -366,9 +422,20 @@ function exportAll(): void {
                 </div>
               </CollapsiblePanel>
 
-              <AppButton variant="primary" size="lg" @click="runJob(activeJob)">{{
-                t('imageEditor.process')
-              }}</AppButton>
+              <CollapsiblePanel
+                :title="t('audio.export.title')"
+                :description="t('audio.export.description')"
+                :icon="FileOutput"
+              >
+                <AudioExportPanel v-model="exportOptions" :source-name="activeJob.file.name" />
+              </CollapsiblePanel>
+
+              <AppButton
+                variant="primary"
+                size="lg"
+                @click="runJob(activeJob, exportOptions.filename)"
+                >{{ t('imageEditor.process') }}</AppButton
+              >
             </div>
 
             <div v-else class="panel-section">
@@ -412,6 +479,7 @@ function exportAll(): void {
         </template>
       </MediaEditorShell>
     </div>
+    <ConflictDialog :caminho="pergunta.caminho.value" @responder="pergunta.responder" />
   </div>
 </template>
 

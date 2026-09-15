@@ -45,7 +45,26 @@
     "processingTitle": "처리",
     "speechDescription": "내레이션, 팟캐스트, 인터뷰 — 목소리가 앞에 있는 소리",
     "speechLabel": "음성 / 목소리",
-    "unsupportedFormat": "지원하지 않는 형식: {name}"
+    "unsupportedFormat": "지원하지 않는 형식: {name}",
+    "export": {
+      "title": "내보내기",
+      "description": "형식, 품질, 저장 위치",
+      "format": "형식",
+      "keep": "원본과 동일",
+      "qualityLabel": "품질",
+      "quality": {
+        "fast": "작은 파일 (192 kbps)",
+        "balanced": "균형 (256 kbps)",
+        "quality": "최고 (320 kbps)"
+      },
+      "destination": "저장 위치",
+      "sameFolder": "원본과 같은 폴더",
+      "refusal": {
+        "format_unavailable": "지원하지 않는 오디오 형식입니다.",
+        "encoder_unavailable": "이 컴퓨터에서는 이 형식으로 저장할 수 없습니다.",
+        "insufficient_disk": "결과를 저장할 디스크 공간이 부족합니다."
+      }
+    }
   },
   "components": {
     "actions": {

@@ -59,6 +59,9 @@ class OutputTarget(BaseModel):
     directory: str | None = None
     filename: str | None = None
     conflict: ConflictMode = 'rename'
+    # A qualidade da codificacao, como na exportacao do Video. So' o Audio a
+    # le, e so' em formato com perda (app/exportacao_de_audio.py).
+    profile: Profile | None = None
 
 
 class MediaRequest(BaseModel):
