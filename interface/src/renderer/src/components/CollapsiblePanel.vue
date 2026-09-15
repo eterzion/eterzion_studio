@@ -48,9 +48,17 @@ const open = ref(props.defaultOpen)
   padding: var(--space-3);
   background: transparent;
   border: none;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  /* Fechado, o cabecalho e' o painel inteiro: os quatro cantos arredondados,
+     ou o hover e o contorno de foco saem com os cantos de baixo quadrados.
+     Aberto, so' os de cima -- embaixo continua o corpo. 1px a menos que o
+     painel, para a curva acompanhar a de dentro da borda. */
+  border-radius: calc(var(--radius-md) - 1px);
   cursor: pointer;
   text-align: left;
+}
+
+.panel-header[aria-expanded='true'] {
+  border-radius: calc(var(--radius-md) - 1px) calc(var(--radius-md) - 1px) 0 0;
 }
 
 .panel-header:hover {
