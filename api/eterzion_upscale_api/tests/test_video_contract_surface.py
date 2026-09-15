@@ -51,7 +51,6 @@ ALLOWED_IMPLEMENTATION_LOOKALIKES = frozenset({'preset_id'})
 PRE_EXISTING_PATH_ROUTES = {
     ('/jobs', 'post'),
     ('/jobs/local', 'post'),
-    ('/jobs/{job_id}/export', 'post'),
     ('/preview/denoise', 'post'),
     ('/content-type/detect', 'post'),
     ('/jobs/detect-content-type', 'post'),

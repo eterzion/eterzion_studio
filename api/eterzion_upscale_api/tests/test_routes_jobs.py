@@ -199,46 +199,6 @@ class TestProcessJob:
         assert res.status_code == 409
 
 
-class TestExportJobRoute:
-    def test_returns_404_for_unknown_job(self, client, tmp_path):
-        res = client.post('/jobs/job_ghost/export', json={
-            'format': 'png', 'quality': 90, 'output_dir': str(tmp_path), 'conflict': 'rename',
-        })
-        assert res.status_code == 404
-
-    def test_returns_409_for_a_job_not_yet_done(self, client, real_input_file, tmp_path):
-        job_id = client.post('/jobs/local', json=_local_body(real_input_file)).json()['id']
-        res = client.post(f'/jobs/{job_id}/export', json={
-            'format': 'png', 'quality': 90, 'output_dir': str(tmp_path), 'conflict': 'rename',
-        })
-        assert res.status_code == 409
-
-    def test_exports_a_done_job_and_renames_on_conflict(self, client, real_input_file, tmp_path, fake_supervisor):
-        from app import jobs as job_manager
-
-        fake_supervisor.configure_result((10, 10), (20, 20))
-        job_id = client.post('/jobs/local', json=_local_body(real_input_file)).json()['id']
-        job_manager.jobs[job_id]['status'] = 'queued'
-        import asyncio
-
-        asyncio.run(job_manager._process_job(job_id))
-        assert job_manager.get_job(job_id)['status'] == 'done'
-
-        out_dir = tmp_path / 'out'
-        out_dir.mkdir()
-        existing = out_dir / f'{job_id}_upscaled.png'
-        existing.write_bytes(b'pre-existing file')  # forces the 'rename' branch
-
-        res = client.post(f'/jobs/{job_id}/export', json={
-            'format': 'png', 'quality': 90, 'output_dir': str(out_dir),
-            'filename': f'{job_id}_upscaled.png', 'conflict': 'rename',
-        })
-        assert res.status_code == 200
-        output_path = res.json()['output_path']
-        assert output_path != str(existing)  # renamed, did not overwrite
-        assert existing.read_bytes() == b'pre-existing file'  # original untouched
-
-
 class TestLicenseGate:
     """T016: POST /jobs* must refuse before creating/enqueueing a job when the
     license gate says no — real gate function, only its network call is faked

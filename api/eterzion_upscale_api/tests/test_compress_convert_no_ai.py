@@ -127,33 +127,9 @@ def test_compress_job_resizes_to_the_exact_requested_dimensions(tmp_path):
     assert job['output_meta']['width'] == 120 and job['output_meta']['height'] == 90
 
 
-def test_export_falls_back_to_the_result_when_a_job_has_no_master(tmp_path, monkeypatch):
-    """Only an enhance job caches a lossless master to re-encode from. A
-    compress job's real result is the file optimize_file() already wrote, and
-    the export panel has to be able to re-encode from that instead."""
-    from app.config import settings
-
-    outputs = tmp_path / 'outputs'
-    outputs.mkdir()
-    monkeypatch.setattr(settings, 'outputs_dir', str(outputs))
-
-    input_path = _write_test_image(tmp_path / 'in.jpg')
-    job_id = job_manager.create_job(
-        input_path, 'in.jpg', {'quality': 80, 'adjustments': {}},
-        media_type='image', operation='compress',
-    )
-    job_manager.jobs[job_id]['status'] = 'queued'
-    asyncio.run(job_manager._process_job(job_id))
-    assert not os.path.isfile(job_manager._master_path(job_id))
-
-    exported = str(tmp_path / 'exported.png')
-    job_manager.export_job(job_id, exported, quality=90)
-    assert cv2.imread(exported) is not None
-
-
 def test_scale_1x_runs_the_filters_and_never_resolves_a_model(tmp_path, spy_on_ai_paths):
     """The Imagem screen's Original mode. It writes the job's master like an
-    enhance job (so export still works), applies the post-processing filters,
+    enhance job (the same delivery follows), applies the post-processing filters,
     and may shrink — but resolves no engine and loads no model, which is what
     made it slow enough to look hung when it went through the model path."""
     input_path = _write_test_image(tmp_path / 'in.jpg', size=200)

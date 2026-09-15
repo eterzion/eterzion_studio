@@ -114,7 +114,7 @@ export function recordJob(job: Job, status: JobStatus): void {
     entry.newHeight = job.outputMeta.height
     entry.outputSizeBytes = job.outputMeta.sizeBytes ?? undefined
   }
-  if (job.lastExportPath) entry.outputPath = job.lastExportPath
+  if (job.outputPath) entry.outputPath = job.outputPath
   if (status === 'done' || status === 'error' || status === 'cancelled') {
     entry.completedAt = Date.now()
   }

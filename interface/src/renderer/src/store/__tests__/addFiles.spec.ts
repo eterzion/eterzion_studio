@@ -33,14 +33,13 @@ vi.mock('../../services/api', () => ({
   createJob: vi.fn(),
   processJob: vi.fn(),
   getJobStatus: vi.fn(),
-  exportJob: vi.fn(),
   cancelJob: vi.fn(),
   errorCategoryCopy: () => ({ message: '', action: '' })
 }))
 
 vi.mock('../history', () => ({ recordJob: vi.fn(), recordSimpleJob: vi.fn() }))
 vi.mock('../settings', () => ({
-  settingsState: { defaultScalePreset: 2, defaultLockAspectRatio: true, defaultQuality: 90 }
+  settingsState: { defaultScalePreset: 2, defaultLockAspectRatio: true }
 }))
 
 /** A fake <img> whose load only completes once every pending one has begun. */

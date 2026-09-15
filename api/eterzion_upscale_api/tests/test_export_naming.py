@@ -1,27 +1,30 @@
-"""Export file naming, and the guarantee that the source survives it.
+"""A Imagem numa etapa so', e a garantia de que a origem sobrevive a ela.
 
-The default output name is the source's own name. That is what people expect
-and what they were renaming files by hand to get — but it also means the
-default output path and the default input path are the same path, because the
-default destination is the source's own folder. Principle XV calls that out by
-name ("Output never lands on the input") and forbids resolving it by
-overwriting, including when the caller explicitly asked for 'overwrite': that
-instruction is about replacing some other file, not about destroying the
-original being worked from.
+O nome padrao do resultado e' o do original, e a pasta padrao e' a do original
+-- entao, por construcao, o destino padrao e' a propria origem quando o formato
+nao muda. O Principio XV proibe resolver isso sobrescrevendo, inclusive com
+"sobrescrever": essa instrucao e' sobre outro arquivo, nunca sobre o original
+de onde a pessoa esta' partindo.
 
-The helpers are tested directly for the edge cases, and the guarantee itself is
-tested through the real route — a test that stops at the helpers passes with the
-guard deleted, which was the first version of this file.
+Antes a exportacao era uma segunda etapa, por uma rota propria com as proprias
+regras de nome. Agora o destino e' resolvido pelo nucleo comum
+(app/destino.py) quando o job e' criado, e o job entrega o resultado. Os testes
+passam pela rota e pelo job de verdade e leem o disco depois -- um teste que
+parasse nos ajudantes passaria com a guarda apagada.
 """
 from __future__ import annotations
 
+import asyncio
 import os
 
+import cv2
+import numpy as np
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app import routes
+from app import jobs
+from app.config import settings
 from app.routes import jobs_router
 
 
@@ -32,140 +35,110 @@ def client():
     return TestClient(app)
 
 
-class TestSameFileDetection:
-    def test_identical_path_is_the_same_file(self, tmp_path):
-        source = tmp_path / 'foto.png'
-        source.write_bytes(b'x')
-        assert routes._is_same_file(str(source), str(source)) is True
-
-    def test_a_different_name_in_the_same_folder_is_not(self, tmp_path):
-        source = tmp_path / 'foto.png'
-        source.write_bytes(b'x')
-        assert routes._is_same_file(str(tmp_path / 'outra.png'), str(source)) is False
-
-    def test_the_same_file_reached_by_a_messier_path_is_still_the_same_file(self, tmp_path):
-        """`.` and `..` segments must not be a way past the check."""
-        source = tmp_path / 'foto.png'
-        source.write_bytes(b'x')
-        detour = tmp_path / 'sub' / '..' / 'foto.png'
-        (tmp_path / 'sub').mkdir()
-        assert routes._is_same_file(str(detour), str(source)) is True
-
-    def test_case_differences_are_the_same_file_on_a_case_insensitive_filesystem(self, tmp_path):
-        """Windows: FOTO.png and foto.png are one file, and exporting to the
-        other spelling would still land on the source."""
-        source = tmp_path / 'foto.png'
-        source.write_bytes(b'x')
-        same = routes._is_same_file(str(tmp_path / 'FOTO.png'), str(source))
-        assert same is (os.path.normcase('A') == os.path.normcase('a'))
-
-    def test_a_path_that_does_not_exist_yet_is_compared_textually(self, tmp_path):
-        """The normal case: the output has not been written, so samefile()
-        cannot be asked and the textual comparison has to carry the check."""
-        source = tmp_path / 'foto.png'
-        source.write_bytes(b'x')
-        assert routes._is_same_file(str(tmp_path / 'foto.png'), str(source)) is True
+@pytest.fixture
+def interna(tmp_path, monkeypatch):
+    pasta = tmp_path / 'interna'
+    pasta.mkdir()
+    monkeypatch.setattr(settings, 'outputs_dir', str(pasta))
+    return pasta
 
 
-class TestSuffixing:
-    def test_suffix_goes_before_the_extension(self):
-        assert routes._suffixed(os.path.join('d', 'foto.png')) == os.path.join('d', 'foto_upscaled.png')
+@pytest.fixture
+def foto(tmp_path):
+    caminho = tmp_path / 'foto.png'
+    ok, dados = cv2.imencode('.png', np.full((10, 10, 3), 90, dtype=np.uint8))
+    assert ok
+    caminho.write_bytes(dados.tobytes())
+    return caminho
 
-    def test_a_name_with_dots_keeps_only_the_real_extension(self):
-        assert routes._suffixed('a.b.c.png').endswith('a.b.c_upscaled.png')
 
-    def test_free_path_returns_the_name_itself_when_nothing_is_there(self, tmp_path):
-        candidate = str(tmp_path / 'foto.png')
-        assert routes._free_path(candidate) == candidate
-
-    def test_free_path_counts_up_past_every_taken_name(self, tmp_path):
-        (tmp_path / 'foto.png').write_bytes(b'x')
-        (tmp_path / 'foto (1).png').write_bytes(b'x')
-        (tmp_path / 'foto (2).png').write_bytes(b'x')
-        assert routes._free_path(str(tmp_path / 'foto.png')) == str(tmp_path / 'foto (3).png')
+def _processar(client, foto, **alvo) -> dict:
+    corpo = {'media_request': {
+        'media_type': 'image', 'operation': 'enhance', 'content_type_override': 'photo',
+        'scale': '4x', 'input_path': str(foto), 'output_target': {'format': 'png', **alvo},
+    }}
+    r = client.post('/jobs/local', json=corpo)
+    assert r.status_code == 200, r.text
+    job_id = r.json()['id']
+    jobs.jobs[job_id]['status'] = 'queued'
+    asyncio.run(jobs._process_job(job_id))
+    job = jobs.get_job(job_id)
+    assert job['status'] == 'done', job.get('error')
+    return job
 
 
 class TestTheSourceIsNeverTheDestination:
-    """Principle XV, through the real route.
-
-    An earlier version of this class composed _is_same_file and _suffixed in a
-    helper of its own and asserted on that. It passed with the guard deleted
-    from routes.py — it was testing an imitation of the route, which protects
-    nothing. These drive POST /jobs/{id}/export and read the filesystem
-    afterwards.
-    """
-
-    @staticmethod
-    def _done_job(client, jobs_module, fake_supervisor, input_path):
-        import asyncio
-
-        fake_supervisor.configure_result((10, 10), (20, 20))
-        body = {
-            'media_request': {
-                'media_type': 'image', 'operation': 'enhance',
-                'content_type_override': 'photo', 'scale': '4x',
-                'input_path': input_path,
-            }
-        }
-        job_id = client.post('/jobs/local', json=body).json()['id']
-        jobs_module.jobs[job_id]['status'] = 'queued'
-        asyncio.run(jobs_module._process_job(job_id))
-        assert jobs_module.get_job(job_id)['status'] == 'done'
-        return job_id
-
-    def test_default_export_does_not_land_on_the_source(
-        self, client, real_input_file, fake_supervisor
-    ):
-        """No filename and no output_dir: both default to the source's own,
-        which is exactly the collision Principle XV is about."""
-        from app import jobs as jobs_module
-
-        before = open(real_input_file, 'rb').read()
-        job_id = self._done_job(client, jobs_module, fake_supervisor, real_input_file)
-
-        res = client.post(f'/jobs/{job_id}/export', json={
-            'format': 'png', 'quality': 90, 'conflict': 'overwrite',
-        })
-        assert res.status_code == 200
-        output_path = res.json()['output_path']
-
-        assert not routes._is_same_file(output_path, real_input_file)
-        assert output_path.endswith('_upscaled.png')
-        assert open(real_input_file, 'rb').read() == before, 'a origem foi alterada'
+    def test_default_does_not_land_on_the_source(self, client, foto, interna, fake_supervisor):
+        antes = foto.read_bytes()
+        job = _processar(client, foto)
+        assert job['output_path'] == str(foto.parent / 'foto_upscaled.png')
+        assert foto.read_bytes() == antes, 'a origem foi alterada'
 
     def test_explicit_overwrite_of_the_source_name_still_spares_the_source(
-        self, client, real_input_file, fake_supervisor
-    ):
-        """Naming the source file outright, with conflict='overwrite'. The
-        instruction is honoured for other files; it never gets to mean "destroy
-        what I am working from"."""
-        from app import jobs as jobs_module
-
-        before = open(real_input_file, 'rb').read()
-        job_id = self._done_job(client, jobs_module, fake_supervisor, real_input_file)
-
-        res = client.post(f'/jobs/{job_id}/export', json={
-            'format': 'png', 'quality': 90, 'conflict': 'overwrite',
-            'output_dir': os.path.dirname(real_input_file),
-            'filename': os.path.basename(real_input_file),
-        })
-        assert res.status_code == 200
-        assert open(real_input_file, 'rb').read() == before, 'a origem foi sobrescrita'
+            self, client, foto, interna, fake_supervisor):
+        antes = foto.read_bytes()
+        job = _processar(client, foto, filename='foto', conflict='overwrite')
+        assert job['output_path'] == str(foto.parent / 'foto_upscaled.png')
+        assert foto.read_bytes() == antes, 'a origem foi alterada'
 
     def test_a_different_folder_keeps_the_plain_source_name(
-        self, client, real_input_file, fake_supervisor, tmp_path
-    ):
-        """The point is to avoid the file, not the name: somewhere else, the
-        export is simply called what the source is called."""
-        from app import jobs as jobs_module
+            self, client, foto, interna, tmp_path, fake_supervisor):
+        saida = tmp_path / 'saida'
+        job = _processar(client, foto, directory=str(saida))
+        assert job['output_path'] == str(saida / 'foto.png')
 
-        job_id = self._done_job(client, jobs_module, fake_supervisor, real_input_file)
-        out_dir = tmp_path / 'out'
-        out_dir.mkdir()
 
-        res = client.post(f'/jobs/{job_id}/export', json={
-            'format': 'png', 'quality': 90, 'conflict': 'rename',
-            'output_dir': str(out_dir),
-        })
-        assert res.status_code == 200
-        assert os.path.basename(res.json()['output_path']) == 'input.png'
+class TestOneStep:
+    def test_the_result_is_in_the_destination_and_no_master_is_left(
+            self, client, foto, interna, tmp_path, fake_supervisor):
+        saida = tmp_path / 'saida'
+        job = _processar(client, foto, format='jpg', directory=str(saida), profile='quality')
+        destino = saida / 'foto.jpg'
+        assert job['output_path'] == str(destino)
+        assert destino.read_bytes()[:2] == b'\xff\xd8', 'deveria ser JPEG de verdade'
+        assert job['output_meta']['size_bytes'] == destino.stat().st_size
+        assert list(interna.iterdir()) == [], 'o master ficou para tras'
+
+    def test_without_a_destination_the_result_stays_inside(
+            self, client, foto, interna, fake_supervisor):
+        corpo = {'media_request': {
+            'media_type': 'image', 'operation': 'enhance', 'content_type_override': 'photo',
+            'scale': '4x', 'input_path': str(foto)}}
+        job_id = client.post('/jobs/local', json=corpo).json()['id']
+        jobs.jobs[job_id]['status'] = 'queued'
+        asyncio.run(jobs._process_job(job_id))
+        assert jobs.get_job(job_id)['output_path'] == str(interna / f'{job_id}_master.png')
+
+    def test_ask_refuses_with_409_before_the_job(self, client, foto, tmp_path):
+        (tmp_path / 'foto.webp').write_bytes(b'ja existe')
+        antes = set(jobs.jobs)
+        corpo = {'media_request': {
+            'media_type': 'image', 'operation': 'enhance', 'content_type_override': 'photo',
+            'scale': '4x', 'input_path': str(foto),
+            'output_target': {'format': 'webp', 'conflict': 'ask'}}}
+        r = client.post('/jobs/local', json=corpo)
+        assert r.status_code == 409
+        assert r.json()['detail']['path'] == str(tmp_path / 'foto.webp')
+        assert set(jobs.jobs) == antes
+
+    def test_unknown_format_is_refused_before_the_job(self, client, foto):
+        corpo = {'media_request': {
+            'media_type': 'image', 'operation': 'enhance', 'content_type_override': 'photo',
+            'scale': '4x', 'input_path': str(foto), 'output_target': {'format': 'bmp'}}}
+        r = client.post('/jobs/local', json=corpo)
+        assert r.status_code == 422
+        assert r.json()['detail']['reason'] == 'format_unavailable'
+
+
+def test_profile_sets_the_jpeg_quality(tmp_path):
+    from app import exportacao_de_imagem
+
+    ruido = np.random.default_rng(1).integers(0, 255, (64, 64, 3), dtype=np.uint8)
+    tamanhos = {}
+    for perfil in ('fast', 'quality'):
+        intermediario = tmp_path / f'{perfil}.png'
+        cv2.imwrite(str(intermediario), ruido)
+        saida = tmp_path / f'{perfil}.jpg'
+        exportacao_de_imagem.codificar(str(intermediario), str(saida), 'jpg', perfil)
+        tamanhos[perfil] = os.path.getsize(saida)
+    assert tamanhos['quality'] > tamanhos['fast']

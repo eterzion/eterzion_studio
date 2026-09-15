@@ -27,7 +27,6 @@ import NumberStepper from '../components/NumberStepper.vue'
 import SettingSwitch from '../components/SettingSwitch.vue'
 import SegmentedControl from '../components/SegmentedControl.vue'
 import AppSelect from '../components/AppSelect.vue'
-import RangeSlider from '../components/RangeSlider.vue'
 import AppButton from '../components/atoms/AppButton.vue'
 import ProgressBar from '../components/atoms/ProgressBar.vue'
 import { settingsState, setTheme, setLanguage } from '../store/settings'
@@ -448,15 +447,15 @@ const outputFolderLabel = computed(
               :label="t('settings.imageQuality')"
               :description="t('settings.imageQualityDescription')"
             >
-              <div class="quality-control">
-                <RangeSlider
-                  v-model="settingsState.defaultQuality"
-                  :min="1"
-                  :max="100"
-                  :default-value="90"
-                />
-                <span class="quality-value">{{ settingsState.defaultQuality }}</span>
-              </div>
+              <AppSelect
+                v-model="settingsState.defaultImageProfile"
+                :options="
+                  (['fast', 'balanced', 'quality'] as const).map((value) => ({
+                    value,
+                    label: t(`imageEditor.qualityProfile.${value}`)
+                  }))
+                "
+              />
             </SettingRow>
             <SettingRow
               :label="t('settings.concurrentJobs')"
@@ -816,22 +815,6 @@ const outputFolderLabel = computed(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.quality-control {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  width: 180px;
-}
-
-.quality-value {
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-semibold);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  width: 28px;
-  text-align: right;
 }
 
 .fixed-value {

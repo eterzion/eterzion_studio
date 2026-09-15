@@ -648,7 +648,7 @@
     "detecting": "判別中…",
     "effort": "処理の強さ",
     "elapsed": "経過時間: {time}",
-    "exportDescription": "形式、保存先、ファイル名",
+    "exportDescription": "形式、品質、保存先、名前",
     "exportTitle": "書き出し",
     "faceRecoveryHint": "画像の他の部分より先にディテールを失う顔を作り直します。顔が見つからない場合、画像はそのまま出力されます。",
     "faceRecoveryLabel": "顔の復元",
@@ -695,7 +695,14 @@
     "technicalDetails": "技術的な詳細",
     "whereToProcess": "処理する場所",
     "width": "幅",
-    "willDistort": "画像が歪みます。"
+    "willDistort": "画像が歪みます。",
+    "qualityProfile": {
+      "fast": "小さいファイル",
+      "balanced": "バランス",
+      "quality": "最高"
+    },
+    "savedAt": "保存先: {path}",
+    "adjustAndReprocess": "調整して再処理"
   },
   "importing": {
     "alreadyQueued": "すでにキューにあります: {files}。",
@@ -1142,6 +1149,12 @@
       "replace": "置き換える",
       "replaceHint": "既存のファイルは、新しいファイルの準備ができてから置き換えられます。",
       "cancel": "キャンセル"
+    },
+    "keepFormat": "元のファイルと同じ",
+    "refusal": {
+      "format_unavailable": "この形式には対応していません。",
+      "encoder_unavailable": "このコンピューターではこの形式を書き出せません。",
+      "insufficient_disk": "結果を保存するディスク容量が足りません。"
     }
   }
 }

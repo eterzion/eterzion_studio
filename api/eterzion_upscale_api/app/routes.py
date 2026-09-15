@@ -39,7 +39,7 @@ from app.schemas import (Adjustments, Component, ComponentDetails, ContainerAvai
                          CompressionJobResponse, CompressionPreset,
                          CompressionPresetCreateRequest, CompressionPresetsResponse,
                          CompressionPresetUpdateRequest, DetectContentTypeRequest,
-                         ExportFormat, ExportRequest,
+                         ExportFormat,
                          ImageExportOptionsResponse, ImageFormatAvailability,
                          LicenseStatusResponse, LocalJobRequest, MediaHandleRequest,
                          MediaHandleResponse, MediaRequest, OutputTarget, VideoCeilingsResponse,
@@ -370,11 +370,11 @@ def _destino_do_resultado(media_request: MediaRequest, input_path: str) -> str |
     job (app/destino.py) -- e' o que deixa "perguntar" perguntar antes de
     processar, e as recusas virem antes do trabalho.
 
-    Video: sempre MP4, que e' o que o upscale produz. Audio: o formato pedido
-    (ou o do original), com as recusas de formato e de espaco
-    (app/exportacao_de_audio.py). Antes os dois ficavam so' na pasta interna do
-    app, com o nome do job. Sem `output_target` (clientes antigos), continuam
-    la'. A Imagem ainda exporta pela rota propria."""
+    Video: sempre MP4, que e' o que o upscale produz. Audio e Imagem: o formato
+    pedido (ou o do original), com as recusas de formato e de espaco
+    (app/exportacao_de_audio.py, app/exportacao_de_imagem.py). Antes os tres
+    ficavam na pasta interna do app, e a Imagem exportava depois, por uma rota
+    propria. Sem `output_target`, o resultado continua na pasta interna."""
     alvo = media_request.output_target
     if media_request.operation != 'enhance' or alvo is None:
         return None
@@ -382,6 +382,11 @@ def _destino_do_resultado(media_request: MediaRequest, input_path: str) -> str |
         extensao, sufixo = 'mp4', destino_de_exportacao.SUFIXOS['video_upscale']
     elif media_request.media_type == 'audio':
         extensao, sufixo = _formato_de_audio(alvo, input_path), destino_de_exportacao.SUFIXOS['audio']
+    elif media_request.media_type == 'image':
+        from app import exportacao_de_imagem
+
+        extensao = exportacao_de_imagem.formato_de_saida(alvo.format, input_path)
+        sufixo = destino_de_exportacao.SUFIXOS['image']
     else:
         return None
     try:
@@ -393,7 +398,35 @@ def _destino_do_resultado(media_request: MediaRequest, input_path: str) -> str |
                                   'path': error.caminho}) from error
     if media_request.media_type == 'audio':
         _verificar_exportacao_de_audio(extensao, alvo.profile, input_path, os.path.dirname(caminho))
+    elif media_request.media_type == 'image':
+        _verificar_exportacao_de_imagem(extensao, media_request, input_path, os.path.dirname(caminho))
     return caminho
+
+
+def _verificar_exportacao_de_imagem(formato: str, media_request: MediaRequest, input_path: str,
+                                    pasta: str) -> None:
+    from PIL import Image, UnidentifiedImageError
+
+    from app import exportacao_de_imagem
+
+    # O tamanho de saida so' para a conta do espaco: o arquivo e' aberto sem
+    # decodificar, e um que nao abre fica sem conta (a recusa, se houver, e' do
+    # processamento).
+    largura = altura = None
+    try:
+        with Image.open(input_path) as imagem:
+            largura, altura = imagem.size
+    except (OSError, UnidentifiedImageError):
+        pass
+    if media_request.custom_size:
+        largura, altura = media_request.custom_size.width, media_request.custom_size.height
+    elif largura and altura:
+        fator = {'2x': 2, '4x': 4}.get(media_request.scale or '', 1)
+        largura, altura = largura * fator, altura * fator
+    try:
+        exportacao_de_imagem.verificar(formato, largura=largura, altura=altura, pasta=pasta)
+    except exportacao_de_imagem.RecusaDeImagem as error:
+        raise HTTPException(422, {'reason': error.reason, 'message': str(error), **error.detail}) from error
 
 
 def _formato_de_audio(alvo: OutputTarget, input_path: str) -> str:
@@ -503,87 +536,6 @@ async def process_job(job_id: str):
     if not await jobs.enqueue(job_id):
         raise HTTPException(409, 'Job não encontrado ou já processado.')
     return {'ok': True}
-
-
-def _is_same_file(candidate: str, source: str) -> bool:
-    """Whether the export would land on the source file itself.
-
-    os.path.samefile() answers this properly — it follows the two paths to the
-    same inode/file id, so a symlink, a junction or a UNC alias for the same
-    file is still recognised as the same file. It needs both to exist, and the
-    output normally does not yet, so the textual comparison is the fallback
-    rather than the answer.
-    """
-    try:
-        if os.path.exists(candidate) and os.path.samefile(candidate, source):
-            return True
-    except OSError:
-        pass
-    return os.path.normcase(os.path.abspath(candidate)) == os.path.normcase(os.path.abspath(source))
-
-
-def _suffixed(path: str) -> str:
-    """`foto.png` -> `foto_upscaled.png`, the name a collision falls back to."""
-    base, ext = os.path.splitext(path)
-    return f'{base}_upscaled{ext}'
-
-
-def _free_path(path: str) -> str:
-    """First path in the `name`, `name (1)`, `name (2)`... series that is free."""
-    if not os.path.exists(path):
-        return path
-    base, ext = os.path.splitext(path)
-    n = 1
-    while os.path.exists(f'{base} ({n}){ext}'):
-        n += 1
-    return f'{base} ({n}){ext}'
-
-
-@jobs_router.post('/{job_id}/export')
-def export_job(job_id: str, payload: ExportRequest):
-    """Re-encodes a done job's already-upscaled result to the requested format,
-    quality and destination. Never re-runs the model (see app.processing's
-    Upscaler / app.jobs)."""
-    job = jobs.get_job(job_id)
-    if job is None:
-        raise HTTPException(404, 'Job não encontrado.')
-    if job['status'] != 'done':
-        raise HTTPException(409, 'Job ainda não foi concluído.')
-
-    ext = '.' + payload.format.lstrip('.')
-    # The source's own name is the default. Adding "_upscaled" to everything
-    # made every export announce the tool instead of naming the picture, and
-    # people ended up renaming files by hand afterwards. The suffix is what a
-    # collision costs, not what every file is called.
-    name = payload.filename or os.path.splitext(job['input_file'])[0] + ext
-    if not name.lower().endswith(ext):
-        name = os.path.splitext(name)[0] + ext
-    output_dir = payload.output_dir or os.path.dirname(job['input_path']) or settings.outputs_dir
-    output_path = os.path.join(output_dir, name)
-
-    # Princípio XV: "Output never lands on the input." Now that the default
-    # name is the source's name and the default directory is the source's
-    # directory, the two collide by construction — this is the exact case the
-    # principle says must never be resolved by overwriting, and it says so
-    # including when the person asked for 'overwrite': that instruction is
-    # about replacing some other file, not about destroying the original they
-    # are working from. Answering it here means the source cannot be lost no
-    # matter what the client sends.
-    if _is_same_file(output_path, job['input_path']):
-        output_path = _suffixed(output_path)
-
-    if os.path.exists(output_path):
-        if payload.conflict == 'ask':
-            raise HTTPException(409, {'reason': 'conflict', 'path': output_path})
-        if payload.conflict == 'rename':
-            output_path = _free_path(_suffixed(output_path))
-        # 'overwrite' falls through and just writes over it
-
-    try:
-        jobs.export_job(job_id, output_path, payload.quality)
-    except ValueError as error:
-        raise HTTPException(409, str(error))
-    return {'output_path': output_path}
 
 
 def _job_public_view(job: dict) -> dict:
