@@ -14,6 +14,8 @@ import shutil
 import time
 from typing import Any, Callable
 
+from eterzion_upscale.media import Cancelado
+
 from . import animation, audio, capabilities, config, image, video, workspace
 
 
@@ -208,6 +210,10 @@ def run(media_kind: str, source_path: str, output_path: str, settings: dict[str,
         try:
             aplicado = _compress(media_kind, source_path, temporario, settings,
                                  on_progress=avancar, on_stage=on_stage)
+        except Cancelado:
+            # O workspace e' apagado ao sair do `with`, e nada chega ao destino.
+            # Nao e' falha, entao nao entra no log de falhas.
+            raise
         except Exception as error:
             # O log carrega o que a interface não pode: qual codec, quais
             # parâmetros, quanto tempo até falhar. É o que responde "por que

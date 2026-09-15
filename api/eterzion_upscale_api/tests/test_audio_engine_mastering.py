@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import shutil
 
+import pytest
+
 import numpy as np
 import soundfile as sf
 
@@ -129,8 +131,10 @@ class TestRestoreMaster:
         engine = MasteringEngine(provider=_NeverCalledProvider())
         result = engine.restore_master(input_path, str(tmp_path / 'out.wav'))
         assert -16 <= result.audio_analysis.integrated_lufs <= -12
-        assert 'restored' in result.stages_output_paths
-        assert 'mastered' in result.stages_output_paths
+        # 'restored' saiu: era um temporario, e ja' foi apagado quando o
+        # resultado volta. Anunciar um caminho que nao existe mais enganaria.
+        assert 'restored' not in result.stages_output_paths
+        assert result.stages_output_paths['mastered'] == str(tmp_path / 'out.wav')
 
 
 class TestAiStrengthStrategy:
@@ -223,3 +227,60 @@ class TestMusicalIntentPreservation:
         # noise-floor filtering runs, no AI, no mastering EQ/compression).
         correlation = np.corrcoef(in_data[:n, 0], out_data[:n, 0])[0, 1]
         assert correlation > 0.9
+
+
+class TestTemporariosSaoApagados:
+    """A restauracao grava WAVs temporarios (DSP, e IA quando entra). Antes
+    eles ficavam no %TEMP% a cada musica processada; agora saem quando o
+    resultado esta' pronto, e tambem quando a masterizacao falha ou e'
+    cancelada -- junto com a saida pela metade."""
+
+    @staticmethod
+    def _temporarios_em(pasta, monkeypatch):
+        from app.audio_engine import mastering
+
+        criados: list[str] = []
+
+        def mktemp(suffix=''):
+            caminho = str(pasta / f'tmp{len(criados)}{suffix}')
+            criados.append(caminho)
+            return caminho
+
+        monkeypatch.setattr(mastering.tempfile, 'mktemp', mktemp)
+        return criados
+
+    def test_no_sucesso_nenhum_temporario_fica(self, tmp_path, monkeypatch):
+        pasta = tmp_path / 'temp'
+        pasta.mkdir()
+        criados = self._temporarios_em(pasta, monkeypatch)
+        engine = MasteringEngine(provider=_NeverCalledProvider())
+
+        engine.auto_master(_clean_tone(tmp_path, amplitude=0.02), str(tmp_path / 'out.wav'))
+
+        assert criados, 'a restauracao deveria ter usado ao menos um temporario'
+        assert list(pasta.iterdir()) == []
+        assert (tmp_path / 'out.wav').is_file()
+
+    def test_se_a_masterizacao_falha_saem_os_temporarios_e_a_saida_pela_metade(
+            self, tmp_path, monkeypatch):
+        from app.audio_engine import mastering
+
+        pasta = tmp_path / 'temp'
+        pasta.mkdir()
+        self._temporarios_em(pasta, monkeypatch)
+        saida = tmp_path / 'out.wav'
+
+        def master_que_quebra(entrada, destino, **_):
+            # Como um ffmpeg interrompido: grava algo e para no meio.
+            with open(destino, 'wb') as f:
+                f.write(b'RIFF pela metade')
+            raise RuntimeError('cancelado no meio da masterizacao')
+
+        monkeypatch.setattr(mastering.dsp, 'master', master_que_quebra)
+        engine = MasteringEngine(provider=_NeverCalledProvider())
+
+        with pytest.raises(RuntimeError):
+            engine.auto_master(_clean_tone(tmp_path, amplitude=0.02), str(saida))
+
+        assert list(pasta.iterdir()) == []
+        assert not saida.exists()

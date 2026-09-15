@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any, Callable, TypedDict
 from uuid import uuid4
 
-from eterzion_upscale.media import ImageOpenError
+from eterzion_upscale.media import Cancelamento, ImageOpenError, escopo_de_cancelamento
 
 from app.config import settings
 
@@ -532,6 +532,10 @@ _watchdog_task: asyncio.Task | None = None
 _audio_idle_watchdog_task: asyncio.Task | None = None
 _enqueue_counter = itertools.count(1)
 _processing_job_id: str | None = None
+# O cancelamento de cada job que esta' rodando numa thread desta API. E' o que
+# faz `cancel_job` interromper o ffmpeg da edicao de video, da compressao e da
+# musica -- que, fora do worker isolado, antes rodavam ate' o fim.
+_cancelamentos: dict[str, Cancelamento] = {}
 
 
 def _now_iso() -> str:
@@ -999,6 +1003,9 @@ def cancel_job(job_id: str) -> bool:
         job['status'] = 'cancelled'
         _notify(job_id)
         if was_processing:
+            cancelamento = _cancelamentos.get(job_id)
+            if cancelamento is not None:
+                cancelamento.cancelar()
             get_supervisor().terminate()
     return True
 
@@ -1265,8 +1272,17 @@ async def _process_job(job_id: str) -> None:
             _apply_edits_to_upscaled(job, params, output_path, on_stage)
         return upscale_result
 
+    cancelamento = Cancelamento()
+    _cancelamentos[job_id] = cancelamento
+
+    def run_cancelavel():
+        # O escopo e' por thread: precisa ser aberto dentro da thread do
+        # executor, que e' onde o ffmpeg vai rodar.
+        with escopo_de_cancelamento(cancelamento):
+            return blocking_run()
+
     try:
-        result_meta = await loop.run_in_executor(_executor, blocking_run)
+        result_meta = await loop.run_in_executor(_executor, run_cancelavel)
         if job['status'] == 'cancelled':
             _notify(job_id)
             return
@@ -1352,6 +1368,7 @@ async def _process_job(job_id: str) -> None:
             _record_failure(job, error)
     finally:
         _processing_job_id = None
+        _cancelamentos.pop(job_id, None)
     _notify(job_id)
 
 

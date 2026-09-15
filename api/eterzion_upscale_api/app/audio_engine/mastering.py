@@ -7,6 +7,7 @@ unavailability always falls back to DSP-only (FR-020).
 """
 from __future__ import annotations
 
+import os
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -18,6 +19,14 @@ from app.audio_engine.analyzer import AudioAnalysisReport
 from app.audio_engine.quality import QualityVerdict, evaluate
 
 AudioMode = Literal['enhance', 'auto_master', 'restore', 'restore_master']
+
+
+def _apagar(caminhos: list[str]) -> None:
+    for caminho in caminhos:
+        try:
+            os.remove(caminho)
+        except OSError:
+            pass  # ja' nao existe, ou preso por outro processo: nao derruba o resultado
 
 
 @dataclass
@@ -34,33 +43,65 @@ def _restore_stage(
     ai_strength: int,
     *,
     full_song: bool,
-) -> tuple[str, QualityVerdict | None]:
+) -> tuple[str, QualityVerdict | None, list[str]]:
     """Runs analysis -> problem detection -> (AI if needed and available) ->
     corrective DSP -> Quality Guard. Never trusts the AI's output directly
     (FR-006/FR-008) — always re-validates and falls back to the DSP-only
-    result on a rejection."""
-    before = analyzer.analyze(input_path, measured_at='input')
-    problems = analyzer.detect_problems(before)
+    result on a rejection.
 
-    dsp_only_path = tempfile.mktemp(suffix='.wav')
-    dsp.restore(input_path, dsp_only_path, problems)
+    Devolve tambem os temporarios que criou, para quem chamou apagar depois de
+    usar o resultado -- antes eles ficavam no %TEMP% a cada musica processada.
+    Se esta etapa falhar ou for cancelada, apaga os que ja' criou antes de
+    subir o erro."""
+    temporarios: list[str] = []
+    try:
+        before = analyzer.analyze(input_path, measured_at='input')
+        problems = analyzer.detect_problems(before)
 
-    if not problems.requires_ai_restoration or ai_strength <= 0 or not provider.is_available():
-        return dsp_only_path, None  # FR-002/FR-020 — no AI call at all
+        dsp_only_path = tempfile.mktemp(suffix='.wav')
+        temporarios.append(dsp_only_path)
+        dsp.restore(input_path, dsp_only_path, problems)
 
-    instruction = build_prompt(problems)
-    restore_fn = provider.restore_full_song if full_song else provider.restore
-    ai_raw_path = restore_fn(input_path, instruction, ai_strength)
+        if not problems.requires_ai_restoration or ai_strength <= 0 or not provider.is_available():
+            return dsp_only_path, None, temporarios  # FR-002/FR-020 — no AI call at all
 
-    ai_corrected_path = tempfile.mktemp(suffix='.wav')
-    dsp.restore(ai_raw_path, ai_corrected_path, problems)  # FR-006 — always corrective DSP after AI
+        instruction = build_prompt(problems)
+        restore_fn = provider.restore_full_song if full_song else provider.restore
+        ai_raw_path = restore_fn(input_path, instruction, ai_strength)
+        temporarios.append(ai_raw_path)
 
-    after = analyzer.analyze(ai_corrected_path, measured_at='post_ai')
-    verdict = evaluate(before, after)
+        ai_corrected_path = tempfile.mktemp(suffix='.wav')
+        temporarios.append(ai_corrected_path)
+        dsp.restore(ai_raw_path, ai_corrected_path, problems)  # FR-006 — always corrective DSP after AI
 
-    if verdict.outcome == 'rejected':
-        return dsp_only_path, verdict  # FR-008 — AI result discarded entirely
-    return ai_corrected_path, verdict  # 'accepted' or 'reduced' — dsp.restore already applied corrective DSP
+        after = analyzer.analyze(ai_corrected_path, measured_at='post_ai')
+        verdict = evaluate(before, after)
+
+        if verdict.outcome == 'rejected':
+            return dsp_only_path, verdict, temporarios  # FR-008 — AI result discarded entirely
+        return ai_corrected_path, verdict, temporarios  # 'accepted' or 'reduced'
+    except BaseException:
+        _apagar(temporarios)
+        raise
+
+
+def _masterizar(restored_path: str, output_path: str, verdict: QualityVerdict | None,
+                target_lufs: float, temporarios: list[str]) -> AudioAnalysisReport:
+    """A etapa de masterizacao de auto_master e restore_master, com a limpeza
+    que as duas precisam: os temporarios da restauracao sempre saem, e a saida
+    sai tambem se a masterizacao falhar ou for cancelada -- um arquivo pela
+    metade no lugar do resultado e' pior que nenhum."""
+    try:
+        pre_master = analyzer.analyze(restored_path, measured_at='post_dsp' if verdict is None else 'post_ai')
+        dsp.master(restored_path, output_path, target_lufs=target_lufs,
+                   correct_phase=pre_master.phase_issues_detected,
+                   bandwidth_hz=pre_master.bandwidth_hz)
+        return analyzer.analyze(output_path, measured_at='post_master')
+    except BaseException:
+        _apagar([output_path])
+        raise
+    finally:
+        _apagar(temporarios)
 
 
 class MasteringEngine:
@@ -78,16 +119,14 @@ class MasteringEngine:
     ) -> MasteringResult:
         """FR-010 — Analyze -> Detect -> (AI if needed) -> Analyze -> Master
         -> Quality Guard -> saída."""
-        restored_path, verdict = _restore_stage(
+        restored_path, verdict, temporarios = _restore_stage(
             input_path, self._provider, ai_strength, full_song=full_song)
-        pre_master = analyzer.analyze(restored_path, measured_at='post_dsp' if verdict is None else 'post_ai')
-        dsp.master(restored_path, output_path, target_lufs=target_lufs,
-                   correct_phase=pre_master.phase_issues_detected,
-                   bandwidth_hz=pre_master.bandwidth_hz)
-        final_analysis = analyzer.analyze(output_path, measured_at='post_master')
+        final_analysis = _masterizar(restored_path, output_path, verdict, target_lufs, temporarios)
+        # Sem 'restored': era um temporario e ja' foi apagado. Anunciar o
+        # caminho de um arquivo que nao existe mais so' serviria para enganar.
         return MasteringResult(
             output_path=output_path, audio_analysis=final_analysis, quality_verdict=verdict,
-            stages_output_paths={'original': input_path, 'restored': restored_path, 'mastered': output_path},
+            stages_output_paths={'original': input_path, 'mastered': output_path},
         )
 
     def restore(
@@ -99,10 +138,16 @@ class MasteringEngine:
         full_song: bool = False,
     ) -> MasteringResult:
         """FR-011 — corrective restoration only, no loudness-target mastering."""
-        restored_path, verdict = _restore_stage(
+        restored_path, verdict, temporarios = _restore_stage(
             input_path, self._provider, ai_strength, full_song=full_song)
-        shutil.copyfile(restored_path, output_path)
-        final_analysis = analyzer.analyze(output_path, measured_at='post_dsp' if verdict is None else 'post_ai')
+        try:
+            shutil.copyfile(restored_path, output_path)
+            final_analysis = analyzer.analyze(output_path, measured_at='post_dsp' if verdict is None else 'post_ai')
+        except BaseException:
+            _apagar([output_path])
+            raise
+        finally:
+            _apagar(temporarios)
         return MasteringResult(
             output_path=output_path, audio_analysis=final_analysis, quality_verdict=verdict,
             stages_output_paths={'original': input_path, 'restored': output_path},
@@ -122,16 +167,12 @@ class MasteringEngine:
         `_restore_stage` call, per research.md Decisão 1's "no new abstraction
         just to ease the merge" spirit — restore_master IS restore + master,
         not a parallel implementation)."""
-        restored_path, verdict = _restore_stage(
+        restored_path, verdict, temporarios = _restore_stage(
             input_path, self._provider, ai_strength, full_song=full_song)
-        pre_master = analyzer.analyze(restored_path, measured_at='post_dsp' if verdict is None else 'post_ai')
-        dsp.master(restored_path, output_path, target_lufs=target_lufs,
-                   correct_phase=pre_master.phase_issues_detected,
-                   bandwidth_hz=pre_master.bandwidth_hz)
-        final_analysis = analyzer.analyze(output_path, measured_at='post_master')
+        final_analysis = _masterizar(restored_path, output_path, verdict, target_lufs, temporarios)
         return MasteringResult(
             output_path=output_path, audio_analysis=final_analysis, quality_verdict=verdict,
-            stages_output_paths={'original': input_path, 'restored': restored_path, 'mastered': output_path},
+            stages_output_paths={'original': input_path, 'mastered': output_path},
         )
 
     def run(self, mode: AudioMode, input_path: str, output_path: str, **kwargs) -> MasteringResult:
