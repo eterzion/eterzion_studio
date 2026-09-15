@@ -620,7 +620,6 @@
     "beyondNative": "Cible au-dessus du facteur natif ({factor}x) — l’excédent est de l’interpolation, avec moins de détail gagné.",
     "cancel": "Annuler",
     "cancelled": "Traitement annulé.",
-    "conflictPrompt": "Un fichier porte déjà ce nom. Que faire ?",
     "denoiseAfterAlt": "Après réduction du bruit",
     "denoiseBeforeAlt": "Avant réduction du bruit",
     "denoiseHint": "Retire le grain et les marques de compression sans flouter les contours. Utile pour les photos de téléphone, en basse lumière, ou réenregistrées plusieurs fois en JPG.",
@@ -1108,5 +1107,22 @@
     "failedBody": "L'application réessaiera à sa prochaine ouverture. Vous pouvez aussi les télécharger dans Composants.",
     "openComponents": "Voir les composants",
     "close": "Fermer"
+  },
+  "destination": {
+    "fileName": "Nom du fichier",
+    "onConflict": "S’il existe déjà",
+    "conflict": {
+      "rename": "Conserver les deux",
+      "overwrite": "Remplacer",
+      "ask": "Demander"
+    },
+    "dialog": {
+      "title": "Un fichier portant ce nom existe déjà",
+      "keepBoth": "Conserver les deux",
+      "keepBothHint": "Le nouveau fichier reçoit un autre nom.",
+      "replace": "Remplacer",
+      "replaceHint": "Le fichier existant n’est remplacé qu’une fois le nouveau prêt.",
+      "cancel": "Annuler"
+    }
   }
 }

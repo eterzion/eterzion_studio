@@ -2,6 +2,7 @@ import { ref, type Ref } from 'vue'
 import { api, hasNativeApi } from '../services/native'
 import { settingsState } from '../store/settings'
 import { exportOne, type Job } from '../store/jobs'
+import { usePerguntaDeConflito, type PerguntaDeConflito } from './usePerguntaDeConflito'
 
 // Extracted from ImageEditorView.vue — the export panel (format/quality/
 // destination/filename/conflict-resolution) is a self-contained state
@@ -14,9 +15,9 @@ export function useExportPanel(): {
   exportDestFolder: Ref<string | null>
   exportFilename: Ref<string | null>
   exportConflict: Ref<'overwrite' | 'rename' | 'ask'>
-  conflictPrompt: Ref<{ job: Job } | null>
+  /** A mesma pergunta dos outros modos (ConflictDialog). */
+  pergunta: PerguntaDeConflito
   runExport: (j: Job) => Promise<void>
-  resolveConflict: (mode: 'overwrite' | 'rename') => Promise<void>
   pickExportFolder: () => Promise<void>
 } {
   const exportFormat = ref<'png' | 'jpg' | 'webp'>(settingsState.defaultExportFormat)
@@ -24,32 +25,33 @@ export function useExportPanel(): {
   const exportDestFolder = ref<string | null>(settingsState.defaultOutputFolder)
   const exportFilename = ref<string | null>(null)
   const exportConflict = ref<'overwrite' | 'rename' | 'ask'>('rename')
-  const conflictPrompt = ref<{ job: Job } | null>(null)
+  const pergunta = usePerguntaDeConflito()
 
-  async function runExport(j: Job): Promise<void> {
-    const result = await exportOne(j, {
+  function exportar(
+    j: Job,
+    conflict: 'overwrite' | 'rename' | 'ask'
+  ): ReturnType<typeof exportOne> {
+    return exportOne(j, {
       format: exportFormat.value,
       quality: exportQuality.value,
       outputDir: exportDestFolder.value,
       filename: exportFilename.value,
-      conflict: exportConflict.value
+      conflict
     })
-    if (!result.ok && j.exportConflicted && exportConflict.value === 'ask') {
-      conflictPrompt.value = { job: j }
-    }
   }
 
-  async function resolveConflict(mode: 'overwrite' | 'rename'): Promise<void> {
-    if (!conflictPrompt.value) return
-    const j = conflictPrompt.value.job
-    conflictPrompt.value = null
-    await exportOne(j, {
-      format: exportFormat.value,
-      quality: exportQuality.value,
-      outputDir: exportDestFolder.value,
-      filename: exportFilename.value,
-      conflict: mode
-    })
+  async function runExport(j: Job): Promise<void> {
+    const result = await exportar(j, exportConflict.value)
+    if (result.ok || !j.exportConflicted || exportConflict.value !== 'ask') return
+    const resposta = await pergunta.perguntar(j.exportConflictPath ?? '')
+    if (resposta) {
+      await exportar(j, resposta)
+      return
+    }
+    // Cancelar a pergunta nao e' falha: nada foi gravado.
+    j.exportState = 'idle'
+    j.exportError = undefined
+    j.exportConflicted = false
   }
 
   async function pickExportFolder(): Promise<void> {
@@ -64,9 +66,8 @@ export function useExportPanel(): {
     exportDestFolder,
     exportFilename,
     exportConflict,
-    conflictPrompt,
+    pergunta,
     runExport,
-    resolveConflict,
     pickExportFolder
   }
 }

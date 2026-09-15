@@ -21,6 +21,7 @@ import {
 } from '../services/compression'
 import type { CompressionResultData } from '../components/compression/CompressionResult.vue'
 import type { CompressionMode, MediaKind } from '../constants/compression'
+import type { RespostaDeConflito } from './usePerguntaDeConflito'
 
 export interface RunRequest {
   handleId: string
@@ -45,7 +46,14 @@ export interface CompressionJobApi {
   stop: () => void
 }
 
-export function useCompressionJob(): CompressionJobApi {
+export interface CompressionJobOptions {
+  /** Abre a pergunta de conflito da tela (usePerguntaDeConflito). Com
+   *  "Perguntar", o backend recusa com `conflict` antes do job; sem esta
+   *  funcao, a recusa aparece como erro. */
+  perguntarConflito?: (caminho: string) => Promise<RespostaDeConflito>
+}
+
+export function useCompressionJob(options: CompressionJobOptions = {}): CompressionJobApi {
   const running = ref(false)
   const progress = ref(0)
   /** Chave de razão, nunca frase — quem exibe traduz (Princípio XIV). */
@@ -85,6 +93,13 @@ export function useCompressionJob(): CompressionJobApi {
       // As recusas do FR-064 chegam aqui, todas antes de qualquer processamento:
       // nada foi escrito, nada precisa ser desfeito.
       running.value = false
+      if (e instanceof CompressionError && e.reason === 'conflict' && options.perguntarConflito) {
+        const resposta = await options.perguntarConflito(String(e.detail.path ?? ''))
+        // Cancelar a pergunta nao e' erro: a pessoa desistiu, nada foi feito.
+        if (resposta)
+          await run({ ...pedido, export: { ...pedido.export, conflict_policy: resposta } })
+        return
+      }
       error.value = e instanceof CompressionError ? e.reason : 'unknown'
       errorDetail.value = e instanceof CompressionError ? e.detail : {}
       return

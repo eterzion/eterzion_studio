@@ -836,6 +836,25 @@ def has_meaningful_edits(edits: dict | None) -> bool:
     return bool(video_edits.build_filter_chain(edits, 0, 0))
 
 
+def _entregar_video(job: dict, params: dict, interno: str) -> str:
+    """Leva o upscale de video da pasta interna ao destino escolhido.
+
+    O worker isolado grava na pasta interna; daqui o arquivo vai para um
+    temporario na pasta do destino e so' entao toma o lugar do destino
+    (app/destino.py) -- um "sobrescrever" nunca deixa meio arquivo."""
+    import shutil
+
+    from app import destino
+
+    final = destino.confirmar_antes_de_gravar(
+        params['output_path'], (params.get('output_target') or {}).get('conflict', 'rename'),
+        destino.SUFIXOS['video_upscale'])
+    with destino.gravacao_segura(
+            final, registrar_parcial=lambda caminho: _registrar_parcial(job, caminho)) as temporario:
+        shutil.move(interno, temporario)
+    return final
+
+
 def _apply_edits_to_upscaled(job: dict, params: dict, output_path: str, on_stage) -> None:
     """Apply the editor's settings to an upscaled video, as a second pass.
 
@@ -1267,6 +1286,9 @@ async def _process_job(job_id: str) -> None:
         # ways to do the same thing.
         if is_video:
             _apply_edits_to_upscaled(job, params, output_path, on_stage)
+            if params.get('output_path'):
+                upscale_result = {**upscale_result,
+                                  'delivered_path': _entregar_video(job, params, output_path)}
         return upscale_result
 
     cancelamento = Cancelamento()
@@ -1319,7 +1341,7 @@ async def _process_job(job_id: str) -> None:
         elif job.get('media_type') == 'video':
             # No separate "master" for video (unlike image) — VideoUpscaler
             # already wrote the real, final, audio-muxed file.
-            video_path = _video_output_path(job_id)
+            video_path = result_meta.get('delivered_path') or _video_output_path(job_id)
             source_w, source_h = result_meta['source_size']
             output_w, output_h = result_meta['output_size']
             job['output_path'] = video_path

@@ -11,7 +11,9 @@ import VideoEnhancePanel, { type EnhanceSettings } from '../components/video/Vid
 import VideoAdjustmentsPanel from '../components/video/VideoAdjustmentsPanel.vue'
 import VideoTransformPanel from '../components/video/VideoTransformPanel.vue'
 import VideoTrimHandles from '../components/video/VideoTrimHandles.vue'
-import VideoExportPanel from '../components/video/VideoExportPanel.vue'
+import VideoExportPanel, { type VideoExportChoice } from '../components/video/VideoExportPanel.vue'
+import ConflictDialog from '../components/ConflictDialog.vue'
+import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
 import { usePickFiles } from '../composables/usePickFiles'
 import { setReactive } from '../store/reactiveInsert'
 import {
@@ -23,9 +25,16 @@ import {
 } from '../composables/useVideoEdits'
 import { useVideoTimeline } from '../composables/useVideoTimeline'
 import { useVideoProcessing, type VideoRequest } from '../composables/useVideoProcessing'
-import { detectContentType, registerMediaHandle, type VideoContainer } from '../services/api'
+import {
+  detectContentType,
+  registerMediaHandle,
+  type ConflictMode,
+  type Profile,
+  type VideoContainer
+} from '../services/api'
 import { api, hasNativeApi, type DescribedFile } from '../services/native'
 import { addVideo, removeVideo, videoQueue, type EditorVideo } from '../store/videoQueue'
+import { settingsState } from '../store/settings'
 
 // The one Vídeo screen (specs/007-video-editor-player, FR-032 as amended).
 //
@@ -53,8 +62,11 @@ const activeId = computed({
   set: (value: string | null) => (videoQueue.activeId = value)
 })
 const importError = ref<string | null>(null)
-const exportDirectory = ref<string | null>(null)
+// A pasta padrao das Configuracoes, como na Imagem; sem ela, a do original.
+const exportDirectory = ref<string | null>(settingsState.defaultOutputFolder)
 const container = ref<VideoContainer>('mp4')
+const exportProfile = ref<Profile>('balanced')
+const conflict = ref<ConflictMode>('rename')
 
 const active = computed(
   () => videos.value.find((v) => v.handle.handle_id === activeId.value) ?? null
@@ -62,7 +74,8 @@ const active = computed(
 
 const edits = useVideoEdits(activeId)
 const timeline = useVideoTimeline(computed(() => active.value?.handle ?? null))
-const processing = useVideoProcessing()
+const pergunta = usePerguntaDeConflito()
+const processing = useVideoProcessing({ perguntarConflito: pergunta.perguntar })
 
 // Enhance settings are per video for the same reason edits are: a batch of
 // clips rarely wants one scale for all of them, and carrying one video's choice
@@ -165,10 +178,13 @@ function setEnhance(patch: Partial<EnhanceSettings>): void {
 
 async function pickDirectory(): Promise<void> {
   if (!hasNativeApi) return
-  exportDirectory.value = await api.selectOutputFolder(exportDirectory.value ?? undefined)
+  // Cancelar o dialogo mantem a pasta que estava (antes voltava para "mesma
+  // pasta do original" sem aviso).
+  const pasta = await api.selectOutputFolder(exportDirectory.value ?? undefined)
+  if (pasta) exportDirectory.value = pasta
 }
 
-function requestFor(video: EditorVideo): VideoRequest {
+function requestFor(video: EditorVideo, filename: string | null = null): VideoRequest {
   return {
     handleId: video.handle.handle_id,
     displayName: video.handle.display_name,
@@ -178,17 +194,24 @@ function requestFor(video: EditorVideo): VideoRequest {
     edits: JSON.parse(JSON.stringify(edits.editsFor(video.handle.handle_id))),
     enhance: { ...enhanceFor(video.handle.handle_id) },
     container: container.value,
-    directory: exportDirectory.value
+    directory: exportDirectory.value,
+    filename,
+    conflict: conflict.value,
+    exportProfile: exportProfile.value
   }
 }
 
-function runActive(choice: { container: VideoContainer }): void {
+function runActive(choice: VideoExportChoice): void {
   if (!active.value) return
   container.value = choice.container
-  processing.start(requestFor(active.value))
+  exportProfile.value = choice.profile
+  conflict.value = choice.conflict
+  processing.start(requestFor(active.value, choice.filename))
 }
 
-/** Batch, kept from the old screen: every video that is not already running. */
+/** Batch, kept from the old screen: every video that is not already running.
+ *  Cada um com o nome do proprio original -- um nome digitado vale para o
+ *  video ativo, e repetido em todos so' geraria conflitos. */
 function runAll(): void {
   for (const video of videos.value) {
     if (!processing.isBusy(video.handle.handle_id)) processing.start(requestFor(video))
@@ -371,6 +394,7 @@ function remove(id: string): void {
           <VideoExportPanel
             :state="activeState"
             :directory="exportDirectory"
+            :source-name="active?.handle.display_name ?? null"
             :disabled="!active"
             @export="runActive"
             @cancel="activeId && processing.cancel(activeId)"
@@ -379,6 +403,7 @@ function remove(id: string): void {
         </template>
       </MediaEditorShell>
     </div>
+    <ConflictDialog :caminho="pergunta.caminho.value" @responder="pergunta.responder" />
   </div>
 </template>
 

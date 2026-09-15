@@ -620,7 +620,6 @@
     "beyondNative": "Ziel über dem nativen Faktor ({factor}x) — der Überschuss ist Interpolation, mit weniger Detailgewinn.",
     "cancel": "Abbrechen",
     "cancelled": "Verarbeitung abgebrochen.",
-    "conflictPrompt": "Eine Datei mit diesem Namen gibt es bereits. Was nun?",
     "denoiseAfterAlt": "Nach der Rauschminderung",
     "denoiseBeforeAlt": "Vor der Rauschminderung",
     "denoiseHint": "Entfernt Korn und Kompressionsartefakte, ohne die Konturen weichzuzeichnen. Nützlich bei Handyfotos, wenig Licht oder mehrfach als JPG gespeicherten Bildern.",
@@ -1108,5 +1107,22 @@
     "failedBody": "Die App versucht es beim nächsten Start erneut. Sie können sie auch unter Komponenten herunterladen.",
     "openComponents": "Komponenten anzeigen",
     "close": "Schließen"
+  },
+  "destination": {
+    "fileName": "Dateiname",
+    "onConflict": "Falls schon vorhanden",
+    "conflict": {
+      "rename": "Beide behalten",
+      "overwrite": "Ersetzen",
+      "ask": "Nachfragen"
+    },
+    "dialog": {
+      "title": "Eine Datei mit diesem Namen existiert bereits",
+      "keepBoth": "Beide behalten",
+      "keepBothHint": "Die neue Datei erhält einen anderen Namen.",
+      "replace": "Ersetzen",
+      "replaceHint": "Die vorhandene Datei wird erst ersetzt, wenn die neue fertig ist.",
+      "cancel": "Abbrechen"
+    }
   }
 }

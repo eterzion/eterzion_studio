@@ -365,6 +365,26 @@ async def create_job(file: UploadFile, media_request: str = Form(...), adjustmen
     return {'id': job_id, 'estimated_duration': capacity_result.estimated_duration if capacity_result else None}
 
 
+def _destino_do_upscale_de_video(media_request: MediaRequest, input_path: str) -> str | None:
+    """Onde o upscale de video e' entregue, resolvido antes do job (app/destino.py).
+
+    Antes o resultado ficava so' na pasta interna do app, com o nome do job: a
+    pasta escolhida no painel de exportacao era ignorada. Sem `output_target`
+    (clientes antigos), continua la'. O formato e' sempre MP4 -- e' o que o
+    upscale produz."""
+    alvo = media_request.output_target
+    if media_request.media_type != 'video' or media_request.operation != 'enhance' or alvo is None:
+        return None
+    try:
+        return destino_de_exportacao.resolver(
+            input_path, pasta=alvo.directory, nome=alvo.filename, extensao='mp4',
+            sufixo=destino_de_exportacao.SUFIXOS['video_upscale'], conflito=alvo.conflict,
+            pasta_padrao=settings.outputs_dir)
+    except destino_de_exportacao.ConflitoDeDestino as error:
+        raise HTTPException(409, {'reason': 'conflict', 'message': str(error),
+                                  'path': error.caminho}) from error
+
+
 @jobs_router.post('/local')
 def create_job_local(payload: LocalJobRequest):
     """Same as POST /jobs, but for when the API and the client share a filesystem
@@ -385,9 +405,13 @@ def create_job_local(payload: LocalJobRequest):
                        f'{capacity_result.limiting_resource}).',
             'limiting_resource': capacity_result.limiting_resource,
         })
+    destino_final = _destino_do_upscale_de_video(payload.media_request, input_path)
     secondary_elements = _detect_secondary_elements(payload.media_request, input_path)
+    params = _build_job_params(payload.media_request, payload.adjustments)
+    if destino_final is not None:
+        params['output_path'] = destino_final
     job_id = jobs.create_job(
-        input_path, filename, _build_job_params(payload.media_request, payload.adjustments),
+        input_path, filename, params,
         media_type=payload.media_request.media_type, operation=payload.media_request.operation,
         content_type_detected=content_type,
         secondary_elements=secondary_elements, secondary_elements_ack=payload.media_request.secondary_elements_ack,

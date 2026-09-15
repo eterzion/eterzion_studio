@@ -620,7 +620,6 @@
     "beyondNative": "目标超过原生倍数（{factor}x），超出部分靠插值，细节提升有限。",
     "cancel": "取消",
     "cancelled": "已取消处理。",
-    "conflictPrompt": "已存在同名文件。要怎么处理？",
     "denoiseAfterAlt": "降噪后",
     "denoiseBeforeAlt": "降噪前",
     "denoiseHint": "在不模糊轮廓的前提下去除颗粒和压缩痕迹。适合手机照片、弱光照片，或多次保存为 JPG 的图片。",
@@ -1108,5 +1107,22 @@
     "failedBody": "应用会在下次打开时重试。你也可以在“组件”中下载。",
     "openComponents": "查看组件",
     "close": "关闭"
+  },
+  "destination": {
+    "fileName": "文件名",
+    "onConflict": "如果已存在",
+    "conflict": {
+      "rename": "保留两者",
+      "overwrite": "替换",
+      "ask": "询问"
+    },
+    "dialog": {
+      "title": "已存在同名文件",
+      "keepBoth": "保留两者",
+      "keepBothHint": "新文件将使用其他名称。",
+      "replace": "替换",
+      "replaceHint": "新文件准备好后才会替换现有文件。",
+      "cancel": "取消"
+    }
   }
 }

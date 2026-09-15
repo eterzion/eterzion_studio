@@ -7,6 +7,7 @@ import {
   defaultAdjustments,
   getJob,
   processJob as apiProcessJob,
+  type ConflictMode,
   type JobStatus,
   type Profile,
   type SecondaryElements,
@@ -17,6 +18,7 @@ import { subscribeJobProgress } from '../services/websocket'
 import { recordSimpleJob } from '../store/history'
 import type { EnhanceSettings } from '../components/video/VideoEnhancePanel.vue'
 import type { VideoEditSet } from './useVideoEdits'
+import type { RespostaDeConflito } from './usePerguntaDeConflito'
 
 // Owns everything that happens to a video after the person presses the button,
 // for the unified Vídeo screen (specs/007-video-editor-player, FR-032 as
@@ -74,6 +76,22 @@ export interface VideoRequest {
   enhance: EnhanceSettings
   container: VideoContainer
   directory: string | null
+  /** Sem extensao; `null` = o nome do original. */
+  filename: string | null
+  conflict: ConflictMode
+  /** A "Qualidade" do painel de exportacao. A edicao sem modelo usava a do
+   *  painel de melhoria, e a escolhida na exportacao era descartada. */
+  exportProfile: Profile
+}
+
+/** O caminho que ja' existe, quando o pedido foi recusado por conflito.
+ *  A rota de edicao manda o detalhe em JSON; a de jobs, `CONFLICT:<caminho>`
+ *  (services/api.ts, extractError). */
+function caminhoEmConflito(cause: unknown): string | null {
+  if (!(cause instanceof Error)) return null
+  if (cause.message.startsWith('CONFLICT:')) return cause.message.slice('CONFLICT:'.length)
+  const detail = safeParse(cause.message)
+  return detail?.reason === 'conflict' && typeof detail.path === 'string' ? detail.path : null
 }
 
 /** Which model pass a video job should ask for.
@@ -126,7 +144,13 @@ export interface VideoProcessing {
   isBusy: (handleId: string) => boolean
 }
 
-export function useVideoProcessing(): VideoProcessing {
+export interface VideoProcessingOptions {
+  /** Abre a pergunta de conflito da tela (usePerguntaDeConflito). Sem ela, a
+   *  recusa por conflito aparece como erro. */
+  perguntarConflito?: (caminho: string) => Promise<RespostaDeConflito>
+}
+
+export function useVideoProcessing(options: VideoProcessingOptions = {}): VideoProcessing {
   const states = ref(new Map<string, ProcessingState>())
   const unsubscribers = new Map<string, () => void>()
 
@@ -226,7 +250,15 @@ export function useVideoProcessing(): VideoProcessing {
           enhance.scale === 'custom' && enhance.customWidth && enhance.customHeight
             ? { width: enhance.customWidth, height: enhance.customHeight }
             : null,
-        edits: request.edits
+        edits: request.edits,
+        // O upscale e' entregue na pasta escolhida (antes ficava so' na pasta
+        // interna do app). Sempre MP4: e' o que o upscale produz.
+        output_target: {
+          format: 'mp4',
+          directory: request.directory,
+          filename: request.filename,
+          conflict: request.conflict
+        }
       },
       defaultAdjustments()
     )
@@ -254,9 +286,10 @@ export function useVideoProcessing(): VideoProcessing {
       handle_id: request.handleId,
       edits: request.edits as unknown as VideoExportRequest['edits'],
       container: request.container,
-      profile: request.enhance.profile as Profile,
+      profile: request.exportProfile,
       output_directory: request.directory,
-      conflict: 'rename'
+      output_filename: request.filename,
+      conflict: request.conflict
     }
     const { job_id: jobId } = await createVideoEditJob(payload)
     set(request.handleId, { jobId, status: 'queued' })
@@ -296,6 +329,14 @@ export function useVideoProcessing(): VideoProcessing {
       if (isEditOnly(request)) await startEditOnly(request)
       else await startEnhance(request)
     } catch (cause) {
+      const existente = caminhoEmConflito(cause)
+      if (existente && options.perguntarConflito) {
+        // Nada foi processado: o backend recusou antes de criar o job.
+        const resposta = await options.perguntarConflito(existente)
+        if (resposta) return start({ ...request, conflict: resposta })
+        set(request.handleId, neutralState())
+        return
+      }
       const detail = cause instanceof Error ? safeParse(cause.message) : null
       set(request.handleId, {
         status: 'error',
@@ -335,7 +376,9 @@ export function useVideoProcessing(): VideoProcessing {
   return { states, stateFor, start, confirm, cancel, isBusy }
 }
 
-function safeParse(message: string): { reason: string; limiting_factor?: string } | null {
+function safeParse(
+  message: string
+): { reason: string; limiting_factor?: string; path?: unknown } | null {
   try {
     const parsed = JSON.parse(message)
     return typeof parsed?.reason === 'string' ? parsed : null

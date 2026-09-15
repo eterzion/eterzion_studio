@@ -17,6 +17,9 @@ import CompressionSummary from '../components/compression/CompressionSummary.vue
 import CompressionComparison from '../components/compression/CompressionComparison.vue'
 import CompressionResult from '../components/compression/CompressionResult.vue'
 import CompressionExportPanel from '../components/compression/CompressionExportPanel.vue'
+import ConflictDialog from '../components/ConflictDialog.vue'
+import { usePerguntaDeConflito } from '../composables/usePerguntaDeConflito'
+import { settingsState } from '../store/settings'
 import ImageCompressionSettings from '../components/compression/ImageCompressionSettings.vue'
 import VideoCompressionSettings from '../components/compression/VideoCompressionSettings.vue'
 import CompressionVideoComparison from '../components/compression/CompressionVideoComparison.vue'
@@ -73,8 +76,9 @@ const { t } = useI18n()
 const queue = useCompressionQueue()
 const { mediaKind, mode, settings, target, payload, set, setTarget, applyPreset } =
   useCompressionSettings()
-const job = useCompressionJob()
-const batch = useCompressionBatch()
+const pergunta = usePerguntaDeConflito()
+const job = useCompressionJob({ perguntarConflito: pergunta.perguntar })
+const batch = useCompressionBatch({ perguntarConflito: pergunta.perguntar })
 
 const capabilities = ref<CompressionCapabilities | null>(null)
 const presets = ref<CompressionPreset[]>([])
@@ -89,7 +93,8 @@ const historyKind = ref<MediaKind | null>(null)
 const presetModified = ref(false)
 
 const exportOptions = ref<CompressionExport>({
-  directory: null,
+  // A pasta padrao das Configuracoes, como na Imagem; sem ela, a do original.
+  directory: settingsState.defaultOutputFolder,
   naming_pattern: '{filename}_compressed',
   conflict_policy: 'rename'
 })
@@ -556,6 +561,7 @@ const previewKind = computed(() => queue.active.value?.media?.media_kind ?? null
         </div>
       </template>
     </MediaEditorShell>
+    <ConflictDialog :caminho="pergunta.caminho.value" @responder="pergunta.responder" />
   </div>
 </template>
 

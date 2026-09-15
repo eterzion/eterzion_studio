@@ -607,7 +607,8 @@ export interface VideoExportRequest {
   profile: Profile
   output_directory?: string | null
   output_filename?: string | null
-  conflict?: 'rename' | 'overwrite'
+  /** 'ask' recusa com 409 `conflict` antes do job (app/destino.py). */
+  conflict?: ConflictMode
 }
 
 /** Create an export. A 422 body carries a `reason` key (ceiling_exceeded,
