@@ -22,7 +22,7 @@ import os
 from dataclasses import dataclass
 from typing import Any, Callable
 
-from eterzion_upscale.media import encoder_works, ffprobe_json, filter_works, run_ffmpeg
+from eterzion_upscale.media import Cancelado, encoder_works, ffprobe_json, filter_works, run_ffmpeg
 
 from . import config
 
@@ -318,6 +318,9 @@ def _run(source_path: str, output_path: str, opcoes: dict[str, Any],
 
     try:
         run_ffmpeg(construir)
+    except Cancelado:
+        # Cancelar nao e' falhar: nem 'encoding_failed', nem log de erro.
+        raise
     except RuntimeError as error:
         raise AnimationCompressionError('encoding_failed', str(error)) from error
 

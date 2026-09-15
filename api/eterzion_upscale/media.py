@@ -15,8 +15,10 @@ import os
 import shutil
 import socket
 import subprocess
+import threading
 import urllib.error
 from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -355,20 +357,140 @@ def _warn_once_if_gpl_build() -> None:
         )
 
 
+class Cancelado(RuntimeError):
+    """O trabalho foi cancelado. Nao e' falha: quem chamou nao deve gravar nada,
+    e o job ja' esta' marcado como cancelado."""
+
+
+class Cancelamento:
+    """Um por job que roda numa thread da API (edicao de video, compressao,
+    musica). Interrompe o ffmpeg que estiver rodando naquela thread.
+
+    **Por que existe.** O `cancel_job` so' sabia encerrar o worker isolado da IA.
+    Esses tres trabalhos rodam fora dele, entao cancelar marcava o job e deixava
+    o ffmpeg ir ate' o fim -- CPU gasta a toa e, na compressao, o arquivo gravado
+    no destino mesmo assim.
+
+    **Mata, nao pede para parar.** O `terminate()` da python-ffmpeg manda
+    CTRL_BREAK no Windows, que so' chega a processos no mesmo console -- e o
+    backend empacotado nao tem console. Como o resultado de um trabalho cancelado
+    vai para o lixo de qualquer jeito, nao ha' o que finalizar com elegancia.
+    """
+
+    def __init__(self) -> None:
+        self._evento = threading.Event()
+        self._lock = threading.Lock()
+        self._atual = None  # o FFmpeg rodando agora nesta thread, se houver
+        self._fim_atual: threading.Event | None = None
+
+    @property
+    def cancelado(self) -> bool:
+        return self._evento.is_set()
+
+    def verificar(self) -> None:
+        """Entre etapas: para antes de comecar a proxima."""
+        if self._evento.is_set():
+            raise Cancelado('cancelado')
+
+    def cancelar(self) -> None:
+        self._evento.set()
+        with self._lock:
+            comando, fim = self._atual, self._fim_atual
+        if comando is not None and fim is not None:
+            # Em outra thread: o processo pode ainda nao existir, e esperar por
+            # ele aqui travaria quem pediu o cancelamento (o loop da API).
+            threading.Thread(target=_matar_quando_existir, args=(comando, fim), daemon=True).start()
+
+    def _registrar(self, comando, fim: threading.Event) -> None:
+        with self._lock:
+            self._atual, self._fim_atual = comando, fim
+
+    def _soltar(self) -> None:
+        with self._lock:
+            self._atual, self._fim_atual = None, None
+
+
+def _matar_quando_existir(comando, fim: threading.Event) -> None:
+    """Mata o processo do ffmpeg assim que ele existir.
+
+    A python-ffmpeg so' cria o processo dentro do `execute()`. Um cancelamento
+    que chega nessa janela nao tem o que matar ainda -- e perde-lo deixaria o
+    ffmpeg rodar ate' o fim. Tenta por alguns segundos, e desiste quando o
+    `execute()` termina por conta propria.
+    """
+    for _ in range(200):
+        processo = getattr(comando, '_process', None)
+        if processo is not None:
+            try:
+                processo.kill()
+            except OSError:
+                pass  # ja' tinha terminado
+            return
+        if fim.wait(0.05):
+            return
+
+
+_escopo = threading.local()
+
+
+@contextmanager
+def escopo_de_cancelamento(cancelamento: Cancelamento) -> Iterator[Cancelamento]:
+    """Faz todo `run_ffmpeg` desta thread obedecer a `cancelamento`. Por thread,
+    e nao global: dois jobs nunca compartilham um cancelamento."""
+    anterior = getattr(_escopo, 'atual', None)
+    _escopo.atual = cancelamento
+    try:
+        yield cancelamento
+    finally:
+        _escopo.atual = anterior
+
+
 def run_ffmpeg(args_builder) -> None:
     """Runs one FFmpeg invocation built by `args_builder(FFmpeg().option('y'))`.
     Consolidates what were three near-identical `_run_ffmpeg` helpers in
     video_io.py, audio.py and optimize.py into the one real place.
-    Uses the bundled ffmpeg binary (T072) when packaged, falling back to PATH."""
+    Uses the bundled ffmpeg binary (T072) when packaged, falling back to PATH.
+
+    Dentro de um `escopo_de_cancelamento`, levanta `Cancelado` quando o job e'
+    cancelado -- nunca retorna como se tivesse dado certo. Sao dois caminhos:
+
+    - cancelado com o ffmpeg rodando: o processo e' morto, o `execute()` levanta
+      FFmpegError (saida diferente de zero), e isso vira `Cancelado` no except;
+    - cancelado quando o ffmpeg ja' tinha terminado, mas antes de retornar
+      daqui: o `execute()` retorna normalmente, e so' a conferencia no fim
+      impede quem chamou de seguir em frente -- movendo o resultado para o
+      destino de um job que a pessoa cancelou.
+    """
     from ffmpeg import FFmpeg, FFmpegError
+
+    cancelamento: Cancelamento | None = getattr(_escopo, 'atual', None)
+    if cancelamento is not None:
+        cancelamento.verificar()
 
     _warn_once_if_gpl_build()
     _ffmpeg_lib_sem_janela()
     executable = ffmpeg_path() or 'ffmpeg'
+    comando = args_builder(FFmpeg(executable=executable).option('y'))
+    fim = threading.Event()
+    if cancelamento is not None:
+        cancelamento._registrar(comando, fim)
+        # Cancelado entre o `verificar()` acima e o registro: ninguem mataria
+        # este comando. Confere de novo agora que ele esta' registrado.
+        if cancelamento.cancelado:
+            cancelamento._soltar()
+            raise Cancelado('cancelado')
     try:
-        args_builder(FFmpeg(executable=executable).option('y')).execute()
+        comando.execute()
     except (FFmpegError, OSError) as error:
+        if cancelamento is not None and cancelamento.cancelado:
+            raise Cancelado('cancelado') from error
         raise RuntimeError(f'Falha ao processar com ffmpeg: {error}') from error
+    finally:
+        fim.set()
+        if cancelamento is not None:
+            cancelamento._soltar()
+    if cancelamento is not None and cancelamento.cancelado:
+        raise Cancelado('cancelado')
 
 
 def _ffmpeg_lib_sem_janela() -> None:
