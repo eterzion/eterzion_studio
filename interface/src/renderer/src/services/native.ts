@@ -30,6 +30,9 @@ export interface UpdateSnapshot {
   phase: UpdatePhase
   version: string | null
   percent: number | null
+  /** Bytes prontos e tamanho total do arquivo novo, só em downloading. */
+  transferred: number | null
+  totalBytes: number | null
   notes: string | null
 }
 

@@ -922,6 +922,7 @@
         "checking": "Recherche de mises à jour…",
         "disabled": "Les mises à jour ne fonctionnent que dans l'application installée.",
         "downloading": "Téléchargement de la version {version}… {percent} %",
+        "downloadingWithSize": "Téléchargement de la version {version}… {percent} % — {done} sur {total}",
         "error": "Recherche impossible pour le moment. Réessayez plus tard.",
         "idle": "Lancez une recherche pour savoir si une nouvelle version existe.",
         "ready": "La version {version} est prête. Elle sera installée à la fermeture de l'application.",

@@ -26,6 +26,8 @@ export const updatesState = reactive<UpdatesState>({
   phase: 'idle' as UpdatePhase,
   version: null,
   percent: null,
+  transferred: null,
+  totalBytes: null,
   notes: null,
   toastVisible: false,
   focusRequested: false,
@@ -49,6 +51,8 @@ function apply(snapshot: UpdateSnapshot): void {
   updatesState.phase = snapshot.phase
   updatesState.version = snapshot.version
   updatesState.percent = snapshot.percent
+  updatesState.transferred = snapshot.transferred
+  updatesState.totalBytes = snapshot.totalBytes
   updatesState.notes = snapshot.notes
   if (snapshot.phase === 'ready' && !eraPronta && snapshot.version) {
     if (!avisoJaMostrado(snapshot.version)) updatesState.toastVisible = true

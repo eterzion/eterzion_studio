@@ -922,6 +922,7 @@
         "checking": "Buscando actualizaciones…",
         "disabled": "Las actualizaciones solo funcionan en la app instalada.",
         "downloading": "Descargando la versión {version}… {percent} %",
+        "downloadingWithSize": "Descargando la versión {version}… {percent} % — {done} de {total}",
         "error": "No se pudo buscar ahora. Inténtalo de nuevo más tarde.",
         "idle": "Busca para ver si hay una versión nueva.",
         "ready": "La versión {version} está lista. Se instalará cuando cierres la app.",
