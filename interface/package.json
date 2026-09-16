@@ -1,6 +1,6 @@
 {
   "name": "eterzion-studio",
-  "version": "1.2.7",
+  "version": "1.2.8",
   "description": "Melhore imagens, vídeos e áudio com IA",
   "main": "./out/main/index.js",
   "author": "Eterzion",
