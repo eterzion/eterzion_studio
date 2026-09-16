@@ -110,6 +110,13 @@ nsis:
   # build/gerar-imagens-do-instalador.py.
   installerSidebar: build/installerSidebar.bmp
   uninstallerSidebar: build/uninstallerSidebar.bmp
+  # Os dois icones explicitos. `installerIcon` ja' caia no icone do app, mas
+  # `uninstallerIcon` nao: sem ele o MUI fica com o padrao do NSIS (a lhama
+  # com a placa de proibido), que aparecia na barra de titulo depois da
+  # elevacao para "todos os usuarios". De quebra, o `uninstallerIcon` e' o que
+  # o template grava como DisplayIcon do item em Aplicativos Instalados.
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
   include: build/installer.nsh
 mac:
   entitlementsInherit: build/entitlements.mac.plist
