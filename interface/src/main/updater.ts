@@ -68,11 +68,31 @@ export interface UpdateSnapshot {
   version: string | null
   /** 0-100, só em downloading. */
   percent: number | null
+  /** Bytes já obtidos e o tamanho total, só em downloading. Uma porcentagem
+   *  sozinha não diz se faltam segundos ou meia hora: 341 MB numa conexão
+   *  ruim é uma decisão diferente de 30 MB. Com download diferencial,
+   *  `transferred` conta também os pedaços aproveitados da versão instalada --
+   *  é o quanto do arquivo novo está pronto, não o tráfego de rede. */
+  transferred: number | null
+  totalBytes: number | null
   /** As novidades que vieram no latest.yml, em texto; null se a versão não trouxe. */
   notes: string | null
 }
 
-let snapshot: UpdateSnapshot = { phase: 'idle', version: null, percent: null, notes: null }
+let snapshot: UpdateSnapshot = {
+  phase: 'idle',
+  version: null,
+  percent: null,
+  transferred: null,
+  totalBytes: null,
+  notes: null
+}
+
+/** Fora de `downloading` não há progresso: limpar os três juntos evita a
+ *  tela mostrar o resto de um download anterior ao lado do estado novo. */
+function semProgresso(phase: UpdatePhase): Partial<UpdateSnapshot> {
+  return { phase, percent: null, transferred: null, totalBytes: null }
+}
 
 function publish(next: Partial<UpdateSnapshot>): void {
   snapshot = { ...snapshot, ...next }
@@ -158,21 +178,33 @@ export function initializeUpdater(): void {
 
   autoUpdater.on('update-available', (info) => {
     console.info('[updater] versão disponível', info.version)
-    publish({ phase: 'downloading', version: info.version, percent: 0, notes: notesFrom(info) })
+    publish({
+      phase: 'downloading',
+      version: info.version,
+      percent: 0,
+      transferred: 0,
+      totalBytes: null,
+      notes: notesFrom(info)
+    })
   })
 
   autoUpdater.on('download-progress', (progress) => {
-    publish({ phase: 'downloading', percent: Math.round(progress.percent) })
+    publish({
+      phase: 'downloading',
+      percent: Math.round(progress.percent),
+      transferred: progress.transferred,
+      totalBytes: progress.total
+    })
   })
 
   autoUpdater.on('update-not-available', () => {
     console.info('[updater] já está na versão mais recente')
-    if (snapshot.phase !== 'ready') publish({ phase: 'up_to_date', percent: null })
+    if (snapshot.phase !== 'ready') publish(semProgresso('up_to_date'))
   })
 
   autoUpdater.on('update-downloaded', (info) => {
     console.info('[updater] baixada, será instalada ao fechar', info.version)
-    publish({ phase: 'ready', version: info.version, percent: null, notes: notesFrom(info) })
+    publish({ ...semProgresso('ready'), version: info.version, notes: notesFrom(info) })
   })
 
   // Falha de atualização não pode derrubar o app nem aparecer como erro
@@ -180,7 +212,7 @@ export function initializeUpdater(): void {
   // não impede ninguém de usar o programa. A interface diz só "tente mais tarde".
   autoUpdater.on('error', (error) => {
     console.warn('[updater] verificação falhou', error?.message ?? error)
-    if (snapshot.phase !== 'ready') publish({ phase: 'error', percent: null })
+    if (snapshot.phase !== 'ready') publish(semProgresso('error'))
   })
 
   ipcMain.handle('updater:check', async () => {
@@ -231,11 +263,11 @@ async function checkQuietly(): Promise<void> {
   if (checking || snapshot.phase === 'downloading' || snapshot.phase === 'ready') return
   checking = true
   try {
-    publish({ phase: 'checking' })
+    publish(semProgresso('checking'))
     const credencial = await credencialCdn()
     if (!credencial) {
       console.info('[updater] sem credencial do CDN nesta rodada; verificação adiada')
-      publish({ phase: 'error' })
+      publish(semProgresso('error'))
       return
     }
     // A cada rodada, porque a credencial vence: a de agora vale por horas, e a

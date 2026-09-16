@@ -922,6 +922,7 @@
         "checking": "Checking for updates…",
         "disabled": "Updates only work in the installed app.",
         "downloading": "Downloading version {version}… {percent}%",
+        "downloadingWithSize": "Downloading version {version}… {percent}% — {done} of {total}",
         "error": "Couldn't check right now. Please try again later.",
         "idle": "Check to see whether a new version is available.",
         "ready": "Version {version} is ready. It will be installed when you close the app.",

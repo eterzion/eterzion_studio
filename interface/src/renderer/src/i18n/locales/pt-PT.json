@@ -922,6 +922,7 @@
         "checking": "A procurar atualizações…",
         "disabled": "As atualizações só funcionam na aplicação instalada.",
         "downloading": "A transferir a versão {version}… {percent}%",
+        "downloadingWithSize": "A transferir a versão {version}… {percent}% — {done} de {total}",
         "error": "Não foi possível procurar agora. Tente novamente mais tarde.",
         "idle": "Procure para ver se existe uma versão nova.",
         "ready": "A versão {version} está pronta. Será instalada quando fechar a aplicação.",

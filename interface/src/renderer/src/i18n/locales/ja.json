@@ -922,6 +922,7 @@
         "checking": "アップデートを確認しています…",
         "disabled": "アップデートはインストール版のアプリでのみ利用できます。",
         "downloading": "バージョン {version} をダウンロード中… {percent}%",
+        "downloadingWithSize": "バージョン {version} をダウンロード中… {percent}%（{done} / {total}）",
         "error": "現在確認できません。しばらくしてからもう一度お試しください。",
         "idle": "新しいバージョンがあるか確認できます。",
         "ready": "バージョン {version} の準備ができました。アプリを閉じるとインストールされます。",

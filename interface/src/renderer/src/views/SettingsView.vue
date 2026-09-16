@@ -34,6 +34,7 @@ import { SUPPORTED_LOCALES, detectSystemLocale, type SupportedLocale } from '../
 import { clearHistory, historyState } from '../store/history'
 import { listComponents } from '../services/api'
 import { api, hasNativeApi } from '../services/native'
+import { formatBytes } from '../utils/formatBytes'
 import {
   cancelRestart,
   checkForUpdates,
@@ -200,11 +201,24 @@ const updateStatusText = computed(() => {
   switch (updatesState.phase) {
     case 'checking':
       return t('settings.updates.status.checking')
-    case 'downloading':
-      return t('settings.updates.status.downloading', {
+    case 'downloading': {
+      const percent = updatesState.percent ?? 0
+      const total = updatesState.totalBytes
+      const pronto = updatesState.transferred
+      // Os tamanhos so' chegam no primeiro evento de progresso: ate' la', a
+      // frase e' a de antes, em vez de um "0 B de —" que nao informa nada.
+      if (total == null || pronto == null) {
+        return t('settings.updates.status.downloading', { version, percent })
+      }
+      return t('settings.updates.status.downloadingWithSize', {
         version,
-        percent: updatesState.percent ?? 0
+        percent,
+        // O download diferencial as vezes fecha a conta com alguns bytes a
+        // mais; "342 MB de 341 MB" parece defeito.
+        done: formatBytes(Math.min(pronto, total)),
+        total: formatBytes(total)
       })
+    }
     case 'ready':
       return t('settings.updates.status.ready', { version })
     case 'up_to_date':

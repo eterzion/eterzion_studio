@@ -98,4 +98,19 @@ describe('store/updates', () => {
     await expect(requestRestart()).resolves.toBe('restarting')
     expect(ponte.installUpdate).toHaveBeenCalledTimes(1)
   })
+
+  // O tamanho do download vem do processo principal e so' chega a tela por
+  // aqui: um campo esquecido neste espelho some sem quebrar nada.
+  it('o progresso em bytes chega do processo principal', () => {
+    ponte.ouvinte?.({
+      phase: 'downloading',
+      version: '1.2.6',
+      percent: 49,
+      transferred: 176_160_768,
+      totalBytes: 357_564_416,
+      notes: null
+    })
+    expect(updatesState.transferred).toBe(176_160_768)
+    expect(updatesState.totalBytes).toBe(357_564_416)
+  })
 })
