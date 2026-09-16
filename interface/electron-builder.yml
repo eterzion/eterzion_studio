@@ -103,6 +103,20 @@ nsis:
     - zh_CN
   multiLanguageInstaller: true
   displayLanguageSelector: false
+  # A faixa da esquerda das paginas de boas-vindas e de conclusao. Sem estes
+  # arquivos o electron-builder cai na arte generica do NSIS (nsis3-metro.bmp:
+  # um quadrado riscado e uma seta entrando num notebook, em azul) -- a
+  # primeira tela do produto era de outro produto. Gerados do icone do app por
+  # build/gerar-imagens-do-instalador.py.
+  installerSidebar: build/installerSidebar.bmp
+  uninstallerSidebar: build/uninstallerSidebar.bmp
+  # Os dois icones explicitos. `installerIcon` ja' caia no icone do app, mas
+  # `uninstallerIcon` nao: sem ele o MUI fica com o padrao do NSIS (a lhama
+  # com a placa de proibido), que aparecia na barra de titulo depois da
+  # elevacao para "todos os usuarios". De quebra, o `uninstallerIcon` e' o que
+  # o template grava como DisplayIcon do item em Aplicativos Instalados.
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
   include: build/installer.nsh
 mac:
   entitlementsInherit: build/entitlements.mac.plist
